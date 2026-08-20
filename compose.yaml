@@ -1,32 +1,61 @@
 services:
-  mysql:
-    image: mysql:8.4
-    container_name: controle-alunos-mysql
-    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: arena-dev-postgres
 
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-controle_alunos}
-      MYSQL_USER: ${MYSQL_USER:-controle}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-controle123}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      POSTGRES_DB: arena_dev
+      POSTGRES_USER: arena
+      POSTGRES_PASSWORD: arena123
 
     ports:
-      - "${MYSQL_PORT:-3306}:3306"
+      - "5432:5432"
 
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - postgres_data:/var/lib/postgresql/data
 
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "mysqladmin ping -h localhost -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"
-        ]
+      test: ["CMD-SHELL", "pg_isready -U arena -d arena_dev"]
       interval: 5s
       timeout: 5s
-      retries: 20
-      start_period: 15s
+      retries: 10
+
+
+  backend:
+    build:
+      context: ./backend
+
+    container_name: arena-dev-backend
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/arena_dev
+      SPRING_DATASOURCE_USERNAME: arena
+      SPRING_DATASOURCE_PASSWORD: arena123
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+
+  frontend:
+    build:
+      context: ./frontend
+
+    container_name: arena-dev-frontend
+
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      - backend
+
 
 volumes:
-  mysql_data:
+  postgres_data:
