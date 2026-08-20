@@ -1,0 +1,2 @@
+1001;Maria Silva;maria@example.com;;F;Rua;Exemplo;10;;Centro;64000-000;Teresina;PI;(86) 99999-0000;
+1002;João Souza;joao@example.com;;M;Avenida;Principal;120;Apto 4;Centro;64000-100;Teresina;PI;(86) 98888-0000;

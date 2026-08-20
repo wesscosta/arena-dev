@@ -1,2 +1,0 @@
-1;Stephenson Galvão;stepgalvao@gmail.com;00011122233;M;Rua;Rua sem nome;390;Perto de lugar nenhum;Cafundó;6400000;Teresina;Piaui;34352345;
-2;Fulano de Tal;fulano@gmail.com;00011122233;M;Rua;Paranaue;450;Paranaue do Parana;Rodado;6400000;Luanda;Piaui;45678909;

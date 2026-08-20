@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS aluno (
+    matricula INT PRIMARY KEY,
+    nome VARCHAR(150) NOT NULL,
+    email VARCHAR(180) NULL,
+    cpf VARCHAR(20) NULL,
+    sexo CHAR(1) NOT NULL,
+    tipo_logradouro VARCHAR(30) NULL,
+    logradouro VARCHAR(180) NULL,
+    numero INT NULL,
+    complemento VARCHAR(120) NULL,
+    bairro VARCHAR(120) NULL,
+    cep VARCHAR(20) NULL,
+    cidade VARCHAR(120) NULL,
+    estado VARCHAR(2) NULL,
+    telefone VARCHAR(30) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_aluno_nome (nome),
+    INDEX idx_aluno_email (email)
+);

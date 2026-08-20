@@ -1,0 +1,11 @@
+target/
+build/
+dist/
+*.class
+*.jar
+*.log
+.env
+.idea/
+.vscode/
+nbproject/private/
+.DS_Store
