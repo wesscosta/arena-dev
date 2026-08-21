@@ -41,6 +41,9 @@ public class SessionService {
         if (!classroom.isActive()) {
             throw new IllegalArgumentException("Não é possível iniciar sessão para uma turma inativa.");
         }
+        if (sessionRepository.existsByClassroomIdAndStatus(classroomId, SessionStatus.ACTIVE)) {
+            throw new IllegalArgumentException("Já existe uma sessão ativa para esta turma. Encerre-a antes de iniciar outra.");
+        }
 
         List<Enrollment> enrollments = enrollmentRepository
                 .findByClassroomIdAndActiveTrueOrderByStudentNameAsc(classroomId);

@@ -40,8 +40,8 @@ export function loadData(): ArenaData {
       (parsed.enrollments?.length ?? 0) > 0;
 
     // Incremento 4 estabeleceu uma fronteira limpa para Classroom/Student/Enrollment.
-    // Incremento 5 amplia essa fronteira para ClassSession/SessionParticipant. Os dados
-    // duráveis desses domínios sempre serão reconstruídos pela API.
+    // Incremento 5 amplia essa fronteira para ClassSession/SessionParticipant e o
+    // Incremento 6 para ScoreEvent. Dados duráveis desses domínios são reconstruídos pela API.
     if (hasLegacyLocalClassroomDomain) return EMPTY_DATA;
 
     return {
@@ -53,7 +53,7 @@ export function loadData(): ArenaData {
       sessions: [],
       sessionParticipants: [],
       sessionRuntime: parsed.sessionRuntime ?? [],
-      scoreEvents: parsed.scoreEvents ?? [],
+      scoreEvents: [],
       activities: parsed.activities ?? [],
       groupHistory: parsed.groupHistory ?? [],
       currentSessionId: undefined,
@@ -73,6 +73,7 @@ export function saveData(data: ArenaData) {
     enrollments: [],
     sessions: [],
     sessionParticipants: [],
+    scoreEvents: [],
     currentSessionId: undefined,
     // Mecânicas ainda não migradas (sorteio, Boss e fonte da Arena) permanecem
     // temporariamente locais, mas sempre referenciam o UUID de uma sessão real.

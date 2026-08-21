@@ -6,6 +6,7 @@ import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-q
 import { createBalancedGroups, getLevel, getLevelProgress, weightedDraw, xpForStudent } from "@/lib/game";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive } from "@/lib/classroom-api";
 import { createSession as createSessionApi, fetchSessionDomain, finishSession as finishSessionApi, setParticipantPresence } from "@/lib/session-api";
+import { createScoreEvent as createScoreEventApi, createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
 import { EMPTY_DATA, loadData, saveData, uid } from "@/lib/store";
 import type { Activity, ActivityQuestion, ArenaData, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 
@@ -77,6 +78,7 @@ export default function ArenaApp() {
       try {
         const domain = await fetchClassroomDomain();
         const sessionDomain = await fetchSessionDomain(domain.classrooms, localData.sessionRuntime);
+        const scoreEvents = await fetchScoreDomain(domain.classrooms);
         if (cancelled) return;
         const preferredClassroomId = domain.classrooms.some((item) => item.id === localData.activeClassroomId)
           ? localData.activeClassroomId
@@ -86,6 +88,7 @@ export default function ArenaApp() {
           ...localData,
           ...domain,
           ...sessionDomain,
+          scoreEvents,
           activeClassroomId: preferredClassroomId,
           currentSessionId: activeSession?.id,
         });
@@ -165,13 +168,14 @@ export default function ArenaApp() {
   async function refreshClassroomDomain(preferredClassroomId?: string) {
     const domain = await fetchClassroomDomain();
     const sessionDomain = await fetchSessionDomain(domain.classrooms, sessionRuntimeSnapshot(data.sessions));
+    const scoreEvents = await fetchScoreDomain(domain.classrooms);
     setData((current) => {
       const candidate = preferredClassroomId ?? current.activeClassroomId;
       const activeClassroomId = domain.classrooms.some((item) => item.id === candidate)
         ? candidate
         : domain.classrooms[0]?.id;
       const activeSession = sessionDomain.sessions.find((item) => item.classroomId === activeClassroomId && item.status === "ACTIVE" && !item.endedAt);
-      return { ...current, ...domain, ...sessionDomain, activeClassroomId, currentSessionId: activeSession?.id };
+      return { ...current, ...domain, ...sessionDomain, scoreEvents, activeClassroomId, currentSessionId: activeSession?.id };
     });
     setApiError("");
   }
@@ -212,7 +216,7 @@ export default function ArenaApp() {
           <div className={apiError ? "status-dot error" : "status-dot"} />
           <div>
             <strong>{apiError ? "Backend indisponível" : "Persistência híbrida"}</strong>
-            <small>{apiError ? "Verifique Spring Boot/PostgreSQL" : "Turmas, alunos, sessões e presença no PostgreSQL"}</small>
+            <small>{apiError ? "Verifique Spring Boot/PostgreSQL" : "Turmas, alunos, sessões, presença e XP no PostgreSQL"}</small>
           </div>
         </div>
       </aside>
@@ -310,9 +314,22 @@ export default function ArenaApp() {
             <HistoryView
               events={data.scoreEvents.filter((event) => event.classroomId === activeClassroom.id)}
               students={data.students}
-              onDelete={(eventId) => {
-                patch((current) => ({ ...current, scoreEvents: current.scoreEvents.filter((event) => event.id !== eventId) }));
-                notify("Lançamento removido.");
+              onReverse={(eventId) => {
+                void (async () => {
+                  try {
+                    const reversal = await reverseScoreEventApi(eventId);
+                    patch((current) => ({
+                      ...current,
+                      scoreEvents: [
+                        ...current.scoreEvents.map((event) => event.id === eventId ? { ...event, reversed: true } : event),
+                        reversal,
+                      ],
+                    }));
+                    notify("Lançamento revertido com auditoria preservada.");
+                  } catch (error) {
+                    notify(errorMessage(error));
+                  }
+                })();
               }}
             />
           )}
@@ -688,13 +705,25 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, s
     }, 900);
   }
 
-  function addScore(points: number, category: ScoreCategory, description: string) {
+  async function addScore(points: number, category: ScoreCategory, description: string) {
     if (!selectedId || !currentSession) return;
-    patch((current) => ({
-      ...current,
-      scoreEvents: [...current.scoreEvents, { id: uid("score"), classroomId, studentId: selectedId, sessionId: currentSession.id, points, category, description, source: "ARENA", activityId: currentSession.activityId, questionId: currentSession.currentQuestionId, createdAt: new Date().toISOString() }],
-    }));
-    notify(`${points >= 0 ? "+" : ""}${points} XP registrado.`);
+    try {
+      const event = await createScoreEventApi({
+        classroomId,
+        studentId: selectedId,
+        sessionId: currentSession.id,
+        points,
+        category,
+        description,
+        source: "ARENA",
+        activityId: currentSession.activityId,
+        questionId: currentSession.currentQuestionId,
+      });
+      patch((current) => ({ ...current, scoreEvents: [...current.scoreEvents, event] }));
+      notify(`${points >= 0 ? "+" : ""}${points} XP registrado no PostgreSQL.`);
+    } catch (error) {
+      notify(errorMessage(error));
+    }
   }
 
   function changeArenaActivity(nextActivityId: string) {
@@ -1091,39 +1120,46 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
     setModal("delivery");
   }
 
-  function registerDelivery() {
+  async function registerDelivery() {
     if (!deliveryActivity || !delivered.length) return;
-    const now = new Date().toISOString();
-    const events = delivered.flatMap((studentId) => {
-      const rows: ArenaData["scoreEvents"] = [{
-        id: uid("score"),
-        classroomId,
-        studentId,
-        points: deliveryActivity.points,
-        category: "SUBMISSION",
-        description: `Entrega: ${deliveryActivity.title}`,
-        source: "ACTIVITY",
-        activityId: deliveryActivity.id,
-        createdAt: now,
-      }];
-      if (onTime.includes(studentId) && deliveryActivity.onTimeBonus) {
-        rows.push({
-          id: uid("score"),
-          classroomId,
-          studentId,
-          points: deliveryActivity.onTimeBonus,
-          category: "BONUS",
-          description: `Bônus no prazo: ${deliveryActivity.title}`,
-          source: "ACTIVITY",
-          activityId: deliveryActivity.id,
-          createdAt: now,
-        });
+    try {
+      const inputs = delivered.flatMap((studentId) => {
+        const rows: CreateScoreEventInput[] = [];
+        if (deliveryActivity.points) {
+          rows.push({
+            classroomId,
+            studentId,
+            points: deliveryActivity.points,
+            category: "SUBMISSION" as const,
+            description: `Entrega: ${deliveryActivity.title}`,
+            source: "ACTIVITY" as const,
+            activityId: deliveryActivity.id,
+          });
+        }
+        if (onTime.includes(studentId) && deliveryActivity.onTimeBonus) {
+          rows.push({
+            classroomId,
+            studentId,
+            points: deliveryActivity.onTimeBonus,
+            category: "BONUS" as const,
+            description: `Bônus no prazo: ${deliveryActivity.title}`,
+            source: "ACTIVITY" as const,
+            activityId: deliveryActivity.id,
+          });
+        }
+        return rows;
+      });
+      if (!inputs.length) {
+        notify("A atividade não possui XP configurado para registrar.");
+        return;
       }
-      return rows;
-    });
-    patch((current) => ({ ...current, scoreEvents: [...current.scoreEvents, ...events] }));
-    setModal(null);
-    notify(`XP registrado para ${delivered.length} aluno(s).`);
+      const events = await createScoreEventsApi(inputs);
+      patch((current) => ({ ...current, scoreEvents: [...current.scoreEvents, ...events] }));
+      setModal(null);
+      notify(`XP persistido para ${delivered.length} aluno(s).`);
+    } catch (error) {
+      notify(errorMessage(error));
+    }
   }
 
   function openImport() {
@@ -1259,7 +1295,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
               </div>
             ))}
           </div>
-          <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!delivered.length} onClick={registerDelivery}>Registrar e aplicar XP</button></div>
+          <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!delivered.length} onClick={() => { void registerDelivery(); }}>Registrar e aplicar XP</button></div>
         </>}
       </Modal>
 
@@ -1293,7 +1329,7 @@ function RankingView({ leaderboard, events, classroomId }: { leaderboard: { stud
           {leaderboard.map((row, index) => {
             const level = getLevel(row.xp);
             const weekly = events.filter((e) => e.classroomId === classroomId && e.studentId === row.student.id && new Date(e.createdAt) >= weekStart).reduce((sum, e) => sum + e.points, 0);
-            return <div className="ranking-full-row" key={row.student.id}><b className="place">#{index + 1}</b><Avatar student={row.student} /><div className="rank-main"><div><strong>{row.student.name}</strong><span>{level.name}</span></div><div className="progress"><span style={{ width: `${getLevelProgress(row.xp)}%` }} /></div></div><div className="weekly">7 dias <b>+{weekly}</b></div><strong>{row.xp} XP</strong></div>;
+            return <div className="ranking-full-row" key={row.student.id}><b className="place">#{index + 1}</b><Avatar student={row.student} /><div className="rank-main"><div><strong>{row.student.name}</strong><span>{level.name}</span></div><div className="progress"><span style={{ width: `${getLevelProgress(row.xp)}%` }} /></div></div><div className="weekly">7 dias <b>{weekly >= 0 ? "+" : ""}{weekly}</b></div><strong>{row.xp} XP</strong></div>;
           })}
           {!leaderboard.length && <MiniEmpty text="O ranking aparecerá após cadastrar alunos." />}
         </div>
@@ -1302,7 +1338,7 @@ function RankingView({ leaderboard, events, classroomId }: { leaderboard: { stud
   );
 }
 
-function HistoryView({ events, students, onDelete }: { events: ArenaData["scoreEvents"]; students: Student[]; onDelete: (id: string) => void }) {
+function HistoryView({ events, students, onReverse }: { events: ArenaData["scoreEvents"]; students: Student[]; onReverse: (id: string) => void }) {
   const [query, setQuery] = useState("");
   const filtered = events.slice().reverse().filter((event) => {
     const student = students.find((s) => s.id === event.studentId);
@@ -1312,7 +1348,7 @@ function HistoryView({ events, students, onDelete }: { events: ArenaData["scoreE
     <Panel title="Histórico de XP" subtitle="Auditoria completa de respostas, entregas, bônus e ajustes">
       <input className="input search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar aluno, motivo ou categoria..." />
       <div className="history-list">
-        {filtered.map((event) => { const student = students.find((s) => s.id === event.studentId); return <div className="history-row" key={event.id}><Avatar student={student ?? { id: "x", name: "?", nickname: "", createdAt: "" }} /><div className="grow"><strong>{student?.name ?? "Aluno removido"}</strong><small>{event.description} · {dateTime(event.createdAt)}</small></div><span className="category-tag">{event.category}</span><b className={event.points >= 0 ? "positive" : "negative"}>{event.points >= 0 ? "+" : ""}{event.points} XP</b><button className="icon-button danger" title="Remover lançamento" onClick={() => onDelete(event.id)}>×</button></div>; })}
+        {filtered.map((event) => { const student = students.find((s) => s.id === event.studentId); return <div className="history-row" key={event.id}><Avatar student={student ?? { id: "x", name: "?", nickname: "", createdAt: "" }} /><div className="grow"><strong>{student?.name ?? "Aluno removido"}</strong><small>{event.description} · {dateTime(event.createdAt)}</small></div><span className="category-tag">{event.reversalOf ? "REVERSÃO" : event.reversed ? "REVERTIDO" : event.category}</span><b className={event.points >= 0 ? "positive" : "negative"}>{event.points >= 0 ? "+" : ""}{event.points} XP</b><button className="icon-button danger" disabled={Boolean(event.reversalOf || event.reversed)} title={event.reversalOf ? "Evento de reversão" : event.reversed ? "Lançamento já revertido" : "Reverter lançamento"} onClick={() => onReverse(event.id)}>↶</button></div>; })}
         {!filtered.length && <MiniEmpty text="Nenhum lançamento encontrado." />}
       </div>
     </Panel>
@@ -1343,16 +1379,10 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
     reader.onload = () => {
       try {
         const parsed = JSON.parse(String(reader.result)) as ArenaData;
-        if (!Array.isArray(parsed.scoreEvents) || !Array.isArray(parsed.activities)) throw new Error();
+        if (!Array.isArray(parsed.activities)) throw new Error();
 
         const classroomIds = new Set(data.classrooms.map((item) => item.id));
-        const studentIds = new Set(data.students.map((item) => item.id));
         const sessionIds = new Set(data.sessions.map((item) => item.id));
-        const scoreEvents = (parsed.scoreEvents ?? []).filter((item) =>
-          classroomIds.has(item.classroomId) &&
-          studentIds.has(item.studentId) &&
-          (!item.sessionId || sessionIds.has(item.sessionId))
-        );
         const activities = (parsed.activities ?? []).filter((item) => classroomIds.has(item.classroomId));
         const groupHistory = (parsed.groupHistory ?? []).filter((item) =>
           classroomIds.has(item.classroomId) && (!item.sessionId || sessionIds.has(item.sessionId))
@@ -1360,11 +1390,10 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
 
         setData((current) => ({
           ...current,
-          scoreEvents,
           activities,
           groupHistory,
         }));
-        notify("Backup local restaurado. Turmas, alunos, sessões e presença continuam vindo do PostgreSQL.");
+        notify("Backup local restaurado. Turmas, alunos, sessões, presença e XP continuam vindo do PostgreSQL.");
       } catch {
         notify("Arquivo de backup inválido ou incompatível com as turmas atuais.");
       }
@@ -1384,25 +1413,21 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
         createdStudents.push(result.student);
       }
 
+      const demoEvents = await createScoreEventsApi(createdStudents.slice(0, 4).map((student, index) => ({
+        classroomId: classroom.id,
+        studentId: student.id,
+        points: (index + 1) * 20,
+        category: "BONUS" as const,
+        description: "Dados de demonstração",
+        source: "MANUAL" as const,
+      })));
       await refreshClassroomDomain(classroom.id);
       setData((current) => ({
         ...current,
         activeClassroomId: classroom.id,
-        scoreEvents: [
-          ...current.scoreEvents,
-          ...createdStudents.slice(0, 4).map((student, index) => ({
-            id: uid("score"),
-            classroomId: classroom.id,
-            studentId: student.id,
-            points: (index + 1) * 20,
-            category: "BONUS" as const,
-            description: "Dados de demonstração",
-            source: "MANUAL" as const,
-            createdAt: new Date().toISOString(),
-          })),
-        ],
+        scoreEvents: [...current.scoreEvents.filter((event) => event.classroomId !== classroom.id), ...demoEvents],
       }));
-      notify("Demonstração criada no PostgreSQL.");
+      notify("Demonstração criada no PostgreSQL, incluindo XP.");
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1414,11 +1439,11 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
     <div className="two-col">
       <Panel title="Backup dos dados" subtitle="Snapshot dos módulos atuais do Arena Dev">
         <div className="backup-card"><span className="backup-icon">↓</span><div><h3>Exportar snapshot</h3><p>Inclui a visão atual de turmas/alunos e os módulos que ainda permanecem local-first.</p></div><button className="button primary" onClick={exportData}>Exportar JSON</button></div>
-        <div className="backup-card"><span className="backup-icon">↑</span><div><h3>Restaurar dados locais</h3><p>Restaura sessões, XP, atividades e grupos compatíveis. Turmas/alunos não sobrescrevem o PostgreSQL.</p></div><label className="button file-button">Importar JSON<input type="file" accept="application/json" onChange={(e) => importData(e.target.files?.[0])} /></label></div>
+        <div className="backup-card"><span className="backup-icon">↑</span><div><h3>Restaurar dados locais</h3><p>Restaura atividades, grupos e runtime local compatíveis. XP não sobrescreve o PostgreSQL.</p></div><label className="button file-button">Importar JSON<input type="file" accept="application/json" onChange={(e) => importData(e.target.files?.[0])} /></label></div>
       </Panel>
       <Panel title="Ambiente de demonstração" subtitle="Teste o fluxo usando a persistência atual">
-        <div className="demo-block"><div className="target-mark small">A</div><h3>Carregar turma demonstrativa</h3><p>Cria a turma e os seis alunos no PostgreSQL; XP e demais módulos continuam no estágio de migração previsto.</p><button className="button" disabled={busy} onClick={() => { void loadDemo(); }}>{busy ? "Criando..." : "Carregar demonstração"}</button></div>
-        <div className="local-note"><strong>Persistência do Incremento 4</strong><p>Turmas, alunos e matrículas já são persistidos no backend/PostgreSQL. Sessões, atividades, XP, Arena e grupos continuam temporariamente no navegador até seus incrementos específicos.</p></div>
+        <div className="demo-block"><div className="target-mark small">A</div><h3>Carregar turma demonstrativa</h3><p>Cria turma, alunos e XP de demonstração diretamente no PostgreSQL.</p><button className="button" disabled={busy} onClick={() => { void loadDemo(); }}>{busy ? "Criando..." : "Carregar demonstração"}</button></div>
+        <div className="local-note"><strong>Persistência do Incremento 6</strong><p>Turmas, alunos, matrículas, sessões, presença e ScoreEvents já estão no backend/PostgreSQL. Atividades e mecânicas da Arena ainda permanecem temporariamente no navegador.</p></div>
       </Panel>
     </div>
   );

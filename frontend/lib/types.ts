@@ -138,6 +138,8 @@ export interface ScoreEvent {
   activityId?: string;
   questionId?: string;
   createdAt: string;
+  reversalOf?: string;
+  reversed?: boolean;
 }
 
 export interface Activity {

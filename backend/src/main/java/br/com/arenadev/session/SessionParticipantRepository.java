@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface SessionParticipantRepository extends JpaRepository<SessionParticipant, UUID> {
     List<SessionParticipant> findBySessionIdOrderByStudentNameAsc(UUID sessionId);
+    boolean existsBySessionIdAndStudentId(UUID sessionId, UUID studentId);
 }

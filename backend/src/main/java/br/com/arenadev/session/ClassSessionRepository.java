@@ -7,4 +7,6 @@ import java.util.UUID;
 
 public interface ClassSessionRepository extends JpaRepository<ClassSession, UUID> {
     List<ClassSession> findByClassroomIdOrderByStartedAtDesc(UUID classroomId);
+
+    boolean existsByClassroomIdAndStatus(UUID classroomId, SessionStatus status);
 }
