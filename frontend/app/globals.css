@@ -167,11 +167,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .icon-action.danger{color:#b87c82}.icon-action.danger:hover{border-color:rgba(255,107,115,.3);background:rgba(255,107,115,.06);color:#ff9da3}
 
 /* Incremento 9.2 — contexto único na sidebar, guias de turma e cards refinados */
-.sidebar-classroom-context{margin:0 0 18px;padding:12px;border:1px solid rgba(88,243,167,.12);border-radius:12px;background:linear-gradient(145deg,rgba(88,243,167,.06),rgba(255,255,255,.015)),#0a1411}
-.sidebar-context-label{display:block;margin:0 0 8px;color:var(--accent);font-size:8px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
-.sidebar-classroom-select{width:100%;min-width:0;padding:9px 30px 9px 10px;font-size:10px;border-color:rgba(255,255,255,.08);background:#0a1310}
-.sidebar-context-meta{display:block;margin-top:7px;color:#71887e;font-size:8px;line-height:1.35}
-.topbar-context-name{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#7f968c;font-size:10px;font-weight:750}
+.topbar-classroom-select{width:min(390px,38vw);min-width:240px;border-color:rgba(255,255,255,.09);background:#0a1310;color:#dce8e3;font-size:10px;font-weight:700}
+.overview-new-classroom{white-space:nowrap}
 
 .classroom-section-nav{border-bottom:1px solid var(--border);margin:-2px 0 0;padding:0 2px}
 .classroom-section-tabs{display:flex;align-items:flex-end;gap:4px;overflow-x:auto;scrollbar-width:none}.classroom-section-tabs::-webkit-scrollbar{display:none}
@@ -189,4 +186,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .overview-class-card h3{margin:8px 0 4px;font-size:17px;letter-spacing:-.02em}.selected-context-pill{border:1px solid rgba(88,243,167,.2);border-radius:999px;padding:4px 6px;background:rgba(88,243,167,.07);color:#91dcb8;font-size:7px;font-weight:850;letter-spacing:.04em;text-transform:uppercase}
 .overview-class-stats{position:relative;z-index:1}.overview-class-card-foot{position:relative;z-index:1}.overview-card-actions{position:relative;z-index:2}
 
-@media(max-width:900px){.topbar-context-name{display:none}.classroom-section-tab{padding:0 11px}}
+@media(max-width:900px){.topbar-classroom-select{min-width:180px;width:min(330px,42vw)}.classroom-section-tab{padding:0 11px}}
+
+/* Ajuste 9.2.1 — seletor no header e ação de criação junto aos filtros */
+@media(max-width:820px){.overview-toolbar{align-items:stretch;flex-direction:column}.overview-new-classroom{align-self:flex-end}.topbar-actions{justify-content:flex-end}.topbar-classroom-select{min-width:0;width:100%}}
+@media(max-width:520px){.overview-new-classroom{align-self:stretch;width:100%}}

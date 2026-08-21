@@ -213,28 +213,6 @@ export default function ArenaApp() {
           </div>
         </div>
 
-        <div className="sidebar-classroom-context">
-          <span className="sidebar-context-label">TURMA ATUAL</span>
-          <select
-            className="select sidebar-classroom-select"
-            value={activeClassroom?.id ?? ""}
-            onChange={(event) => setActiveClassroom(event.target.value)}
-            disabled={!data.classrooms.length}
-          >
-            {!data.classrooms.length && <option value="">Nenhuma turma</option>}
-            {data.classrooms.map((classroom) => (
-              <option key={classroom.id} value={classroom.id}>
-                {classroom.name}{!classroom.active ? " · inativa" : ""}
-              </option>
-            ))}
-          </select>
-          {activeClassroom && (
-            <small className="sidebar-context-meta">
-              {classStudents.length} aluno(s){currentSession ? " · sessão em andamento" : " · pronta para aula"}
-            </small>
-          )}
-        </div>
-
         <nav className="nav-list">
           {NAV.map((item) => (
             <button key={item.id} className={view === item.id ? "nav-item active" : "nav-item"} onClick={() => { if (item.id === "classroom") setClassroomTab("home"); setView(item.id); }}>
@@ -260,7 +238,20 @@ export default function ArenaApp() {
             <h1>{NAV.find((item) => item.id === view)?.label}</h1>
           </div>
           <div className="topbar-actions">
-            {activeClassroom && <span className="topbar-context-name">{activeClassroom.name}</span>}
+            <select
+              className="select topbar-classroom-select"
+              value={activeClassroom?.id ?? ""}
+              onChange={(event) => setActiveClassroom(event.target.value)}
+              disabled={!data.classrooms.length}
+              aria-label="Selecionar turma atual"
+            >
+              {!data.classrooms.length && <option value="">Nenhuma turma</option>}
+              {data.classrooms.map((classroom) => (
+                <option key={classroom.id} value={classroom.id}>
+                  {classroom.name}{!classroom.active ? " · inativa" : ""}
+                </option>
+              ))}
+            </select>
             {currentSession && <span className="live-pill"><span /> Sessão ativa</span>}
           </div>
         </header>
@@ -413,17 +404,6 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
 
   return (
     <div className="stack-lg overview-page">
-      <div className="page-action-bar overview-heading">
-        <div>
-          <span className="eyebrow accent">VISÃO GERAL DO SISTEMA</span>
-          <h2>Suas turmas</h2>
-          <p>Crie, organize e escolha a turma que será o contexto de trabalho.</p>
-        </div>
-        <div className="page-action-buttons">
-          <button className="button primary" onClick={() => setCreateOpen(true)}>+ Nova turma</button>
-        </div>
-      </div>
-
       <div className="metrics-grid overview-metrics">
         <Metric label="Turmas ativas" value={data.classrooms.filter((item) => item.active).length.toString()} hint={`${data.classrooms.length} cadastradas`} />
         <Metric label="Matrículas ativas" value={activeEnrollments.length.toString()} hint="vínculos em todas as turmas" />
@@ -437,6 +417,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
           <button className={filter === "ACTIVE" ? "active" : ""} onClick={() => setFilter("ACTIVE")}>Ativas <span>{data.classrooms.filter((item) => item.active).length}</span></button>
           <button className={filter === "INACTIVE" ? "active" : ""} onClick={() => setFilter("INACTIVE")}>Inativas <span>{data.classrooms.filter((item) => !item.active).length}</span></button>
         </div>
+        <button className="button primary overview-new-classroom" onClick={() => setCreateOpen(true)}>+ Nova turma</button>
       </div>
 
       {!data.classrooms.length ? (
