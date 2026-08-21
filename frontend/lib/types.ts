@@ -1,3 +1,5 @@
+export type ScoreSource = "ARENA" | "ACTIVITY" | "BUZZER" | "BOSS" | "MANUAL";
+
 export type ScoreCategory =
   | "QUESTION"
   | "DEBUG"
@@ -94,6 +96,9 @@ export interface GameSession {
   drawCounts: Record<string, number>;
   lastDrawnStudentId?: string;
   boss?: BossState;
+  activityId?: string;
+  currentQuestionId?: string;
+  answeredQuestionIds?: string[];
 }
 
 export interface ScoreEvent {
@@ -104,6 +109,9 @@ export interface ScoreEvent {
   points: number;
   category: ScoreCategory;
   description: string;
+  source?: ScoreSource;
+  activityId?: string;
+  questionId?: string;
   createdAt: string;
 }
 
@@ -118,6 +126,8 @@ export interface Activity {
   questions?: ActivityQuestion[];
   createdAt: string;
   updatedAt?: string;
+  copiedFromActivityId?: string;
+  copiedFromClassroomId?: string;
 }
 
 export interface GroupHistory {

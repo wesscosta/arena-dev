@@ -39,26 +39,40 @@ O frontend permanece local-first para evitar regressão durante a transição.
 
 Referência: `docs/ACTIVITY_QUESTIONS.md`.
 
-## Incremento 3 — Turmas e alunos via API
+## Incremento 3 — Integração de Atividades com Turma e Arena
+
+**Status: implementado no frontend local-first.**
+
+- turma selecionada como contexto explícito de Atividades;
+- página de Atividades convertida em catálogo/cards;
+- Nova Atividade, Questões, Entregas e Importação em modais;
+- cópia independente de atividade entre turmas;
+- `Activity → Arena` opcional, preservando modo livre;
+- rastreabilidade `ScoreEvent.source`, `activityId` e `questionId`;
+- sequência de questões associada à sessão.
+
+Referência: `docs/INCREMENT_3.md`.
+
+## Incremento 4 — Turmas e alunos via API
 
 Substituir apenas a persistência de Turmas/Alunos/Matrículas por REST, preservando a UI atual.
 
-## Incremento 4 — Sessões e presença via API
+## Incremento 5 — Sessões e presença via API
 
 Migrar início/fim de sessão e presença, mantendo Arena, sorteio, Boss, individual/duplas/grupos e atividades funcionando como hoje.
 
-## Incremento 5 — ScoreEvent + ranking
+## Incremento 6 — ScoreEvent + ranking
 
-Tornar o backend a fonte de verdade da pontuação e introduzir reversão auditável.
+Tornar o backend a fonte de verdade da pontuação e introduzir reversão auditável. Usar `source`, `activityId` e `questionId` para filtros/projeções sem criar uma segunda fonte de pontuação.
 
-## Incremento 6 — Mecânicas e atividades persistentes
+## Incremento 7 — Mecânicas e atividades persistentes
 
 Migrar sorteio inteligente, organização de turma, Boss Battle, atividades e questões para o backend. O contrato JSON de questões deve permanecer compatível com o formato V1.
 
-## Incremento 7 — Relatórios externos
+## Incremento 8 — Relatórios externos
 
 Adicionar adaptadores para importar relatórios exportados por plataformas externas quando houver um formato estável e valor pedagógico claro. Não acoplar o núcleo a um único fornecedor.
 
-## Incremento 8 — Tempo real
+## Incremento 9 — Tempo real
 
 Adicionar join code, QR, WebSocket e Buzzer somente após paridade funcional e persistência das mecânicas atuais.

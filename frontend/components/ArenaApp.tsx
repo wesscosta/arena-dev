@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
+import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { createBalancedGroups, getLevel, getLevelProgress, weightedDraw, xpForStudent } from "@/lib/game";
 import { EMPTY_DATA, loadData, saveData, uid } from "@/lib/store";
 import type { Activity, ActivityQuestion, ArenaData, ScoreCategory, Student } from "@/lib/types";
@@ -45,6 +46,7 @@ export default function ArenaApp() {
   const [hydrated, setHydrated] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [toast, setToast] = useState("");
+  const [arenaActivityId, setArenaActivityId] = useState<string | undefined>();
 
   useEffect(() => {
     setData(loadData());
@@ -102,6 +104,7 @@ export default function ArenaApp() {
   }
 
   function setActiveClassroom(id: string) {
+    setArenaActivityId(undefined);
     patch((current) => ({ ...current, activeClassroomId: id, currentSessionId: undefined }));
   }
 
@@ -202,6 +205,8 @@ export default function ArenaApp() {
               students={classStudents}
               currentSession={currentSession}
               leaderboard={leaderboard}
+              preferredActivityId={arenaActivityId}
+              onPreferredActivityChange={setArenaActivityId}
               patch={patch}
               notify={notify}
             />
@@ -211,7 +216,9 @@ export default function ArenaApp() {
             <ActivitiesView
               data={data}
               classroomId={activeClassroom.id}
+              classroomName={activeClassroom.name}
               students={classStudents}
+              onUseInArena={(activityId) => { setArenaActivityId(activityId); setView("arena"); }}
               patch={patch}
               notify={notify}
             />
@@ -417,12 +424,14 @@ function ClassroomView({ data, activeClassroomId, classStudents, setActiveClassr
   );
 }
 
-function ArenaView({ data, classroomId, students, currentSession, leaderboard, patch, notify }: {
+function ArenaView({ data, classroomId, students, currentSession, leaderboard, preferredActivityId, onPreferredActivityChange, patch, notify }: {
   data: ArenaData;
   classroomId: string;
   students: Student[];
   currentSession?: ArenaData["sessions"][number];
   leaderboard: { student: Student; xp: number }[];
+  preferredActivityId?: string;
+  onPreferredActivityChange: (activityId?: string) => void;
   patch: (updater: (current: ArenaData) => ArenaData) => void;
   notify: (message: string) => void;
 }) {
@@ -436,6 +445,21 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
   const [groupSize, setGroupSize] = useState(2);
   const [bossName, setBossName] = useState("Spaghetti Code");
   const [bossHp, setBossHp] = useState(100);
+  const classActivities = useMemo(
+    () => data.activities.filter((activity) => activity.classroomId === classroomId && (activity.questions?.length ?? 0) > 0),
+    [data.activities, classroomId],
+  );
+  const [activityId, setActivityId] = useState<string>(currentSession?.activityId ?? preferredActivityId ?? "");
+
+  useEffect(() => {
+    if (preferredActivityId) {
+      if (currentSession && currentSession.activityId !== preferredActivityId) changeArenaActivity(preferredActivityId);
+      else if (!currentSession) setActivityId(preferredActivityId);
+      onPreferredActivityChange(undefined);
+      return;
+    }
+    if (currentSession?.activityId) setActivityId(currentSession.activityId);
+  }, [currentSession?.activityId, currentSession?.id, preferredActivityId]);
 
   useEffect(() => {
     if (!currentSession) setPresentIds(students.map((s) => s.id));
@@ -446,7 +470,7 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
     const id = uid("session");
     patch((current) => ({
       ...current,
-      sessions: [...current.sessions, { id, classroomId, title: title.trim() || `Aula · ${todayTitle()}`, startedAt: new Date().toISOString(), presentStudentIds: presentIds, drawCounts: {} }],
+      sessions: [...current.sessions, { id, classroomId, title: title.trim() || `Aula · ${todayTitle()}`, startedAt: new Date().toISOString(), presentStudentIds: presentIds, drawCounts: {}, activityId: activityId || undefined, answeredQuestionIds: [] }],
       currentSessionId: id,
     }));
     notify("Arena iniciada.");
@@ -461,6 +485,7 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
     }));
     setSelectedId(undefined);
     setGroups([]);
+    onPreferredActivityChange(undefined);
     notify("Sessão encerrada.");
   }
 
@@ -489,9 +514,60 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
     if (!selectedId || !currentSession) return;
     patch((current) => ({
       ...current,
-      scoreEvents: [...current.scoreEvents, { id: uid("score"), classroomId, studentId: selectedId, sessionId: currentSession.id, points, category, description, createdAt: new Date().toISOString() }],
+      scoreEvents: [...current.scoreEvents, { id: uid("score"), classroomId, studentId: selectedId, sessionId: currentSession.id, points, category, description, source: "ARENA", activityId: currentSession.activityId, questionId: currentSession.currentQuestionId, createdAt: new Date().toISOString() }],
     }));
     notify(`${points >= 0 ? "+" : ""}${points} XP registrado.`);
+  }
+
+  function changeArenaActivity(nextActivityId: string) {
+    setActivityId(nextActivityId);
+    if (!currentSession) return;
+    patch((current) => ({
+      ...current,
+      sessions: current.sessions.map((session) => session.id === currentSession.id ? {
+        ...session,
+        activityId: nextActivityId || undefined,
+        currentQuestionId: undefined,
+        answeredQuestionIds: [],
+      } : session),
+    }));
+    notify(nextActivityId ? "Atividade conectada à Arena." : "Arena em modo livre.");
+  }
+
+  function nextActivityQuestion() {
+    if (!currentSession?.activityId) {
+      notify("Selecione uma atividade com questões ou use o modo livre.");
+      return;
+    }
+    const activity = data.activities.find((item) => item.id === currentSession.activityId);
+    const questions = activity?.questions ?? [];
+    const answered = new Set(currentSession.answeredQuestionIds ?? []);
+    const next = questions.find((question) => !answered.has(question.id));
+    if (!next) {
+      notify("Todas as questões desta atividade já foram apresentadas.");
+      return;
+    }
+    patch((current) => ({
+      ...current,
+      sessions: current.sessions.map((session) => session.id === currentSession.id ? {
+        ...session,
+        currentQuestionId: next.id,
+        answeredQuestionIds: [...(session.answeredQuestionIds ?? []), next.id],
+      } : session),
+    }));
+  }
+
+  function restartActivityQuestions() {
+    if (!currentSession) return;
+    patch((current) => ({
+      ...current,
+      sessions: current.sessions.map((session) => session.id === currentSession.id ? {
+        ...session,
+        currentQuestionId: undefined,
+        answeredQuestionIds: [],
+      } : session),
+    }));
+    notify("Sequência de questões reiniciada.");
   }
 
   function createGroups() {
@@ -526,6 +602,8 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
 
   const selected = students.find((student) => student.id === selectedId);
   const selectedXp = selected ? xpForStudent(data.scoreEvents, classroomId, selected.id) : 0;
+  const activeActivity = data.activities.find((activity) => activity.id === (currentSession?.activityId ?? activityId));
+  const currentQuestion = activeActivity?.questions?.find((question) => question.id === currentSession?.currentQuestionId);
 
   if (!currentSession) {
     return (
@@ -534,6 +612,12 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
           <div className="form-grid">
             <label className="field-label">Título da sessão</label>
             <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
+            <label className="field-label">Fonte dos desafios</label>
+            <select className="select full" value={activityId} onChange={(e) => changeArenaActivity(e.target.value)}>
+              <option value="">Modo livre — pergunta oral ou conteúdo externo</option>
+              {classActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title} · {activity.questions?.length ?? 0} questões</option>)}
+            </select>
+            {activeActivity && <div className="arena-source-note"><strong>{activeActivity.title}</strong><span>{activeActivity.topic || "Sem tópico"} · {activeActivity.questions?.length ?? 0} questão(ões)</span></div>}
           </div>
           <div className="attendance-head"><strong>Presença</strong><span>{presentIds.length}/{students.length} presentes</span></div>
           <div className="attendance-list">
@@ -567,6 +651,35 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
         <button className="button danger-outline" onClick={endSession}>Encerrar sessão</button>
       </div>
 
+      <div className="arena-activity-strip">
+        <div>
+          <span className="eyebrow accent">FONTE DA ARENA</span>
+          <strong>{activeActivity?.title ?? "Modo livre"}</strong>
+          <small>{activeActivity ? `${activeActivity.questions?.length ?? 0} questões disponíveis` : "Pergunte oralmente ou utilize qualquer recurso da aula"}</small>
+        </div>
+        <select className="select" value={currentSession.activityId ?? ""} onChange={(e) => changeArenaActivity(e.target.value)}>
+          <option value="">Modo livre</option>
+          {classActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}
+        </select>
+      </div>
+
+      {activeActivity && (
+        <Panel title="Questão da Arena" subtitle={`${activeActivity.title} · ${(currentSession.answeredQuestionIds ?? []).length}/${activeActivity.questions?.length ?? 0} apresentadas`}>
+          {currentQuestion ? (
+            <div className="arena-question-card">
+              <div className="question-meta"><span>{QUESTION_TYPE_LABEL[currentQuestion.type]}</span><span>{QUESTION_DIFFICULTY_LABEL[currentQuestion.difficulty]}</span><span>{currentQuestion.points} XP sugeridos</span></div>
+              <h3>{currentQuestion.statement}</h3>
+              {currentQuestion.code && <pre>{currentQuestion.code}</pre>}
+              {currentQuestion.options && <div className="arena-question-options">{currentQuestion.options.map((option) => <div key={option.id}><b>{option.id}</b><span>{option.text}</span></div>)}</div>}
+            </div>
+          ) : <MiniEmpty text="Clique em próxima questão quando quiser usar o conteúdo da atividade na Arena." />}
+          <div className="inline-actions solid-actions">
+            {(currentSession.answeredQuestionIds?.length ?? 0) >= (activeActivity.questions?.length ?? 0) && <button className="button ghost" onClick={restartActivityQuestions}>Reiniciar questões</button>}
+            <button className="button primary" onClick={nextActivityQuestion}>Próxima questão</button>
+          </div>
+        </Panel>
+      )}
+
       <div className="arena-grid">
         <div className="arena-main-card">
           <span className="eyebrow accent">SORTEIO INTELIGENTE</span>
@@ -591,6 +704,7 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
         <div className="score-card">
           <div className="panel-heading"><div><h3>Pontuação rápida</h3><p>{selected ? `Aplicar a ${selected.nickname || selected.name}` : "Sorteie ou selecione um aluno"}</p></div></div>
           <div className="score-presets">
+            {currentQuestion && <button disabled={!selected} onClick={() => addScore(currentQuestion.points, "QUESTION", `Questão: ${currentQuestion.statement}`)}><b>+{currentQuestion.points}</b><span>Questão atual</span></button>}
             {SCORE_PRESETS.map((preset) => (
               <button key={`${preset.points}-${preset.label}`} disabled={!selected} onClick={() => { setReason(preset.label); addScore(preset.points, preset.category, preset.label); }}>
                 <b>+{preset.points}</b><span>{preset.label}</span>
@@ -646,13 +760,20 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
   );
 }
 
-function ActivitiesView({ data, classroomId, students, patch, notify }: {
+function ActivitiesView({ data, classroomId, classroomName, students, onUseInArena, patch, notify }: {
   data: ArenaData;
   classroomId: string;
+  classroomName: string;
   students: Student[];
+  onUseInArena: (activityId: string) => void;
   patch: (updater: (current: ArenaData) => ArenaData) => void;
   notify: (message: string) => void;
 }) {
+  type ActivityModal = "editor" | "delivery" | "import" | null;
+  type EditorTab = "general" | "questions";
+
+  const [modal, setModal] = useState<ActivityModal>(null);
+  const [editorTab, setEditorTab] = useState<EditorTab>("general");
   const [activityId, setActivityId] = useState<string | undefined>();
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("");
@@ -662,10 +783,22 @@ function ActivitiesView({ data, classroomId, students, patch, notify }: {
   const [platform, setPlatform] = useState("");
   const [resourceUrl, setResourceUrl] = useState("");
   const [questions, setQuestions] = useState<ActivityQuestion[]>([]);
+  const [deliveryActivityId, setDeliveryActivityId] = useState<string | undefined>();
   const [delivered, setDelivered] = useState<string[]>([]);
   const [onTime, setOnTime] = useState<string[]>([]);
+  const [sourceClassroomId, setSourceClassroomId] = useState("");
+  const [sourceActivityId, setSourceActivityId] = useState("");
 
-  const classActivities = data.activities.filter((activity) => activity.classroomId === classroomId).slice().reverse();
+  const classActivities = useMemo(
+    () => data.activities.filter((activity) => activity.classroomId === classroomId).slice().sort((a, b) => new Date(b.updatedAt ?? b.createdAt).getTime() - new Date(a.updatedAt ?? a.createdAt).getTime()),
+    [data.activities, classroomId],
+  );
+  const otherClassrooms = data.classrooms.filter((classroom) => classroom.id !== classroomId);
+  const sourceActivities = data.activities.filter((activity) => activity.classroomId === sourceClassroomId);
+  const deliveryActivity = classActivities.find((activity) => activity.id === deliveryActivityId);
+  const activityEvents = data.scoreEvents.filter((event) => event.classroomId === classroomId && (event.source === "ACTIVITY" || event.category === "SUBMISSION"));
+  const totalQuestions = classActivities.reduce((sum, activity) => sum + (activity.questions?.length ?? 0), 0);
+  const activityXp = activityEvents.reduce((sum, event) => sum + event.points, 0);
 
   function draftActivity(id: string, createdAt: string): Activity {
     return {
@@ -696,11 +829,15 @@ function ActivitiesView({ data, classroomId, students, patch, notify }: {
     setPlatform("");
     setResourceUrl("");
     setQuestions([]);
-    setDelivered([]);
-    setOnTime([]);
+    setEditorTab("general");
   }
 
-  function loadActivity(activity: Activity) {
+  function openNewActivity() {
+    resetDraft();
+    setModal("editor");
+  }
+
+  function openActivity(activity: Activity, tab: EditorTab = "general") {
     setActivityId(activity.id);
     setTitle(activity.title);
     setTopic(activity.topic ?? "");
@@ -710,9 +847,8 @@ function ActivitiesView({ data, classroomId, students, patch, notify }: {
     setPlatform(activity.resource?.platform ?? "");
     setResourceUrl(activity.resource?.url ?? "");
     setQuestions(activity.questions ?? []);
-    setDelivered([]);
-    setOnTime([]);
-    notify("Atividade carregada para edição ou novo lançamento de XP.");
+    setEditorTab(tab);
+    setModal("editor");
   }
 
   function validateDraft() {
@@ -731,86 +867,215 @@ function ActivitiesView({ data, classroomId, students, patch, notify }: {
     return true;
   }
 
-  function saveActivity() {
+  function saveActivity(closeAfter = true) {
     if (!validateDraft()) return;
     const existing = activityId ? data.activities.find((activity) => activity.id === activityId) : undefined;
     const id = existing?.id ?? uid("activity");
-    const createdAt = existing?.createdAt ?? new Date().toISOString();
-    const activity = draftActivity(id, createdAt);
+    const activity = draftActivity(id, existing?.createdAt ?? new Date().toISOString());
     patch((current) => ({
       ...current,
       activities: existing
-        ? current.activities.map((item) => item.id === id ? activity : item)
+        ? current.activities.map((item) => item.id === id ? { ...activity, copiedFromActivityId: existing.copiedFromActivityId, copiedFromClassroomId: existing.copiedFromClassroomId } : item)
         : [...current.activities, activity],
     }));
     setActivityId(id);
-    notify(existing ? "Atividade atualizada." : "Atividade salva.");
+    notify(existing ? "Atividade atualizada." : "Atividade criada para esta turma.");
+    if (closeAfter) setModal(null);
   }
 
-  function register() {
-    if (!validateDraft() || !delivered.length) return;
-    const existing = activityId ? data.activities.find((activity) => activity.id === activityId) : undefined;
-    const id = existing?.id ?? uid("activity");
+  function openDelivery(activity: Activity) {
+    setDeliveryActivityId(activity.id);
+    setDelivered([]);
+    setOnTime([]);
+    setModal("delivery");
+  }
+
+  function registerDelivery() {
+    if (!deliveryActivity || !delivered.length) return;
     const now = new Date().toISOString();
-    const activity = draftActivity(id, existing?.createdAt ?? now);
     const events = delivered.flatMap((studentId) => {
-      const rows = [{ id: uid("score"), classroomId, studentId, points, category: "SUBMISSION" as const, description: `Entrega: ${title.trim()}`, createdAt: now }];
-      if (onTime.includes(studentId) && bonus) rows.push({ id: uid("score"), classroomId, studentId, points: bonus, category: "SUBMISSION" as const, description: `Bônus no prazo: ${title.trim()}`, createdAt: now });
+      const rows: ArenaData["scoreEvents"] = [{
+        id: uid("score"),
+        classroomId,
+        studentId,
+        points: deliveryActivity.points,
+        category: "SUBMISSION",
+        description: `Entrega: ${deliveryActivity.title}`,
+        source: "ACTIVITY",
+        activityId: deliveryActivity.id,
+        createdAt: now,
+      }];
+      if (onTime.includes(studentId) && deliveryActivity.onTimeBonus) {
+        rows.push({
+          id: uid("score"),
+          classroomId,
+          studentId,
+          points: deliveryActivity.onTimeBonus,
+          category: "BONUS",
+          description: `Bônus no prazo: ${deliveryActivity.title}`,
+          source: "ACTIVITY",
+          activityId: deliveryActivity.id,
+          createdAt: now,
+        });
+      }
       return rows;
     });
-    patch((current) => ({
-      ...current,
-      activities: existing
-        ? current.activities.map((item) => item.id === id ? activity : item)
-        : [...current.activities, activity],
-      scoreEvents: [...current.scoreEvents, ...events],
-    }));
-    notify(`Atividade salva e XP registrado para ${delivered.length} aluno(s).`);
-    resetDraft();
+    patch((current) => ({ ...current, scoreEvents: [...current.scoreEvents, ...events] }));
+    setModal(null);
+    notify(`XP registrado para ${delivered.length} aluno(s).`);
+  }
+
+  function openImport() {
+    const firstClassroom = otherClassrooms[0]?.id ?? "";
+    setSourceClassroomId(firstClassroom);
+    setSourceActivityId(data.activities.find((activity) => activity.classroomId === firstClassroom)?.id ?? "");
+    setModal("import");
+  }
+
+  function changeSourceClassroom(nextClassroomId: string) {
+    setSourceClassroomId(nextClassroomId);
+    setSourceActivityId(data.activities.find((activity) => activity.classroomId === nextClassroomId)?.id ?? "");
+  }
+
+  function importActivityCopy() {
+    const source = data.activities.find((activity) => activity.id === sourceActivityId && activity.classroomId === sourceClassroomId);
+    if (!source) {
+      notify("Selecione uma atividade de origem.");
+      return;
+    }
+    const now = new Date().toISOString();
+    const copy: Activity = {
+      ...source,
+      id: uid("activity"),
+      classroomId,
+      title: source.title,
+      questions: (source.questions ?? []).map((question) => ({
+        ...question,
+        id: uid("question"),
+        options: question.options?.map((option) => ({ ...option })),
+        evaluationCriteria: question.evaluationCriteria ? [...question.evaluationCriteria] : undefined,
+      })),
+      createdAt: now,
+      updatedAt: now,
+      copiedFromActivityId: source.id,
+      copiedFromClassroomId: source.classroomId,
+    };
+    patch((current) => ({ ...current, activities: [...current.activities, copy] }));
+    setModal(null);
+    notify(`Atividade "${source.title}" copiada para ${classroomName}.`);
   }
 
   return (
     <div className="stack-lg">
-      <div className="two-col uneven">
-        <Panel title={activityId ? "Editar atividade" : "Nova atividade"} subtitle="Conteúdo, recurso externo e XP continuam no mesmo fluxo">
-          <div className="form-grid">
-            <label className="field-label">Atividade</label>
-            <input className="input" placeholder="Ex.: Atividade 07 — Funções" value={title} onChange={(e) => setTitle(e.target.value)} />
-            <div className="form-two"><label>Tema / tópico<input className="input" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Ex.: Estruturas de repetição" /></label><label>Tipo<select className="select full" value={resourceKind} onChange={(e) => setResourceKind(e.target.value as "INTERNAL" | "EXTERNAL")}><option value="INTERNAL">Atividade interna</option><option value="EXTERNAL">Atividade / recurso externo</option></select></label></div>
-            {resourceKind === "EXTERNAL" && <div className="form-two"><label>Plataforma<input className="input" value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Wayground, Forms, Kahoot..." /></label><label>Link<input className="input" type="url" value={resourceUrl} onChange={(e) => setResourceUrl(e.target.value)} placeholder="https://..." /></label></div>}
-            <div className="form-two"><label>XP da entrega<input className="input" type="number" value={points} onChange={(e) => setPoints(Number(e.target.value))} /></label><label>Bônus no prazo<input className="input" type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} /></label></div>
-          </div>
-          <div className="activity-summary-line"><span>{questions.length} questão(ões)</span>{resourceKind === "EXTERNAL" && resourceUrl && <a href={resourceUrl} target="_blank" rel="noreferrer">Abrir recurso externo ↗</a>}</div>
-          <div className="inline-actions solid-actions"><button className="button" onClick={saveActivity} disabled={!title.trim()}>Salvar atividade</button>{activityId && <button className="text-button" onClick={resetDraft}>Nova atividade</button>}</div>
+      <div className="page-action-bar">
+        <div>
+          <span className="eyebrow accent">CONTEXTO DA TURMA</span>
+          <h2>{classroomName}</h2>
+          <p>Atividades, questões e XP desta página pertencem à turma selecionada no topo.</p>
+        </div>
+        <div className="page-action-buttons">
+          <button className="button" onClick={openImport}>Importar atividade</button>
+          <button className="button primary" onClick={openNewActivity}>+ Nova atividade</button>
+        </div>
+      </div>
 
-          <div className="attendance-head"><strong>Registrar entrega / participação</strong><span>{delivered.length} selecionados</span></div>
-          <div className="delivery-list">
+      <div className="metrics-grid activity-metrics">
+        <Metric label="Atividades" value={classActivities.length.toString()} hint="nesta turma" />
+        <Metric label="Questões" value={totalQuestions.toString()} hint="conteúdo reutilizável na Arena" />
+        <Metric label="XP de atividades" value={activityXp.toString()} hint="entregas e bônus registrados" />
+        <Metric label="Integração" value="Arena" hint="atividades podem alimentar desafios" />
+      </div>
+
+      <Panel title="Atividades da turma" subtitle="Abra para editar, registrar entregas ou usar as questões diretamente na Arena">
+        {classActivities.length ? (
+          <div className="activity-catalog">
+            {classActivities.map((activity) => {
+              const submissionCount = new Set(activityEvents.filter((event) => event.activityId === activity.id && event.description.startsWith("Entrega:")).map((event) => event.studentId)).size;
+              return (
+                <article className="activity-catalog-card" key={activity.id}>
+                  <div className="activity-card-head">
+                    <div>
+                      <div className="activity-card-kicker">{activity.resource?.kind === "EXTERNAL" ? activity.resource.platform || "Recurso externo" : "Atividade interna"}</div>
+                      <h3>{activity.title}</h3>
+                      <p>{activity.topic || "Sem tópico definido"}</p>
+                    </div>
+                    <div className="activity-xp"><strong>{activity.points} XP</strong><span>+{activity.onTimeBonus} prazo</span></div>
+                  </div>
+                  <div className="activity-card-stats">
+                    <span>{activity.questions?.length ?? 0} questões</span>
+                    <span>{submissionCount}/{students.length} entregaram</span>
+                    {activity.copiedFromClassroomId && <span>Cópia reutilizada</span>}
+                  </div>
+                  {activity.resource?.kind === "EXTERNAL" && activity.resource.url && <a className="activity-resource-link" href={activity.resource.url} target="_blank" rel="noreferrer">Abrir recurso externo ↗</a>}
+                  <div className="activity-card-actions">
+                    <button className="button ghost" onClick={() => openActivity(activity)}>Abrir / editar</button>
+                    <button className="button" onClick={() => openDelivery(activity)}>Registrar entrega</button>
+                    <button className="button primary" disabled={!(activity.questions?.length)} onClick={() => onUseInArena(activity.id)}>Usar na Arena</button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState title="Nenhuma atividade nesta turma" text="Crie uma atividade do zero ou importe uma cópia de outra turma. Questões podem ser reutilizadas depois na Arena." actionLabel="Criar atividade" onAction={openNewActivity} />
+        )}
+      </Panel>
+
+      <Modal open={modal === "editor"} title={activityId ? "Editar atividade" : "Nova atividade"} subtitle={`Turma: ${classroomName}`} size="large" onClose={() => setModal(null)}>
+        <div className="modal-tabs">
+          <button className={editorTab === "general" ? "active" : ""} onClick={() => setEditorTab("general")}>Geral e XP</button>
+          <button className={editorTab === "questions" ? "active" : ""} onClick={() => setEditorTab("questions")}>Questões <span>{questions.length}</span></button>
+        </div>
+        {editorTab === "general" ? (
+          <div className="modal-section-stack">
+            <div className="context-lock"><span>Turma</span><strong>{classroomName}</strong><small>A atividade será salva somente neste contexto.</small></div>
+            <div className="form-grid">
+              <label className="field-label">Título</label>
+              <input className="input" placeholder="Ex.: Atividade 07 — Funções" value={title} onChange={(e) => setTitle(e.target.value)} />
+              <div className="form-two">
+                <label>Tema / tópico<input className="input" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Ex.: Estruturas de repetição" /></label>
+                <label>Tipo<select className="select full" value={resourceKind} onChange={(e) => setResourceKind(e.target.value as "INTERNAL" | "EXTERNAL")}><option value="INTERNAL">Atividade interna</option><option value="EXTERNAL">Atividade / recurso externo</option></select></label>
+              </div>
+              {resourceKind === "EXTERNAL" && <div className="form-two"><label>Plataforma<input className="input" value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Wayground, Forms, Kahoot..." /></label><label>Link<input className="input" type="url" value={resourceUrl} onChange={(e) => setResourceUrl(e.target.value)} placeholder="https://..." /></label></div>}
+              <div className="form-two"><label>XP da entrega<input className="input" type="number" min="0" value={points} onChange={(e) => setPoints(Math.max(0, Number(e.target.value) || 0))} /></label><label>Bônus no prazo<input className="input" type="number" min="0" value={bonus} onChange={(e) => setBonus(Math.max(0, Number(e.target.value) || 0))} /></label></div>
+            </div>
+            <div className="activity-summary-line"><span>{questions.length} questão(ões) vinculadas</span><button className="text-button" onClick={() => setEditorTab("questions")}>Gerenciar questões →</button></div>
+          </div>
+        ) : (
+          <ActivityQuestionBuilder questions={questions} setQuestions={setQuestions} defaultTheme={topic || title} notify={notify} />
+        )}
+        <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!title.trim()} onClick={() => saveActivity(true)}>Salvar atividade</button></div>
+      </Modal>
+
+      <Modal open={modal === "delivery"} title="Registrar entrega / participação" subtitle={deliveryActivity?.title} size="medium" onClose={() => setModal(null)}>
+        {deliveryActivity && <>
+          <div className="delivery-summary"><div><span>XP da entrega</span><strong>+{deliveryActivity.points}</strong></div><div><span>Bônus no prazo</span><strong>+{deliveryActivity.onTimeBonus}</strong></div><div><span>Selecionados</span><strong>{delivered.length}</strong></div></div>
+          <div className="delivery-list modal-delivery-list">
             {students.map((student) => (
               <div className="delivery-row" key={student.id}>
-                <label><input type="checkbox" checked={delivered.includes(student.id)} onChange={(e) => { setDelivered((cur) => e.target.checked ? [...cur, student.id] : cur.filter((id) => id !== student.id)); if (!e.target.checked) setOnTime((cur) => cur.filter((id) => id !== student.id)); }} /><Avatar student={student} /><span>{student.name}</span></label>
-                <label className="on-time"><input type="checkbox" disabled={!delivered.includes(student.id)} checked={onTime.includes(student.id)} onChange={(e) => setOnTime((cur) => e.target.checked ? [...cur, student.id] : cur.filter((id) => id !== student.id))} />No prazo</label>
+                <label><input type="checkbox" checked={delivered.includes(student.id)} onChange={(e) => { setDelivered((current) => e.target.checked ? [...current, student.id] : current.filter((id) => id !== student.id)); if (!e.target.checked) setOnTime((current) => current.filter((id) => id !== student.id)); }} /><Avatar student={student} /><span>{student.name}</span></label>
+                <label className="on-time"><input type="checkbox" disabled={!delivered.includes(student.id)} checked={onTime.includes(student.id)} onChange={(e) => setOnTime((current) => e.target.checked ? [...current, student.id] : current.filter((id) => id !== student.id))} />No prazo</label>
               </div>
             ))}
           </div>
-          <button className="button primary full large" disabled={!title.trim() || !delivered.length} onClick={register}>Salvar e registrar entregas</button>
-        </Panel>
+          <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!delivered.length} onClick={registerDelivery}>Registrar e aplicar XP</button></div>
+        </>}
+      </Modal>
 
-        <Panel title="Últimas atividades" subtitle="Abra uma atividade para reutilizar conteúdo ou lançar novo XP">
-          <div className="activity-list">
-            {classActivities.map((activity) => (
-              <button className={activity.id === activityId ? "activity-card selected" : "activity-card"} key={activity.id} onClick={() => loadActivity(activity)}>
-                <div><strong>{activity.title}</strong><small>{dateTime(activity.createdAt)} · {activity.questions?.length ?? 0} questão(ões){activity.resource?.kind === "EXTERNAL" ? ` · ${activity.resource.platform || "externa"}` : ""}</small></div><span>+{activity.points} XP · prazo +{activity.onTimeBonus}</span>
-              </button>
-            ))}
-            {!classActivities.length && <MiniEmpty text="Nenhuma atividade registrada." />}
+      <Modal open={modal === "import"} title="Importar atividade de outra turma" subtitle={`Destino: ${classroomName}`} size="medium" onClose={() => setModal(null)}>
+        {otherClassrooms.length ? (
+          <div className="modal-section-stack">
+            <div className="form-grid">
+              <label className="field-label">Turma de origem</label>
+              <select className="select full" value={sourceClassroomId} onChange={(e) => changeSourceClassroom(e.target.value)}>{otherClassrooms.map((classroom) => <option key={classroom.id} value={classroom.id}>{classroom.name}</option>)}</select>
+              <label className="field-label">Atividade</label>
+              <select className="select full" value={sourceActivityId} onChange={(e) => setSourceActivityId(e.target.value)}><option value="">Selecione</option>{sourceActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title} · {activity.questions?.length ?? 0} questões</option>)}</select>
+            </div>
+            <div className="copy-policy"><strong>Será criada uma cópia independente.</strong><p>Conteúdo, questões, XP e recurso externo são copiados. Entregas, alunos, resultados, ScoreEvents e histórico não são copiados.</p></div>
+            <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!sourceActivityId} onClick={importActivityCopy}>Importar cópia</button></div>
           </div>
-          <div className="integration-note"><strong>Ferramentas externas</strong><p>Use o link da atividade quando outra plataforma já resolver melhor o quiz. Importação automática de relatórios entra em um incremento posterior.</p></div>
-        </Panel>
-      </div>
-
-      <Panel title="Questões da atividade" subtitle="Crie manualmente, importe JSON ou gere um prompt padronizado para qualquer IA">
-        <ActivityQuestionBuilder questions={questions} setQuestions={setQuestions} defaultTheme={topic || title} notify={notify} />
-      </Panel>
+        ) : <MiniEmpty text="Crie uma segunda turma para reutilizar atividades entre contextos. Em uma evolução futura, modelos também poderão vir de uma biblioteca." />}
+      </Modal>
     </div>
   );
 }
@@ -898,6 +1163,42 @@ function BackupView({ data, setData, notify }: { data: ArenaData; setData: (data
         <div className="demo-block"><div className="target-mark small">A</div><h3>Carregar turma demonstrativa</h3><p>Cria uma turma com seis alunos e pontuação inicial para você navegar por todas as telas.</p><button className="button" onClick={loadDemo}>Carregar demonstração</button></div>
         <div className="local-note"><strong>Privacidade da V1</strong><p>Nenhum dado é enviado para servidor. Tudo permanece no armazenamento local deste navegador até você limpar os dados do site.</p></div>
       </Panel>
+    </div>
+  );
+}
+
+function Modal({ open, title, subtitle, size = "medium", onClose, children }: {
+  open: boolean;
+  title: string;
+  subtitle?: string;
+  size?: "medium" | "large";
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
+      <section className={`modal-card ${size}`} role="dialog" aria-modal="true" aria-labelledby="arena-modal-title">
+        <header className="modal-header">
+          <div><h2 id="arena-modal-title">{title}</h2>{subtitle && <p>{subtitle}</p>}</div>
+          <button className="modal-close" type="button" aria-label="Fechar" onClick={onClose}>×</button>
+        </header>
+        <div className="modal-body">{children}</div>
+      </section>
     </div>
   );
 }

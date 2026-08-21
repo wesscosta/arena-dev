@@ -1,0 +1,857 @@
+diff --git a/README.md b/README.md
+index 0c22896..cbd320d 100644
+--- a/README.md
++++ b/README.md
+@@ -139,7 +139,9 @@ Activities can contain their own question set and may also reference an external
+ 
+ Supported question families currently include multiple choice, open response, true/false, bug fixing, analysis, practical tasks and scenario-based problems. Direct AI API integration is intentionally deferred; the current flow generates a structured prompt that can be copied to the teacher's preferred AI and imported back as validated JSON.
+ 
+-See `docs/ACTIVITY_QUESTIONS.md` and `docs/question-package-v1.schema.json`.
++See `docs/ACTIVITY_QUESTIONS.md`, `docs/INCREMENT_3.md` and `docs/question-package-v1.schema.json`.
++
++Activities are scoped to the selected classroom. They can be copied into another classroom as independent content and can optionally feed questions into an Arena session without removing the Arena's free/oral mode.
+ 
+ ### Future mechanics
+ 
+diff --git a/docs/INCREMENT_3.md b/docs/INCREMENT_3.md
+new file mode 100644
+index 0000000..8123a5a
+--- /dev/null
++++ b/docs/INCREMENT_3.md
+@@ -0,0 +1,102 @@
++# Incremento 3 — Integração de Atividades com Turma e Arena
++
++**Status:** implementado no frontend local-first.
++
++Este incremento corrige a arquitetura de informação de Atividades sem alterar a identidade visual consolidada do Arena Dev.
++
++## Objetivos
++
++- tratar a **turma selecionada** como contexto raiz das atividades;
++- reduzir a altura e a carga cognitiva da página `Atividades e XP`;
++- conectar explicitamente `Activity → Arena → ScoreEvent → Ranking/Histórico`;
++- permitir reutilização de uma atividade entre turmas sem compartilhar resultados;
++- manter compatibilidade com dados locais produzidos nos incrementos anteriores.
++
++## UX aplicada
++
++A página principal de Atividades passa a funcionar como catálogo operacional:
++
++- `+ Nova atividade` no topo;
++- `Importar atividade` no topo;
++- métricas da turma;
++- cards/lista das atividades;
++- ações `Abrir / editar`, `Registrar entrega` e `Usar na Arena`.
++
++Fluxos extensos são abertos em modal:
++
++- criação/edição da atividade;
++- criação manual, Prompt Builder e importação JSON de questões;
++- registro de entregas;
++- importação de atividade de outra turma.
++
++## Contexto de turma
++
++Toda `Activity` continua contendo `classroomId`. A UI mostra explicitamente a turma do contexto e não solicita novamente uma turma durante a criação.
++
++Trocar a turma no seletor global troca, de forma consistente:
++
++- alunos;
++- atividades;
++- Arena;
++- ScoreEvents;
++- ranking;
++- histórico.
++
++## Cópia entre turmas
++
++`Importar atividade` cria uma **cópia independente** no destino.
++
++São copiados:
++
++- título;
++- tópico;
++- configuração de XP;
++- recurso externo;
++- questões e seus critérios.
++
++Não são copiados:
++
++- alunos;
++- entregas;
++- ScoreEvents;
++- resultados;
++- histórico.
++
++As questões recebem novos IDs. A atividade registra `copiedFromActivityId` e `copiedFromClassroomId` para rastreabilidade.
++
++## Activity → Arena
++
++Uma atividade com questões pode ser usada como fonte da Arena.
++
++A Arena suporta dois modos:
++
++1. **Modo livre** — pergunta oral ou conteúdo externo, sem Activity obrigatória;
++2. **Atividade** — questões de uma Activity da turma são apresentadas durante a sessão.
++
++A `GameSession` pode registrar:
++
++- `activityId`;
++- `currentQuestionId`;
++- `answeredQuestionIds`.
++
++O professor pode trocar entre modo livre e uma atividade durante a sessão sem encerrar a aula.
++
++## Rastreabilidade de XP
++
++`ScoreEvent` recebeu campos opcionais para preservar compatibilidade:
++
++- `source` (`ARENA`, `ACTIVITY`, `BUZZER`, `BOSS`, `MANUAL`);
++- `activityId`;
++- `questionId`.
++
++Eventos de entrega passam a usar `source = ACTIVITY` e a Arena usa `source = ARENA`. Isso prepara ranking e histórico por origem sem criar contadores paralelos.
++
++## Compatibilidade
++
++Os novos campos são opcionais. Backups e dados locais anteriores continuam carregando normalmente.
++
++Eventos antigos de entrega sem `source` continuam sendo considerados nas métricas por meio da categoria `SUBMISSION`.
++
++## Próximos passos
++
++O próximo incremento volta à migração de persistência, começando por Turmas, Alunos e Matrículas via REST sem redesenhar as telas.
+diff --git a/docs/MIGRATION_PLAN.md b/docs/MIGRATION_PLAN.md
+index 92c7a0a..9c55011 100644
+--- a/docs/MIGRATION_PLAN.md
++++ b/docs/MIGRATION_PLAN.md
+@@ -39,26 +39,40 @@ O frontend permanece local-first para evitar regressão durante a transição.
+ 
+ Referência: `docs/ACTIVITY_QUESTIONS.md`.
+ 
+-## Incremento 3 — Turmas e alunos via API
++## Incremento 3 — Integração de Atividades com Turma e Arena
++
++**Status: implementado no frontend local-first.**
++
++- turma selecionada como contexto explícito de Atividades;
++- página de Atividades convertida em catálogo/cards;
++- Nova Atividade, Questões, Entregas e Importação em modais;
++- cópia independente de atividade entre turmas;
++- `Activity → Arena` opcional, preservando modo livre;
++- rastreabilidade `ScoreEvent.source`, `activityId` e `questionId`;
++- sequência de questões associada à sessão.
++
++Referência: `docs/INCREMENT_3.md`.
++
++## Incremento 4 — Turmas e alunos via API
+ 
+ Substituir apenas a persistência de Turmas/Alunos/Matrículas por REST, preservando a UI atual.
+ 
+-## Incremento 4 — Sessões e presença via API
++## Incremento 5 — Sessões e presença via API
+ 
+ Migrar início/fim de sessão e presença, mantendo Arena, sorteio, Boss, individual/duplas/grupos e atividades funcionando como hoje.
+ 
+-## Incremento 5 — ScoreEvent + ranking
++## Incremento 6 — ScoreEvent + ranking
+ 
+-Tornar o backend a fonte de verdade da pontuação e introduzir reversão auditável.
++Tornar o backend a fonte de verdade da pontuação e introduzir reversão auditável. Usar `source`, `activityId` e `questionId` para filtros/projeções sem criar uma segunda fonte de pontuação.
+ 
+-## Incremento 6 — Mecânicas e atividades persistentes
++## Incremento 7 — Mecânicas e atividades persistentes
+ 
+ Migrar sorteio inteligente, organização de turma, Boss Battle, atividades e questões para o backend. O contrato JSON de questões deve permanecer compatível com o formato V1.
+ 
+-## Incremento 7 — Relatórios externos
++## Incremento 8 — Relatórios externos
+ 
+ Adicionar adaptadores para importar relatórios exportados por plataformas externas quando houver um formato estável e valor pedagógico claro. Não acoplar o núcleo a um único fornecedor.
+ 
+-## Incremento 8 — Tempo real
++## Incremento 9 — Tempo real
+ 
+ Adicionar join code, QR, WebSocket e Buzzer somente após paridade funcional e persistência das mecânicas atuais.
+diff --git a/frontend/app/globals.css b/frontend/app/globals.css
+index 3885246..8a6d441 100644
+--- a/frontend/app/globals.css
++++ b/frontend/app/globals.css
+@@ -81,3 +81,17 @@ button:disabled { cursor: not-allowed; opacity: .45; }
+ .questions-preview{display:flex;flex-direction:column}.question-preview-card{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:start;border-top:1px solid var(--border);padding:12px 2px}.question-preview-card:first-of-type{border-top:0}.question-order{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:rgba(88,243,167,.07);color:var(--accent);font-size:9px;font-weight:850}.question-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}.question-meta span{font-size:8px;color:#82958d;border:1px solid var(--border);padding:3px 5px;border-radius:5px}.question-preview-card strong{font-size:11px;line-height:1.5}.question-preview-card pre{white-space:pre-wrap;margin:8px 0 0;padding:9px;border-radius:7px;background:#07100d;border:1px solid var(--border);color:#bcd1c7;font-size:9px;overflow:auto}
+ @media (max-width: 820px){.question-count-grid{grid-template-columns:1fr 1fr}.prompt-total{align-items:flex-start;flex-direction:column}}
+ @media (max-width: 520px){.question-count-grid{grid-template-columns:1fr}.tool-tabs{display:grid;grid-template-columns:1fr}.prompt-presets{align-items:flex-start}.question-preview-card{grid-template-columns:30px 1fr}.question-preview-card>.icon-button{grid-column:2;justify-self:end}.activity-summary-line{align-items:flex-start;flex-direction:column}}
++
++/* Incremento 3 — contexto de turma, catálogo de atividades e integração com Arena */
++.page-action-bar{display:flex;align-items:center;justify-content:space-between;gap:22px;border:1px solid var(--border);border-radius:14px;padding:20px 22px;background:linear-gradient(120deg,rgba(88,243,167,.055),transparent 58%),var(--surface)}
++.page-action-bar h2{margin:5px 0 4px;font-size:21px;letter-spacing:-.025em}.page-action-bar p{margin:0;color:var(--muted);font-size:11px}.page-action-buttons{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}.activity-metrics{grid-template-columns:repeat(4,1fr)}
++.activity-catalog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.activity-catalog-card{border:1px solid var(--border);border-radius:12px;padding:16px;background:#0a1411;display:flex;flex-direction:column;gap:13px;min-width:0}.activity-catalog-card:hover{border-color:rgba(88,243,167,.2)}
++.activity-card-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.activity-card-kicker{font-size:8px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:850}.activity-card-head h3{font-size:14px;margin:5px 0 4px}.activity-card-head p{font-size:10px;color:var(--muted);margin:0}.activity-xp{text-align:right;white-space:nowrap}.activity-xp strong,.activity-xp span{display:block}.activity-xp strong{font-size:12px;color:var(--accent-2)}.activity-xp span{font-size:9px;color:var(--muted);margin-top:3px}
++.activity-card-stats{display:flex;gap:7px;flex-wrap:wrap}.activity-card-stats span{border:1px solid var(--border);border-radius:999px;padding:5px 7px;color:#91a69d;background:rgba(255,255,255,.015);font-size:8px}.activity-resource-link{font-size:9px;color:var(--accent-2);text-decoration:none}.activity-resource-link:hover{text-decoration:underline}.activity-card-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:auto}.activity-card-actions .button{font-size:9px;padding:8px 10px}
++.modal-backdrop{position:fixed;inset:0;z-index:200;background:rgba(1,7,5,.76);backdrop-filter:blur(8px);display:grid;place-items:center;padding:24px}.modal-card{width:min(760px,100%);max-height:calc(100vh - 48px);display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:#0b1512;box-shadow:0 30px 100px rgba(0,0,0,.55);overflow:hidden}.modal-card.large{width:min(1080px,100%)}.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);background:#0c1713}.modal-header h2{font-size:17px;margin:0}.modal-header p{font-size:10px;color:var(--muted);margin:4px 0 0}.modal-close{border:0;background:transparent;color:var(--muted);width:34px;height:34px;border-radius:8px;font-size:22px}.modal-close:hover{background:rgba(255,255,255,.04);color:var(--text)}.modal-body{overflow:auto;padding:20px}.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;padding-top:15px;border-top:1px solid var(--border)}
++.modal-tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:10px}.modal-tabs button{border:0;background:transparent;color:var(--muted);padding:8px 10px;border-radius:7px;font-size:10px;font-weight:800}.modal-tabs button.active{background:rgba(88,243,167,.09);color:var(--accent-2)}.modal-tabs button span{margin-left:5px;color:var(--accent)}.modal-section-stack{display:flex;flex-direction:column;gap:14px}.context-lock{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;border:1px solid rgba(88,243,167,.13);background:rgba(88,243,167,.04);border-radius:9px;padding:10px 12px}.context-lock span,.context-lock small{font-size:9px;color:var(--muted)}.context-lock strong{font-size:11px;color:var(--accent-2)}
++.delivery-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:13px}.delivery-summary>div{border:1px solid var(--border);border-radius:9px;background:#0a1411;padding:11px}.delivery-summary span,.delivery-summary strong{display:block}.delivery-summary span{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.delivery-summary strong{font-size:16px;margin-top:6px}.modal-delivery-list{max-height:48vh}.copy-policy{border:1px solid rgba(88,243,167,.13);background:rgba(88,243,167,.04);border-radius:9px;padding:12px}.copy-policy strong{font-size:10px;color:var(--accent-2)}.copy-policy p{font-size:9px;line-height:1.55;color:var(--muted);margin:5px 0 0}
++.arena-source-note{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid rgba(88,243,167,.13);border-radius:8px;padding:9px 11px;background:rgba(88,243,167,.04)}.arena-source-note strong{font-size:10px;color:var(--accent-2)}.arena-source-note span{font-size:9px;color:var(--muted)}.arena-activity-strip{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--border);border-radius:12px;padding:13px 15px;background:var(--surface)}.arena-activity-strip>div{display:flex;flex-direction:column;gap:3px}.arena-activity-strip strong{font-size:12px}.arena-activity-strip small{font-size:9px;color:var(--muted)}.arena-question-card{border:1px solid rgba(88,243,167,.12);border-radius:11px;padding:16px;background:#09130f}.arena-question-card h3{margin:8px 0 0;font-size:15px;line-height:1.55}.arena-question-card pre{white-space:pre-wrap;overflow:auto;background:#06100c;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:10px;color:#c5d9d0}.arena-question-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}.arena-question-options>div{display:flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:8px;padding:10px;background:#0d1915;font-size:10px}.arena-question-options b{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;background:rgba(88,243,167,.08);color:var(--accent)}
++@media (max-width:1000px){.activity-catalog{grid-template-columns:1fr}.activity-metrics{grid-template-columns:1fr 1fr}}
++@media (max-width:820px){.page-action-bar{align-items:flex-start;flex-direction:column}.page-action-buttons{justify-content:flex-start}.modal-backdrop{padding:10px}.modal-card{max-height:calc(100vh - 20px)}.arena-activity-strip{align-items:flex-start;flex-direction:column}.arena-activity-strip .select{width:100%}}
++@media (max-width:520px){.activity-metrics,.delivery-summary,.arena-question-options{grid-template-columns:1fr}.activity-card-head{flex-direction:column}.activity-xp{text-align:left}.activity-card-actions{display:grid;grid-template-columns:1fr}.context-lock{grid-template-columns:1fr}.modal-body{padding:15px}}
+diff --git a/frontend/components/ArenaApp.tsx b/frontend/components/ArenaApp.tsx
+index cc8b244..8a68acc 100644
+--- a/frontend/components/ArenaApp.tsx
++++ b/frontend/components/ArenaApp.tsx
+@@ -2,6 +2,7 @@
+ 
+ import { useEffect, useMemo, useState } from "react";
+ import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
++import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
+ import { createBalancedGroups, getLevel, getLevelProgress, weightedDraw, xpForStudent } from "@/lib/game";
+ import { EMPTY_DATA, loadData, saveData, uid } from "@/lib/store";
+ import type { Activity, ActivityQuestion, ArenaData, ScoreCategory, Student } from "@/lib/types";
+@@ -45,6 +46,7 @@ export default function ArenaApp() {
+   const [hydrated, setHydrated] = useState(false);
+   const [view, setView] = useState<View>("dashboard");
+   const [toast, setToast] = useState("");
++  const [arenaActivityId, setArenaActivityId] = useState<string | undefined>();
+ 
+   useEffect(() => {
+     setData(loadData());
+@@ -102,6 +104,7 @@ export default function ArenaApp() {
+   }
+ 
+   function setActiveClassroom(id: string) {
++    setArenaActivityId(undefined);
+     patch((current) => ({ ...current, activeClassroomId: id, currentSessionId: undefined }));
+   }
+ 
+@@ -202,6 +205,8 @@ export default function ArenaApp() {
+               students={classStudents}
+               currentSession={currentSession}
+               leaderboard={leaderboard}
++              preferredActivityId={arenaActivityId}
++              onPreferredActivityChange={setArenaActivityId}
+               patch={patch}
+               notify={notify}
+             />
+@@ -211,7 +216,9 @@ export default function ArenaApp() {
+             <ActivitiesView
+               data={data}
+               classroomId={activeClassroom.id}
++              classroomName={activeClassroom.name}
+               students={classStudents}
++              onUseInArena={(activityId) => { setArenaActivityId(activityId); setView("arena"); }}
+               patch={patch}
+               notify={notify}
+             />
+@@ -417,12 +424,14 @@ function ClassroomView({ data, activeClassroomId, classStudents, setActiveClassr
+   );
+ }
+ 
+-function ArenaView({ data, classroomId, students, currentSession, leaderboard, patch, notify }: {
++function ArenaView({ data, classroomId, students, currentSession, leaderboard, preferredActivityId, onPreferredActivityChange, patch, notify }: {
+   data: ArenaData;
+   classroomId: string;
+   students: Student[];
+   currentSession?: ArenaData["sessions"][number];
+   leaderboard: { student: Student; xp: number }[];
++  preferredActivityId?: string;
++  onPreferredActivityChange: (activityId?: string) => void;
+   patch: (updater: (current: ArenaData) => ArenaData) => void;
+   notify: (message: string) => void;
+ }) {
+@@ -436,6 +445,21 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
+   const [groupSize, setGroupSize] = useState(2);
+   const [bossName, setBossName] = useState("Spaghetti Code");
+   const [bossHp, setBossHp] = useState(100);
++  const classActivities = useMemo(
++    () => data.activities.filter((activity) => activity.classroomId === classroomId && (activity.questions?.length ?? 0) > 0),
++    [data.activities, classroomId],
++  );
++  const [activityId, setActivityId] = useState<string>(currentSession?.activityId ?? preferredActivityId ?? "");
++
++  useEffect(() => {
++    if (preferredActivityId) {
++      if (currentSession && currentSession.activityId !== preferredActivityId) changeArenaActivity(preferredActivityId);
++      else if (!currentSession) setActivityId(preferredActivityId);
++      onPreferredActivityChange(undefined);
++      return;
++    }
++    if (currentSession?.activityId) setActivityId(currentSession.activityId);
++  }, [currentSession?.activityId, currentSession?.id, preferredActivityId]);
+ 
+   useEffect(() => {
+     if (!currentSession) setPresentIds(students.map((s) => s.id));
+@@ -446,7 +470,7 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
+     const id = uid("session");
+     patch((current) => ({
+       ...current,
+-      sessions: [...current.sessions, { id, classroomId, title: title.trim() || `Aula · ${todayTitle()}`, startedAt: new Date().toISOString(), presentStudentIds: presentIds, drawCounts: {} }],
++      sessions: [...current.sessions, { id, classroomId, title: title.trim() || `Aula · ${todayTitle()}`, startedAt: new Date().toISOString(), presentStudentIds: presentIds, drawCounts: {}, activityId: activityId || undefined, answeredQuestionIds: [] }],
+       currentSessionId: id,
+     }));
+     notify("Arena iniciada.");
+@@ -461,6 +485,7 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
+     }));
+     setSelectedId(undefined);
+     setGroups([]);
++    onPreferredActivityChange(undefined);
+     notify("Sessão encerrada.");
+   }
+ 
+@@ -489,11 +514,62 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
+     if (!selectedId || !currentSession) return;
+     patch((current) => ({
+       ...current,
+-      scoreEvents: [...current.scoreEvents, { id: uid("score"), classroomId, studentId: selectedId, sessionId: currentSession.id, points, category, description, createdAt: new Date().toISOString() }],
++      scoreEvents: [...current.scoreEvents, { id: uid("score"), classroomId, studentId: selectedId, sessionId: currentSession.id, points, category, description, source: "ARENA", activityId: currentSession.activityId, questionId: currentSession.currentQuestionId, createdAt: new Date().toISOString() }],
+     }));
+     notify(`${points >= 0 ? "+" : ""}${points} XP registrado.`);
+   }
+ 
++  function changeArenaActivity(nextActivityId: string) {
++    setActivityId(nextActivityId);
++    if (!currentSession) return;
++    patch((current) => ({
++      ...current,
++      sessions: current.sessions.map((session) => session.id === currentSession.id ? {
++        ...session,
++        activityId: nextActivityId || undefined,
++        currentQuestionId: undefined,
++        answeredQuestionIds: [],
++      } : session),
++    }));
++    notify(nextActivityId ? "Atividade conectada à Arena." : "Arena em modo livre.");
++  }
++
++  function nextActivityQuestion() {
++    if (!currentSession?.activityId) {
++      notify("Selecione uma atividade com questões ou use o modo livre.");
++      return;
++    }
++    const activity = data.activities.find((item) => item.id === currentSession.activityId);
++    const questions = activity?.questions ?? [];
++    const answered = new Set(currentSession.answeredQuestionIds ?? []);
++    const next = questions.find((question) => !answered.has(question.id));
++    if (!next) {
++      notify("Todas as questões desta atividade já foram apresentadas.");
++      return;
++    }
++    patch((current) => ({
++      ...current,
++      sessions: current.sessions.map((session) => session.id === currentSession.id ? {
++        ...session,
++        currentQuestionId: next.id,
++        answeredQuestionIds: [...(session.answeredQuestionIds ?? []), next.id],
++      } : session),
++    }));
++  }
++
++  function restartActivityQuestions() {
++    if (!currentSession) return;
++    patch((current) => ({
++      ...current,
++      sessions: current.sessions.map((session) => session.id === currentSession.id ? {
++        ...session,
++        currentQuestionId: undefined,
++        answeredQuestionIds: [],
++      } : session),
++    }));
++    notify("Sequência de questões reiniciada.");
++  }
++
+   function createGroups() {
+     if (!currentSession) return;
+     const prior = data.groupHistory.filter((record) => record.classroomId === classroomId).map((record) => record.groups);
+@@ -526,6 +602,8 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
+ 
+   const selected = students.find((student) => student.id === selectedId);
+   const selectedXp = selected ? xpForStudent(data.scoreEvents, classroomId, selected.id) : 0;
++  const activeActivity = data.activities.find((activity) => activity.id === (currentSession?.activityId ?? activityId));
++  const currentQuestion = activeActivity?.questions?.find((question) => question.id === currentSession?.currentQuestionId);
+ 
+   if (!currentSession) {
+     return (
+@@ -534,6 +612,12 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
+           <div className="form-grid">
+             <label className="field-label">Título da sessão</label>
+             <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
++            <label className="field-label">Fonte dos desafios</label>
++            <select className="select full" value={activityId} onChange={(e) => changeArenaActivity(e.target.value)}>
++              <option value="">Modo livre — pergunta oral ou conteúdo externo</option>
++              {classActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title} · {activity.questions?.length ?? 0} questões</option>)}
++            </select>
++            {activeActivity && <div className="arena-source-note"><strong>{activeActivity.title}</strong><span>{activeActivity.topic || "Sem tópico"} · {activeActivity.questions?.length ?? 0} questão(ões)</span></div>}
+           </div>
+           <div className="attendance-head"><strong>Presença</strong><span>{presentIds.length}/{students.length} presentes</span></div>
+           <div className="attendance-list">
+@@ -567,6 +651,35 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
+         <button className="button danger-outline" onClick={endSession}>Encerrar sessão</button>
+       </div>
+ 
++      <div className="arena-activity-strip">
++        <div>
++          <span className="eyebrow accent">FONTE DA ARENA</span>
++          <strong>{activeActivity?.title ?? "Modo livre"}</strong>
++          <small>{activeActivity ? `${activeActivity.questions?.length ?? 0} questões disponíveis` : "Pergunte oralmente ou utilize qualquer recurso da aula"}</small>
++        </div>
++        <select className="select" value={currentSession.activityId ?? ""} onChange={(e) => changeArenaActivity(e.target.value)}>
++          <option value="">Modo livre</option>
++          {classActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}
++        </select>
++      </div>
++
++      {activeActivity && (
++        <Panel title="Questão da Arena" subtitle={`${activeActivity.title} · ${(currentSession.answeredQuestionIds ?? []).length}/${activeActivity.questions?.length ?? 0} apresentadas`}>
++          {currentQuestion ? (
++            <div className="arena-question-card">
++              <div className="question-meta"><span>{QUESTION_TYPE_LABEL[currentQuestion.type]}</span><span>{QUESTION_DIFFICULTY_LABEL[currentQuestion.difficulty]}</span><span>{currentQuestion.points} XP sugeridos</span></div>
++              <h3>{currentQuestion.statement}</h3>
++              {currentQuestion.code && <pre>{currentQuestion.code}</pre>}
++              {currentQuestion.options && <div className="arena-question-options">{currentQuestion.options.map((option) => <div key={option.id}><b>{option.id}</b><span>{option.text}</span></div>)}</div>}
++            </div>
++          ) : <MiniEmpty text="Clique em próxima questão quando quiser usar o conteúdo da atividade na Arena." />}
++          <div className="inline-actions solid-actions">
++            {(currentSession.answeredQuestionIds?.length ?? 0) >= (activeActivity.questions?.length ?? 0) && <button className="button ghost" onClick={restartActivityQuestions}>Reiniciar questões</button>}
++            <button className="button primary" onClick={nextActivityQuestion}>Próxima questão</button>
++          </div>
++        </Panel>
++      )}
++
+       <div className="arena-grid">
+         <div className="arena-main-card">
+           <span className="eyebrow accent">SORTEIO INTELIGENTE</span>
+@@ -591,6 +704,7 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
+         <div className="score-card">
+           <div className="panel-heading"><div><h3>Pontuação rápida</h3><p>{selected ? `Aplicar a ${selected.nickname || selected.name}` : "Sorteie ou selecione um aluno"}</p></div></div>
+           <div className="score-presets">
++            {currentQuestion && <button disabled={!selected} onClick={() => addScore(currentQuestion.points, "QUESTION", `Questão: ${currentQuestion.statement}`)}><b>+{currentQuestion.points}</b><span>Questão atual</span></button>}
+             {SCORE_PRESETS.map((preset) => (
+               <button key={`${preset.points}-${preset.label}`} disabled={!selected} onClick={() => { setReason(preset.label); addScore(preset.points, preset.category, preset.label); }}>
+                 <b>+{preset.points}</b><span>{preset.label}</span>
+@@ -646,13 +760,20 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
+   );
+ }
+ 
+-function ActivitiesView({ data, classroomId, students, patch, notify }: {
++function ActivitiesView({ data, classroomId, classroomName, students, onUseInArena, patch, notify }: {
+   data: ArenaData;
+   classroomId: string;
++  classroomName: string;
+   students: Student[];
++  onUseInArena: (activityId: string) => void;
+   patch: (updater: (current: ArenaData) => ArenaData) => void;
+   notify: (message: string) => void;
+ }) {
++  type ActivityModal = "editor" | "delivery" | "import" | null;
++  type EditorTab = "general" | "questions";
++
++  const [modal, setModal] = useState<ActivityModal>(null);
++  const [editorTab, setEditorTab] = useState<EditorTab>("general");
+   const [activityId, setActivityId] = useState<string | undefined>();
+   const [title, setTitle] = useState("");
+   const [topic, setTopic] = useState("");
+@@ -662,10 +783,22 @@ function ActivitiesView({ data, classroomId, students, patch, notify }: {
+   const [platform, setPlatform] = useState("");
+   const [resourceUrl, setResourceUrl] = useState("");
+   const [questions, setQuestions] = useState<ActivityQuestion[]>([]);
++  const [deliveryActivityId, setDeliveryActivityId] = useState<string | undefined>();
+   const [delivered, setDelivered] = useState<string[]>([]);
+   const [onTime, setOnTime] = useState<string[]>([]);
++  const [sourceClassroomId, setSourceClassroomId] = useState("");
++  const [sourceActivityId, setSourceActivityId] = useState("");
+ 
+-  const classActivities = data.activities.filter((activity) => activity.classroomId === classroomId).slice().reverse();
++  const classActivities = useMemo(
++    () => data.activities.filter((activity) => activity.classroomId === classroomId).slice().sort((a, b) => new Date(b.updatedAt ?? b.createdAt).getTime() - new Date(a.updatedAt ?? a.createdAt).getTime()),
++    [data.activities, classroomId],
++  );
++  const otherClassrooms = data.classrooms.filter((classroom) => classroom.id !== classroomId);
++  const sourceActivities = data.activities.filter((activity) => activity.classroomId === sourceClassroomId);
++  const deliveryActivity = classActivities.find((activity) => activity.id === deliveryActivityId);
++  const activityEvents = data.scoreEvents.filter((event) => event.classroomId === classroomId && (event.source === "ACTIVITY" || event.category === "SUBMISSION"));
++  const totalQuestions = classActivities.reduce((sum, activity) => sum + (activity.questions?.length ?? 0), 0);
++  const activityXp = activityEvents.reduce((sum, event) => sum + event.points, 0);
+ 
+   function draftActivity(id: string, createdAt: string): Activity {
+     return {
+@@ -696,11 +829,15 @@ function ActivitiesView({ data, classroomId, students, patch, notify }: {
+     setPlatform("");
+     setResourceUrl("");
+     setQuestions([]);
+-    setDelivered([]);
+-    setOnTime([]);
++    setEditorTab("general");
++  }
++
++  function openNewActivity() {
++    resetDraft();
++    setModal("editor");
+   }
+ 
+-  function loadActivity(activity: Activity) {
++  function openActivity(activity: Activity, tab: EditorTab = "general") {
+     setActivityId(activity.id);
+     setTitle(activity.title);
+     setTopic(activity.topic ?? "");
+@@ -710,9 +847,8 @@ function ActivitiesView({ data, classroomId, students, patch, notify }: {
+     setPlatform(activity.resource?.platform ?? "");
+     setResourceUrl(activity.resource?.url ?? "");
+     setQuestions(activity.questions ?? []);
+-    setDelivered([]);
+-    setOnTime([]);
+-    notify("Atividade carregada para edição ou novo lançamento de XP.");
++    setEditorTab(tab);
++    setModal("editor");
+   }
+ 
+   function validateDraft() {
+@@ -731,86 +867,215 @@ function ActivitiesView({ data, classroomId, students, patch, notify }: {
+     return true;
+   }
+ 
+-  function saveActivity() {
++  function saveActivity(closeAfter = true) {
+     if (!validateDraft()) return;
+     const existing = activityId ? data.activities.find((activity) => activity.id === activityId) : undefined;
+     const id = existing?.id ?? uid("activity");
+-    const createdAt = existing?.createdAt ?? new Date().toISOString();
+-    const activity = draftActivity(id, createdAt);
++    const activity = draftActivity(id, existing?.createdAt ?? new Date().toISOString());
+     patch((current) => ({
+       ...current,
+       activities: existing
+-        ? current.activities.map((item) => item.id === id ? activity : item)
++        ? current.activities.map((item) => item.id === id ? { ...activity, copiedFromActivityId: existing.copiedFromActivityId, copiedFromClassroomId: existing.copiedFromClassroomId } : item)
+         : [...current.activities, activity],
+     }));
+     setActivityId(id);
+-    notify(existing ? "Atividade atualizada." : "Atividade salva.");
++    notify(existing ? "Atividade atualizada." : "Atividade criada para esta turma.");
++    if (closeAfter) setModal(null);
+   }
+ 
+-  function register() {
+-    if (!validateDraft() || !delivered.length) return;
+-    const existing = activityId ? data.activities.find((activity) => activity.id === activityId) : undefined;
+-    const id = existing?.id ?? uid("activity");
++  function openDelivery(activity: Activity) {
++    setDeliveryActivityId(activity.id);
++    setDelivered([]);
++    setOnTime([]);
++    setModal("delivery");
++  }
++
++  function registerDelivery() {
++    if (!deliveryActivity || !delivered.length) return;
+     const now = new Date().toISOString();
+-    const activity = draftActivity(id, existing?.createdAt ?? now);
+     const events = delivered.flatMap((studentId) => {
+-      const rows = [{ id: uid("score"), classroomId, studentId, points, category: "SUBMISSION" as const, description: `Entrega: ${title.trim()}`, createdAt: now }];
+-      if (onTime.includes(studentId) && bonus) rows.push({ id: uid("score"), classroomId, studentId, points: bonus, category: "SUBMISSION" as const, description: `Bônus no prazo: ${title.trim()}`, createdAt: now });
++      const rows: ArenaData["scoreEvents"] = [{
++        id: uid("score"),
++        classroomId,
++        studentId,
++        points: deliveryActivity.points,
++        category: "SUBMISSION",
++        description: `Entrega: ${deliveryActivity.title}`,
++        source: "ACTIVITY",
++        activityId: deliveryActivity.id,
++        createdAt: now,
++      }];
++      if (onTime.includes(studentId) && deliveryActivity.onTimeBonus) {
++        rows.push({
++          id: uid("score"),
++          classroomId,
++          studentId,
++          points: deliveryActivity.onTimeBonus,
++          category: "BONUS",
++          description: `Bônus no prazo: ${deliveryActivity.title}`,
++          source: "ACTIVITY",
++          activityId: deliveryActivity.id,
++          createdAt: now,
++        });
++      }
+       return rows;
+     });
+-    patch((current) => ({
+-      ...current,
+-      activities: existing
+-        ? current.activities.map((item) => item.id === id ? activity : item)
+-        : [...current.activities, activity],
+-      scoreEvents: [...current.scoreEvents, ...events],
+-    }));
+-    notify(`Atividade salva e XP registrado para ${delivered.length} aluno(s).`);
+-    resetDraft();
++    patch((current) => ({ ...current, scoreEvents: [...current.scoreEvents, ...events] }));
++    setModal(null);
++    notify(`XP registrado para ${delivered.length} aluno(s).`);
++  }
++
++  function openImport() {
++    const firstClassroom = otherClassrooms[0]?.id ?? "";
++    setSourceClassroomId(firstClassroom);
++    setSourceActivityId(data.activities.find((activity) => activity.classroomId === firstClassroom)?.id ?? "");
++    setModal("import");
++  }
++
++  function changeSourceClassroom(nextClassroomId: string) {
++    setSourceClassroomId(nextClassroomId);
++    setSourceActivityId(data.activities.find((activity) => activity.classroomId === nextClassroomId)?.id ?? "");
++  }
++
++  function importActivityCopy() {
++    const source = data.activities.find((activity) => activity.id === sourceActivityId && activity.classroomId === sourceClassroomId);
++    if (!source) {
++      notify("Selecione uma atividade de origem.");
++      return;
++    }
++    const now = new Date().toISOString();
++    const copy: Activity = {
++      ...source,
++      id: uid("activity"),
++      classroomId,
++      title: source.title,
++      questions: (source.questions ?? []).map((question) => ({
++        ...question,
++        id: uid("question"),
++        options: question.options?.map((option) => ({ ...option })),
++        evaluationCriteria: question.evaluationCriteria ? [...question.evaluationCriteria] : undefined,
++      })),
++      createdAt: now,
++      updatedAt: now,
++      copiedFromActivityId: source.id,
++      copiedFromClassroomId: source.classroomId,
++    };
++    patch((current) => ({ ...current, activities: [...current.activities, copy] }));
++    setModal(null);
++    notify(`Atividade "${source.title}" copiada para ${classroomName}.`);
+   }
+ 
+   return (
+     <div className="stack-lg">
+-      <div className="two-col uneven">
+-        <Panel title={activityId ? "Editar atividade" : "Nova atividade"} subtitle="Conteúdo, recurso externo e XP continuam no mesmo fluxo">
+-          <div className="form-grid">
+-            <label className="field-label">Atividade</label>
+-            <input className="input" placeholder="Ex.: Atividade 07 — Funções" value={title} onChange={(e) => setTitle(e.target.value)} />
+-            <div className="form-two"><label>Tema / tópico<input className="input" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Ex.: Estruturas de repetição" /></label><label>Tipo<select className="select full" value={resourceKind} onChange={(e) => setResourceKind(e.target.value as "INTERNAL" | "EXTERNAL")}><option value="INTERNAL">Atividade interna</option><option value="EXTERNAL">Atividade / recurso externo</option></select></label></div>
+-            {resourceKind === "EXTERNAL" && <div className="form-two"><label>Plataforma<input className="input" value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Wayground, Forms, Kahoot..." /></label><label>Link<input className="input" type="url" value={resourceUrl} onChange={(e) => setResourceUrl(e.target.value)} placeholder="https://..." /></label></div>}
+-            <div className="form-two"><label>XP da entrega<input className="input" type="number" value={points} onChange={(e) => setPoints(Number(e.target.value))} /></label><label>Bônus no prazo<input className="input" type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} /></label></div>
++      <div className="page-action-bar">
++        <div>
++          <span className="eyebrow accent">CONTEXTO DA TURMA</span>
++          <h2>{classroomName}</h2>
++          <p>Atividades, questões e XP desta página pertencem à turma selecionada no topo.</p>
++        </div>
++        <div className="page-action-buttons">
++          <button className="button" onClick={openImport}>Importar atividade</button>
++          <button className="button primary" onClick={openNewActivity}>+ Nova atividade</button>
++        </div>
++      </div>
++
++      <div className="metrics-grid activity-metrics">
++        <Metric label="Atividades" value={classActivities.length.toString()} hint="nesta turma" />
++        <Metric label="Questões" value={totalQuestions.toString()} hint="conteúdo reutilizável na Arena" />
++        <Metric label="XP de atividades" value={activityXp.toString()} hint="entregas e bônus registrados" />
++        <Metric label="Integração" value="Arena" hint="atividades podem alimentar desafios" />
++      </div>
++
++      <Panel title="Atividades da turma" subtitle="Abra para editar, registrar entregas ou usar as questões diretamente na Arena">
++        {classActivities.length ? (
++          <div className="activity-catalog">
++            {classActivities.map((activity) => {
++              const submissionCount = new Set(activityEvents.filter((event) => event.activityId === activity.id && event.description.startsWith("Entrega:")).map((event) => event.studentId)).size;
++              return (
++                <article className="activity-catalog-card" key={activity.id}>
++                  <div className="activity-card-head">
++                    <div>
++                      <div className="activity-card-kicker">{activity.resource?.kind === "EXTERNAL" ? activity.resource.platform || "Recurso externo" : "Atividade interna"}</div>
++                      <h3>{activity.title}</h3>
++                      <p>{activity.topic || "Sem tópico definido"}</p>
++                    </div>
++                    <div className="activity-xp"><strong>{activity.points} XP</strong><span>+{activity.onTimeBonus} prazo</span></div>
++                  </div>
++                  <div className="activity-card-stats">
++                    <span>{activity.questions?.length ?? 0} questões</span>
++                    <span>{submissionCount}/{students.length} entregaram</span>
++                    {activity.copiedFromClassroomId && <span>Cópia reutilizada</span>}
++                  </div>
++                  {activity.resource?.kind === "EXTERNAL" && activity.resource.url && <a className="activity-resource-link" href={activity.resource.url} target="_blank" rel="noreferrer">Abrir recurso externo ↗</a>}
++                  <div className="activity-card-actions">
++                    <button className="button ghost" onClick={() => openActivity(activity)}>Abrir / editar</button>
++                    <button className="button" onClick={() => openDelivery(activity)}>Registrar entrega</button>
++                    <button className="button primary" disabled={!(activity.questions?.length)} onClick={() => onUseInArena(activity.id)}>Usar na Arena</button>
++                  </div>
++                </article>
++              );
++            })}
+           </div>
+-          <div className="activity-summary-line"><span>{questions.length} questão(ões)</span>{resourceKind === "EXTERNAL" && resourceUrl && <a href={resourceUrl} target="_blank" rel="noreferrer">Abrir recurso externo ↗</a>}</div>
+-          <div className="inline-actions solid-actions"><button className="button" onClick={saveActivity} disabled={!title.trim()}>Salvar atividade</button>{activityId && <button className="text-button" onClick={resetDraft}>Nova atividade</button>}</div>
++        ) : (
++          <EmptyState title="Nenhuma atividade nesta turma" text="Crie uma atividade do zero ou importe uma cópia de outra turma. Questões podem ser reutilizadas depois na Arena." actionLabel="Criar atividade" onAction={openNewActivity} />
++        )}
++      </Panel>
++
++      <Modal open={modal === "editor"} title={activityId ? "Editar atividade" : "Nova atividade"} subtitle={`Turma: ${classroomName}`} size="large" onClose={() => setModal(null)}>
++        <div className="modal-tabs">
++          <button className={editorTab === "general" ? "active" : ""} onClick={() => setEditorTab("general")}>Geral e XP</button>
++          <button className={editorTab === "questions" ? "active" : ""} onClick={() => setEditorTab("questions")}>Questões <span>{questions.length}</span></button>
++        </div>
++        {editorTab === "general" ? (
++          <div className="modal-section-stack">
++            <div className="context-lock"><span>Turma</span><strong>{classroomName}</strong><small>A atividade será salva somente neste contexto.</small></div>
++            <div className="form-grid">
++              <label className="field-label">Título</label>
++              <input className="input" placeholder="Ex.: Atividade 07 — Funções" value={title} onChange={(e) => setTitle(e.target.value)} />
++              <div className="form-two">
++                <label>Tema / tópico<input className="input" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Ex.: Estruturas de repetição" /></label>
++                <label>Tipo<select className="select full" value={resourceKind} onChange={(e) => setResourceKind(e.target.value as "INTERNAL" | "EXTERNAL")}><option value="INTERNAL">Atividade interna</option><option value="EXTERNAL">Atividade / recurso externo</option></select></label>
++              </div>
++              {resourceKind === "EXTERNAL" && <div className="form-two"><label>Plataforma<input className="input" value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Wayground, Forms, Kahoot..." /></label><label>Link<input className="input" type="url" value={resourceUrl} onChange={(e) => setResourceUrl(e.target.value)} placeholder="https://..." /></label></div>}
++              <div className="form-two"><label>XP da entrega<input className="input" type="number" min="0" value={points} onChange={(e) => setPoints(Math.max(0, Number(e.target.value) || 0))} /></label><label>Bônus no prazo<input className="input" type="number" min="0" value={bonus} onChange={(e) => setBonus(Math.max(0, Number(e.target.value) || 0))} /></label></div>
++            </div>
++            <div className="activity-summary-line"><span>{questions.length} questão(ões) vinculadas</span><button className="text-button" onClick={() => setEditorTab("questions")}>Gerenciar questões →</button></div>
++          </div>
++        ) : (
++          <ActivityQuestionBuilder questions={questions} setQuestions={setQuestions} defaultTheme={topic || title} notify={notify} />
++        )}
++        <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!title.trim()} onClick={() => saveActivity(true)}>Salvar atividade</button></div>
++      </Modal>
+ 
+-          <div className="attendance-head"><strong>Registrar entrega / participação</strong><span>{delivered.length} selecionados</span></div>
+-          <div className="delivery-list">
++      <Modal open={modal === "delivery"} title="Registrar entrega / participação" subtitle={deliveryActivity?.title} size="medium" onClose={() => setModal(null)}>
++        {deliveryActivity && <>
++          <div className="delivery-summary"><div><span>XP da entrega</span><strong>+{deliveryActivity.points}</strong></div><div><span>Bônus no prazo</span><strong>+{deliveryActivity.onTimeBonus}</strong></div><div><span>Selecionados</span><strong>{delivered.length}</strong></div></div>
++          <div className="delivery-list modal-delivery-list">
+             {students.map((student) => (
+               <div className="delivery-row" key={student.id}>
+-                <label><input type="checkbox" checked={delivered.includes(student.id)} onChange={(e) => { setDelivered((cur) => e.target.checked ? [...cur, student.id] : cur.filter((id) => id !== student.id)); if (!e.target.checked) setOnTime((cur) => cur.filter((id) => id !== student.id)); }} /><Avatar student={student} /><span>{student.name}</span></label>
+-                <label className="on-time"><input type="checkbox" disabled={!delivered.includes(student.id)} checked={onTime.includes(student.id)} onChange={(e) => setOnTime((cur) => e.target.checked ? [...cur, student.id] : cur.filter((id) => id !== student.id))} />No prazo</label>
++                <label><input type="checkbox" checked={delivered.includes(student.id)} onChange={(e) => { setDelivered((current) => e.target.checked ? [...current, student.id] : current.filter((id) => id !== student.id)); if (!e.target.checked) setOnTime((current) => current.filter((id) => id !== student.id)); }} /><Avatar student={student} /><span>{student.name}</span></label>
++                <label className="on-time"><input type="checkbox" disabled={!delivered.includes(student.id)} checked={onTime.includes(student.id)} onChange={(e) => setOnTime((current) => e.target.checked ? [...current, student.id] : current.filter((id) => id !== student.id))} />No prazo</label>
+               </div>
+             ))}
+           </div>
+-          <button className="button primary full large" disabled={!title.trim() || !delivered.length} onClick={register}>Salvar e registrar entregas</button>
+-        </Panel>
+-
+-        <Panel title="Últimas atividades" subtitle="Abra uma atividade para reutilizar conteúdo ou lançar novo XP">
+-          <div className="activity-list">
+-            {classActivities.map((activity) => (
+-              <button className={activity.id === activityId ? "activity-card selected" : "activity-card"} key={activity.id} onClick={() => loadActivity(activity)}>
+-                <div><strong>{activity.title}</strong><small>{dateTime(activity.createdAt)} · {activity.questions?.length ?? 0} questão(ões){activity.resource?.kind === "EXTERNAL" ? ` · ${activity.resource.platform || "externa"}` : ""}</small></div><span>+{activity.points} XP · prazo +{activity.onTimeBonus}</span>
+-              </button>
+-            ))}
+-            {!classActivities.length && <MiniEmpty text="Nenhuma atividade registrada." />}
++          <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!delivered.length} onClick={registerDelivery}>Registrar e aplicar XP</button></div>
++        </>}
++      </Modal>
++
++      <Modal open={modal === "import"} title="Importar atividade de outra turma" subtitle={`Destino: ${classroomName}`} size="medium" onClose={() => setModal(null)}>
++        {otherClassrooms.length ? (
++          <div className="modal-section-stack">
++            <div className="form-grid">
++              <label className="field-label">Turma de origem</label>
++              <select className="select full" value={sourceClassroomId} onChange={(e) => changeSourceClassroom(e.target.value)}>{otherClassrooms.map((classroom) => <option key={classroom.id} value={classroom.id}>{classroom.name}</option>)}</select>
++              <label className="field-label">Atividade</label>
++              <select className="select full" value={sourceActivityId} onChange={(e) => setSourceActivityId(e.target.value)}><option value="">Selecione</option>{sourceActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title} · {activity.questions?.length ?? 0} questões</option>)}</select>
++            </div>
++            <div className="copy-policy"><strong>Será criada uma cópia independente.</strong><p>Conteúdo, questões, XP e recurso externo são copiados. Entregas, alunos, resultados, ScoreEvents e histórico não são copiados.</p></div>
++            <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!sourceActivityId} onClick={importActivityCopy}>Importar cópia</button></div>
+           </div>
+-          <div className="integration-note"><strong>Ferramentas externas</strong><p>Use o link da atividade quando outra plataforma já resolver melhor o quiz. Importação automática de relatórios entra em um incremento posterior.</p></div>
+-        </Panel>
+-      </div>
+-
+-      <Panel title="Questões da atividade" subtitle="Crie manualmente, importe JSON ou gere um prompt padronizado para qualquer IA">
+-        <ActivityQuestionBuilder questions={questions} setQuestions={setQuestions} defaultTheme={topic || title} notify={notify} />
+-      </Panel>
++        ) : <MiniEmpty text="Crie uma segunda turma para reutilizar atividades entre contextos. Em uma evolução futura, modelos também poderão vir de uma biblioteca." />}
++      </Modal>
+     </div>
+   );
+ }
+@@ -902,6 +1167,42 @@ function BackupView({ data, setData, notify }: { data: ArenaData; setData: (data
+   );
+ }
+ 
++function Modal({ open, title, subtitle, size = "medium", onClose, children }: {
++  open: boolean;
++  title: string;
++  subtitle?: string;
++  size?: "medium" | "large";
++  onClose: () => void;
++  children: React.ReactNode;
++}) {
++  useEffect(() => {
++    if (!open) return;
++    const previousOverflow = document.body.style.overflow;
++    document.body.style.overflow = "hidden";
++    const onKeyDown = (event: KeyboardEvent) => {
++      if (event.key === "Escape") onClose();
++    };
++    window.addEventListener("keydown", onKeyDown);
++    return () => {
++      document.body.style.overflow = previousOverflow;
++      window.removeEventListener("keydown", onKeyDown);
++    };
++  }, [open, onClose]);
++
++  if (!open) return null;
++  return (
++    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
++      <section className={`modal-card ${size}`} role="dialog" aria-modal="true" aria-labelledby="arena-modal-title">
++        <header className="modal-header">
++          <div><h2 id="arena-modal-title">{title}</h2>{subtitle && <p>{subtitle}</p>}</div>
++          <button className="modal-close" type="button" aria-label="Fechar" onClick={onClose}>×</button>
++        </header>
++        <div className="modal-body">{children}</div>
++      </section>
++    </div>
++  );
++}
++
+ function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+   return <div className="panel"><div className="panel-heading"><div><h3>{title}</h3>{subtitle && <p>{subtitle}</p>}</div></div>{children}</div>;
+ }
+diff --git a/frontend/lib/types.ts b/frontend/lib/types.ts
+index 6c1643a..ab84e7b 100644
+--- a/frontend/lib/types.ts
++++ b/frontend/lib/types.ts
+@@ -1,3 +1,5 @@
++export type ScoreSource = "ARENA" | "ACTIVITY" | "BUZZER" | "BOSS" | "MANUAL";
++
+ export type ScoreCategory =
+   | "QUESTION"
+   | "DEBUG"
+@@ -94,6 +96,9 @@ export interface GameSession {
+   drawCounts: Record<string, number>;
+   lastDrawnStudentId?: string;
+   boss?: BossState;
++  activityId?: string;
++  currentQuestionId?: string;
++  answeredQuestionIds?: string[];
+ }
+ 
+ export interface ScoreEvent {
+@@ -104,6 +109,9 @@ export interface ScoreEvent {
+   points: number;
+   category: ScoreCategory;
+   description: string;
++  source?: ScoreSource;
++  activityId?: string;
++  questionId?: string;
+   createdAt: string;
+ }
+ 
+@@ -118,6 +126,8 @@ export interface Activity {
+   questions?: ActivityQuestion[];
+   createdAt: string;
+   updatedAt?: string;
++  copiedFromActivityId?: string;
++  copiedFromClassroomId?: string;
+ }
+ 
+ export interface GroupHistory {

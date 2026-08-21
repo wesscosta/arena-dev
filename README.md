@@ -139,7 +139,9 @@ Activities can contain their own question set and may also reference an external
 
 Supported question families currently include multiple choice, open response, true/false, bug fixing, analysis, practical tasks and scenario-based problems. Direct AI API integration is intentionally deferred; the current flow generates a structured prompt that can be copied to the teacher's preferred AI and imported back as validated JSON.
 
-See `docs/ACTIVITY_QUESTIONS.md` and `docs/question-package-v1.schema.json`.
+See `docs/ACTIVITY_QUESTIONS.md`, `docs/INCREMENT_3.md` and `docs/question-package-v1.schema.json`.
+
+Activities are scoped to the selected classroom. They can be copied into another classroom as independent content and can optionally feed questions into an Arena session without removing the Arena's free/oral mode.
 
 ### Future mechanics
 
