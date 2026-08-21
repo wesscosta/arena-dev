@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import { createBalancedGroups, getLevel, getLevelProgress, weightedDraw, xpForStudent } from "@/lib/game";
 import { EMPTY_DATA, loadData, saveData, uid } from "@/lib/store";
-import type { ArenaData, ScoreCategory, Student } from "@/lib/types";
+import type { Activity, ActivityQuestion, ArenaData, ScoreCategory, Student } from "@/lib/types";
 
 type View = "dashboard" | "classroom" | "arena" | "activities" | "ranking" | "history" | "backup";
 
@@ -498,7 +499,12 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
     const prior = data.groupHistory.filter((record) => record.classroomId === classroomId).map((record) => record.groups);
     const next = createBalancedGroups(currentSession.presentStudentIds, groupSize, prior);
     setGroups(next);
+    if (groupSize === 1) {
+      notify("Organização individual ativada.");
+      return;
+    }
     patch((current) => ({ ...current, groupHistory: [...current.groupHistory, { id: uid("groups"), classroomId, sessionId: currentSession.id, createdAt: new Date().toISOString(), groups: next }] }));
+    notify(`${next.length} grupo(s) organizado(s).`);
   }
 
   function createBoss() {
@@ -624,12 +630,12 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
           )}
         </Panel>
 
-        <Panel title="Duplas e grupos" subtitle="Evita repetir combinações sempre que possível">
+        <Panel title="Organização da turma" subtitle="Alterne entre individual, duplas e grupos sem encerrar a sessão">
           <div className="group-controls">
-            <label>Tamanho do grupo<select className="select" value={groupSize} onChange={(e) => setGroupSize(Number(e.target.value))}><option value={2}>2</option><option value={3}>3</option><option value={4}>4</option><option value={5}>5</option></select></label>
-            <button className="button" onClick={createGroups}>Gerar grupos</button>
+            <label>Formato<select className="select" value={groupSize} onChange={(e) => setGroupSize(Number(e.target.value))}><option value={1}>Individual</option><option value={2}>Duplas</option><option value={3}>Trios</option><option value={4}>Grupos de 4</option><option value={5}>Grupos de 5</option></select></label>
+            <button className="button" onClick={createGroups}>{groupSize === 1 ? "Voltar ao individual" : "Organizar turma"}</button>
           </div>
-          {groups.length > 0 ? <div className="groups-grid">{groups.map((group, i) => <div className="group-card" key={i}><b>GRUPO {String(i + 1).padStart(2, "0")}</b>{group.map((id) => <span key={id}>{students.find((s) => s.id === id)?.nickname || students.find((s) => s.id === id)?.name}</span>)}</div>)}</div> : <MiniEmpty text="Gere os grupos quando precisar mudar a dinâmica." />}
+          {groups.length > 0 ? <div className="groups-grid">{groups.map((group, i) => <div className="group-card" key={i}><b>{groupSize === 1 ? `INDIVIDUAL ${String(i + 1).padStart(2, "0")}` : `GRUPO ${String(i + 1).padStart(2, "0")}`}</b>{group.map((id) => <span key={id}>{students.find((s) => s.id === id)?.nickname || students.find((s) => s.id === id)?.name}</span>)}</div>)}</div> : <MiniEmpty text="Escolha como a turma deve se organizar nesta etapa da aula." />}
         </Panel>
       </div>
 
@@ -647,16 +653,106 @@ function ActivitiesView({ data, classroomId, students, patch, notify }: {
   patch: (updater: (current: ArenaData) => ArenaData) => void;
   notify: (message: string) => void;
 }) {
+  const [activityId, setActivityId] = useState<string | undefined>();
   const [title, setTitle] = useState("");
+  const [topic, setTopic] = useState("");
   const [points, setPoints] = useState(10);
   const [bonus, setBonus] = useState(5);
+  const [resourceKind, setResourceKind] = useState<"INTERNAL" | "EXTERNAL">("INTERNAL");
+  const [platform, setPlatform] = useState("");
+  const [resourceUrl, setResourceUrl] = useState("");
+  const [questions, setQuestions] = useState<ActivityQuestion[]>([]);
   const [delivered, setDelivered] = useState<string[]>([]);
   const [onTime, setOnTime] = useState<string[]>([]);
 
+  const classActivities = data.activities.filter((activity) => activity.classroomId === classroomId).slice().reverse();
+
+  function draftActivity(id: string, createdAt: string): Activity {
+    return {
+      id,
+      classroomId,
+      title: title.trim(),
+      topic: topic.trim() || undefined,
+      points,
+      onTimeBonus: bonus,
+      resource: {
+        kind: resourceKind,
+        platform: resourceKind === "EXTERNAL" ? platform.trim() || undefined : undefined,
+        url: resourceKind === "EXTERNAL" ? resourceUrl.trim() || undefined : undefined,
+      },
+      questions,
+      createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  function resetDraft() {
+    setActivityId(undefined);
+    setTitle("");
+    setTopic("");
+    setPoints(10);
+    setBonus(5);
+    setResourceKind("INTERNAL");
+    setPlatform("");
+    setResourceUrl("");
+    setQuestions([]);
+    setDelivered([]);
+    setOnTime([]);
+  }
+
+  function loadActivity(activity: Activity) {
+    setActivityId(activity.id);
+    setTitle(activity.title);
+    setTopic(activity.topic ?? "");
+    setPoints(activity.points);
+    setBonus(activity.onTimeBonus);
+    setResourceKind(activity.resource?.kind ?? "INTERNAL");
+    setPlatform(activity.resource?.platform ?? "");
+    setResourceUrl(activity.resource?.url ?? "");
+    setQuestions(activity.questions ?? []);
+    setDelivered([]);
+    setOnTime([]);
+    notify("Atividade carregada para edição ou novo lançamento de XP.");
+  }
+
+  function validateDraft() {
+    if (!title.trim()) {
+      notify("Informe o título da atividade.");
+      return false;
+    }
+    if (resourceKind === "EXTERNAL" && resourceUrl.trim()) {
+      try {
+        new URL(resourceUrl.trim());
+      } catch {
+        notify("Informe um link externo válido.");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function saveActivity() {
+    if (!validateDraft()) return;
+    const existing = activityId ? data.activities.find((activity) => activity.id === activityId) : undefined;
+    const id = existing?.id ?? uid("activity");
+    const createdAt = existing?.createdAt ?? new Date().toISOString();
+    const activity = draftActivity(id, createdAt);
+    patch((current) => ({
+      ...current,
+      activities: existing
+        ? current.activities.map((item) => item.id === id ? activity : item)
+        : [...current.activities, activity],
+    }));
+    setActivityId(id);
+    notify(existing ? "Atividade atualizada." : "Atividade salva.");
+  }
+
   function register() {
-    if (!title.trim() || !delivered.length) return;
-    const activityId = uid("activity");
+    if (!validateDraft() || !delivered.length) return;
+    const existing = activityId ? data.activities.find((activity) => activity.id === activityId) : undefined;
+    const id = existing?.id ?? uid("activity");
     const now = new Date().toISOString();
+    const activity = draftActivity(id, existing?.createdAt ?? now);
     const events = delivered.flatMap((studentId) => {
       const rows = [{ id: uid("score"), classroomId, studentId, points, category: "SUBMISSION" as const, description: `Entrega: ${title.trim()}`, createdAt: now }];
       if (onTime.includes(studentId) && bonus) rows.push({ id: uid("score"), classroomId, studentId, points: bonus, category: "SUBMISSION" as const, description: `Bônus no prazo: ${title.trim()}`, createdAt: now });
@@ -664,40 +760,56 @@ function ActivitiesView({ data, classroomId, students, patch, notify }: {
     });
     patch((current) => ({
       ...current,
-      activities: [...current.activities, { id: activityId, classroomId, title: title.trim(), points, onTimeBonus: bonus, createdAt: now }],
+      activities: existing
+        ? current.activities.map((item) => item.id === id ? activity : item)
+        : [...current.activities, activity],
       scoreEvents: [...current.scoreEvents, ...events],
     }));
-    notify(`XP registrado para ${delivered.length} aluno(s).`);
-    setTitle(""); setDelivered([]); setOnTime([]);
+    notify(`Atividade salva e XP registrado para ${delivered.length} aluno(s).`);
+    resetDraft();
   }
 
   return (
-    <div className="two-col uneven">
-      <Panel title="Registrar entrega" subtitle="Ideal para atividades entregues no Teams">
-        <div className="form-grid">
-          <label className="field-label">Atividade</label>
-          <input className="input" placeholder="Ex.: Atividade 07 — Funções" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <div className="form-two"><label>XP da entrega<input className="input" type="number" value={points} onChange={(e) => setPoints(Number(e.target.value))} /></label><label>Bônus no prazo<input className="input" type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} /></label></div>
-        </div>
-        <div className="attendance-head"><strong>Alunos</strong><span>{delivered.length} selecionados</span></div>
-        <div className="delivery-list">
-          {students.map((student) => (
-            <div className="delivery-row" key={student.id}>
-              <label><input type="checkbox" checked={delivered.includes(student.id)} onChange={(e) => { setDelivered((cur) => e.target.checked ? [...cur, student.id] : cur.filter((id) => id !== student.id)); if (!e.target.checked) setOnTime((cur) => cur.filter((id) => id !== student.id)); }} /><Avatar student={student} /><span>{student.name}</span></label>
-              <label className="on-time"><input type="checkbox" disabled={!delivered.includes(student.id)} checked={onTime.includes(student.id)} onChange={(e) => setOnTime((cur) => e.target.checked ? [...cur, student.id] : cur.filter((id) => id !== student.id))} />No prazo</label>
-            </div>
-          ))}
-        </div>
-        <button className="button primary full large" disabled={!title.trim() || !delivered.length} onClick={register}>Registrar entregas</button>
-      </Panel>
+    <div className="stack-lg">
+      <div className="two-col uneven">
+        <Panel title={activityId ? "Editar atividade" : "Nova atividade"} subtitle="Conteúdo, recurso externo e XP continuam no mesmo fluxo">
+          <div className="form-grid">
+            <label className="field-label">Atividade</label>
+            <input className="input" placeholder="Ex.: Atividade 07 — Funções" value={title} onChange={(e) => setTitle(e.target.value)} />
+            <div className="form-two"><label>Tema / tópico<input className="input" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Ex.: Estruturas de repetição" /></label><label>Tipo<select className="select full" value={resourceKind} onChange={(e) => setResourceKind(e.target.value as "INTERNAL" | "EXTERNAL")}><option value="INTERNAL">Atividade interna</option><option value="EXTERNAL">Atividade / recurso externo</option></select></label></div>
+            {resourceKind === "EXTERNAL" && <div className="form-two"><label>Plataforma<input className="input" value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Wayground, Forms, Kahoot..." /></label><label>Link<input className="input" type="url" value={resourceUrl} onChange={(e) => setResourceUrl(e.target.value)} placeholder="https://..." /></label></div>}
+            <div className="form-two"><label>XP da entrega<input className="input" type="number" value={points} onChange={(e) => setPoints(Number(e.target.value))} /></label><label>Bônus no prazo<input className="input" type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} /></label></div>
+          </div>
+          <div className="activity-summary-line"><span>{questions.length} questão(ões)</span>{resourceKind === "EXTERNAL" && resourceUrl && <a href={resourceUrl} target="_blank" rel="noreferrer">Abrir recurso externo ↗</a>}</div>
+          <div className="inline-actions solid-actions"><button className="button" onClick={saveActivity} disabled={!title.trim()}>Salvar atividade</button>{activityId && <button className="text-button" onClick={resetDraft}>Nova atividade</button>}</div>
 
-      <Panel title="Últimas atividades" subtitle="Cada lançamento gera eventos de XP auditáveis">
-        <div className="activity-list">
-          {data.activities.filter((a) => a.classroomId === classroomId).slice().reverse().map((activity) => (
-            <div className="activity-card" key={activity.id}><div><strong>{activity.title}</strong><small>{dateTime(activity.createdAt)}</small></div><span>+{activity.points} XP · prazo +{activity.onTimeBonus}</span></div>
-          ))}
-          {!data.activities.some((a) => a.classroomId === classroomId) && <MiniEmpty text="Nenhuma atividade registrada." />}
-        </div>
+          <div className="attendance-head"><strong>Registrar entrega / participação</strong><span>{delivered.length} selecionados</span></div>
+          <div className="delivery-list">
+            {students.map((student) => (
+              <div className="delivery-row" key={student.id}>
+                <label><input type="checkbox" checked={delivered.includes(student.id)} onChange={(e) => { setDelivered((cur) => e.target.checked ? [...cur, student.id] : cur.filter((id) => id !== student.id)); if (!e.target.checked) setOnTime((cur) => cur.filter((id) => id !== student.id)); }} /><Avatar student={student} /><span>{student.name}</span></label>
+                <label className="on-time"><input type="checkbox" disabled={!delivered.includes(student.id)} checked={onTime.includes(student.id)} onChange={(e) => setOnTime((cur) => e.target.checked ? [...cur, student.id] : cur.filter((id) => id !== student.id))} />No prazo</label>
+              </div>
+            ))}
+          </div>
+          <button className="button primary full large" disabled={!title.trim() || !delivered.length} onClick={register}>Salvar e registrar entregas</button>
+        </Panel>
+
+        <Panel title="Últimas atividades" subtitle="Abra uma atividade para reutilizar conteúdo ou lançar novo XP">
+          <div className="activity-list">
+            {classActivities.map((activity) => (
+              <button className={activity.id === activityId ? "activity-card selected" : "activity-card"} key={activity.id} onClick={() => loadActivity(activity)}>
+                <div><strong>{activity.title}</strong><small>{dateTime(activity.createdAt)} · {activity.questions?.length ?? 0} questão(ões){activity.resource?.kind === "EXTERNAL" ? ` · ${activity.resource.platform || "externa"}` : ""}</small></div><span>+{activity.points} XP · prazo +{activity.onTimeBonus}</span>
+              </button>
+            ))}
+            {!classActivities.length && <MiniEmpty text="Nenhuma atividade registrada." />}
+          </div>
+          <div className="integration-note"><strong>Ferramentas externas</strong><p>Use o link da atividade quando outra plataforma já resolver melhor o quiz. Importação automática de relatórios entra em um incremento posterior.</p></div>
+        </Panel>
+      </div>
+
+      <Panel title="Questões da atividade" subtitle="Crie manualmente, importe JSON ou gere um prompt padronizado para qualquer IA">
+        <ActivityQuestionBuilder questions={questions} setQuestions={setQuestions} defaultTheme={topic || title} notify={notify} />
       </Panel>
     </div>
   );

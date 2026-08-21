@@ -60,7 +60,7 @@ export function shuffle<T>(items: T[]): T[] {
 }
 
 export function createBalancedGroups(studentIds: string[], groupSize: number, priorGroups: string[][][]) {
-  if (groupSize < 2) groupSize = 2;
+  if (groupSize <= 1) return studentIds.map((id) => [id]);
   const ids = [...studentIds];
   const pairFrequency = new Map<string, number>();
 

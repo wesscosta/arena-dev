@@ -7,6 +7,55 @@ export type ScoreCategory =
   | "BONUS"
   | "ADJUSTMENT";
 
+
+export type QuestionType =
+  | "MULTIPLE_CHOICE"
+  | "OPEN"
+  | "TRUE_FALSE"
+  | "BUG_FIX"
+  | "ANALYSIS"
+  | "PRACTICAL"
+  | "SCENARIO";
+
+export type QuestionDifficulty = "EASY" | "INTERMEDIATE" | "HARD";
+
+export interface QuestionOption {
+  id: string;
+  text: string;
+}
+
+export interface ActivityQuestion {
+  id: string;
+  type: QuestionType;
+  statement: string;
+  difficulty: QuestionDifficulty;
+  points: number;
+  options?: QuestionOption[];
+  answer?: string | boolean;
+  expectedAnswer?: string;
+  explanation?: string;
+  code?: string;
+  language?: string;
+  expectedOutcome?: string;
+  evaluationCriteria?: string[];
+}
+
+export interface ActivityResource {
+  kind: "INTERNAL" | "EXTERNAL";
+  platform?: string;
+  url?: string;
+}
+
+export interface QuestionPackage {
+  version: "1.0";
+  activity?: {
+    title?: string;
+    topic?: string;
+    difficulty?: QuestionDifficulty;
+  };
+  questions: ActivityQuestion[];
+}
+
 export interface Classroom {
   id: string;
   name: string;
@@ -62,9 +111,13 @@ export interface Activity {
   id: string;
   classroomId: string;
   title: string;
+  topic?: string;
   points: number;
   onTimeBonus: number;
+  resource?: ActivityResource;
+  questions?: ActivityQuestion[];
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface GroupHistory {
