@@ -6,10 +6,11 @@ import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi } from "@/lib/classroom-api";
-import { createSession as createSessionApi, fetchSessionDomain, finishSession as finishSessionApi, setParticipantPresence } from "@/lib/session-api";
+import { createSession as createSessionApi, fetchSessionDomain, fetchSessionParticipants, finishSession as finishSessionApi, setParticipantPresence } from "@/lib/session-api";
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, fetchActivityDomain, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
 import { damageBoss as damageBossApi, drawStudent as drawStudentApi, mergeSessionMechanics, nextArenaQuestion as nextArenaQuestionApi, organizeGroups as organizeGroupsApi, restartArenaQuestions as restartArenaQuestionsApi, setArenaActivity as setArenaActivityApi, startBoss as startBossApi } from "@/lib/mechanics-api";
 import { createScoreEvent as createScoreEventApi, createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
+import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
 import type { Activity, ActivityQuestion, ArenaData, Classroom, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 
@@ -939,7 +940,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   notify: (message: string) => void;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
-  const [arenaTab, setArenaTab] = useState<"live" | "presence" | "groups" | "boss">("live");
+  const [arenaTab, setArenaTab] = useState<"live" | "realtime" | "presence" | "groups" | "boss">("live");
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
   const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
@@ -952,11 +953,88 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [sessionBusy, setSessionBusy] = useState(false);
   const [presenceBusyId, setPresenceBusyId] = useState<string | undefined>();
   const [mechanicsBusy, setMechanicsBusy] = useState(false);
+  const [joinCode, setJoinCode] = useState<JoinCode | null>(null);
+  const [buzzerState, setBuzzerState] = useState<BuzzerState>({ status: "IDLE", presses: [] });
+  const [realtimeStatus, setRealtimeStatus] = useState<"offline" | "connecting" | "online">("offline");
+  const [realtimeVersion, setRealtimeVersion] = useState(0);
+  const [publicBaseUrl, setPublicBaseUrl] = useState("");
+  const [realtimeBusy, setRealtimeBusy] = useState(false);
   const classActivities = useMemo(
     () => data.activities.filter((activity) => activity.classroomId === classroomId && (activity.questions?.length ?? 0) > 0),
     [data.activities, classroomId],
   );
   const [activityId, setActivityId] = useState<string>(currentSession?.activityId ?? preferredActivityId ?? "");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") setPublicBaseUrl(window.location.origin);
+  }, []);
+
+  async function refreshRealtimeParticipants(sessionId: string) {
+    try {
+      const participants = await fetchSessionParticipants(sessionId);
+      patch((current) => ({
+        ...current,
+        sessionParticipants: [
+          ...current.sessionParticipants.filter((participant) => participant.sessionId !== sessionId),
+          ...participants,
+        ],
+        sessions: current.sessions.map((session) => session.id === sessionId ? {
+          ...session,
+          presentStudentIds: participants.filter((participant) => participant.present).map((participant) => participant.studentId),
+        } : session),
+      }));
+    } catch {
+      // O próximo evento ou reload fará uma nova sincronização.
+    }
+  }
+
+  useEffect(() => {
+    if (!currentSession) {
+      setJoinCode(null);
+      setBuzzerState({ status: "IDLE", presses: [] });
+      setRealtimeStatus("offline");
+      return;
+    }
+
+    let active = true;
+    let reconnectTimer: number | undefined;
+    setRealtimeStatus("connecting");
+
+    void Promise.all([fetchJoinCode(currentSession.id), fetchBuzzerState(currentSession.id)])
+      .then(([code, buzzer]) => {
+        if (!active) return;
+        setJoinCode(code);
+        setBuzzerState(buzzer);
+        if (buzzer.presses[0]) setSelectedId(buzzer.presses[0].studentId);
+      })
+      .catch((error) => { if (active) notify(errorMessage(error)); });
+
+    const socket = connectSessionSocket(currentSession.id, (event: SessionRealtimeEvent) => {
+      if (!active) return;
+      if (event.type === "BUZZER_STATE") {
+        const state = event.payload as BuzzerState;
+        setBuzzerState(state);
+        if (state.presses[0]) setSelectedId(state.presses[0].studentId);
+      }
+      if (event.type === "PARTICIPANT_CONNECTED" || event.type === "PARTICIPANT_DISCONNECTED") {
+        void refreshRealtimeParticipants(currentSession.id);
+      }
+      if (event.type === "SESSION_FINISHED") setRealtimeStatus("offline");
+    });
+    socket.onopen = () => setRealtimeStatus("online");
+    socket.onerror = () => setRealtimeStatus("offline");
+    socket.onclose = () => {
+      if (!active) return;
+      setRealtimeStatus("offline");
+      reconnectTimer = window.setTimeout(() => setRealtimeVersion((value) => value + 1), 1500);
+    };
+
+    return () => {
+      active = false;
+      if (reconnectTimer) window.clearTimeout(reconnectTimer);
+      socket.close();
+    };
+  }, [currentSession?.id, realtimeVersion]);
 
   useEffect(() => {
     if (preferredActivityId) {
@@ -1226,6 +1304,63 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     }
   }
 
+  async function rotateSessionCode() {
+    if (!currentSession || realtimeBusy) return;
+    setRealtimeBusy(true);
+    try {
+      const next = await rotateJoinCode(currentSession.id);
+      setJoinCode(next);
+      notify("Novo código da sessão gerado. O anterior foi invalidado.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setRealtimeBusy(false);
+    }
+  }
+
+  async function toggleBuzzer(open: boolean) {
+    if (!currentSession || realtimeBusy) return;
+    setRealtimeBusy(true);
+    try {
+      const state = open ? await openBuzzerApi(currentSession.id) : await closeBuzzerApi(currentSession.id);
+      setBuzzerState(state);
+      if (open) setSelectedId(undefined);
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setRealtimeBusy(false);
+    }
+  }
+
+  async function addBuzzerScore(studentId: string, points: number) {
+    if (!currentSession) return;
+    try {
+      const event = await createScoreEventApi({
+        classroomId,
+        studentId,
+        sessionId: currentSession.id,
+        points,
+        category: "QUESTION",
+        description: "Buzzer · resposta correta",
+        source: "BUZZER",
+      });
+      patch((current) => ({ ...current, scoreEvents: [...current.scoreEvents, event] }));
+      notify(`+${points} XP do Buzzer registrado.`);
+    } catch (error) {
+      notify(errorMessage(error));
+    }
+  }
+
+  async function copyJoinLink() {
+    if (!joinCode || !publicBaseUrl) return;
+    try {
+      await navigator.clipboard.writeText(`${publicBaseUrl}/join?code=${joinCode.code}`);
+      notify("Link de entrada copiado.");
+    } catch {
+      notify("Não foi possível copiar o link automaticamente.");
+    }
+  }
+
   const selected = students.find((student) => student.id === selectedId);
   const selectedXp = selected ? xpForStudent(data.scoreEvents, classroomId, selected.id) : 0;
   const activeActivity = data.activities.find((activity) => activity.id === (currentSession?.activityId ?? activityId));
@@ -1285,6 +1420,10 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         <button type="button" role="tab" aria-selected={arenaTab === "live"} className={arenaTab === "live" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("live")}>
           <span>Condução</span>
           <small>{activeActivity?.title ?? "Modo livre"}</small>
+        </button>
+        <button type="button" role="tab" aria-selected={arenaTab === "realtime"} className={arenaTab === "realtime" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("realtime")}>
+          <span>Ao vivo</span>
+          <small>{joinCode ? `${joinCode.code} · ${buzzerState.status === "OPEN" ? "Buzzer aberto" : "QR + Buzzer"}` : "QR + Buzzer"}</small>
         </button>
         <button type="button" role="tab" aria-selected={arenaTab === "presence"} className={arenaTab === "presence" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("presence")}>
           <span>Presença</span>
@@ -1376,6 +1515,55 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {arenaTab === "realtime" && (
+        <div className="realtime-grid">
+          <Panel title="Entrada dos alunos" subtitle="Código temporário da sessão + QR Code">
+            <div className="join-access-layout">
+              <div className="join-code-block">
+                <span className="eyebrow accent">CÓDIGO DA SESSÃO</span>
+                <strong>{joinCode?.code ?? "------"}</strong>
+                <small>{joinCode ? `Válido até ${dateTime(joinCode.expiresAt)}` : "Gerando código..."}</small>
+                <div className="inline-actions solid-actions">
+                  <button className="button" onClick={() => { void copyJoinLink(); }} disabled={!joinCode}>Copiar link</button>
+                  <button className="button ghost" onClick={() => { void rotateSessionCode(); }} disabled={realtimeBusy}>Gerar novo código</button>
+                </div>
+              </div>
+              <div className="join-qr-block">
+                {joinCode && publicBaseUrl ? <img src={joinQrImageUrl(currentSession.id, publicBaseUrl, joinCode.code)} alt={`QR Code da sessão ${joinCode.code}`} /> : <div className="qr-placeholder">QR</div>}
+                <span>Escaneie para abrir <b>/join</b></span>
+              </div>
+            </div>
+            {publicBaseUrl.includes("localhost") && <div className="network-warning"><strong>Uso em celulares</strong><span>Abra o Arena Dev pelo IP da máquina na rede local (ex.: http://192.168.x.x:3000) antes de exibir o QR. “localhost” aponta para o próprio celular.</span></div>}
+            <div className="realtime-connection-row"><span className={`realtime-dot ${realtimeStatus}`} /><strong>{realtimeStatus === "online" ? "Tempo real conectado" : realtimeStatus === "connecting" ? "Conectando WebSocket..." : "WebSocket offline"}</strong><span>{sessionParticipants.filter((participant) => participant.connected).length} aluno(s) conectado(s)</span></div>
+          </Panel>
+
+          <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">
+            <div className={`teacher-buzzer-state ${buzzerState.status.toLowerCase()}`}>
+              <div className="teacher-buzzer-head">
+                <div><span className="eyebrow accent">RODADA</span><h3>{buzzerState.status === "OPEN" ? "Buzzer aberto" : buzzerState.status === "CLOSED" ? "Rodada encerrada" : "Pronto para abrir"}</h3></div>
+                <span className={`buzzer-status-pill ${buzzerState.status.toLowerCase()}`}>{buzzerState.status === "OPEN" ? "VALENDO" : buzzerState.status === "CLOSED" ? "FECHADO" : "AGUARDANDO"}</span>
+              </div>
+              <div className="inline-actions solid-actions">
+                <button className="button primary" onClick={() => { void toggleBuzzer(true); }} disabled={realtimeBusy}>{buzzerState.status === "OPEN" ? "Nova rodada" : "Abrir Buzzer"}</button>
+                <button className="button danger-outline" onClick={() => { void toggleBuzzer(false); }} disabled={realtimeBusy || buzzerState.status !== "OPEN"}>Fechar</button>
+              </div>
+            </div>
+
+            {buzzerState.presses.length > 0 ? (
+              <div className="buzzer-order-list">
+                {buzzerState.presses.map((press) => (
+                  <div className={press.position === 1 ? "buzzer-order-row winner" : "buzzer-order-row"} key={press.id}>
+                    <b>#{press.position}</b>
+                    <div><strong>{press.nickname || press.name}</strong><small>{press.position === 1 ? "Primeiro clique confirmado pelo servidor" : dateTime(press.receivedAt)}</small></div>
+                    {press.position === 1 && <div className="buzzer-score-actions"><button onClick={() => { void addBuzzerScore(press.studentId, 5); }}>+5</button><button onClick={() => { void addBuzzerScore(press.studentId, 10); }}>+10</button></div>}
+                  </div>
+                ))}
+              </div>
+            ) : <MiniEmpty text={buzzerState.status === "OPEN" ? "Aguardando o primeiro clique dos alunos conectados." : "Abra uma rodada quando quiser usar o Buzzer."} />}
+          </Panel>
         </div>
       )}
 
@@ -1897,7 +2085,7 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
       </Panel>
       <Panel title="Ambiente de demonstração" subtitle="Teste o fluxo usando a persistência atual">
         <div className="demo-block"><div className="target-mark small">A</div><h3>Carregar turma demonstrativa</h3><p>Cria turma, alunos e XP de demonstração diretamente no PostgreSQL.</p><button className="button" disabled={busy} onClick={() => { void loadDemo(); }}>{busy ? "Criando..." : "Carregar demonstração"}</button></div>
-        <div className="local-note"><strong>Persistência do Incremento 7</strong><p>Turmas, alunos, matrículas, sessões, presença, XP, atividades, questões, sorteio, grupos, Boss Battle e estado da Arena estão no backend/PostgreSQL. O localStorage guarda apenas a preferência de turma selecionada.</p></div>
+        <div className="local-note"><strong>Persistência + tempo real</strong><p>Turmas, sessões, presença, XP, atividades, mecânicas, códigos de entrada e Buzzer ficam no backend/PostgreSQL. O WebSocket é usado somente para estado conectado e eventos ao vivo.</p></div>
       </Panel>
     </div>
   );

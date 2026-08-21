@@ -143,8 +143,30 @@ Referência: `docs/INCREMENT_8.md` e ADR-0013.
 
 Referência: `docs/INCREMENT_9_1.md`, ADR-0021 e ADR-0022.
 
-## Incremento 9 — Tempo real
+## Incremento 9.2 — Refinamento final da navegação
 
-**Próximo incremento.**
+**Status: implementado.**
 
-Adicionar join code, QR, WebSocket e Buzzer após a consolidação da arquitetura de informação.
+- seletor de turma consolidado no header como `context switcher`;
+- sidebar dedicada somente à navegação global;
+- Visão geral sem banner redundante;
+- botão `+ Nova turma` alinhado aos filtros;
+- cards de turma preservados como principal entrada do contexto;
+- guias da Turma permanecem `Home`, `Alunos`, `Atividades`, `Ranking` e `Histórico`.
+
+## Incremento 10 — Tempo real
+
+**Status: implementado em código; validação funcional pendente no ambiente Docker/LAN.**
+
+- código temporário por `ClassSession`;
+- QR Code para `/join?code=...`;
+- visão mobile-first do aluno;
+- identificação por matrícula ou nome exato sem expor roster;
+- token temporário opaco com hash SHA-256 no PostgreSQL;
+- WebSocket por sessão para estado conectado e eventos ao vivo;
+- Buzzer persistido com rodada, cliques e posição oficial;
+- lock pessimista da rodada antes de ordenar cliques concorrentes;
+- XP do Buzzer continua usando `ScoreEvent`;
+- código é desativado ao encerrar a sessão.
+
+Referência: `docs/INCREMENT_10.md`, ADR-0006 e ADR-0023.

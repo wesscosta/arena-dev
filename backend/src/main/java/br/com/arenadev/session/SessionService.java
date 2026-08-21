@@ -5,6 +5,7 @@ import br.com.arenadev.classroom.ClassroomRepository;
 import br.com.arenadev.classroom.Enrollment;
 import br.com.arenadev.classroom.EnrollmentRepository;
 import br.com.arenadev.classroom.Student;
+import br.com.arenadev.realtime.BuzzerService;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,17 +22,23 @@ public class SessionService {
     private final SessionParticipantRepository participantRepository;
     private final ClassroomRepository classroomRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final SessionJoinService joinService;
+    private final BuzzerService buzzerService;
 
     public SessionService(
             ClassSessionRepository sessionRepository,
             SessionParticipantRepository participantRepository,
             ClassroomRepository classroomRepository,
-            EnrollmentRepository enrollmentRepository
+            EnrollmentRepository enrollmentRepository,
+            SessionJoinService joinService,
+            BuzzerService buzzerService
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
         this.classroomRepository = classroomRepository;
         this.enrollmentRepository = enrollmentRepository;
+        this.joinService = joinService;
+        this.buzzerService = buzzerService;
     }
 
     @Transactional
@@ -70,6 +77,7 @@ public class SessionService {
             ));
         }
 
+        joinService.ensureCode(session);
         return SessionView.from(session);
     }
 
@@ -116,6 +124,8 @@ public class SessionService {
         ClassSession session = getEntity(sessionId);
         ensureActive(session);
         session.finish();
+        joinService.deactivate(sessionId);
+        buzzerService.closeForFinishedSession(sessionId);
         return SessionView.from(session);
     }
 

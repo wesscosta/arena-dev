@@ -6,7 +6,7 @@ The project started as a simple Java desktop application for student management 
 
 > **Status:** under active development — Arena Dev v1.
 
-> **Migration strategy:** the current Next.js interface is the product baseline and remains intentionally unchanged while persistence is migrated incrementally from `localStorage` to Spring Boot + PostgreSQL. As of Increment 9.1, classrooms, students, enrollments, sessions, presence, ScoreEvents, activities, questions, current game mechanics and external-result import audit use the backend/PostgreSQL as their source of truth. The navigation is organized as system overview → classroom workspace → live Arena, and the browser keeps only UI context preferences.
+> **Migration strategy:** the current Next.js interface is the product baseline and remains intentionally unchanged while persistence is migrated incrementally from `localStorage` to Spring Boot + PostgreSQL. As of Increment 10, classrooms, students, enrollments, sessions, presence, ScoreEvents, activities, questions, game mechanics, external-result import audit, session join codes and Buzzer rounds use the backend/PostgreSQL as their source of truth. The navigation is organized as system overview → classroom workspace → live Arena, while real-time participation uses WebSocket only where immediate synchronization adds value.
 
 > **Architecture decisions:** accepted product, UX and technical decisions are versioned in [`docs/adr/README.md`](docs/adr/README.md).
 
@@ -139,7 +139,7 @@ Activities can contain their own question set and may also reference an external
 
 Supported question families currently include multiple choice, open response, true/false, bug fixing, analysis, practical tasks and scenario-based problems. Direct AI API integration is intentionally deferred; the current flow generates a structured prompt that can be copied to the teacher's preferred AI and imported back as validated JSON.
 
-See `docs/ACTIVITY_QUESTIONS.md`, `docs/INCREMENT_3.md`, `docs/INCREMENT_4.md` and `docs/question-package-v1.schema.json`.
+See `docs/ACTIVITY_QUESTIONS.md`, `docs/INCREMENT_10.md`, `docs/adr/README.md` and `docs/question-package-v1.schema.json`.
 
 Activities are scoped to the selected classroom. They can be copied into another classroom as independent content and can optionally feed questions into an Arena session without removing the Arena's free/oral mode.
 
@@ -155,7 +155,7 @@ Planned mechanics include:
 * power-ups;
 * timers;
 * classroom team battles;
-* student mobile participation.
+* richer mobile responses beyond Buzzer.
 
 ---
 
@@ -171,7 +171,8 @@ flowchart TD
     D["PostgreSQL"]
 
     U --> F
-    F -->|HTTP / JSON| B
+    F -->|REST / JSON| B
+    F <-->|WebSocket| B
     B -->|JPA / Hibernate| D
 ```
 

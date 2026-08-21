@@ -39,6 +39,7 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0020](ADR-0020-mecanicas-e-atividades-autoritativas-no-backend.md) | Atividades e mecânicas da sessão autoritativas no backend | Aceito |
 | [ADR-0021](ADR-0021-turma-como-workspace-e-arena-focada-na-sessao.md) | Turma como workspace e Arena focada na sessão | Aceito |
 | [ADR-0022](ADR-0022-visao-geral-do-sistema-e-home-contextual-da-turma.md) | Visão geral do sistema separada da Home contextual da Turma | Aceito |
+| [ADR-0023](ADR-0023-join-temporario-e-buzzer-autoritativo.md) | Join temporário por sessão e Buzzer autoritativo | Aceito |
 
 ## Template
 

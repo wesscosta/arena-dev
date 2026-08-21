@@ -48,6 +48,9 @@ public class SessionParticipant {
     @Column(name = "left_at")
     private Instant leftAt;
 
+    @Column(name = "access_token_hash", unique = true, length = 64)
+    private String accessTokenHash;
+
     protected SessionParticipant() {
     }
 
@@ -83,6 +86,25 @@ public class SessionParticipant {
 
     public Instant getLeftAt() {
         return leftAt;
+    }
+
+    public String getAccessTokenHash() {
+        return accessTokenHash;
+    }
+
+    public void issueAccessToken(String accessTokenHash) {
+        this.accessTokenHash = accessTokenHash;
+    }
+
+    public void markConnected() {
+        this.connected = true;
+        this.joinedAt = Instant.now();
+        this.leftAt = null;
+    }
+
+    public void markDisconnected() {
+        this.connected = false;
+        this.leftAt = Instant.now();
     }
 
     public void setPresent(boolean present) {
