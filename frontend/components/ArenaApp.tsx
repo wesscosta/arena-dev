@@ -213,6 +213,28 @@ export default function ArenaApp() {
           </div>
         </div>
 
+        <div className="sidebar-classroom-context">
+          <span className="sidebar-context-label">TURMA ATUAL</span>
+          <select
+            className="select sidebar-classroom-select"
+            value={activeClassroom?.id ?? ""}
+            onChange={(event) => setActiveClassroom(event.target.value)}
+            disabled={!data.classrooms.length}
+          >
+            {!data.classrooms.length && <option value="">Nenhuma turma</option>}
+            {data.classrooms.map((classroom) => (
+              <option key={classroom.id} value={classroom.id}>
+                {classroom.name}{!classroom.active ? " · inativa" : ""}
+              </option>
+            ))}
+          </select>
+          {activeClassroom && (
+            <small className="sidebar-context-meta">
+              {classStudents.length} aluno(s){currentSession ? " · sessão em andamento" : " · pronta para aula"}
+            </small>
+          )}
+        </div>
+
         <nav className="nav-list">
           {NAV.map((item) => (
             <button key={item.id} className={view === item.id ? "nav-item active" : "nav-item"} onClick={() => { if (item.id === "classroom") setClassroomTab("home"); setView(item.id); }}>
@@ -238,19 +260,7 @@ export default function ArenaApp() {
             <h1>{NAV.find((item) => item.id === view)?.label}</h1>
           </div>
           <div className="topbar-actions">
-            <select
-              className="select"
-              value={activeClassroom?.id ?? ""}
-              onChange={(event) => setActiveClassroom(event.target.value)}
-              disabled={!data.classrooms.length}
-            >
-              {!data.classrooms.length && <option value="">Nenhuma turma</option>}
-              {data.classrooms.map((classroom) => (
-                <option key={classroom.id} value={classroom.id}>
-                  {classroom.name}{!classroom.active ? " · inativa" : ""}
-                </option>
-              ))}
-            </select>
+            {activeClassroom && <span className="topbar-context-name">{activeClassroom.name}</span>}
             {currentSession && <span className="live-pill"><span /> Sessão ativa</span>}
           </div>
         </header>
@@ -270,14 +280,12 @@ export default function ArenaApp() {
           {view === "classroom" && (
             activeClassroom ? (
               <div className="stack-lg">
-                <ClassroomWorkspaceHeader
-                  classroomName={activeClassroom.name}
+                <ClassroomWorkspaceTabs
                   tab={classroomTab}
                   onTabChange={setClassroomTab}
                   studentCount={classStudents.length}
                   activityCount={data.activities.filter((activity) => activity.classroomId === activeClassroom.id).length}
                   eventCount={data.scoreEvents.filter((event) => event.classroomId === activeClassroom.id).length}
-                  hasActiveSession={Boolean(currentSession)}
                 />
                 {classroomTab === "home" && (
                   <ClassroomHome
@@ -450,7 +458,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
             return (
               <article
                 key={classroom.id}
-                className={`overview-class-card ${classroom.active ? "" : "inactive"}`}
+                className={`overview-class-card ${classroom.active ? "" : "inactive"} ${data.activeClassroomId === classroom.id ? "selected" : ""}`}
                 role="button"
                 tabIndex={0}
                 onClick={() => onSelectClassroom(classroom.id)}
@@ -462,13 +470,17 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
                 }}
               >
                 <div className="overview-class-card-head">
-                  <div>
-                    <div className="status-line">
-                      <span className={classroom.active ? "status active" : "status"}>{classroom.active ? "Ativa" : "Inativa"}</span>
-                      {session && <span className="live-pill compact"><span /> Sessão ativa</span>}
+                  <div className="overview-class-identity">
+                    <div className="classroom-monogram">{classroom.name.trim().charAt(0).toUpperCase()}</div>
+                    <div>
+                      <div className="status-line">
+                        <span className={classroom.active ? "status active" : "status"}>{classroom.active ? "Ativa" : "Inativa"}</span>
+                        {data.activeClassroomId === classroom.id && <span className="selected-context-pill">Selecionada</span>}
+                        {session && <span className="live-pill compact"><span /> Sessão ativa</span>}
+                      </div>
+                      <h3>{classroom.name}</h3>
+                      <p>{classroom.code || "Sem código"}</p>
                     </div>
-                    <h3>{classroom.name}</h3>
-                    <p>{classroom.code || "Sem código"}</p>
                   </div>
                   <div className="overview-card-actions">
                     <button
@@ -523,14 +535,12 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
   );
 }
 
-function ClassroomWorkspaceHeader({ classroomName, tab, onTabChange, studentCount, activityCount, eventCount, hasActiveSession }: {
-  classroomName: string;
+function ClassroomWorkspaceTabs({ tab, onTabChange, studentCount, activityCount, eventCount }: {
   tab: ClassroomTab;
   onTabChange: (tab: ClassroomTab) => void;
   studentCount: number;
   activityCount: number;
   eventCount: number;
-  hasActiveSession: boolean;
 }) {
   const badgeFor = (id: ClassroomTab) => {
     if (id === "students") return studentCount;
@@ -540,16 +550,8 @@ function ClassroomWorkspaceHeader({ classroomName, tab, onTabChange, studentCoun
   };
 
   return (
-    <div className="classroom-workspace">
-      <div className="classroom-workspace-head">
-        <div>
-          <span className="eyebrow accent">WORKSPACE DA TURMA</span>
-          <h2>{classroomName}</h2>
-          <p>{studentCount} aluno(s) · {activityCount} atividade(s) · {eventCount} evento(s) de XP</p>
-        </div>
-        {hasActiveSession && <span className="live-pill"><span /> Aula em andamento</span>}
-      </div>
-      <div className="classroom-tabs" role="tablist" aria-label="Conteúdo da turma">
+    <nav className="classroom-section-nav" aria-label="Navegação da turma">
+      <div className="classroom-section-tabs" role="tablist" aria-label="Conteúdo da turma">
         {CLASSROOM_TABS.map((item) => {
           const badge = badgeFor(item.id);
           return (
@@ -558,7 +560,7 @@ function ClassroomWorkspaceHeader({ classroomName, tab, onTabChange, studentCoun
               type="button"
               role="tab"
               aria-selected={tab === item.id}
-              className={tab === item.id ? "classroom-tab active" : "classroom-tab"}
+              className={tab === item.id ? "classroom-section-tab active" : "classroom-section-tab"}
               onClick={() => onTabChange(item.id)}
             >
               <span>{item.icon}</span>
@@ -568,7 +570,7 @@ function ClassroomWorkspaceHeader({ classroomName, tab, onTabChange, studentCoun
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }
 
