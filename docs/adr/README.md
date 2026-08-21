@@ -35,6 +35,8 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0016](ADR-0016-dinamicas-e-ferramentas-auxiliares.md) | Separar dinâmicas de aula de ferramentas auxiliares | Aceito |
 | [ADR-0017](ADR-0017-tres-experiencias-mesmo-sistema.md) | Professor, aluno e projetor como três experiências do mesmo sistema | Aceito |
 | [ADR-0018](ADR-0018-fronteira-limpa-na-migracao-do-dominio-de-turma.md) | Fronteira limpa ao migrar Classroom/Student/Enrollment para o backend | Aceito |
+| [ADR-0019](ADR-0019-sessao-e-presenca-no-backend-runtime-local-das-mecanicas.md) | Sessão e presença no backend; runtime local separado para mecânicas ainda não migradas | Aceito |
+| [ADR-0020](ADR-0020-mecanicas-e-atividades-autoritativas-no-backend.md) | Atividades e mecânicas da sessão autoritativas no backend | Aceito |
 
 ## Template
 

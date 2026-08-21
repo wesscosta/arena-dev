@@ -6,7 +6,7 @@ The project started as a simple Java desktop application for student management 
 
 > **Status:** under active development — Arena Dev v1.
 
-> **Migration strategy:** the current Next.js interface is the product baseline and remains intentionally unchanged while persistence is migrated incrementally from `localStorage` to Spring Boot + PostgreSQL. As of Increment 4, classrooms, students and enrollments already use the backend/PostgreSQL as their source of truth; sessions, activities, XP and game mechanics are migrated in later increments.
+> **Migration strategy:** the current Next.js interface is the product baseline and remains intentionally unchanged while persistence is migrated incrementally from `localStorage` to Spring Boot + PostgreSQL. As of Increment 8, classrooms, students, enrollments, sessions, presence, ScoreEvents, activities, questions, current game mechanics and external-result import audit use the backend/PostgreSQL as their source of truth. The browser keeps only UI context preferences.
 
 > **Architecture decisions:** accepted product, UX and technical decisions are versioned in [`docs/adr/README.md`](docs/adr/README.md).
 
@@ -293,7 +293,7 @@ Game rules should remain isolated from HTTP and persistence concerns whenever po
 
 Arena Dev v1 is currently transitioning from the first local prototype to the Java backend.
 
-The migration is domain-oriented. `Classroom`, `Student` and `Enrollment` are already persisted through REST/PostgreSQL, while sessions, activities, XP and game mechanics remain temporarily local-first.
+The migration is domain-oriented. `Classroom`, `Student`, `Enrollment`, `ClassSession`, `SessionParticipant` and `ScoreEvent` are already persisted through REST/PostgreSQL. Activities and game mechanics remain temporarily local-first; session mechanics use a local runtime keyed by the persistent session UUID.
 
 The current runtime path for the migrated domain is:
 
@@ -307,7 +307,7 @@ Spring Boot
 PostgreSQL
 ```
 
-The next development stage is migrating `ClassSession` and `SessionParticipant` (session lifecycle and attendance) while preserving the existing Arena experience.
+The next development stage is migrating activities and game mechanics while preserving the existing Arena experience.
 
 ---
 
@@ -506,11 +506,13 @@ docker compose down -v
 * [x] Classroom management — REST/PostgreSQL
 * [x] Student management — REST/PostgreSQL
 * [x] Student enrollment — REST/PostgreSQL
+* [x] Class sessions — REST/PostgreSQL
+* [x] Session presence — REST/PostgreSQL
 * [ ] Game sessions
 * [ ] Attendance
-* [ ] Score events
-* [ ] XP calculation
-* [ ] Ranking
+* [x] Score events — REST/PostgreSQL
+* [x] XP calculation — projection from ScoreEvents
+* [x] Ranking — projection from ScoreEvents
 
 ### Game engine
 
@@ -753,4 +755,32 @@ See:
 - `docs/ACTIVITY_QUESTIONS.md`
 - `docs/question-package-v1.schema.json`
 
-The next persistence increment migrates **Classroom + Students + Enrollments** from `localStorage` to the API while preserving the current UI.
+## Migration increment 5 — sessions and presence
+
+`ClassSession` and `SessionParticipant` are now loaded and mutated through the Spring Boot API. Reloading the browser restores the active session and attendance from PostgreSQL. One active session is allowed per classroom.
+
+The temporary `SessionRuntimeState` introduced in Increment 5 has now been retired. Current mechanics are persisted as `SessionDynamic` state associated with the persistent session UUID; draw and group decisions are authoritative on the backend.
+
+See `docs/INCREMENT_5.md` and ADR-0019.
+
+## Migration increment 6 — ScoreEvent and ranking
+
+`ScoreEvent` is now persisted through Spring Boot/PostgreSQL and is the only source of truth for XP. The ranking remains a projection of the event stream instead of a separately persisted counter. Arena scoring and activity deliveries use the API, including transactional batch creation.
+
+History corrections no longer delete events: the backend creates an inverse `ADJUSTMENT` event with `reversalOf`, preserving the original launch for auditability. ScoreEvents are no longer written to `localStorage`, and local backup restore does not overwrite PostgreSQL scoring.
+
+See `docs/INCREMENT_6.md` and ADR-0007.
+
+
+## Migration increment 7 — activities and persistent mechanics
+
+`Activity` and `ActivityQuestion` are now persisted through Spring Boot/PostgreSQL. Activity copy between classrooms is performed server-side and receives independent UUIDs. The JSON Question Package v1 and external-AI Prompt Builder remain unchanged as interchange mechanisms.
+
+`QUICK_DRAW`, `GROUPS`, `BOSS_BATTLE` and `ARENA` now persist their current state through `SessionDynamic`. Smart draw and balanced group formation are decided by the backend; group pairing history is persisted separately. The browser no longer stores operational domain state in `localStorage`, only the selected classroom preference.
+
+See `docs/INCREMENT_7.md` and ADR-0020.
+
+
+## Increment 8 — External activity results
+
+External activities can import CSV/TSV results through a preview-first workflow. The importer recognizes common exports from Wayground/Quizizz, Microsoft Forms, Google Forms and Kahoot plus a generic CSV shape. Student matching is validated against active classroom enrollments, unresolved rows require manual mapping, XP is calculated proportionally to the Activity XP, and every confirmed import is audited in PostgreSQL before creating ScoreEvents. Duplicate report content is blocked per Activity by fingerprint.

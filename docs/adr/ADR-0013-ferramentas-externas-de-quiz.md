@@ -48,9 +48,9 @@ Rejeitada porque obrigaria o professor a abandonar recursos já úteis.
 
 ## Critérios de validação
 
-- [ ] Activity pode abrir recurso externo sem quebrar fluxo interno;
-- [ ] adaptador futuro não altera o núcleo do domínio;
-- [ ] resultados importados geram eventos auditáveis, não sobrescrevem score.
+- [x] Activity pode abrir recurso externo sem quebrar fluxo interno;
+- [x] adaptadores de relatório não alteram o núcleo do domínio;
+- [x] resultados importados geram eventos auditáveis, não sobrescrevem score.
 
 ## Relações
 

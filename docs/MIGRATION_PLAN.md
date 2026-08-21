@@ -68,20 +68,67 @@ Referência: `docs/INCREMENT_4.md`.
 
 ## Incremento 5 — Sessões e presença via API
 
-Migrar início/fim de sessão e presença, mantendo Arena, sorteio, Boss, individual/duplas/grupos e atividades funcionando como hoje.
+**Status: implementado.**
+
+- `ClassSession` e `SessionParticipant` usam REST/PostgreSQL como fonte de verdade;
+- sessão ativa é recuperada após reload;
+- presença inicial e alterações durante a aula são persistidas;
+- encerramento de sessão é persistido;
+- uma turma não pode abrir duas sessões `ACTIVE` simultaneamente;
+- mecânicas ainda local-first são separadas em `SessionRuntimeState` e referenciam o UUID real da sessão;
+- backup não sobrescreve sessões/presença persistidas.
+
+Referência: `docs/INCREMENT_5.md`.
 
 ## Incremento 6 — ScoreEvent + ranking
 
-Tornar o backend a fonte de verdade da pontuação e introduzir reversão auditável. Usar `source`, `activityId` e `questionId` para filtros/projeções sem criar uma segunda fonte de pontuação.
+**Status: implementado.**
+
+- `ScoreEvent` usa REST/PostgreSQL como fonte de verdade;
+- ranking permanece projeção de `SUM(score_events.points)`, sem tabela/contador duplicado;
+- Arena e entregas de atividade gravam XP pela API;
+- criação em lote é transacional para entregas;
+- correção usa evento inverso com `reversalOf`, sem `DELETE`;
+- `source`, `activityId` e `questionId` permanecem disponíveis para filtros/projeções;
+- `localStorage` deixa de persistir ScoreEvents;
+- backup local não sobrescreve XP persistido.
+
+Referência: `docs/INCREMENT_6.md` e ADR-0007.
 
 ## Incremento 7 — Mecânicas e atividades persistentes
 
-Migrar sorteio inteligente, organização de turma, Boss Battle, atividades e questões para o backend. O contrato JSON de questões deve permanecer compatível com o formato V1.
+**Status: implementado.**
+
+- `Activity` e `ActivityQuestion` usam REST/PostgreSQL como fonte de verdade;
+- contrato Arena Dev Question Package `1.0` permanece compatível;
+- cópia entre turmas é processada no backend e gera novos UUIDs;
+- `SessionDynamic` persiste estado de Sorteio, Grupos, Boss Battle e Arena;
+- sorteio inteligente passa a ser decidido no backend;
+- grupos são montados no backend usando `group_history` persistido;
+- `Individual` não registra pareamentos artificiais;
+- Boss, fonte da Arena e sequência de questões sobrevivem a reload;
+- novos ScoreEvents validam referências reais de Activity/ActivityQuestion;
+- `localStorage` guarda apenas a preferência de turma selecionada.
+
+Referência: `docs/INCREMENT_7.md` e ADR-0020.
 
 ## Incremento 8 — Relatórios externos
 
-Adicionar adaptadores para importar relatórios exportados por plataformas externas quando houver um formato estável e valor pedagógico claro. Não acoplar o núcleo a um único fornecedor.
+**Status: implementado.**
+
+- importação permanece dentro de `Turma → Atividades`, vinculada à `Activity`;
+- CSV/TSV é normalizado por adaptadores leves para Wayground/Quizizz, Microsoft Forms, Google Forms, Kahoot e formato genérico;
+- aluno é associado por matrícula/registro ou nome normalizado, com correção manual antes da gravação;
+- XP é calculado proporcionalmente ao desempenho e ao XP configurado na atividade;
+- relatório passa por preview e validação antes da importação;
+- importações são auditadas em `external_result_imports` / `external_result_rows`;
+- fingerprint por atividade bloqueia reimportação acidental do mesmo relatório;
+- os resultados geram `ScoreEvent` auditável e não sobrescrevem ranking/histórico.
+
+Referência: `docs/INCREMENT_8.md` e ADR-0013.
 
 ## Incremento 9 — Tempo real
 
-Adicionar join code, QR, WebSocket e Buzzer somente após paridade funcional e persistência das mecânicas atuais.
+**Próximo incremento.**
+
+Adicionar join code, QR, WebSocket e Buzzer após a consolidação das integrações externas.

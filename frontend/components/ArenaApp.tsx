@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
+import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive } from "@/lib/classroom-api";
@@ -1159,7 +1160,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   patch: (updater: (current: ArenaData) => ArenaData) => void;
   notify: (message: string) => void;
 }) {
-  type ActivityModal = "editor" | "delivery" | "import" | null;
+  type ActivityModal = "editor" | "delivery" | "import" | "external-results" | null;
   type EditorTab = "general" | "questions";
 
   const [modal, setModal] = useState<ActivityModal>(null);
@@ -1174,6 +1175,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   const [resourceUrl, setResourceUrl] = useState("");
   const [questions, setQuestions] = useState<ActivityQuestion[]>([]);
   const [deliveryActivityId, setDeliveryActivityId] = useState<string | undefined>();
+  const [externalResultActivityId, setExternalResultActivityId] = useState<string | undefined>();
   const [delivered, setDelivered] = useState<string[]>([]);
   const [onTime, setOnTime] = useState<string[]>([]);
   const [sourceClassroomId, setSourceClassroomId] = useState("");
@@ -1187,6 +1189,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   const otherClassrooms = data.classrooms.filter((classroom) => classroom.id !== classroomId);
   const sourceActivities = data.activities.filter((activity) => activity.classroomId === sourceClassroomId);
   const deliveryActivity = classActivities.find((activity) => activity.id === deliveryActivityId);
+  const externalResultActivity = classActivities.find((activity) => activity.id === externalResultActivityId);
   const activityEvents = data.scoreEvents.filter((event) => event.classroomId === classroomId && (event.source === "ACTIVITY" || event.category === "SUBMISSION"));
   const totalQuestions = classActivities.reduce((sum, activity) => sum + (activity.questions?.length ?? 0), 0);
   const activityXp = activityEvents.reduce((sum, event) => sum + event.points, 0);
@@ -1329,6 +1332,17 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
     }
   }
 
+
+  function openExternalResults(activity: Activity) {
+    setExternalResultActivityId(activity.id);
+    setModal("external-results");
+  }
+
+  function handleExternalImported(events: ArenaData["scoreEvents"]) {
+    if (!events.length) return;
+    patch((current) => ({ ...current, scoreEvents: [...current.scoreEvents, ...events] }));
+  }
+
   function openImport() {
     const firstClassroom = otherClassrooms[0]?.id ?? "";
     setSourceClassroomId(firstClassroom);
@@ -1405,6 +1419,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
                   <div className="activity-card-actions">
                     <button className="button ghost" onClick={() => openActivity(activity)}>Abrir / editar</button>
                     <button className="button" onClick={() => openDelivery(activity)}>Registrar entrega</button>
+                    {activity.resource?.kind === "EXTERNAL" && <button className="button" onClick={() => openExternalResults(activity)}>Importar resultados</button>}
                     <button className="button primary" disabled={!(activity.questions?.length)} onClick={() => onUseInArena(activity.id)}>Usar na Arena</button>
                   </div>
                 </article>
@@ -1456,6 +1471,15 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
           <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!delivered.length} onClick={() => { void registerDelivery(); }}>Registrar e aplicar XP</button></div>
         </>}
       </Modal>
+
+      <ExternalResultImportModal
+        open={modal === "external-results"}
+        activity={externalResultActivity}
+        students={students}
+        onClose={() => setModal(null)}
+        onImported={handleExternalImported}
+        notify={notify}
+      />
 
       <Modal open={modal === "import"} title="Importar atividade de outra turma" subtitle={`Destino: ${classroomName}`} size="medium" onClose={() => setModal(null)}>
         {otherClassrooms.length ? (
