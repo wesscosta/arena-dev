@@ -56,6 +56,14 @@ public class SessionController {
         return service.updatePresence(sessionId, participantId, request.present());
     }
 
+    @PostMapping("/{sessionId}/participants/{participantId}/release-device")
+    public SessionService.ParticipantView releaseDevice(
+            @PathVariable UUID sessionId,
+            @PathVariable UUID participantId
+    ) {
+        return service.releaseDevice(sessionId, participantId);
+    }
+
     @PostMapping("/{id}/finish")
     public SessionService.SessionView finish(@PathVariable UUID id) {
         return service.finish(id);

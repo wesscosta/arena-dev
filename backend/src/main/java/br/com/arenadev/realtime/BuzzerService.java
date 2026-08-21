@@ -52,7 +52,7 @@ public class BuzzerService {
                 });
         roundRepository.save(new BuzzerRound(session));
         BuzzerStateView state = stateInternal(sessionId);
-        realtimeGateway.broadcast(sessionId, "BUZZER_STATE", state);
+        realtimeGateway.broadcastAfterCommit(sessionId, "BUZZER_STATE", state);
         return state;
     }
 
@@ -62,7 +62,7 @@ public class BuzzerService {
         roundRepository.findFirstBySessionIdAndStatusOrderByOpenedAtDesc(sessionId, BuzzerRoundStatus.OPEN)
                 .ifPresent(BuzzerRound::close);
         BuzzerStateView state = stateInternal(sessionId);
-        realtimeGateway.broadcast(sessionId, "BUZZER_STATE", state);
+        realtimeGateway.broadcastAfterCommit(sessionId, "BUZZER_STATE", state);
         return state;
     }
 
@@ -70,7 +70,7 @@ public class BuzzerService {
     public void closeForFinishedSession(UUID sessionId) {
         roundRepository.findFirstBySessionIdAndStatusOrderByOpenedAtDesc(sessionId, BuzzerRoundStatus.OPEN)
                 .ifPresent(BuzzerRound::close);
-        realtimeGateway.broadcast(sessionId, "SESSION_FINISHED", java.util.Map.of("sessionId", sessionId));
+        realtimeGateway.broadcastAfterCommit(sessionId, "SESSION_FINISHED", java.util.Map.of("sessionId", sessionId));
     }
 
     @Transactional
@@ -84,13 +84,16 @@ public class BuzzerService {
                 .findFirstBySessionIdAndStatusOrderByOpenedAtDesc(sessionId, BuzzerRoundStatus.OPEN)
                 .orElseThrow(() -> new IllegalArgumentException("O Buzzer está fechado."));
 
-        if (pressRepository.findByRoundIdAndParticipantId(round.getId(), participant.getId()).isEmpty()) {
-            int position = Math.toIntExact(pressRepository.countByRoundId(round.getId()) + 1);
-            pressRepository.save(new BuzzerPress(round, participant, position));
+        if (pressRepository.findByRoundIdAndParticipantId(round.getId(), participant.getId()).isPresent()) {
+            return stateInternal(sessionId);
         }
 
+        int position = Math.toIntExact(pressRepository.countByRoundId(round.getId()) + 1);
+        pressRepository.save(new BuzzerPress(round, participant, position));
+        pressRepository.flush();
+
         BuzzerStateView state = stateInternal(sessionId);
-        realtimeGateway.broadcast(sessionId, "BUZZER_STATE", state);
+        realtimeGateway.broadcastAfterCommit(sessionId, "BUZZER_STATE", state);
         return state;
     }
 

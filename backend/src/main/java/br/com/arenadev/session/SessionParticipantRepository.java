@@ -10,5 +10,6 @@ public interface SessionParticipantRepository extends JpaRepository<SessionParti
     List<SessionParticipant> findBySessionIdOrderByStudentNameAsc(UUID sessionId);
     List<SessionParticipant> findByConnectedTrue();
     Optional<SessionParticipant> findByAccessTokenHash(String accessTokenHash);
+    Optional<SessionParticipant> findByIdAndSessionId(UUID id, UUID sessionId);
     boolean existsBySessionIdAndStudentId(UUID sessionId, UUID studentId);
 }

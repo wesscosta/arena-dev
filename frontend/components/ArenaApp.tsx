@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import TeacherLogin from "@/components/TeacherLogin";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi } from "@/lib/classroom-api";
-import { createSession as createSessionApi, fetchSessionDomain, fetchSessionParticipants, finishSession as finishSessionApi, setParticipantPresence } from "@/lib/session-api";
+import { createSession as createSessionApi, fetchSessionDomain, fetchSessionParticipants, finishSession as finishSessionApi, releaseParticipantDevice, setParticipantPresence } from "@/lib/session-api";
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, fetchActivityDomain, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
 import { damageBoss as damageBossApi, drawStudent as drawStudentApi, mergeSessionMechanics, nextArenaQuestion as nextArenaQuestionApi, organizeGroups as organizeGroupsApi, restartArenaQuestions as restartArenaQuestionsApi, setArenaActivity as setArenaActivityApi, startBoss as startBossApi } from "@/lib/mechanics-api";
 import { createScoreEvent as createScoreEventApi, createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
 import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
+import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
 import type { Activity, ActivityQuestion, ArenaData, Classroom, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 
 type View = "dashboard" | "classroom" | "arena" | "backup";
@@ -61,6 +63,7 @@ function errorMessage(error: unknown) {
 
 export default function ArenaApp() {
   const [data, setData] = useState<ArenaData>(EMPTY_DATA);
+  const [teacherSession, setTeacherSession] = useState<TeacherSession | null | undefined>(undefined);
   const [hydrated, setHydrated] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [classroomTab, setClassroomTab] = useState<ClassroomTab>("home");
@@ -69,6 +72,17 @@ export default function ArenaApp() {
   const [arenaActivityId, setArenaActivityId] = useState<string | undefined>();
 
   useEffect(() => {
+    let cancelled = false;
+    void fetchTeacherSession()
+      .then((session) => { if (!cancelled) setTeacherSession(session); })
+      .catch(() => { if (!cancelled) setTeacherSession(null); });
+    const requireAuth = () => setTeacherSession(null);
+    window.addEventListener("arena-auth-required", requireAuth);
+    return () => { cancelled = true; window.removeEventListener("arena-auth-required", requireAuth); };
+  }, []);
+
+  useEffect(() => {
+    if (!teacherSession) return;
     let cancelled = false;
     async function bootstrap() {
       const localData = loadData();
@@ -106,7 +120,7 @@ export default function ArenaApp() {
     }
     void bootstrap();
     return () => { cancelled = true; };
-  }, []);
+  }, [teacherSession]);
 
   useEffect(() => {
     if (hydrated) saveData(data);
@@ -199,6 +213,14 @@ export default function ArenaApp() {
     setView("classroom");
   }
 
+  if (teacherSession === undefined) {
+    return <div className="loading-screen">Validando acesso...</div>;
+  }
+
+  if (!teacherSession) {
+    return <TeacherLogin onAuthenticated={(session) => { setTeacherSession(session); setHydrated(false); }} />;
+  }
+
   if (!hydrated) {
     return <div className="loading-screen">Carregando Arena Dev...</div>;
   }
@@ -254,6 +276,7 @@ export default function ArenaApp() {
               ))}
             </select>
             {currentSession && <span className="live-pill"><span /> Sessão ativa</span>}
+            <button className="button ghost topbar-logout" onClick={() => { void logoutTeacher().finally(() => { setTeacherSession(null); setData(EMPTY_DATA); setHydrated(false); }); }}>Sair</button>
           </div>
         </header>
 
@@ -1139,6 +1162,23 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     }
   }
 
+  async function releaseDevice(participant: SessionParticipant) {
+    if (!currentSession || presenceBusyId) return;
+    setPresenceBusyId(participant.id);
+    try {
+      const updated = await releaseParticipantDevice(currentSession.id, participant.id);
+      patch((current) => ({
+        ...current,
+        sessionParticipants: current.sessionParticipants.map((item) => item.id === updated.id ? updated : item),
+      }));
+      notify(`Dispositivo de ${participant.nickname || participant.name} liberado.`);
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setPresenceBusyId(undefined);
+    }
+  }
+
   async function draw() {
     if (!currentSession || drawPhase === "drawing" || mechanicsBusy) return;
     setDrawPhase("drawing");
@@ -1585,6 +1625,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                   <Avatar student={student} />
                   <span>{student.name}</span>
                   {participant.connected && <small className="connected-label">conectado</small>}
+                  {participant.connected && <button type="button" className="text-button release-device" onClick={(event) => { event.preventDefault(); void releaseDevice(participant); }}>Liberar dispositivo</button>}
                 </label>
               );
             })}

@@ -1,0 +1,64 @@
+package br.com.arenadev.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    UserDetailsService teacherUserDetailsService(
+            PasswordEncoder encoder,
+            @Value("${app.teacher.username:professor}") String username,
+            @Value("${app.teacher.password:arena-dev-change-me}") String password
+    ) {
+        return new InMemoryUserDetailsManager(
+                User.withUsername(username)
+                        .password(encoder.encode(password))
+                        .roles("TEACHER")
+                        .build()
+        );
+    }
+
+    @Bean
+    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .logout(logout -> logout.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, error) -> response.sendError(401))
+                        .accessDeniedHandler((request, response, error) -> response.sendError(403))
+                )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/health", "/api/auth/login", "/api/join/**", "/ws/**").permitAll()
+                        .requestMatchers("/api/**").hasRole("TEACHER")
+                        .anyRequest().permitAll()
+                );
+        return http.build();
+    }
+}

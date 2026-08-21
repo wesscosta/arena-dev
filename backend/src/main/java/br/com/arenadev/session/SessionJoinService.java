@@ -104,6 +104,9 @@ public class SessionJoinService {
         }
 
         SessionParticipant participant = matches.getFirst();
+        if (participant.isConnected()) {
+            throw new IllegalArgumentException("Este aluno já possui um dispositivo conectado. Peça ao professor para liberar o dispositivo antes de entrar novamente.");
+        }
         String token = generateToken();
         participant.issueAccessToken(hashToken(token));
 
@@ -156,6 +159,16 @@ public class SessionJoinService {
         if (participant.getSession().getStatus() != SessionStatus.ACTIVE) {
             throw new IllegalArgumentException("Sessão encerrada.");
         }
+        return participant;
+    }
+
+
+    @Transactional
+    public SessionParticipant releaseDevice(UUID sessionId, UUID participantId) {
+        getActiveSession(sessionId);
+        SessionParticipant participant = participantRepository.findByIdAndSessionId(participantId, sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Participante não encontrado nesta sessão."));
+        participant.releaseDevice();
         return participant;
     }
 
@@ -244,7 +257,7 @@ public class SessionJoinService {
             String name,
             boolean connected
     ) {
-        static ParticipantConnectionView from(SessionParticipant participant) {
+        public static ParticipantConnectionView from(SessionParticipant participant) {
             return new ParticipantConnectionView(
                     participant.getId(),
                     participant.getStudent().getId(),

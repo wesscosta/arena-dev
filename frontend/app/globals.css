@@ -206,3 +206,11 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 
 @media(max-width:980px){.realtime-grid{grid-template-columns:1fr}.join-access-layout{grid-template-columns:1fr 180px}}
 @media(max-width:620px){.join-access-layout{grid-template-columns:1fr}.join-qr-block{justify-self:center;width:200px}.join-code-block>strong{font-size:36px}.student-join-shell{padding:12px}.student-join-card{padding:17px;border-radius:17px}.student-live-top{flex-direction:column}.student-session-footer{flex-direction:column}.buzzer-order-row{grid-template-columns:28px 1fr}.buzzer-score-actions{grid-column:2}}
+
+/* Incremento 11.1/11.2 — security boundary */
+.teacher-login-shell{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 10%,rgba(110,255,188,.08),transparent 34%),#07100d}
+.teacher-login-card{width:min(440px,100%);padding:34px;border:1px solid rgba(157,255,211,.15);border-radius:22px;background:rgba(10,24,19,.96);box-shadow:0 24px 70px rgba(0,0,0,.38)}
+.teacher-login-mark{margin-bottom:20px}.teacher-login-card h1{margin:8px 0 8px;font-size:28px}.teacher-login-card>p{margin:0 0 24px;color:var(--muted)}
+.teacher-login-form{display:grid;gap:15px}.teacher-login-form label{display:grid;gap:7px;font-size:12px;color:var(--muted)}.teacher-login-form .button{width:100%;justify-content:center;margin-top:4px}
+.teacher-login-error{margin:0}.teacher-login-note{display:block;margin-top:18px;color:var(--muted);text-align:center}.teacher-login-note code{color:var(--accent)}
+.topbar-logout{padding-inline:12px}.release-device{margin-left:auto;font-size:10px;white-space:nowrap}

@@ -1,7 +1,7 @@
 import type { ScoreEvent, Student } from "./types";
 import type { ExternalResultPlatform, ParsedExternalResultRow } from "./external-results";
+import { apiFetch } from "./auth-api";
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
 
 type ApiErrorBody = { message?: string; fields?: Record<string, string> };
 
@@ -13,7 +13,7 @@ export class ExternalResultsApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await apiFetch(path, {
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
   });

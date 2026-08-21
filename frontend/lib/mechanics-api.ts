@@ -1,6 +1,6 @@
 import type { BossState, GameSession, SessionRuntimeState } from "./types";
+import { apiFetch } from "./auth-api";
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
 
 type ApiErrorBody = { message?: string; fields?: Record<string, string> };
 
@@ -12,7 +12,7 @@ export class MechanicsApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await apiFetch(path, {
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
   });

@@ -1,6 +1,8 @@
 package br.com.arenadev.realtime;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import tools.jackson.databind.json.JsonMapper;
@@ -14,10 +16,31 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class SessionRealtimeGateway {
     private final Map<UUID, Set<WebSocketSession>> sessions = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<UUID, Set<WebSocketSession>>> participantSockets = new ConcurrentHashMap<>();
     private final JsonMapper json = JsonMapper.builder().build();
 
     public void register(UUID sessionId, WebSocketSession socket) {
         sessions.computeIfAbsent(sessionId, ignored -> ConcurrentHashMap.newKeySet()).add(socket);
+    }
+
+    public int registerParticipant(UUID sessionId, UUID participantId, WebSocketSession socket) {
+        register(sessionId, socket);
+        Set<WebSocketSession> sockets = participantSockets
+                .computeIfAbsent(sessionId, ignored -> new ConcurrentHashMap<>())
+                .computeIfAbsent(participantId, ignored -> ConcurrentHashMap.newKeySet());
+        sockets.add(socket);
+        return sockets.size();
+    }
+
+    public int unregisterParticipant(UUID sessionId, UUID participantId, WebSocketSession socket) {
+        Map<UUID, Set<WebSocketSession>> byParticipant = participantSockets.get(sessionId);
+        if (byParticipant == null) return 0;
+        Set<WebSocketSession> sockets = byParticipant.get(participantId);
+        if (sockets == null) return 0;
+        sockets.remove(socket);
+        if (sockets.isEmpty()) byParticipant.remove(participantId);
+        if (byParticipant.isEmpty()) participantSockets.remove(sessionId);
+        return sockets.size();
     }
 
     public void unregister(UUID sessionId, WebSocketSession socket) {
@@ -37,9 +60,20 @@ public class SessionRealtimeGateway {
         }
 
         Set<WebSocketSession> sockets = sessions.getOrDefault(sessionId, Set.of());
-        for (WebSocketSession socket : sockets) {
-            send(socket, body);
+        for (WebSocketSession socket : sockets) send(socket, body);
+    }
+
+    public void broadcastAfterCommit(UUID sessionId, String type, Object payload) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            broadcast(sessionId, type, payload);
+            return;
         }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                broadcast(sessionId, type, payload);
+            }
+        });
     }
 
     public void send(WebSocketSession socket, String type, UUID sessionId, Object payload) {
@@ -61,6 +95,5 @@ public class SessionRealtimeGateway {
         }
     }
 
-    public record RealtimeEvent(String type, UUID sessionId, String occurredAt, Object payload) {
-    }
+    public record RealtimeEvent(String type, UUID sessionId, String occurredAt, Object payload) {}
 }

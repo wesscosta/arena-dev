@@ -22,3 +22,6 @@ spring:
 app:
   frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
   allowed-origin-patterns: ${APP_ALLOWED_ORIGIN_PATTERNS:http://*:[3000]}
+  teacher:
+    username: ${APP_TEACHER_USERNAME:professor}
+    password: ${APP_TEACHER_PASSWORD:arena-dev-change-me}

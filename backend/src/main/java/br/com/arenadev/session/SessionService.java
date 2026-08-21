@@ -119,6 +119,14 @@ public class SessionService {
         return ParticipantView.from(participant);
     }
 
+
+    @Transactional
+    public ParticipantView releaseDevice(UUID sessionId, UUID participantId) {
+        ClassSession session = getEntity(sessionId);
+        ensureActive(session);
+        return ParticipantView.from(joinService.releaseDevice(sessionId, participantId));
+    }
+
     @Transactional
     public SessionView finish(UUID sessionId) {
         ClassSession session = getEntity(sessionId);

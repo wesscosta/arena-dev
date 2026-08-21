@@ -170,3 +170,18 @@ Referência: `docs/INCREMENT_9_1.md`, ADR-0021 e ADR-0022.
 - código é desativado ao encerrar a sessão.
 
 Referência: `docs/INCREMENT_10.md`, ADR-0006 e ADR-0023.
+
+
+## Incremento 11.1 + 11.2 — Security Boundary e Realtime Hardening
+
+**Status: em validação.**
+
+- autenticação do professor por Spring Security + sessão HTTP;
+- APIs administrativas protegidas por `ROLE_TEACHER`;
+- join do aluno continua público e temporário;
+- token removido da URL do WebSocket;
+- proteção contra reivindicação concorrente do mesmo participante;
+- liberação de dispositivo pelo professor;
+- conexão múltipla, heartbeat, rate limit lógico e broadcast pós-commit no Buzzer.
+
+Referência: `docs/INCREMENT_11_1_11_2.md` e ADR-0024.

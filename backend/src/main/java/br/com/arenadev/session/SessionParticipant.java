@@ -96,6 +96,12 @@ public class SessionParticipant {
         this.accessTokenHash = accessTokenHash;
     }
 
+    public void releaseDevice() {
+        this.accessTokenHash = null;
+        this.connected = false;
+        this.leftAt = Instant.now();
+    }
+
     public void markConnected() {
         this.connected = true;
         this.joinedAt = Instant.now();

@@ -28,6 +28,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-arena123}
       APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:3000}
       APP_ALLOWED_ORIGIN_PATTERNS: ${APP_ALLOWED_ORIGIN_PATTERNS:-http://*:[3000]}
+      APP_TEACHER_USERNAME: ${APP_TEACHER_USERNAME:-professor}
+      APP_TEACHER_PASSWORD: ${APP_TEACHER_PASSWORD:-arena-dev-change-me}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:

@@ -1,7 +1,7 @@
 import { fetchSessionMechanics } from "./mechanics-api";
 import type { Classroom, GameSession, SessionParticipant, SessionRuntimeState } from "./types";
+import { apiFetch } from "./auth-api";
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
 
 type ApiErrorBody = {
   message?: string;
@@ -20,7 +20,7 @@ export class SessionApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await apiFetch(path, {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -129,6 +129,12 @@ export async function fetchSessionDomain(
     )),
     sessionParticipants,
   };
+}
+
+
+export async function releaseParticipantDevice(sessionId: string, participantId: string): Promise<SessionParticipant> {
+  const row = await request<ParticipantView>(`/api/sessions/${sessionId}/participants/${participantId}/release-device`, { method: "POST" });
+  return mapParticipant(sessionId, row);
 }
 
 export async function createSession(input: {
