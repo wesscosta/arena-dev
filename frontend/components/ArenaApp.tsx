@@ -3,23 +3,30 @@
 import { useEffect, useMemo, useState } from "react";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
-import { createBalancedGroups, getLevel, getLevelProgress, weightedDraw, xpForStudent } from "@/lib/game";
+import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive } from "@/lib/classroom-api";
 import { createSession as createSessionApi, fetchSessionDomain, finishSession as finishSessionApi, setParticipantPresence } from "@/lib/session-api";
+import { copyActivity as copyActivityApi, createActivity as createActivityApi, fetchActivityDomain, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
+import { damageBoss as damageBossApi, drawStudent as drawStudentApi, mergeSessionMechanics, nextArenaQuestion as nextArenaQuestionApi, organizeGroups as organizeGroupsApi, restartArenaQuestions as restartArenaQuestionsApi, setArenaActivity as setArenaActivityApi, startBoss as startBossApi } from "@/lib/mechanics-api";
 import { createScoreEvent as createScoreEventApi, createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
-import { EMPTY_DATA, loadData, saveData, uid } from "@/lib/store";
+import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
 import type { Activity, ActivityQuestion, ArenaData, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 
-type View = "dashboard" | "classroom" | "arena" | "activities" | "ranking" | "history" | "backup";
+type View = "dashboard" | "classroom" | "arena" | "backup";
+type ClassroomTab = "students" | "activities" | "ranking" | "history";
 
 const NAV: { id: View; label: string; icon: string }[] = [
   { id: "dashboard", label: "Visão geral", icon: "◫" },
-  { id: "classroom", label: "Turma e alunos", icon: "◎" },
+  { id: "classroom", label: "Turma", icon: "◎" },
   { id: "arena", label: "Arena", icon: "◆" },
-  { id: "activities", label: "Atividades e XP", icon: "✓" },
+  { id: "backup", label: "Backup", icon: "⇅" },
+];
+
+const CLASSROOM_TABS: { id: ClassroomTab; label: string; icon: string }[] = [
+  { id: "students", label: "Alunos", icon: "◎" },
+  { id: "activities", label: "Atividades", icon: "✓" },
   { id: "ranking", label: "Ranking", icon: "▲" },
   { id: "history", label: "Histórico", icon: "≡" },
-  { id: "backup", label: "Backup", icon: "⇅" },
 ];
 
 const SCORE_PRESETS: { points: number; label: string; category: ScoreCategory }[] = [
@@ -49,24 +56,11 @@ function errorMessage(error: unknown) {
   return "Não foi possível concluir a operação.";
 }
 
-function sessionRuntimeSnapshot(sessions: ArenaData["sessions"]) {
-  return sessions
-    .filter((session) => session.status !== "FINISHED" && !session.endedAt)
-    .map((session) => ({
-      sessionId: session.id,
-      drawCounts: session.drawCounts ?? {},
-      lastDrawnStudentId: session.lastDrawnStudentId,
-      boss: session.boss,
-      activityId: session.activityId,
-      currentQuestionId: session.currentQuestionId,
-      answeredQuestionIds: session.answeredQuestionIds ?? [],
-    }));
-}
-
 export default function ArenaApp() {
   const [data, setData] = useState<ArenaData>(EMPTY_DATA);
   const [hydrated, setHydrated] = useState(false);
   const [view, setView] = useState<View>("dashboard");
+  const [classroomTab, setClassroomTab] = useState<ClassroomTab>("students");
   const [toast, setToast] = useState("");
   const [apiError, setApiError] = useState("");
   const [arenaActivityId, setArenaActivityId] = useState<string | undefined>();
@@ -77,8 +71,11 @@ export default function ArenaApp() {
       const localData = loadData();
       try {
         const domain = await fetchClassroomDomain();
-        const sessionDomain = await fetchSessionDomain(domain.classrooms, localData.sessionRuntime);
-        const scoreEvents = await fetchScoreDomain(domain.classrooms);
+        const [sessionDomain, scoreEvents, activities] = await Promise.all([
+          fetchSessionDomain(domain.classrooms),
+          fetchScoreDomain(domain.classrooms),
+          fetchActivityDomain(domain.classrooms),
+        ]);
         if (cancelled) return;
         const preferredClassroomId = domain.classrooms.some((item) => item.id === localData.activeClassroomId)
           ? localData.activeClassroomId
@@ -89,6 +86,9 @@ export default function ArenaApp() {
           ...domain,
           ...sessionDomain,
           scoreEvents,
+          activities,
+          sessionRuntime: [],
+          groupHistory: [],
           activeClassroomId: preferredClassroomId,
           currentSessionId: activeSession?.id,
         });
@@ -167,15 +167,18 @@ export default function ArenaApp() {
 
   async function refreshClassroomDomain(preferredClassroomId?: string) {
     const domain = await fetchClassroomDomain();
-    const sessionDomain = await fetchSessionDomain(domain.classrooms, sessionRuntimeSnapshot(data.sessions));
-    const scoreEvents = await fetchScoreDomain(domain.classrooms);
+    const [sessionDomain, scoreEvents, activities] = await Promise.all([
+      fetchSessionDomain(domain.classrooms),
+      fetchScoreDomain(domain.classrooms),
+      fetchActivityDomain(domain.classrooms),
+    ]);
     setData((current) => {
       const candidate = preferredClassroomId ?? current.activeClassroomId;
       const activeClassroomId = domain.classrooms.some((item) => item.id === candidate)
         ? candidate
         : domain.classrooms[0]?.id;
       const activeSession = sessionDomain.sessions.find((item) => item.classroomId === activeClassroomId && item.status === "ACTIVE" && !item.endedAt);
-      return { ...current, ...domain, ...sessionDomain, scoreEvents, activeClassroomId, currentSessionId: activeSession?.id };
+      return { ...current, ...domain, ...sessionDomain, scoreEvents, activities, sessionRuntime: [], groupHistory: [], activeClassroomId, currentSessionId: activeSession?.id };
     });
     setApiError("");
   }
@@ -186,6 +189,11 @@ export default function ArenaApp() {
       const activeSession = current.sessions.find((item) => item.classroomId === id && item.status === "ACTIVE" && !item.endedAt);
       return { ...current, activeClassroomId: id, currentSessionId: activeSession?.id };
     });
+  }
+
+  function openClassroom(tab: ClassroomTab = "students") {
+    setClassroomTab(tab);
+    setView("classroom");
   }
 
   if (!hydrated) {
@@ -215,8 +223,8 @@ export default function ArenaApp() {
         <div className="sidebar-foot">
           <div className={apiError ? "status-dot error" : "status-dot"} />
           <div>
-            <strong>{apiError ? "Backend indisponível" : "Persistência híbrida"}</strong>
-            <small>{apiError ? "Verifique Spring Boot/PostgreSQL" : "Turmas, alunos, sessões, presença e XP no PostgreSQL"}</small>
+            <strong>{apiError ? "Backend indisponível" : "Persistência no backend"}</strong>
+            <small>{apiError ? "Verifique Spring Boot/PostgreSQL" : "Turmas, sessões, XP, atividades e mecânicas no PostgreSQL"}</small>
           </div>
         </div>
       </aside>
@@ -252,7 +260,7 @@ export default function ArenaApp() {
               title="Crie sua primeira turma"
               text="O Arena Dev começa pela turma. Depois você cadastra os alunos e inicia a primeira sessão."
               actionLabel="Criar turma"
-              onAction={() => setView("classroom")}
+              onAction={() => openClassroom("students")}
             />
           ) : null}
 
@@ -264,19 +272,82 @@ export default function ArenaApp() {
               events={data.scoreEvents.filter((event) => event.classroomId === activeClassroom.id)}
               currentSession={currentSession}
               onOpenArena={() => setView("arena")}
-              onOpenStudents={() => setView("classroom")}
+              onOpenStudents={() => openClassroom("students")}
+              onOpenActivities={() => openClassroom("activities")}
+              onOpenRanking={() => openClassroom("ranking")}
             />
           )}
 
           {view === "classroom" && (
-            <ClassroomView
-              data={data}
-              activeClassroomId={activeClassroomId}
-              classStudents={classStudents}
-              setActiveClassroom={setActiveClassroom}
-              notify={notify}
-              refreshClassroomDomain={refreshClassroomDomain}
-            />
+            activeClassroom ? (
+              <div className="stack-lg">
+                <ClassroomWorkspaceHeader
+                  classroomName={activeClassroom.name}
+                  tab={classroomTab}
+                  onTabChange={setClassroomTab}
+                  studentCount={classStudents.length}
+                  activityCount={data.activities.filter((activity) => activity.classroomId === activeClassroom.id).length}
+                  eventCount={data.scoreEvents.filter((event) => event.classroomId === activeClassroom.id).length}
+                  hasActiveSession={Boolean(currentSession)}
+                />
+                {classroomTab === "students" && (
+                  <ClassroomView
+                    data={data}
+                    activeClassroomId={activeClassroomId}
+                    classStudents={classStudents}
+                    setActiveClassroom={setActiveClassroom}
+                    notify={notify}
+                    refreshClassroomDomain={refreshClassroomDomain}
+                  />
+                )}
+                {classroomTab === "activities" && (
+                  <ActivitiesView
+                    data={data}
+                    classroomId={activeClassroom.id}
+                    classroomName={activeClassroom.name}
+                    students={classStudents}
+                    onUseInArena={(activityId) => { setArenaActivityId(activityId); setView("arena"); }}
+                    patch={patch}
+                    notify={notify}
+                  />
+                )}
+                {classroomTab === "ranking" && (
+                  <RankingView leaderboard={leaderboard} events={data.scoreEvents} classroomId={activeClassroom.id} />
+                )}
+                {classroomTab === "history" && (
+                  <HistoryView
+                    events={data.scoreEvents.filter((event) => event.classroomId === activeClassroom.id)}
+                    students={data.students}
+                    onReverse={(eventId) => {
+                      void (async () => {
+                        try {
+                          const reversal = await reverseScoreEventApi(eventId);
+                          patch((current) => ({
+                            ...current,
+                            scoreEvents: [
+                              ...current.scoreEvents.map((event) => event.id === eventId ? { ...event, reversed: true } : event),
+                              reversal,
+                            ],
+                          }));
+                          notify("Lançamento revertido com auditoria preservada.");
+                        } catch (error) {
+                          notify(errorMessage(error));
+                        }
+                      })();
+                    }}
+                  />
+                )}
+              </div>
+            ) : (
+              <ClassroomView
+                data={data}
+                activeClassroomId={activeClassroomId}
+                classStudents={classStudents}
+                setActiveClassroom={setActiveClassroom}
+                notify={notify}
+                refreshClassroomDomain={refreshClassroomDomain}
+              />
+            )
           )}
 
           {view === "arena" && activeClassroom && (
@@ -285,52 +356,11 @@ export default function ArenaApp() {
               classroomId={activeClassroom.id}
               students={arenaStudents}
               currentSession={currentSession}
-              leaderboard={leaderboard}
               sessionParticipants={data.sessionParticipants.filter((item) => item.sessionId === currentSession?.id)}
               preferredActivityId={arenaActivityId}
               onPreferredActivityChange={setArenaActivityId}
               patch={patch}
               notify={notify}
-            />
-          )}
-
-          {view === "activities" && activeClassroom && (
-            <ActivitiesView
-              data={data}
-              classroomId={activeClassroom.id}
-              classroomName={activeClassroom.name}
-              students={classStudents}
-              onUseInArena={(activityId) => { setArenaActivityId(activityId); setView("arena"); }}
-              patch={patch}
-              notify={notify}
-            />
-          )}
-
-          {view === "ranking" && activeClassroom && (
-            <RankingView leaderboard={leaderboard} events={data.scoreEvents} classroomId={activeClassroom.id} />
-          )}
-
-          {view === "history" && activeClassroom && (
-            <HistoryView
-              events={data.scoreEvents.filter((event) => event.classroomId === activeClassroom.id)}
-              students={data.students}
-              onReverse={(eventId) => {
-                void (async () => {
-                  try {
-                    const reversal = await reverseScoreEventApi(eventId);
-                    patch((current) => ({
-                      ...current,
-                      scoreEvents: [
-                        ...current.scoreEvents.map((event) => event.id === eventId ? { ...event, reversed: true } : event),
-                        reversal,
-                      ],
-                    }));
-                    notify("Lançamento revertido com auditoria preservada.");
-                  } catch (error) {
-                    notify(errorMessage(error));
-                  }
-                })();
-              }}
             />
           )}
 
@@ -343,7 +373,56 @@ export default function ArenaApp() {
   );
 }
 
-function Dashboard({ classroomName, students, leaderboard, events, currentSession, onOpenArena, onOpenStudents }: {
+function ClassroomWorkspaceHeader({ classroomName, tab, onTabChange, studentCount, activityCount, eventCount, hasActiveSession }: {
+  classroomName: string;
+  tab: ClassroomTab;
+  onTabChange: (tab: ClassroomTab) => void;
+  studentCount: number;
+  activityCount: number;
+  eventCount: number;
+  hasActiveSession: boolean;
+}) {
+  const badgeFor = (id: ClassroomTab) => {
+    if (id === "students") return studentCount;
+    if (id === "activities") return activityCount;
+    if (id === "history") return eventCount;
+    return undefined;
+  };
+
+  return (
+    <div className="classroom-workspace">
+      <div className="classroom-workspace-head">
+        <div>
+          <span className="eyebrow accent">WORKSPACE DA TURMA</span>
+          <h2>{classroomName}</h2>
+          <p>{studentCount} aluno(s) · {activityCount} atividade(s) · {eventCount} evento(s) de XP</p>
+        </div>
+        {hasActiveSession && <span className="live-pill"><span /> Aula em andamento</span>}
+      </div>
+      <div className="classroom-tabs" role="tablist" aria-label="Conteúdo da turma">
+        {CLASSROOM_TABS.map((item) => {
+          const badge = badgeFor(item.id);
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === item.id}
+              className={tab === item.id ? "classroom-tab active" : "classroom-tab"}
+              onClick={() => onTabChange(item.id)}
+            >
+              <span>{item.icon}</span>
+              <strong>{item.label}</strong>
+              {badge !== undefined && <small>{badge}</small>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({ classroomName, students, leaderboard, events, currentSession, onOpenArena, onOpenStudents, onOpenActivities, onOpenRanking }: {
   classroomName: string;
   students: Student[];
   leaderboard: { student: Student; xp: number }[];
@@ -351,6 +430,8 @@ function Dashboard({ classroomName, students, leaderboard, events, currentSessio
   currentSession?: ArenaData["sessions"][number];
   onOpenArena: () => void;
   onOpenStudents: () => void;
+  onOpenActivities: () => void;
+  onOpenRanking: () => void;
 }) {
   const totalXp = leaderboard.reduce((sum, row) => sum + row.xp, 0);
   const today = new Date().toDateString();
@@ -390,8 +471,10 @@ function Dashboard({ classroomName, students, leaderboard, events, currentSessio
         </Panel>
         <Panel title="Ações rápidas" subtitle="Prepare a próxima dinâmica">
           <div className="quick-actions">
-            <button className="quick-button" onClick={onOpenStudents}><span>01</span><div><strong>Gerenciar alunos</strong><small>Cadastro, importação e status</small></div></button>
-            <button className="quick-button" onClick={onOpenArena}><span>02</span><div><strong>Abrir Arena</strong><small>Presença, sorteio e pontuação</small></div></button>
+            <button className="quick-button" onClick={onOpenStudents}><span>01</span><div><strong>Alunos da turma</strong><small>Cadastro, importação e status</small></div></button>
+            <button className="quick-button" onClick={onOpenActivities}><span>02</span><div><strong>Atividades</strong><small>Questões, entregas e recursos</small></div></button>
+            <button className="quick-button" onClick={onOpenRanking}><span>03</span><div><strong>Ranking da turma</strong><small>XP e progressão acumulada</small></div></button>
+            <button className="quick-button" onClick={onOpenArena}><span>04</span><div><strong>Abrir Arena</strong><small>Condução ao vivo da sessão</small></div></button>
           </div>
         </Panel>
       </div>
@@ -558,12 +641,11 @@ function ClassroomView({ data, activeClassroomId, classStudents, setActiveClassr
   );
 }
 
-function ArenaView({ data, classroomId, students, currentSession, leaderboard, sessionParticipants, preferredActivityId, onPreferredActivityChange, patch, notify }: {
+function ArenaView({ data, classroomId, students, currentSession, sessionParticipants, preferredActivityId, onPreferredActivityChange, patch, notify }: {
   data: ArenaData;
   classroomId: string;
   students: Student[];
   currentSession?: ArenaData["sessions"][number];
-  leaderboard: { student: Student; xp: number }[];
   sessionParticipants: SessionParticipant[];
   preferredActivityId?: string;
   onPreferredActivityChange: (activityId?: string) => void;
@@ -571,17 +653,19 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, s
   notify: (message: string) => void;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
+  const [arenaTab, setArenaTab] = useState<"live" | "presence" | "groups" | "boss">("live");
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
   const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
   const [reason, setReason] = useState("Resposta correta");
   const [customPoints, setCustomPoints] = useState(10);
-  const [groups, setGroups] = useState<string[][]>([]);
-  const [groupSize, setGroupSize] = useState(2);
+  const [groups, setGroups] = useState<string[][]>(currentSession?.groups ?? []);
+  const [groupSize, setGroupSize] = useState(currentSession?.groupSize ?? 2);
   const [bossName, setBossName] = useState("Spaghetti Code");
   const [bossHp, setBossHp] = useState(100);
   const [sessionBusy, setSessionBusy] = useState(false);
   const [presenceBusyId, setPresenceBusyId] = useState<string | undefined>();
+  const [mechanicsBusy, setMechanicsBusy] = useState(false);
   const classActivities = useMemo(
     () => data.activities.filter((activity) => activity.classroomId === classroomId && (activity.questions?.length ?? 0) > 0),
     [data.activities, classroomId],
@@ -590,7 +674,7 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, s
 
   useEffect(() => {
     if (preferredActivityId) {
-      if (currentSession && currentSession.activityId !== preferredActivityId) changeArenaActivity(preferredActivityId);
+      if (currentSession && currentSession.activityId !== preferredActivityId) void changeArenaActivity(preferredActivityId);
       else if (!currentSession) setActivityId(preferredActivityId);
       onPreferredActivityChange(undefined);
       return;
@@ -606,6 +690,11 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, s
     setSelectedId(currentSession?.lastDrawnStudentId);
   }, [currentSession?.id, currentSession?.lastDrawnStudentId]);
 
+  useEffect(() => {
+    setGroups(currentSession?.groups ?? []);
+    setGroupSize(currentSession?.groupSize ?? 2);
+  }, [currentSession?.id, currentSession?.groups, currentSession?.groupSize]);
+
   async function startSession() {
     if (!presentIds.length || sessionBusy) return;
     setSessionBusy(true);
@@ -615,11 +704,11 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, s
         title: title.trim() || `Aula · ${todayTitle()}`,
         presentStudentIds: presentIds,
       });
-      const started = {
-        ...result.session,
-        activityId: activityId || undefined,
-        answeredQuestionIds: [],
-      };
+      let started = result.session;
+      if (activityId) {
+        const runtime = await setArenaActivityApi(result.session.id, activityId);
+        started = mergeSessionMechanics(started, runtime);
+      }
       patch((current) => ({
         ...current,
         sessions: [...current.sessions.filter((session) => session.id !== started.id), started],
@@ -629,7 +718,8 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, s
         ],
         currentSessionId: started.id,
       }));
-      notify("Arena iniciada e sessão salva no PostgreSQL.");
+      setArenaTab("live");
+      notify("Arena iniciada. Sessão e mecânicas estão no PostgreSQL.");
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -653,6 +743,7 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, s
       }));
       setSelectedId(undefined);
       setGroups([]);
+      setArenaTab("live");
       onPreferredActivityChange(undefined);
       notify("Sessão encerrada e persistida.");
     } catch (error) {
@@ -684,25 +775,29 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, s
     }
   }
 
-  function draw() {
-    if (!currentSession || drawPhase === "drawing") return;
-    const candidates = students.filter((student) => currentSession.presentStudentIds.includes(student.id));
-    const winner = weightedDraw(candidates, currentSession);
-    if (!winner) return;
+  async function draw() {
+    if (!currentSession || drawPhase === "drawing" || mechanicsBusy) return;
     setDrawPhase("drawing");
+    setMechanicsBusy(true);
     setSelectedId(undefined);
-    window.setTimeout(() => {
-      setSelectedId(winner.id);
+    try {
+      const [result] = await Promise.all([
+        drawStudentApi(currentSession.id),
+        new Promise((resolve) => window.setTimeout(resolve, 900)),
+      ]);
+      setSelectedId(result.studentId);
       patch((current) => ({
         ...current,
-        sessions: current.sessions.map((session) => session.id === currentSession.id ? {
-          ...session,
-          lastDrawnStudentId: winner.id,
-          drawCounts: { ...session.drawCounts, [winner.id]: (session.drawCounts[winner.id] ?? 0) + 1 },
-        } : session),
+        sessions: current.sessions.map((session) => session.id === currentSession.id
+          ? mergeSessionMechanics(session, result.runtime)
+          : session),
       }));
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
       setDrawPhase("idle");
-    }, 900);
+      setMechanicsBusy(false);
+    }
   }
 
   async function addScore(points: number, category: ScoreCategory, description: string) {
@@ -726,85 +821,123 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, s
     }
   }
 
-  function changeArenaActivity(nextActivityId: string) {
+  async function changeArenaActivity(nextActivityId: string) {
     setActivityId(nextActivityId);
-    if (!currentSession) return;
-    patch((current) => ({
-      ...current,
-      sessions: current.sessions.map((session) => session.id === currentSession.id ? {
-        ...session,
-        activityId: nextActivityId || undefined,
-        currentQuestionId: undefined,
-        answeredQuestionIds: [],
-      } : session),
-    }));
-    notify(nextActivityId ? "Atividade conectada à Arena." : "Arena em modo livre.");
+    if (!currentSession || mechanicsBusy) return;
+    setMechanicsBusy(true);
+    try {
+      const runtime = await setArenaActivityApi(currentSession.id, nextActivityId || undefined);
+      patch((current) => ({
+        ...current,
+        sessions: current.sessions.map((session) => session.id === currentSession.id
+          ? mergeSessionMechanics(session, runtime)
+          : session),
+      }));
+      notify(nextActivityId ? "Atividade conectada à Arena e persistida." : "Arena em modo livre.");
+    } catch (error) {
+      setActivityId(currentSession.activityId ?? "");
+      notify(errorMessage(error));
+    } finally {
+      setMechanicsBusy(false);
+    }
   }
 
-  function nextActivityQuestion() {
-    if (!currentSession?.activityId) {
-      notify("Selecione uma atividade com questões ou use o modo livre.");
+  async function nextActivityQuestion() {
+    if (!currentSession?.activityId || mechanicsBusy) {
+      if (!currentSession?.activityId) notify("Selecione uma atividade com questões ou use o modo livre.");
       return;
     }
-    const activity = data.activities.find((item) => item.id === currentSession.activityId);
-    const questions = activity?.questions ?? [];
-    const answered = new Set(currentSession.answeredQuestionIds ?? []);
-    const next = questions.find((question) => !answered.has(question.id));
-    if (!next) {
-      notify("Todas as questões desta atividade já foram apresentadas.");
-      return;
+    setMechanicsBusy(true);
+    try {
+      const result = await nextArenaQuestionApi(currentSession.id);
+      patch((current) => ({
+        ...current,
+        sessions: current.sessions.map((session) => session.id === currentSession.id
+          ? mergeSessionMechanics(session, result.runtime)
+          : session),
+      }));
+      if (result.completed) notify("Todas as questões desta atividade já foram apresentadas.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setMechanicsBusy(false);
     }
-    patch((current) => ({
-      ...current,
-      sessions: current.sessions.map((session) => session.id === currentSession.id ? {
-        ...session,
-        currentQuestionId: next.id,
-        answeredQuestionIds: [...(session.answeredQuestionIds ?? []), next.id],
-      } : session),
-    }));
   }
 
-  function restartActivityQuestions() {
-    if (!currentSession) return;
-    patch((current) => ({
-      ...current,
-      sessions: current.sessions.map((session) => session.id === currentSession.id ? {
-        ...session,
-        currentQuestionId: undefined,
-        answeredQuestionIds: [],
-      } : session),
-    }));
-    notify("Sequência de questões reiniciada.");
-  }
-
-  function createGroups() {
-    if (!currentSession) return;
-    const prior = data.groupHistory.filter((record) => record.classroomId === classroomId).map((record) => record.groups);
-    const next = createBalancedGroups(currentSession.presentStudentIds, groupSize, prior);
-    setGroups(next);
-    if (groupSize === 1) {
-      notify("Organização individual ativada.");
-      return;
+  async function restartActivityQuestions() {
+    if (!currentSession || mechanicsBusy) return;
+    setMechanicsBusy(true);
+    try {
+      const runtime = await restartArenaQuestionsApi(currentSession.id);
+      patch((current) => ({
+        ...current,
+        sessions: current.sessions.map((session) => session.id === currentSession.id
+          ? mergeSessionMechanics(session, runtime)
+          : session),
+      }));
+      notify("Sequência de questões reiniciada.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setMechanicsBusy(false);
     }
-    patch((current) => ({ ...current, groupHistory: [...current.groupHistory, { id: uid("groups"), classroomId, sessionId: currentSession.id, createdAt: new Date().toISOString(), groups: next }] }));
-    notify(`${next.length} grupo(s) organizado(s).`);
   }
 
-  function createBoss() {
-    if (!currentSession) return;
-    patch((current) => ({
-      ...current,
-      sessions: current.sessions.map((session) => session.id === currentSession.id ? { ...session, boss: { name: bossName.trim() || "Boss", maxHp: bossHp, currentHp: bossHp } } : session),
-    }));
-    notify("Boss iniciado.");
+  async function createGroups() {
+    if (!currentSession || mechanicsBusy) return;
+    setMechanicsBusy(true);
+    try {
+      const result = await organizeGroupsApi(currentSession.id, groupSize);
+      setGroups(result.groups);
+      patch((current) => ({
+        ...current,
+        sessions: current.sessions.map((session) => session.id === currentSession.id
+          ? mergeSessionMechanics(session, result.runtime)
+          : session),
+      }));
+      notify(groupSize === 1 ? "Organização individual ativada." : `${result.groups.length} grupo(s) organizado(s) com histórico persistido.`);
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setMechanicsBusy(false);
+    }
   }
 
-  function damageBoss(amount: number) {
-    if (!currentSession?.boss) return;
-    patch((current) => ({
-      ...current,
-      sessions: current.sessions.map((session) => session.id === currentSession.id && session.boss ? { ...session, boss: { ...session.boss, currentHp: Math.max(0, session.boss.currentHp - amount) } } : session),
-    }));
+  async function createBoss() {
+    if (!currentSession || mechanicsBusy) return;
+    setMechanicsBusy(true);
+    try {
+      const runtime = await startBossApi(currentSession.id, bossName.trim() || "Boss", bossHp);
+      patch((current) => ({
+        ...current,
+        sessions: current.sessions.map((session) => session.id === currentSession.id
+          ? mergeSessionMechanics(session, runtime)
+          : session),
+      }));
+      notify("Boss iniciado e persistido.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setMechanicsBusy(false);
+    }
+  }
+
+  async function damageBoss(amount: number) {
+    if (!currentSession?.boss || mechanicsBusy) return;
+    setMechanicsBusy(true);
+    try {
+      const runtime = await damageBossApi(currentSession.id, amount);
+      patch((current) => ({
+        ...current,
+        sessions: current.sessions.map((session) => session.id === currentSession.id
+          ? mergeSessionMechanics(session, runtime)
+          : session),
+      }));
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setMechanicsBusy(false);
+    }
   }
 
   const selected = students.find((student) => student.id === selectedId);
@@ -820,7 +953,7 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, s
             <label className="field-label">Título da sessão</label>
             <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
             <label className="field-label">Fonte dos desafios</label>
-            <select className="select full" value={activityId} onChange={(e) => changeArenaActivity(e.target.value)}>
+            <select className="select full" value={activityId} onChange={(e) => { void changeArenaActivity(e.target.value); }}>
               <option value="">Modo livre — pergunta oral ou conteúdo externo</option>
               {classActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title} · {activity.questions?.length ?? 0} questões</option>)}
             </select>
@@ -852,140 +985,167 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, s
   }
 
   return (
-    <div className="stack-lg">
-      <div className="arena-header">
-        <div><span className="live-pill"><span /> AO VIVO</span><h2>{currentSession.title}</h2><p>{currentSession.presentStudentIds.length} presentes · iniciada {dateTime(currentSession.startedAt)}</p></div>
+    <div className="stack-lg arena-session-workspace">
+      <div className="arena-header compact">
+        <div>
+          <span className="live-pill"><span /> AO VIVO</span>
+          <h2>{currentSession.title}</h2>
+          <p>{currentSession.presentStudentIds.length} presentes · iniciada {dateTime(currentSession.startedAt)}</p>
+        </div>
         <button className="button danger-outline" onClick={() => { void endSession(); }} disabled={sessionBusy}>{sessionBusy ? "Encerrando..." : "Encerrar sessão"}</button>
       </div>
 
-      <div className="arena-activity-strip">
-        <div>
-          <span className="eyebrow accent">FONTE DA ARENA</span>
-          <strong>{activeActivity?.title ?? "Modo livre"}</strong>
-          <small>{activeActivity ? `${activeActivity.questions?.length ?? 0} questões disponíveis` : "Pergunte oralmente ou utilize qualquer recurso da aula"}</small>
-        </div>
-        <select className="select" value={currentSession.activityId ?? ""} onChange={(e) => changeArenaActivity(e.target.value)}>
-          <option value="">Modo livre</option>
-          {classActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}
-        </select>
+      <div className="arena-tabs" role="tablist" aria-label="Ferramentas da sessão">
+        <button type="button" role="tab" aria-selected={arenaTab === "live"} className={arenaTab === "live" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("live")}>
+          <span>Condução</span>
+          <small>{activeActivity?.title ?? "Modo livre"}</small>
+        </button>
+        <button type="button" role="tab" aria-selected={arenaTab === "presence"} className={arenaTab === "presence" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("presence")}>
+          <span>Presença</span>
+          <small>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</small>
+        </button>
+        <button type="button" role="tab" aria-selected={arenaTab === "groups"} className={arenaTab === "groups" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("groups")}>
+          <span>Organização</span>
+          <small>{groupSize === 1 ? "Individual" : groupSize === 2 ? "Duplas" : groupSize === 3 ? "Trios" : `Grupos de ${groupSize}`}</small>
+        </button>
+        <button type="button" role="tab" aria-selected={arenaTab === "boss"} className={arenaTab === "boss" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("boss")}>
+          <span>Boss Battle</span>
+          <small>{currentSession.boss ? `${currentSession.boss.currentHp}/${currentSession.boss.maxHp} HP` : "Não iniciado"}</small>
+        </button>
       </div>
 
-      <Panel title="Presença da sessão" subtitle="Alterações são salvas imediatamente no PostgreSQL">
-        <div className="attendance-head"><strong>Participantes</strong><span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span></div>
-        <div className="attendance-list compact-attendance">
-          {sessionParticipants.map((participant) => {
-            const student = data.students.find((item) => item.id === participant.studentId);
-            if (!student) return null;
-            return (
-              <label key={participant.id} className="check-row">
-                <input
-                  type="checkbox"
-                  checked={participant.present}
-                  disabled={presenceBusyId === participant.id}
-                  onChange={(event) => { void changePresence(participant, event.target.checked); }}
-                />
-                <Avatar student={student} />
-                <span>{student.name}</span>
-                {participant.connected && <small className="connected-label">conectado</small>}
-              </label>
-            );
-          })}
-        </div>
-      </Panel>
-
-      {activeActivity && (
-        <Panel title="Questão da Arena" subtitle={`${activeActivity.title} · ${(currentSession.answeredQuestionIds ?? []).length}/${activeActivity.questions?.length ?? 0} apresentadas`}>
-          {currentQuestion ? (
-            <div className="arena-question-card">
-              <div className="question-meta"><span>{QUESTION_TYPE_LABEL[currentQuestion.type]}</span><span>{QUESTION_DIFFICULTY_LABEL[currentQuestion.difficulty]}</span><span>{currentQuestion.points} XP sugeridos</span></div>
-              <h3>{currentQuestion.statement}</h3>
-              {currentQuestion.code && <pre>{currentQuestion.code}</pre>}
-              {currentQuestion.options && <div className="arena-question-options">{currentQuestion.options.map((option) => <div key={option.id}><b>{option.id}</b><span>{option.text}</span></div>)}</div>}
+      {arenaTab === "live" && (
+        <div className="stack-lg arena-tab-content">
+          <div className="arena-activity-strip">
+            <div>
+              <span className="eyebrow accent">FONTE DA ARENA</span>
+              <strong>{activeActivity?.title ?? "Modo livre"}</strong>
+              <small>{activeActivity ? `${activeActivity.questions?.length ?? 0} questões disponíveis` : "Pergunte oralmente ou utilize qualquer recurso da aula"}</small>
             </div>
-          ) : <MiniEmpty text="Clique em próxima questão quando quiser usar o conteúdo da atividade na Arena." />}
-          <div className="inline-actions solid-actions">
-            {(currentSession.answeredQuestionIds?.length ?? 0) >= (activeActivity.questions?.length ?? 0) && <button className="button ghost" onClick={restartActivityQuestions}>Reiniciar questões</button>}
-            <button className="button primary" onClick={nextActivityQuestion}>Próxima questão</button>
+            <select className="select" value={currentSession.activityId ?? ""} onChange={(e) => { void changeArenaActivity(e.target.value); }}>
+              <option value="">Modo livre</option>
+              {classActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}
+            </select>
+          </div>
+
+          {activeActivity && (
+            <Panel title="Questão da Arena" subtitle={`${activeActivity.title} · ${(currentSession.answeredQuestionIds ?? []).length}/${activeActivity.questions?.length ?? 0} apresentadas`}>
+              {currentQuestion ? (
+                <div className="arena-question-card">
+                  <div className="question-meta"><span>{QUESTION_TYPE_LABEL[currentQuestion.type]}</span><span>{QUESTION_DIFFICULTY_LABEL[currentQuestion.difficulty]}</span><span>{currentQuestion.points} XP sugeridos</span></div>
+                  <h3>{currentQuestion.statement}</h3>
+                  {currentQuestion.code && <pre>{currentQuestion.code}</pre>}
+                  {currentQuestion.options && <div className="arena-question-options">{currentQuestion.options.map((option) => <div key={option.id}><b>{option.id}</b><span>{option.text}</span></div>)}</div>}
+                </div>
+              ) : <MiniEmpty text="Clique em próxima questão quando quiser usar o conteúdo da atividade na Arena." />}
+              <div className="inline-actions solid-actions">
+                {(currentSession.answeredQuestionIds?.length ?? 0) >= (activeActivity.questions?.length ?? 0) && <button className="button ghost" onClick={() => { void restartActivityQuestions(); }}>Reiniciar questões</button>}
+                <button className="button primary" onClick={() => { void nextActivityQuestion(); }}>Próxima questão</button>
+              </div>
+            </Panel>
+          )}
+
+          <div className="arena-grid">
+            <div className="arena-main-card">
+              <span className="eyebrow accent">SORTEIO INTELIGENTE</span>
+              <div className={drawPhase === "drawing" ? "draw-stage spinning" : "draw-stage"}>
+                {drawPhase === "drawing" ? (
+                  <div className="draw-loading"><span /><span /><span /></div>
+                ) : selected ? (
+                  <>
+                    <Avatar student={selected} large />
+                    <h3>{selected.nickname || selected.name}</h3>
+                    <p>{selected.name}</p>
+                    <div className="xp-badge">{selectedXp} XP · {getLevel(selectedXp).name}</div>
+                  </>
+                ) : (
+                  <><div className="target-mark">+</div><h3>Pronto para sortear</h3><p>O backend prioriza quem participou menos.</p></>
+                )}
+              </div>
+              <button className="button primary huge" onClick={() => { void draw(); }} disabled={drawPhase === "drawing"}>SORTEAR DEV</button>
+              {selected && <small className="draw-count">Sorteado nesta sessão: {currentSession.drawCounts[selected.id] ?? 0} vez(es)</small>}
+            </div>
+
+            <div className="score-card">
+              <div className="panel-heading"><div><h3>Pontuação rápida</h3><p>{selected ? `Aplicar a ${selected.nickname || selected.name}` : "Sorteie ou selecione um aluno"}</p></div></div>
+              <div className="score-presets">
+                {currentQuestion && <button disabled={!selected} onClick={() => addScore(currentQuestion.points, "QUESTION", `Questão: ${currentQuestion.statement}`)}><b>+{currentQuestion.points}</b><span>Questão atual</span></button>}
+                {SCORE_PRESETS.map((preset) => (
+                  <button key={`${preset.points}-${preset.label}`} disabled={!selected} onClick={() => { setReason(preset.label); addScore(preset.points, preset.category, preset.label); }}>
+                    <b>+{preset.points}</b><span>{preset.label}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="custom-score">
+                <input className="input compact" type="number" value={customPoints} onChange={(e) => setCustomPoints(Number(e.target.value))} />
+                <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo" />
+                <button className="button" disabled={!selected || !reason.trim()} onClick={() => addScore(customPoints, "ADJUSTMENT", reason)}>Aplicar</button>
+              </div>
+              <div className="student-select-list">
+                <span className="field-label">Selecionar manualmente</span>
+                <select className="select full" value={selectedId ?? ""} onChange={(e) => setSelectedId(e.target.value || undefined)}>
+                  <option value="">Selecione um aluno</option>
+                  {students.filter((student) => currentSession.presentStudentIds.includes(student.id)).map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {arenaTab === "presence" && (
+        <Panel title="Presença da sessão" subtitle="Alterações são salvas imediatamente no PostgreSQL">
+          <div className="attendance-head"><strong>Participantes</strong><span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span></div>
+          <div className="attendance-list compact-attendance">
+            {sessionParticipants.map((participant) => {
+              const student = data.students.find((item) => item.id === participant.studentId);
+              if (!student) return null;
+              return (
+                <label key={participant.id} className="check-row">
+                  <input
+                    type="checkbox"
+                    checked={participant.present}
+                    disabled={presenceBusyId === participant.id}
+                    onChange={(event) => { void changePresence(participant, event.target.checked); }}
+                  />
+                  <Avatar student={student} />
+                  <span>{student.name}</span>
+                  {participant.connected && <small className="connected-label">conectado</small>}
+                </label>
+              );
+            })}
           </div>
         </Panel>
       )}
 
-      <div className="arena-grid">
-        <div className="arena-main-card">
-          <span className="eyebrow accent">SORTEIO INTELIGENTE</span>
-          <div className={drawPhase === "drawing" ? "draw-stage spinning" : "draw-stage"}>
-            {drawPhase === "drawing" ? (
-              <div className="draw-loading"><span /><span /><span /></div>
-            ) : selected ? (
-              <>
-                <Avatar student={selected} large />
-                <h3>{selected.nickname || selected.name}</h3>
-                <p>{selected.name}</p>
-                <div className="xp-badge">{selectedXp} XP · {getLevel(selectedXp).name}</div>
-              </>
-            ) : (
-              <><div className="target-mark">+</div><h3>Pronto para sortear</h3><p>O algoritmo prioriza quem participou menos.</p></>
-            )}
+      {arenaTab === "groups" && (
+        <Panel title="Organização da turma" subtitle="Alterne entre individual, duplas e grupos sem encerrar a sessão">
+          <div className="group-controls">
+            <label>Formato<select className="select" value={groupSize} onChange={(e) => setGroupSize(Number(e.target.value))}><option value={1}>Individual</option><option value={2}>Duplas</option><option value={3}>Trios</option><option value={4}>Grupos de 4</option><option value={5}>Grupos de 5</option></select></label>
+            <button className="button" onClick={() => { void createGroups(); }}>{groupSize === 1 ? "Voltar ao individual" : "Organizar turma"}</button>
           </div>
-          <button className="button primary huge" onClick={draw} disabled={drawPhase === "drawing"}>SORTEAR DEV</button>
-          {selected && <small className="draw-count">Sorteado nesta sessão: {currentSession.drawCounts[selected.id] ?? 0} vez(es)</small>}
-        </div>
+          {groups.length > 0 ? <div className="groups-grid">{groups.map((group, index) => <div className="group-card" key={index}><b>{groupSize === 1 ? `INDIVIDUAL ${String(index + 1).padStart(2, "0")}` : `GRUPO ${String(index + 1).padStart(2, "0")}`}</b>{group.map((id) => <span key={id}>{students.find((student) => student.id === id)?.nickname || students.find((student) => student.id === id)?.name}</span>)}</div>)}</div> : <MiniEmpty text="Escolha como a turma deve se organizar nesta etapa da aula." />}
+        </Panel>
+      )}
 
-        <div className="score-card">
-          <div className="panel-heading"><div><h3>Pontuação rápida</h3><p>{selected ? `Aplicar a ${selected.nickname || selected.name}` : "Sorteie ou selecione um aluno"}</p></div></div>
-          <div className="score-presets">
-            {currentQuestion && <button disabled={!selected} onClick={() => addScore(currentQuestion.points, "QUESTION", `Questão: ${currentQuestion.statement}`)}><b>+{currentQuestion.points}</b><span>Questão atual</span></button>}
-            {SCORE_PRESETS.map((preset) => (
-              <button key={`${preset.points}-${preset.label}`} disabled={!selected} onClick={() => { setReason(preset.label); addScore(preset.points, preset.category, preset.label); }}>
-                <b>+{preset.points}</b><span>{preset.label}</span>
-              </button>
-            ))}
-          </div>
-          <div className="custom-score">
-            <input className="input compact" type="number" value={customPoints} onChange={(e) => setCustomPoints(Number(e.target.value))} />
-            <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo" />
-            <button className="button" disabled={!selected || !reason.trim()} onClick={() => addScore(customPoints, "ADJUSTMENT", reason)}>Aplicar</button>
-          </div>
-          <div className="student-select-list">
-            <span className="field-label">Selecionar manualmente</span>
-            <select className="select full" value={selectedId ?? ""} onChange={(e) => setSelectedId(e.target.value || undefined)}>
-              <option value="">Selecione um aluno</option>
-              {students.filter((s) => currentSession.presentStudentIds.includes(s.id)).map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className="two-col">
+      {arenaTab === "boss" && (
         <Panel title="Boss Battle" subtitle="Transforme questões em um objetivo coletivo">
           {currentSession.boss ? (
             <div className="boss-box">
               <div className="boss-head"><div><span className="eyebrow accent">BOSS</span><h3>{currentSession.boss.name}</h3></div><b>{currentSession.boss.currentHp}/{currentSession.boss.maxHp} HP</b></div>
               <div className="hp-track"><span style={{ width: `${(currentSession.boss.currentHp / currentSession.boss.maxHp) * 100}%` }} /></div>
-              <div className="damage-buttons"><button onClick={() => damageBoss(10)}>−10 HP</button><button onClick={() => damageBoss(20)}>−20 HP</button><button onClick={() => damageBoss(30)}>−30 HP</button></div>
+              <div className="damage-buttons"><button onClick={() => { void damageBoss(10); }}>−10 HP</button><button onClick={() => { void damageBoss(20); }}>−20 HP</button><button onClick={() => { void damageBoss(30); }}>−30 HP</button></div>
               {currentSession.boss.currentHp === 0 && <div className="boss-defeated">BOSS DERROTADO · objetivo coletivo concluído</div>}
             </div>
           ) : (
             <div className="boss-create">
               <input className="input" value={bossName} onChange={(e) => setBossName(e.target.value)} placeholder="Nome do Boss" />
               <input className="input" type="number" min="10" value={bossHp} onChange={(e) => setBossHp(Math.max(10, Number(e.target.value)))} />
-              <button className="button" onClick={createBoss}>Criar Boss</button>
+              <button className="button" onClick={() => { void createBoss(); }}>Criar Boss</button>
             </div>
           )}
         </Panel>
-
-        <Panel title="Organização da turma" subtitle="Alterne entre individual, duplas e grupos sem encerrar a sessão">
-          <div className="group-controls">
-            <label>Formato<select className="select" value={groupSize} onChange={(e) => setGroupSize(Number(e.target.value))}><option value={1}>Individual</option><option value={2}>Duplas</option><option value={3}>Trios</option><option value={4}>Grupos de 4</option><option value={5}>Grupos de 5</option></select></label>
-            <button className="button" onClick={createGroups}>{groupSize === 1 ? "Voltar ao individual" : "Organizar turma"}</button>
-          </div>
-          {groups.length > 0 ? <div className="groups-grid">{groups.map((group, i) => <div className="group-card" key={i}><b>{groupSize === 1 ? `INDIVIDUAL ${String(i + 1).padStart(2, "0")}` : `GRUPO ${String(i + 1).padStart(2, "0")}`}</b>{group.map((id) => <span key={id}>{students.find((s) => s.id === id)?.nickname || students.find((s) => s.id === id)?.name}</span>)}</div>)}</div> : <MiniEmpty text="Escolha como a turma deve se organizar nesta etapa da aula." />}
-        </Panel>
-      </div>
-
-      <Panel title="Ranking ao vivo" subtitle="Atualizado a cada lançamento de XP">
-        <div className="live-ranking">{leaderboard.slice(0, 8).map((row, index) => <div key={row.student.id}><span>{index + 1}</span><Avatar student={row.student} /><strong>{row.student.nickname || row.student.name}</strong><b>{row.xp} XP</b></div>)}</div>
-      </Panel>
+      )}
     </div>
   );
 }
@@ -1018,6 +1178,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   const [onTime, setOnTime] = useState<string[]>([]);
   const [sourceClassroomId, setSourceClassroomId] = useState("");
   const [sourceActivityId, setSourceActivityId] = useState("");
+  const [activityBusy, setActivityBusy] = useState(false);
 
   const classActivities = useMemo(
     () => data.activities.filter((activity) => activity.classroomId === classroomId).slice().sort((a, b) => new Date(b.updatedAt ?? b.createdAt).getTime() - new Date(a.updatedAt ?? a.createdAt).getTime()),
@@ -1030,9 +1191,8 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   const totalQuestions = classActivities.reduce((sum, activity) => sum + (activity.questions?.length ?? 0), 0);
   const activityXp = activityEvents.reduce((sum, event) => sum + event.points, 0);
 
-  function draftActivity(id: string, createdAt: string): Activity {
+  function draftInput(): ActivityUpsertInput {
     return {
-      id,
       classroomId,
       title: title.trim(),
       topic: topic.trim() || undefined,
@@ -1044,8 +1204,6 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
         url: resourceKind === "EXTERNAL" ? resourceUrl.trim() || undefined : undefined,
       },
       questions,
-      createdAt,
-      updatedAt: new Date().toISOString(),
     };
   }
 
@@ -1097,20 +1255,29 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
     return true;
   }
 
-  function saveActivity(closeAfter = true) {
-    if (!validateDraft()) return;
-    const existing = activityId ? data.activities.find((activity) => activity.id === activityId) : undefined;
-    const id = existing?.id ?? uid("activity");
-    const activity = draftActivity(id, existing?.createdAt ?? new Date().toISOString());
-    patch((current) => ({
-      ...current,
-      activities: existing
-        ? current.activities.map((item) => item.id === id ? { ...activity, copiedFromActivityId: existing.copiedFromActivityId, copiedFromClassroomId: existing.copiedFromClassroomId } : item)
-        : [...current.activities, activity],
-    }));
-    setActivityId(id);
-    notify(existing ? "Atividade atualizada." : "Atividade criada para esta turma.");
-    if (closeAfter) setModal(null);
+  async function saveActivity(closeAfter = true) {
+    if (!validateDraft() || activityBusy) return;
+    setActivityBusy(true);
+    try {
+      const existing = activityId ? data.activities.find((activity) => activity.id === activityId) : undefined;
+      const saved = existing
+        ? await updateActivityApi(existing.id, draftInput())
+        : await createActivityApi(draftInput());
+      patch((current) => ({
+        ...current,
+        activities: existing
+          ? current.activities.map((item) => item.id === saved.id ? saved : item)
+          : [...current.activities, saved],
+      }));
+      setActivityId(saved.id);
+      setQuestions(saved.questions ?? []);
+      notify(existing ? "Atividade atualizada no PostgreSQL." : "Atividade criada no PostgreSQL.");
+      if (closeAfter) setModal(null);
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setActivityBusy(false);
+    }
   }
 
   function openDelivery(activity: Activity) {
@@ -1174,32 +1341,23 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
     setSourceActivityId(data.activities.find((activity) => activity.classroomId === nextClassroomId)?.id ?? "");
   }
 
-  function importActivityCopy() {
+  async function importActivityCopy() {
     const source = data.activities.find((activity) => activity.id === sourceActivityId && activity.classroomId === sourceClassroomId);
-    if (!source) {
-      notify("Selecione uma atividade de origem.");
+    if (!source || activityBusy) {
+      if (!source) notify("Selecione uma atividade de origem.");
       return;
     }
-    const now = new Date().toISOString();
-    const copy: Activity = {
-      ...source,
-      id: uid("activity"),
-      classroomId,
-      title: source.title,
-      questions: (source.questions ?? []).map((question) => ({
-        ...question,
-        id: uid("question"),
-        options: question.options?.map((option) => ({ ...option })),
-        evaluationCriteria: question.evaluationCriteria ? [...question.evaluationCriteria] : undefined,
-      })),
-      createdAt: now,
-      updatedAt: now,
-      copiedFromActivityId: source.id,
-      copiedFromClassroomId: source.classroomId,
-    };
-    patch((current) => ({ ...current, activities: [...current.activities, copy] }));
-    setModal(null);
-    notify(`Atividade "${source.title}" copiada para ${classroomName}.`);
+    setActivityBusy(true);
+    try {
+      const copy = await copyActivityApi(source.id, classroomId);
+      patch((current) => ({ ...current, activities: [...current.activities, copy] }));
+      setModal(null);
+      notify(`Atividade "${source.title}" copiada para ${classroomName} no PostgreSQL.`);
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setActivityBusy(false);
+    }
   }
 
   return (
@@ -1281,7 +1439,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
         ) : (
           <ActivityQuestionBuilder questions={questions} setQuestions={setQuestions} defaultTheme={topic || title} notify={notify} />
         )}
-        <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!title.trim()} onClick={() => saveActivity(true)}>Salvar atividade</button></div>
+        <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!title.trim() || activityBusy} onClick={() => { void saveActivity(true); }}>Salvar atividade</button></div>
       </Modal>
 
       <Modal open={modal === "delivery"} title="Registrar entrega / participação" subtitle={deliveryActivity?.title} size="medium" onClose={() => setModal(null)}>
@@ -1309,7 +1467,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
               <select className="select full" value={sourceActivityId} onChange={(e) => setSourceActivityId(e.target.value)}><option value="">Selecione</option>{sourceActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title} · {activity.questions?.length ?? 0} questões</option>)}</select>
             </div>
             <div className="copy-policy"><strong>Será criada uma cópia independente.</strong><p>Conteúdo, questões, XP e recurso externo são copiados. Entregas, alunos, resultados, ScoreEvents e histórico não são copiados.</p></div>
-            <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!sourceActivityId} onClick={importActivityCopy}>Importar cópia</button></div>
+            <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!sourceActivityId || activityBusy} onClick={() => { void importActivityCopy(); }}>Importar cópia</button></div>
           </div>
         ) : <MiniEmpty text="Crie uma segunda turma para reutilizar atividades entre contextos. Em uma evolução futura, modelos também poderão vir de uma biblioteca." />}
       </Modal>
@@ -1378,24 +1536,11 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const parsed = JSON.parse(String(reader.result)) as ArenaData;
-        if (!Array.isArray(parsed.activities)) throw new Error();
-
-        const classroomIds = new Set(data.classrooms.map((item) => item.id));
-        const sessionIds = new Set(data.sessions.map((item) => item.id));
-        const activities = (parsed.activities ?? []).filter((item) => classroomIds.has(item.classroomId));
-        const groupHistory = (parsed.groupHistory ?? []).filter((item) =>
-          classroomIds.has(item.classroomId) && (!item.sessionId || sessionIds.has(item.sessionId))
-        );
-
-        setData((current) => ({
-          ...current,
-          activities,
-          groupHistory,
-        }));
-        notify("Backup local restaurado. Turmas, alunos, sessões, presença e XP continuam vindo do PostgreSQL.");
+        const parsed = JSON.parse(String(reader.result)) as Partial<ArenaData>;
+        if (!Array.isArray(parsed.classrooms) || !Array.isArray(parsed.activities)) throw new Error();
+        notify("Snapshot válido. A restauração direta foi desativada porque o núcleo agora é autoritativo no PostgreSQL; a restauração server-side entra em um incremento próprio.");
       } catch {
-        notify("Arquivo de backup inválido ou incompatível com as turmas atuais.");
+        notify("Arquivo de snapshot inválido.");
       }
     };
     reader.readAsText(file);
@@ -1438,12 +1583,12 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
   return (
     <div className="two-col">
       <Panel title="Backup dos dados" subtitle="Snapshot dos módulos atuais do Arena Dev">
-        <div className="backup-card"><span className="backup-icon">↓</span><div><h3>Exportar snapshot</h3><p>Inclui a visão atual de turmas/alunos e os módulos que ainda permanecem local-first.</p></div><button className="button primary" onClick={exportData}>Exportar JSON</button></div>
-        <div className="backup-card"><span className="backup-icon">↑</span><div><h3>Restaurar dados locais</h3><p>Restaura atividades, grupos e runtime local compatíveis. XP não sobrescreve o PostgreSQL.</p></div><label className="button file-button">Importar JSON<input type="file" accept="application/json" onChange={(e) => importData(e.target.files?.[0])} /></label></div>
+        <div className="backup-card"><span className="backup-icon">↓</span><div><h3>Exportar snapshot</h3><p>Inclui uma fotografia da visão atual carregada do backend/PostgreSQL.</p></div><button className="button primary" onClick={exportData}>Exportar JSON</button></div>
+        <div className="backup-card"><span className="backup-icon">↑</span><div><h3>Validar snapshot</h3><p>Confere o JSON exportado. Restauração server-side será implementada separadamente para não sobrescrever dados persistentes de forma insegura.</p></div><label className="button file-button">Validar JSON<input type="file" accept="application/json" onChange={(e) => importData(e.target.files?.[0])} /></label></div>
       </Panel>
       <Panel title="Ambiente de demonstração" subtitle="Teste o fluxo usando a persistência atual">
         <div className="demo-block"><div className="target-mark small">A</div><h3>Carregar turma demonstrativa</h3><p>Cria turma, alunos e XP de demonstração diretamente no PostgreSQL.</p><button className="button" disabled={busy} onClick={() => { void loadDemo(); }}>{busy ? "Criando..." : "Carregar demonstração"}</button></div>
-        <div className="local-note"><strong>Persistência do Incremento 6</strong><p>Turmas, alunos, matrículas, sessões, presença e ScoreEvents já estão no backend/PostgreSQL. Atividades e mecânicas da Arena ainda permanecem temporariamente no navegador.</p></div>
+        <div className="local-note"><strong>Persistência do Incremento 7</strong><p>Turmas, alunos, matrículas, sessões, presença, XP, atividades, questões, sorteio, grupos, Boss Battle e estado da Arena estão no backend/PostgreSQL. O localStorage guarda apenas a preferência de turma selecionada.</p></div>
       </Panel>
     </div>
   );

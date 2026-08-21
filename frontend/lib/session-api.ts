@@ -1,3 +1,4 @@
+import { fetchSessionMechanics } from "./mechanics-api";
 import type { Classroom, GameSession, SessionParticipant, SessionRuntimeState } from "./types";
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
@@ -61,10 +62,6 @@ type ParticipantView = {
   connected: boolean;
 };
 
-function runtimeFor(sessionId: string, runtime: SessionRuntimeState[]) {
-  return runtime.find((item) => item.sessionId === sessionId);
-}
-
 function mapParticipant(sessionId: string, item: ParticipantView): SessionParticipant {
   return {
     id: item.id,
@@ -93,6 +90,8 @@ function mapSession(item: SessionView, participants: SessionParticipant[], runti
     activityId: runtime?.activityId,
     currentQuestionId: runtime?.currentQuestionId,
     answeredQuestionIds: runtime?.answeredQuestionIds ?? [],
+    groups: runtime?.groups ?? [],
+    groupSize: runtime?.groupSize ?? 2,
   };
 }
 
@@ -103,15 +102,18 @@ export async function fetchSessionParticipants(sessionId: string): Promise<Sessi
 
 export async function fetchSessionDomain(
   classrooms: Classroom[],
-  runtime: SessionRuntimeState[] = [],
 ): Promise<{ sessions: GameSession[]; sessionParticipants: SessionParticipant[] }> {
   const sessionGroups = await Promise.all(
     classrooms.map((classroom) => request<SessionView[]>(`/api/sessions?classroomId=${encodeURIComponent(classroom.id)}`)),
   );
   const sessionViews = sessionGroups.flat();
   const activeSessionViews = sessionViews.filter((session) => session.status === "ACTIVE" && !session.endedAt);
-  const participantGroups = await Promise.all(activeSessionViews.map((session) => fetchSessionParticipants(session.id)));
+  const [participantGroups, mechanics] = await Promise.all([
+    Promise.all(activeSessionViews.map((session) => fetchSessionParticipants(session.id))),
+    Promise.all(activeSessionViews.map((session) => fetchSessionMechanics(session.id))),
+  ]);
   const sessionParticipants = participantGroups.flat();
+  const mechanicsBySession = new Map(mechanics.map((item) => [item.sessionId, item]));
   const participantsBySession = new Map<string, SessionParticipant[]>();
   for (const participant of sessionParticipants) {
     const rows = participantsBySession.get(participant.sessionId) ?? [];
@@ -123,7 +125,7 @@ export async function fetchSessionDomain(
     sessions: sessionViews.map((session) => mapSession(
       session,
       participantsBySession.get(session.id) ?? [],
-      runtimeFor(session.id, runtime),
+      mechanicsBySession.get(session.id),
     )),
     sessionParticipants,
   };

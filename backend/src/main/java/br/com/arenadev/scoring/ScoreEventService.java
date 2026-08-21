@@ -1,5 +1,9 @@
 package br.com.arenadev.scoring;
 
+import br.com.arenadev.activity.Activity;
+import br.com.arenadev.activity.ActivityQuestion;
+import br.com.arenadev.activity.ActivityQuestionRepository;
+import br.com.arenadev.activity.ActivityRepository;
 import br.com.arenadev.classroom.Classroom;
 import br.com.arenadev.classroom.ClassroomRepository;
 import br.com.arenadev.classroom.Enrollment;
@@ -27,6 +31,8 @@ public class ScoreEventService {
     private final EnrollmentRepository enrollmentRepository;
     private final ClassSessionRepository sessionRepository;
     private final SessionParticipantRepository participantRepository;
+    private final ActivityRepository activityRepository;
+    private final ActivityQuestionRepository activityQuestionRepository;
 
     public ScoreEventService(
             ScoreEventRepository scoreEventRepository,
@@ -34,7 +40,9 @@ public class ScoreEventService {
             StudentRepository studentRepository,
             EnrollmentRepository enrollmentRepository,
             ClassSessionRepository sessionRepository,
-            SessionParticipantRepository participantRepository
+            SessionParticipantRepository participantRepository,
+            ActivityRepository activityRepository,
+            ActivityQuestionRepository activityQuestionRepository
     ) {
         this.scoreEventRepository = scoreEventRepository;
         this.classroomRepository = classroomRepository;
@@ -42,6 +50,8 @@ public class ScoreEventService {
         this.enrollmentRepository = enrollmentRepository;
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
+        this.activityRepository = activityRepository;
+        this.activityQuestionRepository = activityQuestionRepository;
     }
 
     @Transactional(readOnly = true)
@@ -134,6 +144,9 @@ public class ScoreEventService {
             }
         }
 
+        String activityRef = validateActivityReference(classroom, command.activityId());
+        String questionRef = validateQuestionReference(activityRef, command.questionId());
+
         ScoreSource source = command.source() == null ? ScoreSource.MANUAL : command.source();
         return new ScoreEvent(
                 classroom,
@@ -143,10 +156,37 @@ public class ScoreEventService {
                 command.category(),
                 normalizeDescription(command.description()),
                 source,
-                normalizeRef(command.activityId()),
-                normalizeRef(command.questionId()),
+                activityRef,
+                questionRef,
                 null
         );
+    }
+
+    private String validateActivityReference(Classroom classroom, String value) {
+        if (value == null || value.isBlank()) return null;
+        UUID activityId;
+        try { activityId = UUID.fromString(value.trim()); }
+        catch (IllegalArgumentException ex) { throw new IllegalArgumentException("Referência de atividade inválida."); }
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new ResourceNotFoundException("Atividade não encontrada."));
+        if (!activity.getClassroom().getId().equals(classroom.getId())) {
+            throw new IllegalArgumentException("Atividade não pertence à turma informada.");
+        }
+        return activityId.toString();
+    }
+
+    private String validateQuestionReference(String activityRef, String value) {
+        if (value == null || value.isBlank()) return null;
+        if (activityRef == null) throw new IllegalArgumentException("Questão exige uma atividade de origem.");
+        UUID questionId;
+        try { questionId = UUID.fromString(value.trim()); }
+        catch (IllegalArgumentException ex) { throw new IllegalArgumentException("Referência de questão inválida."); }
+        ActivityQuestion question = activityQuestionRepository.findById(questionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Questão não encontrada."));
+        if (!question.getActivity().getId().toString().equals(activityRef)) {
+            throw new IllegalArgumentException("Questão não pertence à atividade informada.");
+        }
+        return questionId.toString();
     }
 
     private static String normalizeDescription(String value) {
@@ -154,11 +194,6 @@ public class ScoreEventService {
         return normalized.length() <= 300 ? normalized : normalized.substring(0, 300);
     }
 
-    private static String normalizeRef(String value) {
-        if (value == null || value.isBlank()) return null;
-        String normalized = value.trim();
-        return normalized.length() <= 120 ? normalized : normalized.substring(0, 120);
-    }
 
     public record CreateScoreEvent(
             UUID classroomId,

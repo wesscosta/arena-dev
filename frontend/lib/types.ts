@@ -97,6 +97,8 @@ export interface SessionRuntimeState {
   activityId?: string;
   currentQuestionId?: string;
   answeredQuestionIds?: string[];
+  groups?: string[][];
+  groupSize?: number;
 }
 
 export interface SessionParticipant {
@@ -124,6 +126,8 @@ export interface GameSession {
   activityId?: string;
   currentQuestionId?: string;
   answeredQuestionIds?: string[];
+  groups?: string[][];
+  groupSize?: number;
 }
 
 export interface ScoreEvent {
