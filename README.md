@@ -6,7 +6,7 @@ The project started as a simple Java desktop application for student management 
 
 > **Status:** under active development — Arena Dev v1.
 
-> **Migration strategy:** the current Next.js interface is the product baseline and remains intentionally unchanged while persistence is migrated incrementally from `localStorage` to Spring Boot + PostgreSQL. The first persistent increment covers classrooms, students, enrollments, class sessions and attendance.
+> **Migration strategy:** the current Next.js interface is the product baseline and remains intentionally unchanged while persistence is migrated incrementally from `localStorage` to Spring Boot + PostgreSQL. As of Increment 4, classrooms, students and enrollments already use the backend/PostgreSQL as their source of truth; sessions, activities, XP and game mechanics are migrated in later increments.
 
 > **Architecture decisions:** accepted product, UX and technical decisions are versioned in [`docs/adr/README.md`](docs/adr/README.md).
 
@@ -139,7 +139,7 @@ Activities can contain their own question set and may also reference an external
 
 Supported question families currently include multiple choice, open response, true/false, bug fixing, analysis, practical tasks and scenario-based problems. Direct AI API integration is intentionally deferred; the current flow generates a structured prompt that can be copied to the teacher's preferred AI and imported back as validated JSON.
 
-See `docs/ACTIVITY_QUESTIONS.md`, `docs/INCREMENT_3.md` and `docs/question-package-v1.schema.json`.
+See `docs/ACTIVITY_QUESTIONS.md`, `docs/INCREMENT_3.md`, `docs/INCREMENT_4.md` and `docs/question-package-v1.schema.json`.
 
 Activities are scoped to the selected classroom. They can be copied into another classroom as independent content and can optionally feed questions into an Arena session without removing the Arena's free/oral mode.
 
@@ -293,9 +293,9 @@ Game rules should remain isolated from HTTP and persistence concerns whenever po
 
 Arena Dev v1 is currently transitioning from the first local prototype to the Java backend.
 
-The frontend already contains the initial game experience and currently persists part of its state locally in the browser.
+The migration is domain-oriented. `Classroom`, `Student` and `Enrollment` are already persisted through REST/PostgreSQL, while sessions, activities, XP and game mechanics remain temporarily local-first.
 
-The backend currently provides the foundation for the permanent architecture:
+The current runtime path for the migrated domain is:
 
 ```text
 Next.js
@@ -307,7 +307,7 @@ Spring Boot
 PostgreSQL
 ```
 
-The next development stage is migrating the core entities and game state from local browser storage to the Spring Boot API.
+The next development stage is migrating `ClassSession` and `SessionParticipant` (session lifecycle and attendance) while preserving the existing Arena experience.
 
 ---
 
@@ -503,9 +503,9 @@ docker compose down -v
 
 ### Core domain
 
-* [ ] Classroom management
-* [ ] Student management
-* [ ] Student enrollment
+* [x] Classroom management — REST/PostgreSQL
+* [x] Student management — REST/PostgreSQL
+* [x] Student enrollment — REST/PostgreSQL
 * [ ] Game sessions
 * [ ] Attendance
 * [ ] Score events

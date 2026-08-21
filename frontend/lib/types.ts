@@ -62,13 +62,16 @@ export interface Classroom {
   id: string;
   name: string;
   code: string;
+  active?: boolean;
   createdAt: string;
 }
 
 export interface Student {
   id: string;
+  registration?: string;
   name: string;
   nickname: string;
+  active?: boolean;
   createdAt: string;
 }
 

@@ -55,7 +55,16 @@ Referência: `docs/INCREMENT_3.md`.
 
 ## Incremento 4 — Turmas e alunos via API
 
-Substituir apenas a persistência de Turmas/Alunos/Matrículas por REST, preservando a UI atual.
+**Status: implementado.**
+
+- `Classroom`, `Student` e `Enrollment` usam REST/PostgreSQL como fonte de verdade;
+- UI atual preservada;
+- `localStorage` deixa de persistir cópia autoritativa desses domínios;
+- criação, matrícula, ativação/inativação e remoção passam pela API;
+- dados experimentais com IDs locais não são remapeados (ADR-0018);
+- backup passa a tratar o domínio persistente separadamente.
+
+Referência: `docs/INCREMENT_4.md`.
 
 ## Incremento 5 — Sessões e presença via API
 

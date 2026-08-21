@@ -95,3 +95,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 @media (max-width:1000px){.activity-catalog{grid-template-columns:1fr}.activity-metrics{grid-template-columns:1fr 1fr}}
 @media (max-width:820px){.page-action-bar{align-items:flex-start;flex-direction:column}.page-action-buttons{justify-content:flex-start}.modal-backdrop{padding:10px}.modal-card{max-height:calc(100vh - 20px)}.arena-activity-strip{align-items:flex-start;flex-direction:column}.arena-activity-strip .select{width:100%}}
 @media (max-width:520px){.activity-metrics,.delivery-summary,.arena-question-options{grid-template-columns:1fr}.activity-card-head{flex-direction:column}.activity-xp{text-align:left}.activity-card-actions{display:grid;grid-template-columns:1fr}.context-lock{grid-template-columns:1fr}.modal-body{padding:15px}}
+
+/* Incremento 4 — Classroom/Student/Enrollment via API */
+.status-dot.error{background:#ff7f87;box-shadow:0 0 10px rgba(255,127,135,.7)}
+.api-alert{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;margin-bottom:18px;border:1px solid rgba(255,127,135,.24);background:rgba(255,127,135,.055);border-radius:10px;padding:11px 13px}.api-alert strong{font-size:10px;color:#ffafb4}.api-alert span{font-size:10px;color:#b8c5c0}.api-alert .text-button{color:#ffafb4;font-weight:800}
+@media (max-width:700px){.api-alert{grid-template-columns:1fr}.api-alert .text-button{justify-self:start}}

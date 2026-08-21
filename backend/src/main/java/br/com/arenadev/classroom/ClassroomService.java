@@ -75,10 +75,18 @@ public class ClassroomService {
     }
 
     @Transactional
+    public EnrollmentView setEnrollmentActive(UUID classroomId, UUID studentId, boolean active) {
+        Enrollment enrollment = enrollmentRepository.findByClassroomIdAndStudentId(classroomId, studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Matrícula do aluno na turma não encontrada."));
+        enrollment.setActive(active);
+        return EnrollmentView.from(enrollment);
+    }
+
+    @Transactional
     public void remove(UUID classroomId, UUID studentId) {
         Enrollment enrollment = enrollmentRepository.findByClassroomIdAndStudentId(classroomId, studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Matrícula do aluno na turma não encontrada."));
-        enrollment.setActive(false);
+        enrollmentRepository.delete(enrollment);
     }
 
     private Classroom getClassroom(UUID id) {

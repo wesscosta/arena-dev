@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { createBalancedGroups, getLevel, getLevelProgress, weightedDraw, xpForStudent } from "@/lib/game";
+import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive } from "@/lib/classroom-api";
 import { EMPTY_DATA, loadData, saveData, uid } from "@/lib/store";
 import type { Activity, ActivityQuestion, ArenaData, ScoreCategory, Student } from "@/lib/types";
 
@@ -41,16 +42,46 @@ function todayTitle() {
   }).format(new Date());
 }
 
+function errorMessage(error: unknown) {
+  if (error instanceof ArenaApiError || error instanceof Error) return error.message;
+  return "Não foi possível concluir a operação.";
+}
+
 export default function ArenaApp() {
   const [data, setData] = useState<ArenaData>(EMPTY_DATA);
   const [hydrated, setHydrated] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [toast, setToast] = useState("");
+  const [apiError, setApiError] = useState("");
   const [arenaActivityId, setArenaActivityId] = useState<string | undefined>();
 
   useEffect(() => {
-    setData(loadData());
-    setHydrated(true);
+    let cancelled = false;
+    async function bootstrap() {
+      const localData = loadData();
+      try {
+        const domain = await fetchClassroomDomain();
+        if (cancelled) return;
+        const preferredClassroomId = domain.classrooms.some((item) => item.id === localData.activeClassroomId)
+          ? localData.activeClassroomId
+          : domain.classrooms[0]?.id;
+        setData({
+          ...localData,
+          ...domain,
+          activeClassroomId: preferredClassroomId,
+          currentSessionId: undefined,
+        });
+        setApiError("");
+      } catch (error) {
+        if (cancelled) return;
+        setData(localData);
+        setApiError(`Backend indisponível: ${errorMessage(error)}`);
+      } finally {
+        if (!cancelled) setHydrated(true);
+      }
+    }
+    void bootstrap();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -103,6 +134,18 @@ export default function ArenaApp() {
     setData((current) => updater(current));
   }
 
+  async function refreshClassroomDomain(preferredClassroomId?: string) {
+    const domain = await fetchClassroomDomain();
+    setData((current) => {
+      const candidate = preferredClassroomId ?? current.activeClassroomId;
+      const activeClassroomId = domain.classrooms.some((item) => item.id === candidate)
+        ? candidate
+        : domain.classrooms[0]?.id;
+      return { ...current, ...domain, activeClassroomId };
+    });
+    setApiError("");
+  }
+
   function setActiveClassroom(id: string) {
     setArenaActivityId(undefined);
     patch((current) => ({ ...current, activeClassroomId: id, currentSessionId: undefined }));
@@ -133,10 +176,10 @@ export default function ArenaApp() {
         </nav>
 
         <div className="sidebar-foot">
-          <div className="status-dot" />
+          <div className={apiError ? "status-dot error" : "status-dot"} />
           <div>
-            <strong>Modo local</strong>
-            <small>Dados salvos neste navegador</small>
+            <strong>{apiError ? "Backend indisponível" : "Persistência híbrida"}</strong>
+            <small>{apiError ? "Verifique Spring Boot/PostgreSQL" : "Turmas e alunos no PostgreSQL"}</small>
           </div>
         </div>
       </aside>
@@ -166,6 +209,7 @@ export default function ArenaApp() {
         </header>
 
         <section className="content">
+          {apiError && <div className="api-alert"><strong>API indisponível.</strong><span>{apiError}</span><button className="text-button" onClick={() => { void refreshClassroomDomain(); }}>Tentar novamente</button></div>}
           {!activeClassroom && view !== "classroom" && view !== "backup" ? (
             <EmptyState
               title="Crie sua primeira turma"
@@ -193,8 +237,8 @@ export default function ArenaApp() {
               activeClassroomId={activeClassroomId}
               classStudents={classStudents}
               setActiveClassroom={setActiveClassroom}
-              patch={patch}
               notify={notify}
+              refreshClassroomDomain={refreshClassroomDomain}
             />
           )}
 
@@ -239,7 +283,7 @@ export default function ArenaApp() {
             />
           )}
 
-          {view === "backup" && <BackupView data={data} setData={setData} notify={notify} />}
+          {view === "backup" && <BackupView data={data} setData={setData} notify={notify} refreshClassroomDomain={refreshClassroomDomain} />}
         </section>
       </main>
 
@@ -304,65 +348,104 @@ function Dashboard({ classroomName, students, leaderboard, events, currentSessio
   );
 }
 
-function ClassroomView({ data, activeClassroomId, classStudents, setActiveClassroom, patch, notify }: {
+function ClassroomView({ data, activeClassroomId, classStudents, setActiveClassroom, notify, refreshClassroomDomain }: {
   data: ArenaData;
   activeClassroomId?: string;
   classStudents: Student[];
   setActiveClassroom: (id: string) => void;
-  patch: (updater: (current: ArenaData) => ArenaData) => void;
   notify: (message: string) => void;
+  refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
   const [className, setClassName] = useState("");
   const [classCode, setClassCode] = useState("");
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
   const [bulk, setBulk] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  function addClassroom() {
-    if (!className.trim()) return;
-    const id = uid("class");
-    patch((current) => ({
-      ...current,
-      classrooms: [...current.classrooms, { id, name: className.trim(), code: classCode.trim(), createdAt: new Date().toISOString() }],
-      activeClassroomId: id,
-      currentSessionId: undefined,
-    }));
-    setClassName(""); setClassCode("");
-    notify("Turma criada.");
+  async function addClassroom() {
+    if (!className.trim() || busy) return;
+    setBusy(true);
+    try {
+      const classroom = await createClassroomApi({ name: className.trim(), code: classCode.trim() });
+      await refreshClassroomDomain(classroom.id);
+      setActiveClassroom(classroom.id);
+      setClassName("");
+      setClassCode("");
+      notify("Turma criada no PostgreSQL.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function addStudent(studentName: string, studentNickname = "") {
-    if (!activeClassroomId || !studentName.trim()) return;
-    const studentId = uid("student");
-    patch((current) => ({
-      ...current,
-      students: [...current.students, { id: studentId, name: studentName.trim(), nickname: studentNickname.trim(), createdAt: new Date().toISOString() }],
-      enrollments: [...current.enrollments, { id: uid("enrollment"), classroomId: activeClassroomId, studentId, active: true, joinedAt: new Date().toISOString() }],
-    }));
+  async function addStudent(studentName: string, studentNickname = "", silent = false) {
+    if (!activeClassroomId || !studentName.trim() || (!silent && busy)) return false;
+    if (!silent) setBusy(true);
+    try {
+      await createAndEnrollStudent(activeClassroomId, {
+        name: studentName.trim(),
+        nickname: studentNickname.trim(),
+      });
+      if (!silent) {
+        await refreshClassroomDomain(activeClassroomId);
+        notify("Aluno cadastrado e vinculado à turma.");
+      }
+      return true;
+    } catch (error) {
+      if (!silent) notify(errorMessage(error));
+      return false;
+    } finally {
+      if (!silent) setBusy(false);
+    }
   }
 
-  function importStudents() {
+  async function importStudents() {
     const names = bulk.split(/\r?\n|;/).map((item) => item.trim()).filter(Boolean);
-    if (!names.length || !activeClassroomId) return;
-    names.forEach((studentName) => addStudent(studentName));
-    setBulk("");
-    notify(`${names.length} aluno(s) importado(s).`);
+    if (!names.length || !activeClassroomId || busy) return;
+    setBusy(true);
+    let imported = 0;
+    try {
+      for (const studentName of names) {
+        if (await addStudent(studentName, "", true)) imported += 1;
+      }
+      await refreshClassroomDomain(activeClassroomId);
+      setBulk("");
+      notify(imported === names.length
+        ? `${imported} aluno(s) importado(s).`
+        : `${imported} de ${names.length} aluno(s) importados.`);
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function removeStudent(studentId: string) {
-    if (!activeClassroomId) return;
-    patch((current) => ({
-      ...current,
-      enrollments: current.enrollments.filter((enrollment) => !(enrollment.classroomId === activeClassroomId && enrollment.studentId === studentId)),
-    }));
-    notify("Aluno removido da turma.");
+  async function removeStudent(studentId: string) {
+    if (!activeClassroomId || busy) return;
+    setBusy(true);
+    try {
+      await removeEnrollment(activeClassroomId, studentId);
+      await refreshClassroomDomain(activeClassroomId);
+      notify("Aluno removido da turma.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function toggleStudent(studentId: string) {
-    patch((current) => ({
-      ...current,
-      enrollments: current.enrollments.map((enrollment) => enrollment.classroomId === activeClassroomId && enrollment.studentId === studentId ? { ...enrollment, active: !enrollment.active } : enrollment),
-    }));
+  async function toggleStudent(studentId: string, active: boolean) {
+    if (!activeClassroomId || busy) return;
+    setBusy(true);
+    try {
+      await setEnrollmentActive(activeClassroomId, studentId, !active);
+      await refreshClassroomDomain(activeClassroomId);
+      notify(active ? "Aluno inativado na turma." : "Aluno reativado na turma.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
   }
 
   const allRows = data.enrollments
@@ -378,7 +461,7 @@ function ClassroomView({ data, activeClassroomId, classStudents, setActiveClassr
           <div className="form-grid">
             <input className="input" placeholder="Nome da turma" value={className} onChange={(e) => setClassName(e.target.value)} />
             <input className="input" placeholder="Código opcional" value={classCode} onChange={(e) => setClassCode(e.target.value)} />
-            <button className="button primary" onClick={addClassroom}>Criar turma</button>
+            <button className="button primary" disabled={busy || !className.trim()} onClick={() => { void addClassroom(); }}>{busy ? "Processando..." : "Criar turma"}</button>
           </div>
           <div className="class-list">
             {data.classrooms.map((classroom) => (
@@ -392,13 +475,13 @@ function ClassroomView({ data, activeClassroomId, classStudents, setActiveClassr
 
         <Panel title="Cadastro rápido" subtitle={activeClassroomId ? "Adicionar um aluno" : "Crie uma turma primeiro"}>
           <div className="form-grid">
-            <input className="input" placeholder="Nome completo" value={name} onChange={(e) => setName(e.target.value)} disabled={!activeClassroomId} />
-            <input className="input" placeholder="Apelido (opcional)" value={nickname} onChange={(e) => setNickname(e.target.value)} disabled={!activeClassroomId} />
-            <button className="button" disabled={!activeClassroomId || !name.trim()} onClick={() => { addStudent(name, nickname); setName(""); setNickname(""); notify("Aluno cadastrado."); }}>Adicionar aluno</button>
+            <input className="input" placeholder="Nome completo" value={name} onChange={(e) => setName(e.target.value)} disabled={busy || !activeClassroomId} />
+            <input className="input" placeholder="Apelido (opcional)" value={nickname} onChange={(e) => setNickname(e.target.value)} disabled={busy || !activeClassroomId} />
+            <button className="button" disabled={busy || !activeClassroomId || !name.trim()} onClick={() => { void addStudent(name, nickname).then((created) => { if (created) { setName(""); setNickname(""); } }); }}>Adicionar aluno</button>
           </div>
           <div className="separator"><span>ou</span></div>
-          <textarea className="textarea" rows={7} placeholder={"Cole uma lista, um aluno por linha\nAna Luiza\nCarlos Henrique\nJoão Pedro"} value={bulk} onChange={(e) => setBulk(e.target.value)} disabled={!activeClassroomId} />
-          <button className="button ghost full" onClick={importStudents} disabled={!bulk.trim()}>Importar lista</button>
+          <textarea className="textarea" rows={7} placeholder={"Cole uma lista, um aluno por linha\nAna Luiza\nCarlos Henrique\nJoão Pedro"} value={bulk} onChange={(e) => setBulk(e.target.value)} disabled={busy || !activeClassroomId} />
+          <button className="button ghost full" onClick={() => { void importStudents(); }} disabled={busy || !bulk.trim()}>Importar lista</button>
         </Panel>
       </div>
 
@@ -413,7 +496,7 @@ function ClassroomView({ data, activeClassroomId, classStudents, setActiveClassr
                   <div className="student-cell"><Avatar student={student} /><div><strong>{student.name}</strong><small>{student.nickname || "Sem apelido"}</small></div></div>
                   <span className={enrollment.active ? "status active" : "status"}>{enrollment.active ? "Ativo" : "Inativo"}</span>
                   <b>{xp} XP</b>
-                  <div className="row-actions"><button className="text-button" onClick={() => toggleStudent(student.id)}>{enrollment.active ? "Inativar" : "Ativar"}</button><button className="text-button danger" onClick={() => removeStudent(student.id)}>Remover</button></div>
+                  <div className="row-actions"><button className="text-button" onClick={() => { void toggleStudent(student.id, enrollment.active); }} disabled={busy}>{enrollment.active ? "Inativar" : "Ativar"}</button><button className="text-button danger" disabled={busy} onClick={() => { void removeStudent(student.id); }}>Remover</button></div>
                 </div>
               );
             })}
@@ -1118,7 +1201,14 @@ function HistoryView({ events, students, onDelete }: { events: ArenaData["scoreE
   );
 }
 
-function BackupView({ data, setData, notify }: { data: ArenaData; setData: (data: ArenaData) => void; notify: (message: string) => void }) {
+function BackupView({ data, setData, notify, refreshClassroomDomain }: {
+  data: ArenaData;
+  setData: React.Dispatch<React.SetStateAction<ArenaData>>;
+  notify: (message: string) => void;
+  refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+
   function exportData() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -1135,33 +1225,78 @@ function BackupView({ data, setData, notify }: { data: ArenaData; setData: (data
     reader.onload = () => {
       try {
         const parsed = JSON.parse(String(reader.result)) as ArenaData;
-        if (!Array.isArray(parsed.classrooms) || !Array.isArray(parsed.students) || !Array.isArray(parsed.scoreEvents)) throw new Error();
-        setData({ ...EMPTY_DATA, ...parsed });
-        notify("Backup importado com sucesso.");
-      } catch { notify("Arquivo de backup inválido."); }
+        if (!Array.isArray(parsed.sessions) || !Array.isArray(parsed.scoreEvents) || !Array.isArray(parsed.activities)) throw new Error();
+
+        const classroomIds = new Set(data.classrooms.map((item) => item.id));
+        const studentIds = new Set(data.students.map((item) => item.id));
+        const sessions = (parsed.sessions ?? []).filter((item) => classroomIds.has(item.classroomId));
+        const scoreEvents = (parsed.scoreEvents ?? []).filter((item) => classroomIds.has(item.classroomId) && studentIds.has(item.studentId));
+        const activities = (parsed.activities ?? []).filter((item) => classroomIds.has(item.classroomId));
+        const groupHistory = (parsed.groupHistory ?? []).filter((item) => classroomIds.has(item.classroomId));
+
+        setData((current) => ({
+          ...current,
+          sessions,
+          scoreEvents,
+          activities,
+          groupHistory,
+          currentSessionId: undefined,
+        }));
+        notify("Backup local restaurado. Turmas e alunos continuam vindo do PostgreSQL.");
+      } catch {
+        notify("Arquivo de backup inválido ou incompatível com as turmas atuais.");
+      }
     };
     reader.readAsText(file);
   }
 
-  function loadDemo() {
-    const classroomId = uid("class");
-    const names = ["Ana Luiza", "Carlos Henrique", "João Pedro", "Maria Francisca", "Pedro Augusto", "Rafael Lima"];
-    const students = names.map((name) => ({ id: uid("student"), name, nickname: name.split(" ")[0], createdAt: new Date().toISOString() }));
-    const enrollments = students.map((student) => ({ id: uid("enrollment"), classroomId, studentId: student.id, active: true, joinedAt: new Date().toISOString() }));
-    const scoreEvents = students.flatMap((student, index) => index < 4 ? [{ id: uid("score"), classroomId, studentId: student.id, points: (index + 1) * 20, category: "BONUS" as const, description: "Dados de demonstração", createdAt: new Date().toISOString() }] : []);
-    setData({ ...EMPTY_DATA, classrooms: [{ id: classroomId, name: "Desenvolvimento de Sistemas", code: "DS-DEMO", createdAt: new Date().toISOString() }], students, enrollments, scoreEvents, activeClassroomId: classroomId });
-    notify("Demonstração carregada.");
+  async function loadDemo() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const classroom = await createClassroomApi({ name: `Desenvolvimento de Sistemas · Demo ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` });
+      const names = ["Ana Luiza", "Carlos Henrique", "João Pedro", "Maria Francisca", "Pedro Augusto", "Rafael Lima"];
+      const createdStudents: Student[] = [];
+      for (const name of names) {
+        const result = await createAndEnrollStudent(classroom.id, { name, nickname: name.split(" ")[0] });
+        createdStudents.push(result.student);
+      }
+
+      await refreshClassroomDomain(classroom.id);
+      setData((current) => ({
+        ...current,
+        activeClassroomId: classroom.id,
+        scoreEvents: [
+          ...current.scoreEvents,
+          ...createdStudents.slice(0, 4).map((student, index) => ({
+            id: uid("score"),
+            classroomId: classroom.id,
+            studentId: student.id,
+            points: (index + 1) * 20,
+            category: "BONUS" as const,
+            description: "Dados de demonstração",
+            source: "MANUAL" as const,
+            createdAt: new Date().toISOString(),
+          })),
+        ],
+      }));
+      notify("Demonstração criada no PostgreSQL.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <div className="two-col">
-      <Panel title="Backup dos dados" subtitle="Como a V1 é local-first, faça backup periódico">
-        <div className="backup-card"><span className="backup-icon">↓</span><div><h3>Exportar tudo</h3><p>Turmas, alunos, sessões, histórico, atividades e grupos em um único JSON.</p></div><button className="button primary" onClick={exportData}>Exportar JSON</button></div>
-        <div className="backup-card"><span className="backup-icon">↑</span><div><h3>Restaurar backup</h3><p>Substitui os dados locais pela cópia selecionada.</p></div><label className="button file-button">Importar JSON<input type="file" accept="application/json" onChange={(e) => importData(e.target.files?.[0])} /></label></div>
+      <Panel title="Backup dos dados" subtitle="Snapshot dos módulos atuais do Arena Dev">
+        <div className="backup-card"><span className="backup-icon">↓</span><div><h3>Exportar snapshot</h3><p>Inclui a visão atual de turmas/alunos e os módulos que ainda permanecem local-first.</p></div><button className="button primary" onClick={exportData}>Exportar JSON</button></div>
+        <div className="backup-card"><span className="backup-icon">↑</span><div><h3>Restaurar dados locais</h3><p>Restaura sessões, XP, atividades e grupos compatíveis. Turmas/alunos não sobrescrevem o PostgreSQL.</p></div><label className="button file-button">Importar JSON<input type="file" accept="application/json" onChange={(e) => importData(e.target.files?.[0])} /></label></div>
       </Panel>
-      <Panel title="Ambiente de demonstração" subtitle="Teste o sistema sem cadastrar sua turma real">
-        <div className="demo-block"><div className="target-mark small">A</div><h3>Carregar turma demonstrativa</h3><p>Cria uma turma com seis alunos e pontuação inicial para você navegar por todas as telas.</p><button className="button" onClick={loadDemo}>Carregar demonstração</button></div>
-        <div className="local-note"><strong>Privacidade da V1</strong><p>Nenhum dado é enviado para servidor. Tudo permanece no armazenamento local deste navegador até você limpar os dados do site.</p></div>
+      <Panel title="Ambiente de demonstração" subtitle="Teste o fluxo usando a persistência atual">
+        <div className="demo-block"><div className="target-mark small">A</div><h3>Carregar turma demonstrativa</h3><p>Cria a turma e os seis alunos no PostgreSQL; XP e demais módulos continuam no estágio de migração previsto.</p><button className="button" disabled={busy} onClick={() => { void loadDemo(); }}>{busy ? "Criando..." : "Carregar demonstração"}</button></div>
+        <div className="local-note"><strong>Persistência do Incremento 4</strong><p>Turmas, alunos e matrículas já são persistidos no backend/PostgreSQL. Sessões, atividades, XP, Arena e grupos continuam temporariamente no navegador até seus incrementos específicos.</p></div>
       </Panel>
     </div>
   );

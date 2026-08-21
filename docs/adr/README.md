@@ -34,6 +34,7 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0015](ADR-0015-ux-de-atividades-com-modais.md) | Atividades em lista/cards; criação, questões e entregas em modal | Aceito |
 | [ADR-0016](ADR-0016-dinamicas-e-ferramentas-auxiliares.md) | Separar dinâmicas de aula de ferramentas auxiliares | Aceito |
 | [ADR-0017](ADR-0017-tres-experiencias-mesmo-sistema.md) | Professor, aluno e projetor como três experiências do mesmo sistema | Aceito |
+| [ADR-0018](ADR-0018-fronteira-limpa-na-migracao-do-dominio-de-turma.md) | Fronteira limpa ao migrar Classroom/Student/Enrollment para o backend | Aceito |
 
 ## Template
 

@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -64,6 +65,15 @@ public class ClassroomController {
         return service.enroll(id, studentId);
     }
 
+    @PatchMapping("/{id}/students/{studentId}")
+    public ClassroomService.EnrollmentView setEnrollmentActive(
+            @PathVariable UUID id,
+            @PathVariable UUID studentId,
+            @RequestBody EnrollmentStatusRequest request
+    ) {
+        return service.setEnrollmentActive(id, studentId, request.active());
+    }
+
     @DeleteMapping("/{id}/students/{studentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void remove(@PathVariable UUID id, @PathVariable UUID studentId) {
@@ -74,5 +84,8 @@ public class ClassroomController {
     }
 
     public record ClassroomUpdateRequest(@NotBlank String name, String code, boolean active) {
+    }
+
+    public record EnrollmentStatusRequest(boolean active) {
     }
 }
