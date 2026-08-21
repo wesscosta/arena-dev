@@ -6,6 +6,8 @@ The project started as a simple Java desktop application for student management 
 
 > **Status:** under active development — Arena Dev v1.
 
+> **Migration strategy:** the current Next.js interface is the product baseline and remains intentionally unchanged while persistence is migrated incrementally from `localStorage` to Spring Boot + PostgreSQL. The first persistent increment covers classrooms, students, enrollments, class sessions and attendance.
+
 ---
 
 ## Overview
@@ -216,7 +218,7 @@ All services are orchestrated using **Docker Compose**.
 
 ### Planned additions
 
-* Flyway
+* Flyway (implemented)
 * Spring Security
 * JWT
 * WebSocket / real-time sessions
@@ -694,3 +696,28 @@ Developed by **Weslley Costa**.
 ## License
 
 A license will be defined before the first stable public release.
+
+---
+
+## Migration increment 1 — persistent foundation
+
+The current frontend remains intentionally unchanged and local-first while the persistent backend is validated.
+
+Implemented in the backend:
+
+- Flyway versioned migrations;
+- Classroom;
+- Student (optional registration during migration);
+- Enrollment;
+- ClassSession;
+- SessionParticipant / attendance;
+- REST endpoints for those domains;
+- Hibernate schema validation instead of automatic schema mutation.
+
+See:
+
+- `docs/BASELINE_AUDIT.md`
+- `docs/MIGRATION_PLAN.md`
+- `docs/API_INCREMENT_1.md`
+
+The next increment will migrate **only Classroom + Students + Enrollments** from `localStorage` to the API while preserving the current UI.

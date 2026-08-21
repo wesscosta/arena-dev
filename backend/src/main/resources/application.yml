@@ -10,8 +10,13 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:arena123}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
         format_sql: true
+  flyway:
+    enabled: true
+
+app:
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
