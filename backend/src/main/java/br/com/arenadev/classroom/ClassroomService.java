@@ -1,5 +1,9 @@
 package br.com.arenadev.classroom;
 
+import br.com.arenadev.activity.ActivityRepository;
+import br.com.arenadev.scoring.ScoreEventRepository;
+import br.com.arenadev.session.ClassSessionRepository;
+import br.com.arenadev.session.SessionStatus;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,15 +17,24 @@ public class ClassroomService {
     private final ClassroomRepository classroomRepository;
     private final StudentRepository studentRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final ClassSessionRepository classSessionRepository;
+    private final ActivityRepository activityRepository;
+    private final ScoreEventRepository scoreEventRepository;
 
     public ClassroomService(
             ClassroomRepository classroomRepository,
             StudentRepository studentRepository,
-            EnrollmentRepository enrollmentRepository
+            EnrollmentRepository enrollmentRepository,
+            ClassSessionRepository classSessionRepository,
+            ActivityRepository activityRepository,
+            ScoreEventRepository scoreEventRepository
     ) {
         this.classroomRepository = classroomRepository;
         this.studentRepository = studentRepository;
         this.enrollmentRepository = enrollmentRepository;
+        this.classSessionRepository = classSessionRepository;
+        this.activityRepository = activityRepository;
+        this.scoreEventRepository = scoreEventRepository;
     }
 
     @Transactional(readOnly = true)
@@ -49,8 +62,24 @@ public class ClassroomService {
         if (normalizedCode != null && classroomRepository.existsByCodeIgnoreCaseAndIdNot(normalizedCode, id)) {
             throw new IllegalArgumentException("Código da turma já está em uso.");
         }
+        if (!active && classroom.isActive() && classSessionRepository.existsByClassroomIdAndStatus(id, SessionStatus.ACTIVE)) {
+            throw new IllegalArgumentException("Encerre a sessão ativa antes de inativar a turma.");
+        }
         classroom.update(name.trim(), normalizedCode, active);
         return ClassroomView.from(classroom);
+    }
+
+    @Transactional
+    public void delete(UUID id) {
+        Classroom classroom = getClassroom(id);
+        boolean hasOperationalHistory = classSessionRepository.existsByClassroomId(id)
+                || activityRepository.existsByClassroomId(id)
+                || scoreEventRepository.existsByClassroomId(id);
+        if (hasOperationalHistory) {
+            throw new IllegalArgumentException("Esta turma possui histórico operacional. Inative a turma para preservar sessões, atividades e XP.");
+        }
+        enrollmentRepository.deleteByClassroomId(id);
+        classroomRepository.delete(classroom);
     }
 
     @Transactional(readOnly = true)

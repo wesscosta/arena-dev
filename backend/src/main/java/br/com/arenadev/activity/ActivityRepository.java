@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface ActivityRepository extends JpaRepository<Activity, UUID> {
     List<Activity> findByClassroomIdOrderByUpdatedAtDesc(UUID classroomId);
+    boolean existsByClassroomId(UUID classroomId);
 }

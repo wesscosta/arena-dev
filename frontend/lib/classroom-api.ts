@@ -106,7 +106,7 @@ export async function fetchClassroomDomain(): Promise<{
   enrollments: Enrollment[];
 }> {
   const [classroomViews, studentViews] = await Promise.all([
-    request<ClassroomView[]>("/api/classrooms"),
+    request<ClassroomView[]>("/api/classrooms?includeInactive=true"),
     request<StudentView[]>("/api/students?includeInactive=true"),
   ]);
 
@@ -132,6 +132,25 @@ export async function createClassroom(input: { name: string; code?: string }): P
     body: JSON.stringify({ name: input.name, code: input.code || null }),
   });
   return mapClassroom(result);
+}
+
+
+export async function updateClassroom(input: { id: string; name: string; code?: string; active: boolean }): Promise<Classroom> {
+  const result = await request<ClassroomView>(`/api/classrooms/${input.id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      name: input.name,
+      code: input.code || null,
+      active: input.active,
+    }),
+  });
+  return mapClassroom(result);
+}
+
+export async function deleteClassroom(classroomId: string): Promise<void> {
+  await request<void>(`/api/classrooms/${classroomId}`, {
+    method: "DELETE",
+  });
 }
 
 export async function createStudent(input: { name: string; nickname?: string; registration?: string }): Promise<Student> {

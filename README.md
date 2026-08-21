@@ -6,7 +6,7 @@ The project started as a simple Java desktop application for student management 
 
 > **Status:** under active development — Arena Dev v1.
 
-> **Migration strategy:** the current Next.js interface is the product baseline and remains intentionally unchanged while persistence is migrated incrementally from `localStorage` to Spring Boot + PostgreSQL. As of Increment 8, classrooms, students, enrollments, sessions, presence, ScoreEvents, activities, questions, current game mechanics and external-result import audit use the backend/PostgreSQL as their source of truth. The browser keeps only UI context preferences.
+> **Migration strategy:** the current Next.js interface is the product baseline and remains intentionally unchanged while persistence is migrated incrementally from `localStorage` to Spring Boot + PostgreSQL. As of Increment 9.1, classrooms, students, enrollments, sessions, presence, ScoreEvents, activities, questions, current game mechanics and external-result import audit use the backend/PostgreSQL as their source of truth. The navigation is organized as system overview → classroom workspace → live Arena, and the browser keeps only UI context preferences.
 
 > **Architecture decisions:** accepted product, UX and technical decisions are versioned in [`docs/adr/README.md`](docs/adr/README.md).
 

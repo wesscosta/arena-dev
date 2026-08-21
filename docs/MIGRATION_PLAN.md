@@ -127,8 +127,24 @@ Referência: `docs/INCREMENT_7.md` e ADR-0020.
 
 Referência: `docs/INCREMENT_8.md` e ADR-0013.
 
+## Incremento 9.1 — Refactor de navegação e Home da Turma
+
+**Status: implementado na camada de aplicação/UX.**
+
+- `Visão geral` passa a representar o sistema e o conjunto de turmas;
+- cards permitem selecionar e abrir uma turma;
+- criação de turma usa fluxo em duas etapas: dados → alunos;
+- `Turma` ganha a aba `Home`;
+- o antigo dashboard contextual é movido para `Turma → Home`;
+- edição concentra nome, código, status e alunos;
+- turmas inativas continuam administráveis e preservam histórico;
+- exclusão definitiva é permitida somente sem histórico operacional;
+- nenhuma mudança de schema é necessária.
+
+Referência: `docs/INCREMENT_9_1.md`, ADR-0021 e ADR-0022.
+
 ## Incremento 9 — Tempo real
 
 **Próximo incremento.**
 
-Adicionar join code, QR, WebSocket e Buzzer após a consolidação das integrações externas.
+Adicionar join code, QR, WebSocket e Buzzer após a consolidação da arquitetura de informação.

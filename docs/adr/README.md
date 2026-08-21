@@ -37,6 +37,8 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0018](ADR-0018-fronteira-limpa-na-migracao-do-dominio-de-turma.md) | Fronteira limpa ao migrar Classroom/Student/Enrollment para o backend | Aceito |
 | [ADR-0019](ADR-0019-sessao-e-presenca-no-backend-runtime-local-das-mecanicas.md) | Sessão e presença no backend; runtime local separado para mecânicas ainda não migradas | Aceito |
 | [ADR-0020](ADR-0020-mecanicas-e-atividades-autoritativas-no-backend.md) | Atividades e mecânicas da sessão autoritativas no backend | Aceito |
+| [ADR-0021](ADR-0021-turma-como-workspace-e-arena-focada-na-sessao.md) | Turma como workspace e Arena focada na sessão | Aceito |
+| [ADR-0022](ADR-0022-visao-geral-do-sistema-e-home-contextual-da-turma.md) | Visão geral do sistema separada da Home contextual da Turma | Aceito |
 
 ## Template
 

@@ -1,13 +1,16 @@
-# Ajuste de UX — Workspace da Turma
+# UX — Visão geral, Workspace da Turma e Arena
 
-Este ajuste é posterior ao Incremento 7 e não altera contratos REST, migrations ou entidades. Ele reorganiza a informação para refletir melhor a arquitetura já definida.
-
-## Estrutura final
+A arquitetura de informação do Arena Dev segue três níveis explícitos:
 
 ```text
 Arena Dev
 ├── Visão geral
+│   ├── Cards de turmas
+│   ├── Nova turma
+│   ├── Ativas / Inativas
+│   └── Seleção da turma
 ├── Turma
+│   ├── Home
 │   ├── Alunos
 │   ├── Atividades
 │   ├── Ranking
@@ -20,19 +23,24 @@ Arena Dev
 └── Backup
 ```
 
-## Objetivos
+## Regra de contexto
 
-- deixar `Classroom` evidente como contexto de Atividades, Ranking e Histórico;
-- reduzir a quantidade de módulos globais aparentes;
-- reduzir o comprimento da tela da Arena durante uma sessão;
-- manter sorteio e pontuação no centro da experiência ao vivo;
-- preservar todas as funcionalidades já persistidas no PostgreSQL.
+- `Visão geral` responde **quais turmas existem e qual devo abrir?**
+- `Turma` responde **o que quero fazer com esta turma?**
+- `Arena` responde **o que está acontecendo nesta aula agora?**
 
-## Validação recomendada
+## Visão geral
 
-1. Selecionar uma turma e abrir `Turma`.
-2. Alternar entre Alunos, Atividades, Ranking e Histórico sem trocar a turma.
-3. Em Atividades, usar `Usar na Arena` e confirmar a abertura da Arena com a atividade selecionada.
-4. Durante uma sessão, alternar entre Condução, Presença, Organização e Boss Battle.
-5. Confirmar que Presença, grupos, Boss e fonte da Arena continuam após `F5`.
-6. Confirmar que o ranking completo é acessado em `Turma → Ranking` e continua refletindo os `ScoreEvent` persistidos.
+A tela é global e não depende de uma turma para existir. Cada turma aparece em um card clicável, com quantidade de alunos, atividades, eventos de XP, status e sessão em andamento. Criar e administrar turmas também pertence a este nível.
+
+## Home da Turma
+
+A Home é contextual e concentra o antigo dashboard da turma: iniciar/continuar Arena, métricas da turma, Top da turma e atalhos operacionais.
+
+## Gestão
+
+A edição da turma é modal e concentra dados, status e alunos. Inativação preserva histórico. Exclusão definitiva fica restrita a turmas ainda sem histórico operacional.
+
+## Arena
+
+A Arena permanece focada na sessão ao vivo e usa abas para evitar uma tela vertical excessivamente longa.
