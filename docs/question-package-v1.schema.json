@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arena.dev/schemas/question-package-v1.schema.json",
+  "title": "Arena Dev Question Package v1",
+  "type": "object",
+  "required": [
+    "version",
+    "questions"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": "1.0"
+    },
+    "activity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "difficulty": {
+          "$ref": "#/$defs/difficulty"
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/question"
+      }
+    }
+  },
+  "$defs": {
+    "difficulty": {
+      "enum": [
+        "EASY",
+        "INTERMEDIATE",
+        "HARD"
+      ]
+    },
+    "questionType": {
+      "enum": [
+        "MULTIPLE_CHOICE",
+        "OPEN",
+        "TRUE_FALSE",
+        "BUG_FIX",
+        "ANALYSIS",
+        "PRACTICAL",
+        "SCENARIO"
+      ]
+    },
+    "option": {
+      "type": "object",
+      "required": [
+        "id",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "question": {
+      "type": "object",
+      "required": [
+        "type",
+        "statement",
+        "difficulty",
+        "points"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/questionType"
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "difficulty": {
+          "$ref": "#/$defs/difficulty"
+        },
+        "points": {
+          "type": "number",
+          "minimum": 0
+        },
+        "options": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/option"
+          }
+        },
+        "answer": {
+          "type": [
+            "string",
+            "boolean"
+          ]
+        },
+        "expectedAnswer": {
+          "type": "string"
+        },
+        "explanation": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "expectedOutcome": {
+          "type": "string"
+        },
+        "evaluationCriteria": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "MULTIPLE_CHOICE"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "options",
+              "answer"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TRUE_FALSE"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "answer"
+            ],
+            "properties": {
+              "answer": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "BUG_FIX"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "code",
+              "expectedAnswer"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "PRACTICAL"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "expectedOutcome",
+              "evaluationCriteria"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

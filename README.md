@@ -8,6 +8,8 @@ The project started as a simple Java desktop application for student management 
 
 > **Migration strategy:** the current Next.js interface is the product baseline and remains intentionally unchanged while persistence is migrated incrementally from `localStorage` to Spring Boot + PostgreSQL. The first persistent increment covers classrooms, students, enrollments, class sessions and attendance.
 
+> **Architecture decisions:** accepted product, UX and technical decisions are versioned in [`docs/adr/README.md`](docs/adr/README.md).
+
 ---
 
 ## Overview
@@ -119,15 +121,25 @@ Each class can create a game session containing:
 * score events;
 * classroom activity history.
 
-### Groups and pairs
+### Individual, pairs and groups
 
-Arena Dev will support dynamic generation of:
+Arena Dev supports changing the classroom organization during the same session:
 
+* individual;
 * pairs;
+* trios;
 * groups;
-* programming teams.
+* programming teams or other collaborative arrangements.
 
-Future versions may consider previous combinations to reduce repeated pairings.
+The group generator considers previous combinations to reduce repeated pairings when possible. Returning to **Individual** does not create artificial one-person group history.
+
+### Activities and question packages
+
+Activities can contain their own question set and may also reference an external resource. Questions can be created manually, imported using the versioned Arena Dev JSON format or generated through a provider-agnostic prompt builder.
+
+Supported question families currently include multiple choice, open response, true/false, bug fixing, analysis, practical tasks and scenario-based problems. Direct AI API integration is intentionally deferred; the current flow generates a structured prompt that can be copied to the teacher's preferred AI and imported back as validated JSON.
+
+See `docs/ACTIVITY_QUESTIONS.md` and `docs/question-package-v1.schema.json`.
 
 ### Future mechanics
 
@@ -500,10 +512,13 @@ docker compose down -v
 
 ### Game engine
 
-* [ ] Smart student draw
-* [ ] Participation history
-* [ ] Pair generation
-* [ ] Group generation
+* [x] Smart student draw — local-first baseline
+* [x] Participation history — local-first baseline
+* [x] Individual / pair / trio / group organization — local-first baseline
+* [x] Previous-pairing-aware group generation — local-first baseline
+* [x] Activity question packages + JSON import — local-first baseline
+* [x] Provider-agnostic AI prompt builder — local-first baseline
+* [ ] Persist activities/questions in backend
 * [ ] Challenges
 * [ ] Debug battles
 * [ ] Timers
@@ -701,7 +716,7 @@ A license will be defined before the first stable public release.
 
 ## Migration increment 1 — persistent foundation
 
-The current frontend remains intentionally unchanged and local-first while the persistent backend is validated.
+The current frontend remains intentionally local-first while the persistent backend is validated.
 
 Implemented in the backend:
 
@@ -714,10 +729,26 @@ Implemented in the backend:
 - REST endpoints for those domains;
 - Hibernate schema validation instead of automatic schema mutation.
 
+## Migration increment 2 — activities and classroom organization
+
+Implemented without redesigning the baseline UI:
+
+- Individual, pairs, trios and groups inside the same session;
+- individual mode excluded from pairing history;
+- Activity-owned questions;
+- manual question creation;
+- Arena Dev Question Package JSON v1;
+- JSON validation/import by paste or file;
+- AI prompt builder with compact inputs and presets;
+- optional external activity platform + URL;
+- existing XP/delivery workflow preserved.
+
 See:
 
 - `docs/BASELINE_AUDIT.md`
 - `docs/MIGRATION_PLAN.md`
 - `docs/API_INCREMENT_1.md`
+- `docs/ACTIVITY_QUESTIONS.md`
+- `docs/question-package-v1.schema.json`
 
-The next increment will migrate **only Classroom + Students + Enrollments** from `localStorage` to the API while preserving the current UI.
+The next persistence increment migrates **Classroom + Students + Enrollments** from `localStorage` to the API while preserving the current UI.

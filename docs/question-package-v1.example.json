@@ -1,0 +1,47 @@
+{
+  "version": "1.0",
+  "activity": {
+    "title": "Revisão de estruturas de repetição",
+    "topic": "for e while",
+    "difficulty": "INTERMEDIATE"
+  },
+  "questions": [
+    {
+      "type": "MULTIPLE_CHOICE",
+      "statement": "Qual estrutura é mais adequada quando a quantidade de repetições é conhecida previamente?",
+      "difficulty": "EASY",
+      "points": 3,
+      "options": [
+        { "id": "A", "text": "for" },
+        { "id": "B", "text": "while" },
+        { "id": "C", "text": "if" },
+        { "id": "D", "text": "switch" }
+      ],
+      "answer": "A",
+      "explanation": "O for expressa de forma direta uma repetição com controle conhecido."
+    },
+    {
+      "type": "BUG_FIX",
+      "statement": "Identifique e corrija o erro que impede o laço de avançar para a condição de parada.",
+      "difficulty": "INTERMEDIATE",
+      "points": 5,
+      "code": "for (int i = 0; i < 10; i--) {\n    System.out.println(i);\n}",
+      "language": "java",
+      "expectedAnswer": "Substituir i-- por i++.",
+      "explanation": "Com i--, i diminui e permanece abaixo de 10, afastando-se da condição de parada."
+    },
+    {
+      "type": "PRACTICAL",
+      "statement": "Crie um programa que leia cinco notas e exiba a média aritmética.",
+      "difficulty": "INTERMEDIATE",
+      "points": 8,
+      "expectedOutcome": "Programa funcional que lê cinco valores, calcula a média e exibe o resultado.",
+      "evaluationCriteria": [
+        "usar uma estrutura de repetição",
+        "ler exatamente cinco valores",
+        "calcular a média corretamente",
+        "exibir o resultado"
+      ]
+    }
+  ]
+}
