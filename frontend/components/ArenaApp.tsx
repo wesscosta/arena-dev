@@ -5,8 +5,9 @@ import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { createBalancedGroups, getLevel, getLevelProgress, weightedDraw, xpForStudent } from "@/lib/game";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive } from "@/lib/classroom-api";
+import { createSession as createSessionApi, fetchSessionDomain, finishSession as finishSessionApi, setParticipantPresence } from "@/lib/session-api";
 import { EMPTY_DATA, loadData, saveData, uid } from "@/lib/store";
-import type { Activity, ActivityQuestion, ArenaData, ScoreCategory, Student } from "@/lib/types";
+import type { Activity, ActivityQuestion, ArenaData, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 
 type View = "dashboard" | "classroom" | "arena" | "activities" | "ranking" | "history" | "backup";
 
@@ -47,6 +48,20 @@ function errorMessage(error: unknown) {
   return "Não foi possível concluir a operação.";
 }
 
+function sessionRuntimeSnapshot(sessions: ArenaData["sessions"]) {
+  return sessions
+    .filter((session) => session.status !== "FINISHED" && !session.endedAt)
+    .map((session) => ({
+      sessionId: session.id,
+      drawCounts: session.drawCounts ?? {},
+      lastDrawnStudentId: session.lastDrawnStudentId,
+      boss: session.boss,
+      activityId: session.activityId,
+      currentQuestionId: session.currentQuestionId,
+      answeredQuestionIds: session.answeredQuestionIds ?? [],
+    }));
+}
+
 export default function ArenaApp() {
   const [data, setData] = useState<ArenaData>(EMPTY_DATA);
   const [hydrated, setHydrated] = useState(false);
@@ -61,15 +76,18 @@ export default function ArenaApp() {
       const localData = loadData();
       try {
         const domain = await fetchClassroomDomain();
+        const sessionDomain = await fetchSessionDomain(domain.classrooms, localData.sessionRuntime);
         if (cancelled) return;
         const preferredClassroomId = domain.classrooms.some((item) => item.id === localData.activeClassroomId)
           ? localData.activeClassroomId
           : domain.classrooms[0]?.id;
+        const activeSession = sessionDomain.sessions.find((item) => item.classroomId === preferredClassroomId && item.status === "ACTIVE" && !item.endedAt);
         setData({
           ...localData,
           ...domain,
+          ...sessionDomain,
           activeClassroomId: preferredClassroomId,
-          currentSessionId: undefined,
+          currentSessionId: activeSession?.id,
         });
         setApiError("");
       } catch (error) {
@@ -113,7 +131,17 @@ export default function ArenaApp() {
     return data.students.filter((student) => ids.has(student.id)).sort((a, b) => a.name.localeCompare(b.name));
   }, [classEnrollments, data.students]);
 
-  const currentSession = data.sessions.find((item) => item.id === data.currentSessionId && !item.endedAt);
+  const currentSession = data.sessions.find((item) => item.id === data.currentSessionId && item.status !== "FINISHED" && !item.endedAt);
+
+  const arenaStudents = useMemo(() => {
+    if (!currentSession) return classStudents;
+    const participantIds = new Set(
+      data.sessionParticipants
+        .filter((item) => item.sessionId === currentSession.id)
+        .map((item) => item.studentId),
+    );
+    return data.students.filter((student) => participantIds.has(student.id)).sort((a, b) => a.name.localeCompare(b.name));
+  }, [classStudents, currentSession, data.sessionParticipants, data.students]);
 
   const leaderboard = useMemo(
     () =>
@@ -136,19 +164,24 @@ export default function ArenaApp() {
 
   async function refreshClassroomDomain(preferredClassroomId?: string) {
     const domain = await fetchClassroomDomain();
+    const sessionDomain = await fetchSessionDomain(domain.classrooms, sessionRuntimeSnapshot(data.sessions));
     setData((current) => {
       const candidate = preferredClassroomId ?? current.activeClassroomId;
       const activeClassroomId = domain.classrooms.some((item) => item.id === candidate)
         ? candidate
         : domain.classrooms[0]?.id;
-      return { ...current, ...domain, activeClassroomId };
+      const activeSession = sessionDomain.sessions.find((item) => item.classroomId === activeClassroomId && item.status === "ACTIVE" && !item.endedAt);
+      return { ...current, ...domain, ...sessionDomain, activeClassroomId, currentSessionId: activeSession?.id };
     });
     setApiError("");
   }
 
   function setActiveClassroom(id: string) {
     setArenaActivityId(undefined);
-    patch((current) => ({ ...current, activeClassroomId: id, currentSessionId: undefined }));
+    patch((current) => {
+      const activeSession = current.sessions.find((item) => item.classroomId === id && item.status === "ACTIVE" && !item.endedAt);
+      return { ...current, activeClassroomId: id, currentSessionId: activeSession?.id };
+    });
   }
 
   if (!hydrated) {
@@ -179,7 +212,7 @@ export default function ArenaApp() {
           <div className={apiError ? "status-dot error" : "status-dot"} />
           <div>
             <strong>{apiError ? "Backend indisponível" : "Persistência híbrida"}</strong>
-            <small>{apiError ? "Verifique Spring Boot/PostgreSQL" : "Turmas e alunos no PostgreSQL"}</small>
+            <small>{apiError ? "Verifique Spring Boot/PostgreSQL" : "Turmas, alunos, sessões e presença no PostgreSQL"}</small>
           </div>
         </div>
       </aside>
@@ -246,9 +279,10 @@ export default function ArenaApp() {
             <ArenaView
               data={data}
               classroomId={activeClassroom.id}
-              students={classStudents}
+              students={arenaStudents}
               currentSession={currentSession}
               leaderboard={leaderboard}
+              sessionParticipants={data.sessionParticipants.filter((item) => item.sessionId === currentSession?.id)}
               preferredActivityId={arenaActivityId}
               onPreferredActivityChange={setArenaActivityId}
               patch={patch}
@@ -507,12 +541,13 @@ function ClassroomView({ data, activeClassroomId, classStudents, setActiveClassr
   );
 }
 
-function ArenaView({ data, classroomId, students, currentSession, leaderboard, preferredActivityId, onPreferredActivityChange, patch, notify }: {
+function ArenaView({ data, classroomId, students, currentSession, leaderboard, sessionParticipants, preferredActivityId, onPreferredActivityChange, patch, notify }: {
   data: ArenaData;
   classroomId: string;
   students: Student[];
   currentSession?: ArenaData["sessions"][number];
   leaderboard: { student: Student; xp: number }[];
+  sessionParticipants: SessionParticipant[];
   preferredActivityId?: string;
   onPreferredActivityChange: (activityId?: string) => void;
   patch: (updater: (current: ArenaData) => ArenaData) => void;
@@ -528,6 +563,8 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
   const [groupSize, setGroupSize] = useState(2);
   const [bossName, setBossName] = useState("Spaghetti Code");
   const [bossHp, setBossHp] = useState(100);
+  const [sessionBusy, setSessionBusy] = useState(false);
+  const [presenceBusyId, setPresenceBusyId] = useState<string | undefined>();
   const classActivities = useMemo(
     () => data.activities.filter((activity) => activity.classroomId === classroomId && (activity.questions?.length ?? 0) > 0),
     [data.activities, classroomId],
@@ -548,28 +585,86 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
     if (!currentSession) setPresentIds(students.map((s) => s.id));
   }, [students, currentSession]);
 
-  function startSession() {
-    if (!presentIds.length) return;
-    const id = uid("session");
-    patch((current) => ({
-      ...current,
-      sessions: [...current.sessions, { id, classroomId, title: title.trim() || `Aula · ${todayTitle()}`, startedAt: new Date().toISOString(), presentStudentIds: presentIds, drawCounts: {}, activityId: activityId || undefined, answeredQuestionIds: [] }],
-      currentSessionId: id,
-    }));
-    notify("Arena iniciada.");
+  useEffect(() => {
+    setSelectedId(currentSession?.lastDrawnStudentId);
+  }, [currentSession?.id, currentSession?.lastDrawnStudentId]);
+
+  async function startSession() {
+    if (!presentIds.length || sessionBusy) return;
+    setSessionBusy(true);
+    try {
+      const result = await createSessionApi({
+        classroomId,
+        title: title.trim() || `Aula · ${todayTitle()}`,
+        presentStudentIds: presentIds,
+      });
+      const started = {
+        ...result.session,
+        activityId: activityId || undefined,
+        answeredQuestionIds: [],
+      };
+      patch((current) => ({
+        ...current,
+        sessions: [...current.sessions.filter((session) => session.id !== started.id), started],
+        sessionParticipants: [
+          ...current.sessionParticipants.filter((participant) => participant.sessionId !== started.id),
+          ...result.participants,
+        ],
+        currentSessionId: started.id,
+      }));
+      notify("Arena iniciada e sessão salva no PostgreSQL.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setSessionBusy(false);
+    }
   }
 
-  function endSession() {
-    if (!currentSession) return;
-    patch((current) => ({
-      ...current,
-      sessions: current.sessions.map((session) => session.id === currentSession.id ? { ...session, endedAt: new Date().toISOString() } : session),
-      currentSessionId: undefined,
-    }));
-    setSelectedId(undefined);
-    setGroups([]);
-    onPreferredActivityChange(undefined);
-    notify("Sessão encerrada.");
+  async function endSession() {
+    if (!currentSession || sessionBusy) return;
+    setSessionBusy(true);
+    try {
+      const finished = await finishSessionApi(currentSession.id);
+      patch((current) => ({
+        ...current,
+        sessions: current.sessions.map((session) => session.id === currentSession.id ? {
+          ...session,
+          status: finished.status,
+          endedAt: finished.endedAt,
+        } : session),
+        currentSessionId: undefined,
+      }));
+      setSelectedId(undefined);
+      setGroups([]);
+      onPreferredActivityChange(undefined);
+      notify("Sessão encerrada e persistida.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setSessionBusy(false);
+    }
+  }
+
+  async function changePresence(participant: SessionParticipant, present: boolean) {
+    if (!currentSession || presenceBusyId) return;
+    setPresenceBusyId(participant.id);
+    try {
+      const updated = await setParticipantPresence(currentSession.id, participant.id, present);
+      patch((current) => ({
+        ...current,
+        sessionParticipants: current.sessionParticipants.map((item) => item.id === updated.id ? updated : item),
+        sessions: current.sessions.map((session) => session.id === currentSession.id ? {
+          ...session,
+          presentStudentIds: present
+            ? Array.from(new Set([...session.presentStudentIds, updated.studentId]))
+            : session.presentStudentIds.filter((studentId) => studentId !== updated.studentId),
+        } : session),
+      }));
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setPresenceBusyId(undefined);
+    }
   }
 
   function draw() {
@@ -713,7 +808,7 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
             ))}
           </div>
           <div className="inline-actions"><button className="text-button" onClick={() => setPresentIds(students.map((s) => s.id))}>Marcar todos</button><button className="text-button" onClick={() => setPresentIds([])}>Limpar</button></div>
-          <button className="button primary large full" onClick={startSession} disabled={!presentIds.length}>Iniciar Arena</button>
+          <button className="button primary large full" onClick={() => { void startSession(); }} disabled={!presentIds.length || sessionBusy}>{sessionBusy ? "Iniciando..." : "Iniciar Arena"}</button>
         </Panel>
         <Panel title="Como funciona" subtitle="Fluxo recomendado em aula">
           <div className="steps">
@@ -731,7 +826,7 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
     <div className="stack-lg">
       <div className="arena-header">
         <div><span className="live-pill"><span /> AO VIVO</span><h2>{currentSession.title}</h2><p>{currentSession.presentStudentIds.length} presentes · iniciada {dateTime(currentSession.startedAt)}</p></div>
-        <button className="button danger-outline" onClick={endSession}>Encerrar sessão</button>
+        <button className="button danger-outline" onClick={() => { void endSession(); }} disabled={sessionBusy}>{sessionBusy ? "Encerrando..." : "Encerrar sessão"}</button>
       </div>
 
       <div className="arena-activity-strip">
@@ -745,6 +840,29 @@ function ArenaView({ data, classroomId, students, currentSession, leaderboard, p
           {classActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}
         </select>
       </div>
+
+      <Panel title="Presença da sessão" subtitle="Alterações são salvas imediatamente no PostgreSQL">
+        <div className="attendance-head"><strong>Participantes</strong><span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span></div>
+        <div className="attendance-list compact-attendance">
+          {sessionParticipants.map((participant) => {
+            const student = data.students.find((item) => item.id === participant.studentId);
+            if (!student) return null;
+            return (
+              <label key={participant.id} className="check-row">
+                <input
+                  type="checkbox"
+                  checked={participant.present}
+                  disabled={presenceBusyId === participant.id}
+                  onChange={(event) => { void changePresence(participant, event.target.checked); }}
+                />
+                <Avatar student={student} />
+                <span>{student.name}</span>
+                {participant.connected && <small className="connected-label">conectado</small>}
+              </label>
+            );
+          })}
+        </div>
+      </Panel>
 
       {activeActivity && (
         <Panel title="Questão da Arena" subtitle={`${activeActivity.title} · ${(currentSession.answeredQuestionIds ?? []).length}/${activeActivity.questions?.length ?? 0} apresentadas`}>
@@ -1225,24 +1343,28 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
     reader.onload = () => {
       try {
         const parsed = JSON.parse(String(reader.result)) as ArenaData;
-        if (!Array.isArray(parsed.sessions) || !Array.isArray(parsed.scoreEvents) || !Array.isArray(parsed.activities)) throw new Error();
+        if (!Array.isArray(parsed.scoreEvents) || !Array.isArray(parsed.activities)) throw new Error();
 
         const classroomIds = new Set(data.classrooms.map((item) => item.id));
         const studentIds = new Set(data.students.map((item) => item.id));
-        const sessions = (parsed.sessions ?? []).filter((item) => classroomIds.has(item.classroomId));
-        const scoreEvents = (parsed.scoreEvents ?? []).filter((item) => classroomIds.has(item.classroomId) && studentIds.has(item.studentId));
+        const sessionIds = new Set(data.sessions.map((item) => item.id));
+        const scoreEvents = (parsed.scoreEvents ?? []).filter((item) =>
+          classroomIds.has(item.classroomId) &&
+          studentIds.has(item.studentId) &&
+          (!item.sessionId || sessionIds.has(item.sessionId))
+        );
         const activities = (parsed.activities ?? []).filter((item) => classroomIds.has(item.classroomId));
-        const groupHistory = (parsed.groupHistory ?? []).filter((item) => classroomIds.has(item.classroomId));
+        const groupHistory = (parsed.groupHistory ?? []).filter((item) =>
+          classroomIds.has(item.classroomId) && (!item.sessionId || sessionIds.has(item.sessionId))
+        );
 
         setData((current) => ({
           ...current,
-          sessions,
           scoreEvents,
           activities,
           groupHistory,
-          currentSessionId: undefined,
         }));
-        notify("Backup local restaurado. Turmas e alunos continuam vindo do PostgreSQL.");
+        notify("Backup local restaurado. Turmas, alunos, sessões e presença continuam vindo do PostgreSQL.");
       } catch {
         notify("Arquivo de backup inválido ou incompatível com as turmas atuais.");
       }

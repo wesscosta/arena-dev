@@ -100,3 +100,31 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .status-dot.error{background:#ff7f87;box-shadow:0 0 10px rgba(255,127,135,.7)}
 .api-alert{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;margin-bottom:18px;border:1px solid rgba(255,127,135,.24);background:rgba(255,127,135,.055);border-radius:10px;padding:11px 13px}.api-alert strong{font-size:10px;color:#ffafb4}.api-alert span{font-size:10px;color:#b8c5c0}.api-alert .text-button{color:#ffafb4;font-weight:800}
 @media (max-width:700px){.api-alert{grid-template-columns:1fr}.api-alert .text-button{justify-self:start}}
+
+/* Incremento 5 — presença persistida sem alongar excessivamente a Arena */
+.compact-attendance {
+  max-height: 260px;
+  overflow: auto;
+}
+
+.connected-label {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Incremento 5 — presença persistida sem alongar excessivamente a Arena */
+.compact-attendance {
+  max-height: 260px;
+  overflow: auto;
+}
+
+.connected-label {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}

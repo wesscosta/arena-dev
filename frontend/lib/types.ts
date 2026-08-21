@@ -89,10 +89,32 @@ export interface BossState {
   currentHp: number;
 }
 
+export interface SessionRuntimeState {
+  sessionId: string;
+  drawCounts: Record<string, number>;
+  lastDrawnStudentId?: string;
+  boss?: BossState;
+  activityId?: string;
+  currentQuestionId?: string;
+  answeredQuestionIds?: string[];
+}
+
+export interface SessionParticipant {
+  id: string;
+  sessionId: string;
+  studentId: string;
+  registration?: string;
+  name: string;
+  nickname: string;
+  present: boolean;
+  connected: boolean;
+}
+
 export interface GameSession {
   id: string;
   classroomId: string;
   title: string;
+  status?: "ACTIVE" | "FINISHED";
   startedAt: string;
   endedAt?: string;
   presentStudentIds: string[];
@@ -146,6 +168,8 @@ export interface ArenaData {
   students: Student[];
   enrollments: Enrollment[];
   sessions: GameSession[];
+  sessionParticipants: SessionParticipant[];
+  sessionRuntime: SessionRuntimeState[];
   scoreEvents: ScoreEvent[];
   activities: Activity[];
   groupHistory: GroupHistory[];
