@@ -2,6 +2,8 @@
 
 > As decisões que fundamentam este plano estão registradas em `docs/adr/README.md`. Em caso de conflito entre documentação narrativa e uma decisão vigente, o ADR aceito deve ser tratado como registro arquitetural de referência.
 
+> O estado corrente consolidado está em `docs/STATUS_ATUAL.md`. As descrições abaixo preservam o contexto histórico de cada incremento.
+
 ## Regra de evolução
 
 A interface V1 é a baseline do produto. Cada incremento deve preservar estética e funcionalidades existentes; novas capacidades entram de forma aditiva.
@@ -19,7 +21,7 @@ A interface V1 é a baseline do produto. Cada incremento deve preservar estétic
 - APIs REST para turmas, alunos, matrículas, sessões e presença;
 - PostgreSQL validado pelo Hibernate (`ddl-auto=validate`).
 
-O frontend permanece local-first para evitar regressão durante a transição.
+Neste estágio histórico, o frontend permaneceu local-first para evitar regressão durante a transição. Essa condição foi encerrada progressivamente nos incrementos posteriores.
 
 ## Incremento 2 — Organização e conteúdo das atividades
 
@@ -108,7 +110,7 @@ Referência: `docs/INCREMENT_6.md` e ADR-0007.
 - `Individual` não registra pareamentos artificiais;
 - Boss, fonte da Arena e sequência de questões sobrevivem a reload;
 - novos ScoreEvents validam referências reais de Activity/ActivityQuestion;
-- `localStorage` guarda apenas a preferência de turma selecionada.
+- o domínio operacional deixa de usar `localStorage` como fonte de verdade; o painel guarda a preferência de turma e a rota pública `/join` mantém separadamente o acesso temporário do participante para reconexão.
 
 Referência: `docs/INCREMENT_7.md` e ADR-0020.
 
@@ -156,7 +158,7 @@ Referência: `docs/INCREMENT_9_1.md`, ADR-0021 e ADR-0022.
 
 ## Incremento 10 — Tempo real
 
-**Status: implementado em código; validação funcional pendente no ambiente Docker/LAN.**
+**Status: implementado. A validação manual em Docker/LAN está registrada no handoff; ainda não há regressão automatizada no repositório.**
 
 - código temporário por `ClassSession`;
 - QR Code para `/join?code=...`;
@@ -174,7 +176,7 @@ Referência: `docs/INCREMENT_10.md`, ADR-0006 e ADR-0023.
 
 ## Incremento 11.1 + 11.2 — Security Boundary e Realtime Hardening
 
-**Status: em validação.**
+**Status: implementado em código, sem cobertura automatizada suficiente.**
 
 - autenticação do professor por Spring Security + sessão HTTP;
 - APIs administrativas protegidas por `ROLE_TEACHER`;
@@ -184,4 +186,31 @@ Referência: `docs/INCREMENT_10.md`, ADR-0006 e ADR-0023.
 - liberação de dispositivo pelo professor;
 - conexão múltipla, heartbeat, rate limit lógico e broadcast pós-commit no Buzzer.
 
+Limites confirmados na baseline `1738b26`:
+
+- o rate limit implementado é por socket e não cobre tentativas de login;
+- existem credenciais default para desenvolvimento local;
+- a política `SameSite`/`Secure` do cookie não está configurada explicitamente;
+- CSRF permanece desabilitado;
+- não existe migration `V7`; o schema corrente termina na `V6`.
+
 Referência: `docs/INCREMENT_11_1_11_2.md` e ADR-0024.
+
+## Incremento 11.3 — Automated Tests
+
+**Status: parcial; próximo gate.**
+
+- existe somente `DomainSmokeTest`;
+- faltam testes unitários das regras centrais;
+- faltam testes de integração com PostgreSQL/Testcontainers;
+- falta teste concorrente do Buzzer;
+- faltam testes frontend.
+
+## Incremento 11.4 — E2E, CI e release hardening
+
+**Status: planejado.**
+
+- Playwright;
+- GitHub Actions;
+- validação de Compose, secrets e dependências;
+- checklist e evidências de release.

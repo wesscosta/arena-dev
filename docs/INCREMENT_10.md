@@ -1,5 +1,7 @@
 # Incremento 10 — Tempo real: Join, QR e Buzzer
 
+**Status atual:** implementado. A validação manual em Docker/LAN está registrada no handoff; o repositório ainda não possui testes automatizados de integração e concorrência para este fluxo.
+
 ## Objetivo
 
 Fechar a principal fronteira restante do MVP: permitir que alunos entrem na sessão ativa pelo celular/notebook e participem de uma dinâmica Buzzer cuja ordem oficial é determinada pelo backend.
@@ -191,13 +193,15 @@ O helper da visão do aluno substitui `localhost` pelo hostname usado no navegad
 
 ## Critérios de aceite
 
-- [ ] sessão ativa apresenta código e QR;
-- [ ] QR abre `/join` no celular;
-- [ ] aluno é associado ao `SessionParticipant` correto;
-- [ ] professor vê aluno conectado sem reload;
-- [ ] duas ou mais conexões recebem abertura/fechamento do Buzzer em tempo real;
-- [ ] cada participante registra no máximo um clique por rodada;
-- [ ] ordem oficial independe do relógio do cliente;
-- [ ] reload da tela do professor preserva rodada e ordem gravadas;
-- [ ] XP do vencedor vira `ScoreEvent` com origem `BUZZER`;
-- [ ] código deixa de funcionar após encerrar sessão.
+Os critérios abaixo foram concluídos por implementação e validação manual. O Incremento 11.3 deverá convertê-los em regressão automatizada.
+
+- [x] sessão ativa apresenta código e QR;
+- [x] QR abre `/join` no celular;
+- [x] aluno é associado ao `SessionParticipant` correto;
+- [x] professor vê aluno conectado sem reload;
+- [x] duas ou mais conexões recebem abertura/fechamento do Buzzer em tempo real;
+- [x] cada participante registra no máximo um clique por rodada;
+- [x] ordem oficial independe do relógio do cliente;
+- [x] reload da tela do professor preserva rodada e ordem gravadas;
+- [x] XP do vencedor vira `ScoreEvent` com origem `BUZZER`;
+- [x] código deixa de funcionar após encerrar sessão.
