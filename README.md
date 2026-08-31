@@ -444,6 +444,24 @@ curl http://localhost:8080/api/health
 
 ---
 
+## Automated tests
+
+The backend separates fast unit tests from PostgreSQL integration tests:
+
+```bash
+cd backend
+
+# JUnit tests that do not require Docker
+mvn test
+
+# Full backend gate, including PostgreSQL 17 via Testcontainers
+mvn verify
+```
+
+The integration gate starts the application on a random port, applies every Flyway migration and exercises the real HTTP security boundary. It requires Java 21, Maven and a Docker-compatible runtime.
+
+---
+
 ## Docker commands
 
 ### Check running services
@@ -551,7 +569,7 @@ docker compose down -v
 * [x] Real-time Buzzer participation
 * [ ] Persistent teacher/student account model
 * [ ] Dedicated projector/public view
-* [ ] Automated test gate
+* [ ] Automated test gate — Increment 11.3A implemented; execution evidence and remaining slices pending
 * [ ] CI and release hardening
 * [ ] PWA support
 * [ ] Microsoft Teams integration

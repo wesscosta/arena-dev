@@ -102,9 +102,10 @@ Não existe migration `V7` na baseline auditada. O hardening dos Incrementos 11.
 | Backend e migrations | Implementados; não reexecutados nessa auditoria por ausência de JDK 21/Maven/Docker no ambiente |
 | Incremento 10 | Implementado; validação manual Docker/LAN registrada no handoff |
 | Incrementos 11.1 e 11.2 | Implementados; sem cobertura automatizada suficiente |
-| Testes backend | Parcial: somente `DomainSmokeTest` |
+| Testes backend | Parcial: `DomainSmokeTest` e a primeira suíte de integração foram implementados; execução da suíte nova ainda requer validação em ambiente com Java 21, Maven e Docker |
 | Testes frontend | Inexistentes |
-| Testcontainers e concorrência do Buzzer | Planejados no Incremento 11.3 |
+| Testcontainers/PostgreSQL | Implementado na primeira fatia do Incremento 11.3; execução pendente nesta auditoria |
+| Concorrência do Buzzer | Planejada para a próxima fatia do Incremento 11.3 |
 | Playwright, CI e release hardening | Planejados no Incremento 11.4 |
 
 ## Documentado, mas ainda não implementado
@@ -119,12 +120,12 @@ Não existe migration `V7` na baseline auditada. O hardening dos Incrementos 11.
 
 ## Próximo gate
 
-O próximo incremento executável é o **11.3 — Automated Tests**, dividido em entregas pequenas:
+O **11.3 — Automated Tests** está parcialmente implementado e dividido em entregas pequenas:
 
-1. infraestrutura JUnit + Testcontainers/PostgreSQL;
-2. testes de migrations, autenticação e autorização;
+1. infraestrutura JUnit + Testcontainers/PostgreSQL — implementada, com validação de execução pendente;
+2. testes de migrations, autenticação e autorização — implementados na primeira suíte de integração;
 3. testes de sessão, ScoreEvent e reversão;
 4. teste concorrente do Buzzer;
 5. testes frontend dos fluxos críticos.
 
-O Incremento 11.3 deve produzir evidência automatizada antes de novas mecânicas ou do hardening de release do Incremento 11.4.
+Consulte [`INCREMENT_11_3.md`](INCREMENT_11_3.md) para comandos, critérios e limites. O Incremento 11.3 deve produzir evidência automatizada antes de novas mecânicas ou do hardening de release do Incremento 11.4.

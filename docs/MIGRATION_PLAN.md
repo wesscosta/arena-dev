@@ -198,13 +198,18 @@ Referência: `docs/INCREMENT_11_1_11_2.md` e ADR-0024.
 
 ## Incremento 11.3 — Automated Tests
 
-**Status: parcial; próximo gate.**
+**Status: parcial; primeira fatia implementada, com execução pendente em ambiente Java 21/Maven/Docker.**
 
-- existe somente `DomainSmokeTest`;
+- `DomainSmokeTest` permanece como teste unitário rápido;
+- Maven Failsafe separa testes de integração no gate `mvn verify`;
+- Testcontainers sobe PostgreSQL 17 e valida as migrations `V1`–`V6` e o schema operacional;
+- a suíte cobre health público, proteção das APIs administrativas, login, sessão, criação autenticada, logout e credenciais inválidas;
 - faltam testes unitários das regras centrais;
-- faltam testes de integração com PostgreSQL/Testcontainers;
+- faltam testes de sessão, ScoreEvent e reversão;
 - falta teste concorrente do Buzzer;
 - faltam testes frontend.
+
+Referência: `docs/INCREMENT_11_3.md`.
 
 ## Incremento 11.4 — E2E, CI e release hardening
 
