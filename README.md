@@ -775,7 +775,7 @@ Developed by **Weslley Costa**.
 
 ## License
 
-The project license still requires an explicit owner decision. The final release gate intentionally fails while no `LICENSE` file exists, so a stable public release cannot be published accidentally without defined usage terms.
+Arena Dev is licensed under the [MIT License](LICENSE).
 
 ---
 
