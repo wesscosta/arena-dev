@@ -570,7 +570,7 @@ docker compose down -v
 * [ ] Persistent teacher/student account model
 * [ ] Dedicated projector/public view
 * [x] Automated test gate — backend 11.3A–11.3C and frontend 11.3D validated
-* [ ] CI and release hardening
+* [ ] CI and release hardening — CI implemented; first GitHub Actions run, E2E and hardening pending
 * [ ] PWA support
 * [ ] Microsoft Teams integration
 * [ ] Analytics dashboard

@@ -106,7 +106,7 @@ Não existe migration `V7` na baseline auditada. O hardening dos Incrementos 11.
 | Testes frontend | Validado no 11.3D: doze testes de contrato e estado, TypeScript e build de produção |
 | Testcontainers/PostgreSQL | Validado na fatia 11.3A com Testcontainers 2.0.5 e PostgreSQL 17.11 |
 | Concorrência do Buzzer | Validada em cinco cenários, repetidos cinco vezes consecutivas em Java 21/Docker |
-| Playwright, CI e release hardening | Planejados no Incremento 11.4 |
+| Playwright, CI e release hardening | Parcial: CI implementado no 11.4A e aguardando execução; Playwright e hardening permanecem planejados |
 
 ## Documentado, mas ainda não implementado
 
@@ -128,4 +128,4 @@ O **11.3 — Automated Tests** está concluído nas seguintes entregas:
 4. testes concorrentes de Buzzer, claim de dispositivo e broadcast pós-commit — validados;
 5. testes frontend de autenticação, turma, Arena, join e reconexão — validados.
 
-Consulte [`INCREMENT_11_3.md`](INCREMENT_11_3.md) para comandos, critérios e limites. O próximo gate é o Incremento 11.4, com E2E, CI e hardening de release.
+Consulte [`INCREMENT_11_3.md`](INCREMENT_11_3.md) para a evidência do gate automatizado e [`INCREMENT_11_4.md`](INCREMENT_11_4.md) para o CI, E2E e hardening de release. A primeira execução do workflow 11.4A ainda precisa ser validada no GitHub Actions.
