@@ -1,6 +1,6 @@
 # Incremento 11.3 — Testes automatizados
 
-**Status:** parcial — fatias 11.3A e 11.3B validadas; concorrência e frontend permanecem pendentes.
+**Status:** parcial — fatias backend 11.3A, 11.3B e 11.3C validadas; frontend permanece pendente.
 
 ## Objetivo
 
@@ -86,15 +86,42 @@ Na primeira execução, Testcontainers baixa a imagem `postgres:17-alpine`.
 - [x] `mvn verify` executado com sucesso em Java 21 e Docker ativo;
 - [x] evidência de execução registrada neste documento.
 
+## Fatia 11.3C — Concorrência realtime
+
+### Implementado
+
+- teste concorrente para uma única rodada `OPEN` de Buzzer por sessão;
+- teste de clique simultâneo duplicado do mesmo participante;
+- teste de posições oficiais únicas para participantes concorrentes;
+- teste e correção da reivindicação concorrente do mesmo dispositivo;
+- teste de broadcast após commit e descarte em rollback;
+- lock pessimista dos participantes da sessão durante a resolução do claim;
+- token já emitido passa a representar dispositivo vinculado até reconexão ou liberação pelo professor.
+
+### Evidência de execução
+
+- ambiente: Arch Linux, Java 21.0.12.1 e Docker 29.7.2;
+- stack exercitada: Spring Boot 4.1.0, Testcontainers 2.0.5 e PostgreSQL 17.11;
+- `mvn test`: um teste executado, zero falhas, zero erros e zero ignorados;
+- `mvn verify`: treze testes de integração executados, incluindo os cinco cenários realtime, sem falhas, erros ou testes ignorados;
+- `RealtimeConcurrencyIT` foi executada cinco vezes consecutivas, totalizando 25 cenários sem falhas, erros ou testes ignorados;
+- `SessionJoinService` e `SessionParticipantRepository` foram ajustados para eliminar a corrida de emissão de tokens;
+- migrations e contratos HTTP/WebSocket permanecem inalterados;
+- a violação PostgreSQL `23505` da constraint `uk_buzzer_open_round_per_session` foi provocada e capturada em cada execução esperada;
+- gate concluído com sucesso em 30/08/2026.
+
+### Critérios de aceite da fatia 11.3C
+
+- [x] uma única rodada aberta é preservada sob requisições concorrentes;
+- [x] clique duplicado do mesmo participante não cria duas posições;
+- [x] participantes concorrentes recebem posições únicas e ordenadas pelo backend;
+- [x] apenas um token é emitido no claim concorrente do participante;
+- [x] broadcast transacional ocorre somente após commit;
+- [x] rollback não publica estado realtime;
+- [x] `mvn verify` executado com sucesso em Java 21 e Docker ativo;
+- [x] evidência de execução registrada neste documento.
+
 ## Próximas fatias
-
-### 11.3C — Concorrência realtime
-
-- uma rodada `OPEN` de Buzzer por sessão;
-- um clique por participante/rodada;
-- posições oficiais sem duplicidade;
-- reivindicação concorrente de dispositivo;
-- broadcast apenas após commit.
 
 ### 11.3D — Frontend
 

@@ -102,10 +102,10 @@ Não existe migration `V7` na baseline auditada. O hardening dos Incrementos 11.
 | Backend e migrations | Validados na fatia 11.3A: compilação Java 21, empacotamento, Flyway `V1`–`V6`, validação JPA e PostgreSQL 17.11 |
 | Incremento 10 | Implementado; validação manual Docker/LAN registrada no handoff |
 | Incrementos 11.1 e 11.2 | Implementados; sem cobertura automatizada suficiente |
-| Testes backend | Parcial e validado: um teste unitário e oito de integração aprovados nas fatias 11.3A e 11.3B; concorrência realtime ainda não coberta |
+| Testes backend | Validado nas fatias 11.3A–11.3C: um teste unitário e treze de integração; a suíte realtime também passou cinco vezes consecutivas |
 | Testes frontend | Inexistentes |
 | Testcontainers/PostgreSQL | Validado na fatia 11.3A com Testcontainers 2.0.5 e PostgreSQL 17.11 |
-| Concorrência do Buzzer | Planejada para a próxima fatia do Incremento 11.3 |
+| Concorrência do Buzzer | Validada em cinco cenários, repetidos cinco vezes consecutivas em Java 21/Docker |
 | Playwright, CI e release hardening | Planejados no Incremento 11.4 |
 
 ## Documentado, mas ainda não implementado
@@ -125,7 +125,7 @@ O **11.3 — Automated Tests** está parcialmente implementado e dividido em ent
 1. infraestrutura JUnit + Testcontainers/PostgreSQL — validada;
 2. testes de migrations, autenticação e autorização — validados na primeira suíte de integração;
 3. testes de sessão, ScoreEvent, reversão, ranking derivado e rollback de lote — validados;
-4. teste concorrente do Buzzer;
+4. testes concorrentes de Buzzer, claim de dispositivo e broadcast pós-commit — validados;
 5. testes frontend dos fluxos críticos.
 
 Consulte [`INCREMENT_11_3.md`](INCREMENT_11_3.md) para comandos, critérios e limites. O Incremento 11.3 deve produzir evidência automatizada antes de novas mecânicas ou do hardening de release do Incremento 11.4.

@@ -94,7 +94,7 @@ public class SessionJoinService {
             throw new IllegalArgumentException("Informe sua matrícula ou nome completo.");
         }
 
-        List<SessionParticipant> participants = participantRepository.findBySessionIdOrderByStudentNameAsc(session.getId());
+        List<SessionParticipant> participants = participantRepository.findBySessionIdForUpdate(session.getId());
         List<SessionParticipant> matches = findMatches(participants, identity.trim());
         if (matches.isEmpty()) {
             throw new ResourceNotFoundException("Aluno não encontrado nesta sessão. Confira a matrícula ou o nome completo.");
@@ -104,7 +104,7 @@ public class SessionJoinService {
         }
 
         SessionParticipant participant = matches.getFirst();
-        if (participant.isConnected()) {
+        if (participant.isConnected() || participant.getAccessTokenHash() != null) {
             throw new IllegalArgumentException("Este aluno já possui um dispositivo conectado. Peça ao professor para liberar o dispositivo antes de entrar novamente.");
         }
         String token = generateToken();
