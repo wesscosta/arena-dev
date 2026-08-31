@@ -1,6 +1,6 @@
 # Incremento 11.3 — Testes automatizados
 
-**Status:** parcial — fatia 11.3A validada; regras transacionais, concorrência e frontend permanecem pendentes.
+**Status:** parcial — fatias 11.3A e 11.3B validadas; concorrência e frontend permanecem pendentes.
 
 ## Objetivo
 
@@ -52,15 +52,41 @@ Na primeira execução, Testcontainers baixa a imagem `postgres:17-alpine`.
 - Mockito/Byte Buddy usa autoanexação dinâmica do agente no Java 21; o build atual passa, mas essa configuração deverá ser tornada explícita antes de uma versão futura do JDK bloquear o comportamento por padrão;
 - Testcontainers não encontrou configuração de autenticação do Docker e usou o fallback padrão; imagens públicas foram baixadas e executadas normalmente.
 
-## Próximas fatias
+## Fatia 11.3B — Regras transacionais
 
-### 11.3B — Regras transacionais
+### Implementado
 
 - uma sessão ativa por turma;
-- presença e participantes da sessão;
-- criação e reversão de `ScoreEvent`;
-- ranking como projeção da soma dos eventos;
-- constraints de duplicidade e preservação de histórico.
+- snapshot de participantes e presença ao iniciar a sessão;
+- encerramento da sessão ativa antes da abertura da próxima;
+- constraint PostgreSQL que impede duas sessões ativas na mesma turma;
+- criação e reversão auditável de `ScoreEvent`;
+- bloqueio de reversão duplicada e de reversão de uma reversão;
+- ranking reconstruído pela soma dos eventos, incluindo o evento inverso;
+- rollback integral de lote quando um lançamento de XP é inválido.
+
+### Evidência de execução
+
+- ambiente: Arch Linux, Java 21.0.12.1 e Docker 29.7.2;
+- stack exercitada: Spring Boot 4.1.0, Testcontainers 2.0.5 e PostgreSQL 17.11;
+- `mvn test`: um teste executado, zero falhas, zero erros e zero ignorados;
+- `mvn verify`: oito testes de integração executados, incluindo os quatro cenários transacionais, sem falhas, erros ou testes ignorados;
+- Flyway aplicou as migrations `V1`–`V6` nos dois bancos descartáveis;
+- a violação PostgreSQL `23505` da constraint `uk_class_sessions_one_active_per_classroom` foi provocada e capturada pelo teste esperado;
+- o código produtivo não precisou ser alterado nesta fatia;
+- gate concluído com sucesso em 30/08/2026.
+
+### Critérios de aceite da fatia 11.3B
+
+- [x] participantes e presença inicial são cobertos por teste automatizado;
+- [x] bloqueio de sessão ativa duplicada é coberto no serviço e no PostgreSQL;
+- [x] criação, reversão e preservação do histórico de XP são cobertas;
+- [x] ranking é reconstruído exclusivamente pela soma dos eventos;
+- [x] falha em lote de XP não deixa lançamentos parciais persistidos;
+- [x] `mvn verify` executado com sucesso em Java 21 e Docker ativo;
+- [x] evidência de execução registrada neste documento.
+
+## Próximas fatias
 
 ### 11.3C — Concorrência realtime
 
