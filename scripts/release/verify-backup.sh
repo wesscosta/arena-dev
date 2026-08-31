@@ -70,7 +70,7 @@ for _ in {1..30}; do
 done
 $ready || fail "PostgreSQL temporário não ficou pronto em 30 segundos"
 
-docker exec -i "$CONTAINER_NAME" pg_restore --list - < "$backup_file" >/dev/null
+docker exec -i "$CONTAINER_NAME" pg_restore --list < "$backup_file" >/dev/null
 docker exec -i "$CONTAINER_NAME" \
   pg_restore \
     --username "$CHECK_USER" \

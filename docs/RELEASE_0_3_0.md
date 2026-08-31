@@ -29,11 +29,11 @@ Não pertencem a esta release autenticação institucional, tela dedicada de pro
 | Playwright | Validado localmente em Chromium |
 | Dependências de produção | Validado localmente: auditoria npm sem vulnerabilidades conhecidas |
 | Compose e imagens endurecidas | Validado localmente; serviços saudáveis e usuários não-root |
-| GitHub Actions | Implementado; URL/ID da primeira execução verde ainda não registrada |
-| Backup/restore | Scripts implementados; evidência de um dump real restaurado ainda pendente |
+| GitHub Actions | Execuções `33388090556` no SHA `4fd6b236...` e `33402409771` no SHA `dbedac465...` aprovadas; o SHA final após documentação/correção ainda exige execução própria |
+| Backup/restore | Dump real e checksum criados em 31/08/2026; correção de compatibilidade do verificador com PostgreSQL 17 incluída nesta consolidação; restauração isolada ainda deve ser reexecutada |
 | Rollback | Procedimento documentado; simulação operacional ainda pendente |
-| Licença | Decisão pendente; bloqueia release pública estável |
-| Commit final | Desconhecido até `main` estar limpa, sincronizada e aprovada pelo CI |
+| Licença | Validada: MIT; arquivo `LICENSE` integrado no commit `dbedac46519fb8be1e03c6c687e35a6b92c4c2c1` |
+| Commit final | Pendente até esta consolidação documental estar na `main`, limpa, sincronizada e aprovada pelo CI |
 
 ## Comandos do gate
 
@@ -98,7 +98,7 @@ O modo `final` também exige:
 - [x] gate local automatizado e evidência reproduzível;
 - [x] backup, verificação e restauração operacionalizados por scripts;
 - [x] fronteira de rollback documentada;
-- [ ] licença escolhida e arquivo `LICENSE` adicionado;
+- [x] licença MIT escolhida e arquivo `LICENSE` adicionado;
 - [ ] `main` limpa e sincronizada com `origin/main`;
 - [ ] commit final registrado;
 - [ ] CI remoto verde no mesmo commit;

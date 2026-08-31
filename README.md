@@ -1,20 +1,20 @@
-# Arena Dev
+# Arena Dev Community
 
-**Arena Dev** is a gamified classroom platform designed to increase student participation through challenges, XP, rankings, smart student draws, group generation and interactive learning sessions.
+**Arena Dev Community** is an open-source, self-hosted classroom platform designed to increase student participation through challenges, XP, rankings, smart student draws, group generation and interactive learning sessions.
 
 The project started as a simple Java desktop application for student management and is now being reengineered into a modern full-stack platform using **Java, Spring Boot, Next.js, PostgreSQL and Docker**.
 
-> **Status:** Arena Dev `0.3.0` release candidate under active development. Increment 11.4D is implemented, but the stable tag remains blocked until the final CI, license, backup/restore and rollback gates are proven.
+> **Status:** Arena Dev `0.3.0` release candidate under active development. Increment 11.4D and the MIT license are integrated. The stable tag remains blocked until CI is green for the exact release commit, a real backup is restored successfully, rollback is rehearsed and the final release gate passes.
 
 > **Current persistence:** the operational domains migrated through Increment 10 use Spring Boot + PostgreSQL as their source of truth. `localStorage` is not authoritative for domain data; it stores the selected-classroom preference and, on `/join`, the participant's temporary access needed for reconnection.
 
-> **Project documentation:** see [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for the current evidence-backed state and [`docs/adr/README.md`](docs/adr/README.md) for accepted product, UX and architecture decisions.
+> **Project documentation:** see [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for the evidence-backed state, [`docs/RELEASE_0_3_0.md`](docs/RELEASE_0_3_0.md) for the remaining release gates and [`docs/adr/README.md`](docs/adr/README.md) for accepted product, UX and architecture decisions.
 
 ---
 
 ## Overview
 
-Arena Dev is designed for classroom environments where students frequently participate in questions, programming challenges, debugging activities and practical assignments.
+Arena Dev Community is designed for classroom environments where students frequently participate in questions, programming challenges, debugging activities and practical assignments.
 
 Instead of managing participation manually, the platform provides a centralized environment for:
 
@@ -29,6 +29,23 @@ Instead of managing participation manually, the platform provides a centralized 
 * gamified learning sessions.
 
 The goal is not to turn learning into a competition, but to use gamification as a mechanism to improve **engagement, participation, consistency and visibility of student progress**.
+
+---
+
+## Community edition and commercial evolution
+
+This repository is the public **Community Edition** and remains licensed under MIT. It contains the self-hosted classroom core and does not contain a proprietary Verit product.
+
+A more complete commercial SaaS is planned for a separate private repository owned and operated by Verit. That product may reuse the MIT core while preserving its copyright and license notice, but its proprietary modules, operation and commercial terms will be maintained separately.
+
+| Arena Dev Community — this repository | Future Verit commercial product — planned |
+| --- | --- |
+| Classroom, students, sessions and attendance | Persistent accounts, organizations and advanced roles |
+| Score events, ranking and audit trail | Multi-tenancy, plans, billing and entitlements |
+| Activities, question packages and external-result import | Studies/exams workspace, adaptive review and advanced analytics |
+| Smart Draw, groups, Boss Battle, Buzzer and self-hosted Docker | Managed SaaS, premium content, institutional administration and AI-assisted features |
+
+The studies/exams product remains a separate domain, backend and database. Any future connection to Arena must use versioned APIs or contracts instead of a shared database. The accepted boundary and repository-split sequence are recorded in [ADR-0026](docs/adr/ADR-0026-community-mit-e-produto-comercial-verit.md).
 
 ---
 
@@ -74,7 +91,7 @@ Arena Dev implements several classroom mechanics and keeps later additions expli
 
 Students can be selected dynamically during classroom activities.
 
-The draw algorithm will consider factors such as:
+The draw algorithm considers factors such as:
 
 * attendance;
 * previous selections;
@@ -104,7 +121,7 @@ Scoring rules will be configurable as the platform evolves.
 
 ### Ranking
 
-The platform will provide multiple perspectives instead of relying exclusively on a global leaderboard:
+The platform provides multiple perspectives instead of relying exclusively on a global leaderboard:
 
 * overall ranking;
 * weekly progression;
@@ -243,11 +260,13 @@ All services are orchestrated using **Docker Compose**.
 
 ### Planned platform additions
 
-* final public-release evidence and deployment validation;
+* final `v0.3.0` evidence and deployment validation;
 * dedicated projector/public view;
 * PWA support;
 * Microsoft Graph / Microsoft Teams integration;
-* persistent account model if the product requires it. JWT is not used by the current MVP.
+* Community features accepted into the public roadmap.
+
+Persistent multi-role accounts, multi-tenancy, billing and the studies/exams SaaS belong to the planned commercial product boundary. They are not implemented in this repository. JWT is not used by the current MVP.
 
 ---
 
@@ -301,7 +320,7 @@ Game rules should remain isolated from HTTP and persistence concerns whenever po
 
 ## Current development status
 
-Arena Dev v1 has completed the domain migration covered by Increments 1–10. `Classroom`, `Student`, `Enrollment`, `ClassSession`, `SessionParticipant`, `ScoreEvent`, activities, questions, external-result imports, session mechanics, join codes and Buzzer rounds are persisted through REST/PostgreSQL.
+Arena Dev Community has completed the domain migration covered by Increments 1–10. `Classroom`, `Student`, `Enrollment`, `ClassSession`, `SessionParticipant`, `ScoreEvent`, activities, questions, external-result imports, session mechanics, join codes and Buzzer rounds are persisted through REST/PostgreSQL.
 
 The current runtime path for the migrated domain is:
 
@@ -315,7 +334,7 @@ Spring Boot
 PostgreSQL
 ```
 
-The current stabilization stage covers the teacher security boundary and realtime hardening implemented in Increments 11.1 and 11.2. Increment 11.3 completed the automated backend and frontend test gate. Increment 11.4 implemented CI, browser E2E, production hardening and release-readiness tooling. Publication of `v0.3.0` still depends on a clean synchronized `main`, a green remote CI run for the exact release commit, a selected license, a verified real backup and a rollback rehearsal. See [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for implementation limits and validation evidence.
+The current stabilization stage covers the teacher security boundary and realtime hardening implemented in Increments 11.1 and 11.2. Increment 11.3 completed the automated backend and frontend test gate. Increment 11.4 implemented CI, browser E2E, production hardening and release-readiness tooling. The MIT license is present. Publication of `v0.3.0` still depends on a clean synchronized `main`, a green remote CI run for the exact release commit, a verified real backup, a rollback rehearsal and the final release gate. See [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for implementation limits and validation evidence.
 
 ---
 
@@ -600,11 +619,11 @@ docker compose down -v
 * [x] Teacher authentication for the MVP administrative area
 * [x] Temporary student access by session code/QR
 * [x] Real-time Buzzer participation
-* [ ] Persistent teacher/student account model
+* [ ] Persistent multi-role account model — commercial product boundary; not part of the Community `v0.3.0`
 * [ ] Dedicated projector/public view
 * [x] Automated test gate — backend 11.3A–11.3C and frontend 11.3D validated
 * [x] CI, browser E2E and production hardening implemented; local gates validated
-* [ ] Publish `v0.3.0` — blocked by final CI evidence, license, real backup verification and rollback rehearsal
+* [ ] Publish `v0.3.0` — blocked by exact-SHA CI evidence, real backup verification, rollback rehearsal and final gate
 * [ ] PWA support
 * [ ] Microsoft Teams integration
 * [ ] Analytics dashboard
@@ -652,7 +671,7 @@ This version introduced improvements such as:
 * import/export improvements;
 * better resource management.
 
-### Arena Dev v1
+### Arena Dev Community web
 
 The project is now being completely reengineered as a web platform.
 
@@ -775,7 +794,9 @@ Developed by **Weslley Costa**.
 
 ## License
 
-Arena Dev is licensed under the [MIT License](LICENSE).
+Arena Dev Community is licensed under the [MIT License](LICENSE).
+
+The planned proprietary Verit product is a separate product and repository. Reuse of this Community code must preserve the MIT copyright and license notice; the product and intellectual-property boundary is documented in [ADR-0026](docs/adr/ADR-0026-community-mit-e-produto-comercial-verit.md).
 
 ---
 
