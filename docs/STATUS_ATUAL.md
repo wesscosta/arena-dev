@@ -99,12 +99,12 @@ Não existe migration `V7` na baseline auditada. O hardening dos Incrementos 11.
 | Build de produção do frontend | Validado na auditoria de 31/08/2026 |
 | TypeScript | Validado na auditoria de 31/08/2026 |
 | Auditoria npm de produção | Validada; zero vulnerabilidades conhecidas na execução |
-| Backend e migrations | Implementados; não reexecutados nessa auditoria por ausência de JDK 21/Maven/Docker no ambiente |
+| Backend e migrations | Validados na fatia 11.3A: compilação Java 21, empacotamento, Flyway `V1`–`V6`, validação JPA e PostgreSQL 17.11 |
 | Incremento 10 | Implementado; validação manual Docker/LAN registrada no handoff |
 | Incrementos 11.1 e 11.2 | Implementados; sem cobertura automatizada suficiente |
-| Testes backend | Parcial: `DomainSmokeTest` e a primeira suíte de integração foram implementados; execução da suíte nova ainda requer validação em ambiente com Java 21, Maven e Docker |
+| Testes backend | Parcial e validado: um teste unitário e quatro testes de integração aprovados; regras transacionais e concorrência ainda não cobertas |
 | Testes frontend | Inexistentes |
-| Testcontainers/PostgreSQL | Implementado na primeira fatia do Incremento 11.3; execução pendente nesta auditoria |
+| Testcontainers/PostgreSQL | Validado na fatia 11.3A com Testcontainers 2.0.5 e PostgreSQL 17.11 |
 | Concorrência do Buzzer | Planejada para a próxima fatia do Incremento 11.3 |
 | Playwright, CI e release hardening | Planejados no Incremento 11.4 |
 
@@ -122,8 +122,8 @@ Não existe migration `V7` na baseline auditada. O hardening dos Incrementos 11.
 
 O **11.3 — Automated Tests** está parcialmente implementado e dividido em entregas pequenas:
 
-1. infraestrutura JUnit + Testcontainers/PostgreSQL — implementada, com validação de execução pendente;
-2. testes de migrations, autenticação e autorização — implementados na primeira suíte de integração;
+1. infraestrutura JUnit + Testcontainers/PostgreSQL — validada;
+2. testes de migrations, autenticação e autorização — validados na primeira suíte de integração;
 3. testes de sessão, ScoreEvent e reversão;
 4. teste concorrente do Buzzer;
 5. testes frontend dos fluxos críticos.

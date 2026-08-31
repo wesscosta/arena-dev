@@ -198,7 +198,7 @@ Referência: `docs/INCREMENT_11_1_11_2.md` e ADR-0024.
 
 ## Incremento 11.3 — Automated Tests
 
-**Status: parcial; primeira fatia implementada, com execução pendente em ambiente Java 21/Maven/Docker.**
+**Status: parcial; primeira fatia validada em Java 21, Maven, Docker e PostgreSQL 17.**
 
 - `DomainSmokeTest` permanece como teste unitário rápido;
 - Maven Failsafe separa testes de integração no gate `mvn verify`;

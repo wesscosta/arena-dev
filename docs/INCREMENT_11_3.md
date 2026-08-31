@@ -1,6 +1,6 @@
 # Incremento 11.3 — Testes automatizados
 
-**Status:** parcial — fatia 11.3A implementada; execução pendente em ambiente com Java 21, Maven e Docker.
+**Status:** parcial — fatia 11.3A validada; regras transacionais, concorrência e frontend permanecem pendentes.
 
 ## Objetivo
 
@@ -37,13 +37,20 @@ mvn verify
 
 Na primeira execução, Testcontainers baixa a imagem `postgres:17-alpine`.
 
-### Evidência disponível
+### Evidência de execução
 
-- o código da suíte e a configuração Maven estão implementados;
-- o diff e a estrutura documental foram validados no ambiente de auditoria;
-- a execução Java ainda não foi realizada nesse ambiente porque Java 21, Maven e Docker não estão disponíveis.
+- ambiente: Arch Linux, Java 21.0.12.1 e Docker 29.7.2;
+- stack exercitada: Spring Boot 4.1.0, Testcontainers 2.0.5 e PostgreSQL 17.11;
+- `mvn test`: um teste executado, zero falhas, zero erros e zero ignorados;
+- `mvn verify`: quatro testes de integração executados, zero falhas, zero erros e zero ignorados;
+- Flyway validou e aplicou as migrations `V1`–`V6` em schema vazio;
+- Hibernate/JPA validou o schema e a aplicação iniciou em porta aleatória;
+- o gate completo foi repetido com sucesso em 30/08/2026.
 
-Essa limitação deve permanecer explícita: a fatia está **Implementada**, mas não deve ser classificada como **Validada** até que `mvn verify` finalize com sucesso.
+### Avisos não bloqueantes
+
+- Mockito/Byte Buddy usa autoanexação dinâmica do agente no Java 21; o build atual passa, mas essa configuração deverá ser tornada explícita antes de uma versão futura do JDK bloquear o comportamento por padrão;
+- Testcontainers não encontrou configuração de autenticação do Docker e usou o fallback padrão; imagens públicas foram baixadas e executadas normalmente.
 
 ## Próximas fatias
 
@@ -77,6 +84,6 @@ Essa limitação deve permanecer explícita: a fatia está **Implementada**, mas
 - [x] Flyway e validação JPA fazem parte da inicialização testada;
 - [x] fronteira HTTP pública/protegida possui casos automatizados;
 - [x] login, sessão e logout possuem casos automatizados;
-- [ ] `mvn test` executado com sucesso em Java 21;
-- [ ] `mvn verify` executado com sucesso com Docker ativo;
-- [ ] evidência de execução registrada neste documento.
+- [x] `mvn test` executado com sucesso em Java 21;
+- [x] `mvn verify` executado com sucesso com Docker ativo;
+- [x] evidência de execução registrada neste documento.

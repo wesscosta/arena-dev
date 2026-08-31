@@ -569,7 +569,7 @@ docker compose down -v
 * [x] Real-time Buzzer participation
 * [ ] Persistent teacher/student account model
 * [ ] Dedicated projector/public view
-* [ ] Automated test gate — Increment 11.3A implemented; execution evidence and remaining slices pending
+* [ ] Automated test gate — Increment 11.3A validated; remaining slices pending
 * [ ] CI and release hardening
 * [ ] PWA support
 * [ ] Microsoft Teams integration
