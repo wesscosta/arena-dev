@@ -14,6 +14,7 @@ import { createScoreEvent as createScoreEventApi, createScoreEvents as createSco
 import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
 import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
+import { activeSessionId, selectPreferredClassroomId } from "@/lib/app-state";
 import type { Activity, ActivityQuestion, ArenaData, Classroom, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 
 type View = "dashboard" | "classroom" | "arena" | "backup";
@@ -94,10 +95,7 @@ export default function ArenaApp() {
           fetchActivityDomain(domain.classrooms),
         ]);
         if (cancelled) return;
-        const preferredClassroomId = domain.classrooms.some((item) => item.id === localData.activeClassroomId)
-          ? localData.activeClassroomId
-          : domain.classrooms[0]?.id;
-        const activeSession = sessionDomain.sessions.find((item) => item.classroomId === preferredClassroomId && item.status === "ACTIVE" && !item.endedAt);
+        const selectedClassroomId = selectPreferredClassroomId(domain.classrooms, localData.activeClassroomId);
         setData({
           ...localData,
           ...domain,
@@ -106,8 +104,8 @@ export default function ArenaApp() {
           activities,
           sessionRuntime: [],
           groupHistory: [],
-          activeClassroomId: preferredClassroomId,
-          currentSessionId: activeSession?.id,
+          activeClassroomId: selectedClassroomId,
+          currentSessionId: activeSessionId(sessionDomain.sessions, selectedClassroomId),
         });
         setApiError("");
       } catch (error) {
@@ -191,11 +189,8 @@ export default function ArenaApp() {
     ]);
     setData((current) => {
       const candidate = preferredClassroomId ?? current.activeClassroomId;
-      const activeClassroomId = domain.classrooms.some((item) => item.id === candidate)
-        ? candidate
-        : domain.classrooms[0]?.id;
-      const activeSession = sessionDomain.sessions.find((item) => item.classroomId === activeClassroomId && item.status === "ACTIVE" && !item.endedAt);
-      return { ...current, ...domain, ...sessionDomain, scoreEvents, activities, sessionRuntime: [], groupHistory: [], activeClassroomId, currentSessionId: activeSession?.id };
+      const activeClassroomId = selectPreferredClassroomId(domain.classrooms, candidate);
+      return { ...current, ...domain, ...sessionDomain, scoreEvents, activities, sessionRuntime: [], groupHistory: [], activeClassroomId, currentSessionId: activeSessionId(sessionDomain.sessions, activeClassroomId) };
     });
     setApiError("");
   }
@@ -203,8 +198,7 @@ export default function ArenaApp() {
   function setActiveClassroom(id: string) {
     setArenaActivityId(undefined);
     patch((current) => {
-      const activeSession = current.sessions.find((item) => item.classroomId === id && item.status === "ACTIVE" && !item.endedAt);
-      return { ...current, activeClassroomId: id, currentSessionId: activeSession?.id };
+      return { ...current, activeClassroomId: id, currentSessionId: activeSessionId(current.sessions, id) };
     });
   }
 

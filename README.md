@@ -316,7 +316,7 @@ Spring Boot
 PostgreSQL
 ```
 
-The current stabilization stage covers the teacher security boundary and realtime hardening implemented in Increments 11.1 and 11.2. The next quality gate is Increment 11.3: unit, integration, Testcontainers and Buzzer-concurrency tests. See [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for implementation limits and validation evidence.
+The current stabilization stage covers the teacher security boundary and realtime hardening implemented in Increments 11.1 and 11.2. Increment 11.3 completed the automated backend and frontend test gate. The next quality gate is Increment 11.4: E2E, CI and release hardening. See [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for implementation limits and validation evidence.
 
 ---
 
@@ -569,7 +569,7 @@ docker compose down -v
 * [x] Real-time Buzzer participation
 * [ ] Persistent teacher/student account model
 * [ ] Dedicated projector/public view
-* [ ] Automated test gate — backend 11.3A–11.3C validated; frontend pending
+* [x] Automated test gate — backend 11.3A–11.3C and frontend 11.3D validated
 * [ ] CI and release hardening
 * [ ] PWA support
 * [ ] Microsoft Teams integration

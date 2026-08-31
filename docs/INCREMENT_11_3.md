@@ -1,6 +1,6 @@
 # Incremento 11.3 — Testes automatizados
 
-**Status:** parcial — fatias backend 11.3A, 11.3B e 11.3C validadas; frontend permanece pendente.
+**Status:** concluído — fatias backend 11.3A–11.3C e frontend 11.3D validadas.
 
 ## Objetivo
 
@@ -121,14 +121,47 @@ Na primeira execução, Testcontainers baixa a imagem `postgres:17-alpine`.
 - [x] `mvn verify` executado com sucesso em Java 21 e Docker ativo;
 - [x] evidência de execução registrada neste documento.
 
-## Próximas fatias
+## Fatia 11.3D — Frontend
 
-### 11.3D — Frontend
+### Implementado
 
-- autenticação e expiração de sessão;
-- seleção de turma;
-- fluxos críticos da Arena;
-- join e reconexão do participante.
+- test runner nativo do Node, com compilação TypeScript isolada e sem dependências adicionais;
+- testes do contrato de sessão expirada e login do professor com cookie;
+- teste de carga e mapeamento de turmas, alunos e matrículas;
+- testes de seleção persistida, fallback de turma e sessão ativa da Arena;
+- testes de ranking, níveis e formação balanceada de grupos;
+- testes de normalização do código, join e restauração segura do token do participante;
+- normalização do código de join centralizada no cliente realtime;
+- correção da formação de grupos para não deixar um participante isolado no caso 5 alunos/grupos de 2.
+
+### Comandos
+
+```bash
+cd frontend
+npm test
+npm run typecheck
+npm run build
+```
+
+### Evidência de execução
+
+- ambiente: Node.js 24.19.0 e npm 11.9.0;
+- `npm test`: doze testes executados, zero falhas, zero erros e zero ignorados;
+- `npm run typecheck`: concluído sem erros TypeScript;
+- `npm run build`: build Next.js 16.3.0 concluído, incluindo as rotas `/` e `/join`;
+- nenhuma dependência de produção ou desenvolvimento foi adicionada;
+- gate concluído com sucesso em 31/08/2026.
+
+### Critérios de aceite da fatia 11.3D
+
+- [x] autenticação e expiração de sessão possuem cobertura do contrato cliente;
+- [x] seleção e fallback de turma possuem cobertura automatizada;
+- [x] sessão ativa, ranking, níveis e grupos possuem cobertura da lógica crítica da Arena;
+- [x] join e reconexão do participante possuem cobertura automatizada;
+- [x] TypeScript e build de produção permanecem válidos;
+- [x] evidência de execução registrada neste documento.
+
+Testes de navegador, integração E2E com backend real e Playwright permanecem no escopo do Incremento 11.4.
 
 ## Critérios de aceite da fatia 11.3A
 

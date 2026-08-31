@@ -10,10 +10,7 @@ import {
   type SessionRealtimeEvent,
   type StudentJoinAccess,
 } from "@/lib/realtime-api";
-
-function storageKey(code: string) {
-  return `arena-dev-student:${code.toUpperCase()}`;
-}
+import { normalizeJoinCode, restoreStudentAccess, studentAccessStorageKey } from "@/lib/app-state";
 
 function messageOf(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a operação.";
@@ -33,7 +30,7 @@ export default function JoinPage() {
   const socketRef = useRef<WebSocket | null>(null);
 
   async function resolveCode(nextCode: string) {
-    const normalized = nextCode.trim().toUpperCase();
+    const normalized = normalizeJoinCode(nextCode);
     if (!normalized) return;
     setLoading(true);
     setError("");
@@ -41,17 +38,11 @@ export default function JoinPage() {
       const result = await fetchPublicSession(normalized);
       setCode(result.code);
       setSession(result);
-      const saved = window.localStorage.getItem(storageKey(result.code));
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved) as StudentJoinAccess;
-          if (parsed.sessionId === result.sessionId && new Date(parsed.expiresAt).getTime() > Date.now()) {
-            setAccess(parsed);
-          }
-        } catch {
-          window.localStorage.removeItem(storageKey(result.code));
-        }
-      }
+      const key = studentAccessStorageKey(result.code);
+      const saved = window.localStorage.getItem(key);
+      const restored = restoreStudentAccess(saved, result.sessionId);
+      setAccess(restored);
+      if (saved && !restored) window.localStorage.removeItem(key);
       window.history.replaceState(null, "", `/join?code=${encodeURIComponent(result.code)}`);
     } catch (caught) {
       setSession(null);
@@ -91,7 +82,7 @@ export default function JoinPage() {
       if (!active) return;
       setSocketState("offline");
       if (event.code === 1008) {
-        window.localStorage.removeItem(storageKey(access.code));
+        window.localStorage.removeItem(studentAccessStorageKey(access.code));
         setAccess(null);
         setError(event.reason || "Sua identificação expirou. Entre novamente.");
         return;
@@ -118,7 +109,7 @@ export default function JoinPage() {
     setError("");
     try {
       const result = await joinSession(session.code, identity.trim());
-      window.localStorage.setItem(storageKey(session.code), JSON.stringify(result));
+      window.localStorage.setItem(studentAccessStorageKey(session.code), JSON.stringify(result));
       setAccess(result);
     } catch (caught) {
       setError(messageOf(caught));

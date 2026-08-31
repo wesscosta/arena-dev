@@ -1,4 +1,5 @@
 import { apiFetch, browserApiBaseUrl } from "./auth-api";
+import { normalizeJoinCode } from "./app-state";
 
 export type JoinCode = {
   code: string;
@@ -82,11 +83,11 @@ export function rotateJoinCode(sessionId: string) {
 }
 
 export function fetchPublicSession(code: string) {
-  return request<PublicSession>(`/api/join/${encodeURIComponent(code.trim())}`);
+  return request<PublicSession>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}`);
 }
 
 export function joinSession(code: string, identity: string) {
-  return request<StudentJoinAccess>(`/api/join/${encodeURIComponent(code.trim())}`, {
+  return request<StudentJoinAccess>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}`, {
     method: "POST",
     body: JSON.stringify({ identity }),
   });

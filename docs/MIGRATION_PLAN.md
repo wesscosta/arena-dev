@@ -198,7 +198,7 @@ Referência: `docs/INCREMENT_11_1_11_2.md` e ADR-0024.
 
 ## Incremento 11.3 — Automated Tests
 
-**Status: parcial; backend 11.3A, 11.3B e 11.3C validado; frontend pendente.**
+**Status: concluído; backend 11.3A–11.3C e frontend 11.3D validados.**
 
 - `DomainSmokeTest` permanece como teste unitário rápido;
 - Maven Failsafe separa testes de integração no gate `mvn verify`;
@@ -208,7 +208,9 @@ Referência: `docs/INCREMENT_11_1_11_2.md` e ADR-0024.
 - a suíte transacional foi validada com quatro cenários e integra o gate de oito testes de infraestrutura;
 - a suíte realtime cobre rodada aberta única, clique duplicado, posições oficiais, claim de dispositivo e broadcast transacional;
 - a suíte realtime foi validada no gate de treze testes de integração e repetida cinco vezes consecutivas sem falhas;
-- faltam testes frontend.
+- o frontend possui doze testes de contrato e estado para autenticação, turma, Arena, join e reconexão;
+- TypeScript e build de produção foram validados após a suíte frontend;
+- testes de navegador e integração E2E completa permanecem no Incremento 11.4.
 
 Referência: `docs/INCREMENT_11_3.md`.
 

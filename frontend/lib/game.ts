@@ -101,8 +101,14 @@ export function createBalancedGroups(studentIds: string[], groupSize: number, pr
 
   if (groups.length > 1) {
     const last = groups.at(-1)!;
-    if (last.length === 1 && groups[0].length > 2) {
-      last.push(groups[0].pop()!);
+    if (last.length === 1) {
+      const donor = groups.slice(0, -1).find((group) => group.length > 2);
+      if (donor) {
+        last.push(donor.pop()!);
+      } else {
+        groups[0].push(last[0]);
+        groups.pop();
+      }
     }
   }
 
