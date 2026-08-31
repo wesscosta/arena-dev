@@ -216,11 +216,12 @@ Referência: `docs/INCREMENT_11_3.md`.
 
 ## Incremento 11.4 — E2E, CI e release hardening
 
-**Status: parcial; Playwright validado localmente, CI implementado e hardening 11.4C aguardando gate completo.**
+**Status: implementação concluída até 11.4D; publicação da release bloqueada pelos gates externos/finais.**
 
 - Playwright — implementado em 11.4B;
 - GitHub Actions — implementado em 11.4A;
-- hardening de Compose, secrets, CSRF, imagens e dependências implementado no 11.4C;
-- checklist e evidências de release.
+- hardening de Compose, secrets, CSRF, imagens e dependências implementado e validado localmente no 11.4C;
+- versões `0.3.0`, gate executável, checklist, backup/restore e rollback implementados no 11.4D;
+- licença, CI remoto verde no commit final, backup real validado e simulação de rollback permanecem gates da tag.
 
-Referência: `docs/INCREMENT_11_4.md`.
+Referências: `docs/INCREMENT_11_4.md`, `docs/RELEASE_0_3_0.md` e ADR-0025.

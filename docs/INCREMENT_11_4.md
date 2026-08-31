@@ -1,6 +1,6 @@
 # Incremento 11.4 — E2E, CI e release hardening
 
-**Status:** parcial — fatias 11.4A e 11.4B implementadas e validadas localmente; 11.4C implementada, aguardando gate completo; 11.4D pendente.
+**Status:** implementação concluída até a fatia 11.4D; gates locais validados até 11.4C. A release permanece bloqueada até licença, backup/restore real, rollback simulado e CI remoto verde no commit final.
 
 ## Objetivo
 
@@ -27,7 +27,7 @@ Converter os gates locais do Incremento 11.3 em proteção contínua, validar os
 - [x] dependências frontend são instaladas exclusivamente pelo lockfile;
 - [x] configuração Compose e Dockerfiles participam do gate;
 - [x] permissões, concorrência e timeouts estão explícitos;
-- [ ] primeira execução concluída com sucesso no GitHub Actions;
+- [ ] primeira execução concluída com sucesso no GitHub Actions e no commit final da release;
 - [ ] evidência da execução registrada neste documento.
 
 ### Validação local segura
@@ -119,7 +119,7 @@ docker compose down --volumes --remove-orphans
 - [x] política automatizada de atualização está versionada;
 - [x] testes, TypeScript, build e auditoria npm passam localmente;
 - [x] `mvn verify` passa em Java 21 com Docker após a mudança CSRF: 14 testes, zero falhas;
-- [ ] Compose de produção e imagens endurecidas são validados no Docker;
+- [x] Compose de produção e imagens endurecidas validados no Docker; serviços saudáveis e runtimes não-root;
 - [ ] CI remoto conclui verde.
 
 #### Execução de produção
@@ -138,19 +138,62 @@ docker compose -f compose.yaml -f compose.prod.yaml config --quiet
 docker compose -f compose.yaml -f compose.prod.yaml up --detach --build --wait
 ```
 
-## Próxima fatia
+## Fatia 11.4D — Release readiness
 
-### 11.4D — Release
+### Implementado
 
-- checklist operacional;
-- evidências consolidadas;
-- critérios de rollback e backup;
-- decisão de tag da versão estável.
+- versões do Maven, npm e lockfile alinhadas em `0.3.0`;
+- validação automatizada dos metadados e de arquivos proibidos no artefato;
+- gate local que repete backend, frontend, auditoria, Compose, imagens, usuários não-root e E2E;
+- modo final que exige `main` limpa/sincronizada, licença, CI verde no mesmo SHA e backup restaurável;
+- backup PostgreSQL em formato custom com checksum SHA-256;
+- restauração do dump em PostgreSQL 17 temporário para validar Flyway `V1–V6` e tabelas centrais;
+- restauração destrutiva protegida por confirmação, verificação prévia e backup de segurança;
+- procedimento de rollback que separa aplicação de restauração de dados;
+- decisão de usar `v0.3.0` e adiar `v1.0.0`;
+- tag e GitHub Release mantidas como ações manuais após todos os gates.
+
+Referências:
+
+- [`RELEASE_0_3_0.md`](RELEASE_0_3_0.md);
+- [`ADR-0025`](adr/ADR-0025-release-readiness-e-versionamento.md);
+- `scripts/release/`.
+
+### Critérios de aceite
+
+- [x] manifests alinhados em `0.3.0`;
+- [x] checklist operacional e evidências consolidados;
+- [x] scripts de backup, verificação e restauração versionados;
+- [x] rollback e limites do ambiente-alvo documentados;
+- [x] gate final bloqueia tag baseada em árvore suja, CI de outro SHA ou backup inválido;
+- [ ] licença definida e arquivo `LICENSE` presente;
+- [ ] `main` limpa e sincronizada no commit final;
+- [ ] execução remota do CI verde no mesmo commit;
+- [ ] backup real criado e validado pelo restore-check;
+- [ ] rollback simulado no ambiente-alvo;
+- [ ] gate final concluído;
+- [ ] tag anotada `v0.3.0` e GitHub Release publicadas.
+
+### Comandos
+
+```bash
+scripts/release/check-metadata.sh
+scripts/release/release-gate.sh local
+
+BACKUP_FILE="$(scripts/release/backup-postgres.sh)"
+scripts/release/verify-backup.sh "$BACKUP_FILE"
+
+scripts/release/release-gate.sh final \
+  --ci-run-url https://github.com/wesscosta/arena-dev/actions/runs/ID_DA_EXECUCAO \
+  --backup "$BACKUP_FILE"
+```
 
 ## Limites
 
-- o workflow ainda não foi executado no GitHub e permanece **Implementado**, não **Validado**;
+- o workflow permanece **Implementado** até que uma URL/ID de execução verde no commit final seja registrada;
 - Playwright foi validado localmente; o CI remoto ainda precisa registrar a execução verde;
 - os defaults fracos permanecem somente no perfil de desenvolvimento; `prod` não os aceita;
 - o overlay de produção pressupõe proxy TLS externo e não constitui sozinho uma plataforma completa de deploy;
-- nenhuma tag ou release deve ser criada antes das fatias 11.4B–11.4D.
+- não existe rate limit específico para tentativas de login;
+- a licença do projeto ainda depende de decisão e bloqueia a release pública estável;
+- nenhuma tag ou release deve ser criada antes de todos os critérios pendentes do 11.4D.

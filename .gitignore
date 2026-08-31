@@ -12,6 +12,13 @@ backend/target/
 frontend/node_modules/
 frontend/.next/
 frontend/out/
+frontend/.test-dist/
+frontend/playwright-report/
+frontend/test-results/
+
+# Release operations
+backups/
+release-evidence/
 
 # Logs
 *.log

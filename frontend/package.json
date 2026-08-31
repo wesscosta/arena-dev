@@ -1,6 +1,6 @@
 {
   "name": "arena-dev-web",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -18,7 +18,6 @@
   "devDependencies": {
     "@playwright/test": "^1.62.1",
     "@types/node": "^22.15.0",
-    "@playwright/test": "^1.62.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "typescript": "^5.9.2"

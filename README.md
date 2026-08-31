@@ -4,7 +4,7 @@
 
 The project started as a simple Java desktop application for student management and is now being reengineered into a modern full-stack platform using **Java, Spring Boot, Next.js, PostgreSQL and Docker**.
 
-> **Status:** Arena Dev v1 under active development. The current quality gate is Increment 11.3 — automated tests.
+> **Status:** Arena Dev `0.3.0` release candidate under active development. Increment 11.4D is implemented, but the stable tag remains blocked until the final CI, license, backup/restore and rollback gates are proven.
 
 > **Current persistence:** the operational domains migrated through Increment 10 use Spring Boot + PostgreSQL as their source of truth. `localStorage` is not authoritative for domain data; it stores the selected-classroom preference and, on `/join`, the participant's temporary access needed for reconnection.
 
@@ -243,8 +243,7 @@ All services are orchestrated using **Docker Compose**.
 
 ### Planned platform additions
 
-* automated backend, concurrency and frontend tests;
-* CI and release hardening;
+* final public-release evidence and deployment validation;
 * dedicated projector/public view;
 * PWA support;
 * Microsoft Graph / Microsoft Teams integration;
@@ -316,7 +315,7 @@ Spring Boot
 PostgreSQL
 ```
 
-The current stabilization stage covers the teacher security boundary and realtime hardening implemented in Increments 11.1 and 11.2. Increment 11.3 completed the automated backend and frontend test gate. The next quality gate is Increment 11.4: E2E, CI and release hardening. See [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for implementation limits and validation evidence.
+The current stabilization stage covers the teacher security boundary and realtime hardening implemented in Increments 11.1 and 11.2. Increment 11.3 completed the automated backend and frontend test gate. Increment 11.4 implemented CI, browser E2E, production hardening and release-readiness tooling. Publication of `v0.3.0` still depends on a clean synchronized `main`, a green remote CI run for the exact release commit, a selected license, a verified real backup and a rollback rehearsal. See [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for implementation limits and validation evidence.
 
 ---
 
@@ -432,7 +431,21 @@ docker compose -f compose.yaml -f compose.prod.yaml config --quiet
 docker compose -f compose.yaml -f compose.prod.yaml up --detach --build --wait
 ```
 
-The production profile enables secure session cookies and administrative CSRF protection. PostgreSQL is not published by the production overlay. See [`docs/INCREMENT_11_4.md`](docs/INCREMENT_11_4.md) for the remaining deployment and release gates.
+The production profile enables secure session cookies and administrative CSRF protection. PostgreSQL is not published by the production overlay. See [`docs/INCREMENT_11_4.md`](docs/INCREMENT_11_4.md) and [`docs/RELEASE_0_3_0.md`](docs/RELEASE_0_3_0.md) for the remaining deployment and release gates.
+
+### Release-readiness gate
+
+The release scripts validate metadata, repeat the local technical gates and provide explicit PostgreSQL backup/restore procedures. They never create a tag automatically.
+
+```bash
+scripts/release/check-metadata.sh
+scripts/release/release-gate.sh local
+
+BACKUP_FILE="$(scripts/release/backup-postgres.sh)"
+scripts/release/verify-backup.sh "$BACKUP_FILE"
+```
+
+The final mode additionally verifies the remote GitHub Actions run, exact commit, repository state, license and restorable backup. Full commands and rollback boundaries are documented in [`docs/RELEASE_0_3_0.md`](docs/RELEASE_0_3_0.md).
 
 ---
 
@@ -590,7 +603,8 @@ docker compose down -v
 * [ ] Persistent teacher/student account model
 * [ ] Dedicated projector/public view
 * [x] Automated test gate — backend 11.3A–11.3C and frontend 11.3D validated
-* [ ] CI and release hardening — CI implemented; first GitHub Actions run, E2E and hardening pending
+* [x] CI, browser E2E and production hardening implemented; local gates validated
+* [ ] Publish `v0.3.0` — blocked by final CI evidence, license, real backup verification and rollback rehearsal
 * [ ] PWA support
 * [ ] Microsoft Teams integration
 * [ ] Analytics dashboard
@@ -681,7 +695,7 @@ v0.1-legacy
 v0.2.0
 ```
 
-The Arena Dev `v1.0.0` release will only be tagged after the core game functionality is considered stable.
+The next web release candidate is `v0.3.0`. The `v1.0.0` milestone remains deferred until broader functional and operational validation.
 
 ---
 
@@ -761,7 +775,7 @@ Developed by **Weslley Costa**.
 
 ## License
 
-A license will be defined before the first stable public release.
+The project license still requires an explicit owner decision. The final release gate intentionally fails while no `LICENSE` file exists, so a stable public release cannot be published accidentally without defined usage terms.
 
 ---
 
@@ -836,4 +850,4 @@ External activities can import CSV/TSV results through a preview-first workflow.
 
 Increments 9.1 and 9.2 established the current `system overview → classroom workspace → live Arena` navigation. Increment 10 added session code/QR, `/join`, WebSocket participation and the server-authoritative Buzzer. Increments 11.1 and 11.2 added the teacher security boundary and realtime hardening.
 
-The remaining stabilization work starts with automated tests in Increment 11.3 and continues with E2E, CI and release hardening in Increment 11.4. Current evidence and known limitations are maintained in [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md).
+Increment 11.3 completed the automated test baseline. Increment 11.4 implemented CI, E2E, production hardening and release-readiness procedures. The remaining work is evidence and operational validation for the `v0.3.0` tag, not a new product feature. Current evidence and known limitations are maintained in [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md).

@@ -41,6 +41,7 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0022](ADR-0022-visao-geral-do-sistema-e-home-contextual-da-turma.md) | Visão geral do sistema separada da Home contextual da Turma | Aceito |
 | [ADR-0023](ADR-0023-join-temporario-e-buzzer-autoritativo.md) | Join temporário por sessão e Buzzer autoritativo | Aceito |
 | [ADR-0024](ADR-0024-fronteira-de-seguranca-e-hardening-realtime.md) | Fronteira de segurança do professor e hardening realtime | Aceito |
+| [ADR-0025](ADR-0025-release-readiness-e-versionamento.md) | Release readiness, versionamento `0.3.x` e fronteira de rollback | Aceito |
 
 ## Template
 
