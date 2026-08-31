@@ -106,7 +106,7 @@ Não existe migration `V7` na baseline auditada. O hardening dos Incrementos 11.
 | Testes frontend | Validado no 11.3D: doze testes de contrato e estado, TypeScript e build de produção |
 | Testcontainers/PostgreSQL | Validado na fatia 11.3A com Testcontainers 2.0.5 e PostgreSQL 17.11 |
 | Concorrência do Buzzer | Validada em cinco cenários, repetidos cinco vezes consecutivas em Java 21/Docker |
-| Playwright, CI e release hardening | Parcial: CI implementado no 11.4A e aguardando execução; Playwright e hardening permanecem planejados |
+| Playwright, CI e release hardening | Parcial: CI e cenário crítico Playwright implementados e aguardando execução; hardening e release permanecem planejados |
 
 ## Documentado, mas ainda não implementado
 

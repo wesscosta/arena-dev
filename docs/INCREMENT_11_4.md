@@ -1,6 +1,6 @@
 # Incremento 11.4 — E2E, CI e release hardening
 
-**Status:** parcial — fatia 11.4A implementada; execução no GitHub Actions e fatias 11.4B–11.4D pendentes.
+**Status:** parcial — fatias 11.4A e 11.4B implementadas; execução no GitHub Actions e fatias 11.4C–11.4D pendentes.
 
 ## Objetivo
 
@@ -47,15 +47,54 @@ docker compose config --quiet
 docker compose build backend frontend
 ```
 
+## Fatia 11.4B — E2E com Playwright
+
+### Implementado
+
+- Playwright configurado com Chromium, execução serial e evidências de falha;
+- dados isolados criados pela API autenticada a cada execução;
+- login real do professor pelo navegador;
+- seleção da turma preparada e confirmação da sessão ativa;
+- entrada na Arena e confirmação da sessão corrente;
+- join do participante por matrícula;
+- autenticação realtime e confirmação de conexão;
+- reload do navegador e reconexão pelo token persistido;
+- execução integrada ao job Compose do GitHub Actions;
+- relatório HTML, trace, screenshots e vídeos de falha preservados por sete dias;
+- logs dos serviços exibidos quando o cenário falha;
+- teardown do Compose executado mesmo após falha.
+
+### Critérios de aceite
+
+- [x] cenário crítico versionado sem depender de dados preexistentes;
+- [x] professor e participante usam contextos de navegador separados;
+- [x] login, turma, Arena, join e reconexão participam do mesmo fluxo ponta a ponta;
+- [x] credenciais E2E são explícitas e não dependem de secrets do repositório;
+- [x] artefatos e logs de falha estão configurados;
+- [ ] cenário executado com sucesso em Chromium, backend e PostgreSQL reais;
+- [ ] evidência da execução registrada neste documento.
+
+### Validação local
+
+```bash
+cd arena-dev
+export APP_TEACHER_USERNAME=professor
+export APP_TEACHER_PASSWORD=e2e-safe-password
+export E2E_TEACHER_USERNAME=professor
+export E2E_TEACHER_PASSWORD=e2e-safe-password
+
+docker compose up --detach --build --wait
+
+cd frontend
+npm ci
+npx playwright install chromium
+npm run test:e2e
+
+cd ..
+docker compose down --volumes --remove-orphans
+```
+
 ## Próximas fatias
-
-### 11.4B — E2E com Playwright
-
-- autenticação do professor;
-- seleção de turma e entrada na Arena;
-- join do participante;
-- expiração/reconexão;
-- evidência em navegador real com backend e PostgreSQL.
 
 ### 11.4C — Hardening de configuração e dependências
 
@@ -75,6 +114,6 @@ docker compose build backend frontend
 ## Limites
 
 - o workflow ainda não foi executado no GitHub e permanece **Implementado**, não **Validado**;
-- Playwright não foi adicionado nesta fatia;
+- Playwright foi implementado, mas ainda aguarda execução em ambiente com Docker e Chromium;
 - os defaults de desenvolvimento e os limites de segurança documentados continuam inalterados;
 - nenhuma tag ou release deve ser criada antes das fatias 11.4B–11.4D.
