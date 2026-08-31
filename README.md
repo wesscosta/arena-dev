@@ -416,6 +416,26 @@ The first execution may take longer because Docker needs to download and build t
 
 ---
 
+### Hardened production baseline
+
+Production uses the `prod` Spring profile and requires explicit database, teacher and origin values. The overlay binds the application to loopback and expects an external HTTPS reverse proxy; it does not provide TLS by itself.
+
+```bash
+export POSTGRES_PASSWORD='use-a-long-unique-password'
+export APP_FRONTEND_URL='https://arena.example.com'
+export APP_ALLOWED_ORIGIN_PATTERNS='https://arena.example.com'
+export APP_TEACHER_USERNAME='teacher'
+export APP_TEACHER_PASSWORD='use-another-long-unique-password'
+export NEXT_PUBLIC_API_URL='https://api.arena.example.com'
+
+docker compose -f compose.yaml -f compose.prod.yaml config --quiet
+docker compose -f compose.yaml -f compose.prod.yaml up --detach --build --wait
+```
+
+The production profile enables secure session cookies and administrative CSRF protection. PostgreSQL is not published by the production overlay. See [`docs/INCREMENT_11_4.md`](docs/INCREMENT_11_4.md) for the remaining deployment and release gates.
+
+---
+
 ## Application endpoints
 
 ### Frontend

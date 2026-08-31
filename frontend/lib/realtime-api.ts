@@ -63,8 +63,8 @@ export class RealtimeApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, init);
+async function request<T>(path: string, init?: RequestInit, credentials: RequestCredentials = "include"): Promise<T> {
+  const response = await apiFetch(path, init, credentials);
   if (!response.ok) {
     let body: ApiErrorBody | undefined;
     try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
@@ -83,14 +83,14 @@ export function rotateJoinCode(sessionId: string) {
 }
 
 export function fetchPublicSession(code: string) {
-  return request<PublicSession>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}`);
+  return request<PublicSession>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}`, undefined, "omit");
 }
 
 export function joinSession(code: string, identity: string) {
   return request<StudentJoinAccess>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}`, {
     method: "POST",
     body: JSON.stringify({ identity }),
-  });
+  }, "omit");
 }
 
 export function fetchBuzzerState(sessionId: string) {

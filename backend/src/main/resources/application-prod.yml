@@ -1,0 +1,25 @@
+server:
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: true
+        same-site: strict
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jpa:
+    properties:
+      hibernate:
+        format_sql: false
+
+app:
+  frontend-url: ${APP_FRONTEND_URL}
+  allowed-origin-patterns: ${APP_ALLOWED_ORIGIN_PATTERNS}
+  teacher:
+    username: ${APP_TEACHER_USERNAME}
+    password: ${APP_TEACHER_PASSWORD}

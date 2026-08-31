@@ -7,6 +7,8 @@ RUN mvn -B -ntp clean package
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+RUN addgroup -S arena && adduser -S arena -G arena
+COPY --from=build --chown=arena:arena /app/target/*.jar app.jar
+USER arena
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

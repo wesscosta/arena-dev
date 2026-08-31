@@ -88,7 +88,7 @@ Não existe migration `V7` na baseline auditada. O hardening dos Incrementos 11.
 - a política `SameSite`/`Secure` do cookie não está configurada explicitamente no repositório;
 - `APP_SESSION_COOKIE_SECURE` não faz parte da configuração versionada da aplicação;
 - não existe rate limit específico para tentativas de login;
-- CSRF está desabilitado;
+- CSRF está ativo para login e mutações administrativas; rotas públicas com token próprio permanecem independentes da sessão do professor;
 - o limite realtime é local à instância e não substitui proteção distribuída futura;
 - a configuração atual exige revisão antes de exposição pública.
 
@@ -106,7 +106,7 @@ Não existe migration `V7` na baseline auditada. O hardening dos Incrementos 11.
 | Testes frontend | Validado no 11.3D: doze testes de contrato e estado, TypeScript e build de produção |
 | Testcontainers/PostgreSQL | Validado na fatia 11.3A com Testcontainers 2.0.5 e PostgreSQL 17.11 |
 | Concorrência do Buzzer | Validada em cinco cenários, repetidos cinco vezes consecutivas em Java 21/Docker |
-| Playwright, CI e release hardening | Parcial: CI e cenário crítico Playwright implementados e aguardando execução; hardening e release permanecem planejados |
+| Playwright, CI e release hardening | Parcial: Playwright validado localmente; CI implementado; hardening 11.4C implementado e aguardando Java 21/Docker/CI; release pendente |
 
 ## Documentado, mas ainda não implementado
 
@@ -128,4 +128,4 @@ O **11.3 — Automated Tests** está concluído nas seguintes entregas:
 4. testes concorrentes de Buzzer, claim de dispositivo e broadcast pós-commit — validados;
 5. testes frontend de autenticação, turma, Arena, join e reconexão — validados.
 
-Consulte [`INCREMENT_11_3.md`](INCREMENT_11_3.md) para a evidência do gate automatizado e [`INCREMENT_11_4.md`](INCREMENT_11_4.md) para o CI, E2E e hardening de release. A primeira execução do workflow 11.4A ainda precisa ser validada no GitHub Actions.
+Consulte [`INCREMENT_11_3.md`](INCREMENT_11_3.md) para a evidência do gate automatizado e [`INCREMENT_11_4.md`](INCREMENT_11_4.md) para o CI, E2E e hardening de release. O Playwright foi validado localmente; a execução completa do workflow ainda precisa ser registrada.

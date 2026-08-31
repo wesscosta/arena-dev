@@ -216,11 +216,11 @@ Referência: `docs/INCREMENT_11_3.md`.
 
 ## Incremento 11.4 — E2E, CI e release hardening
 
-**Status: parcial; CI e Playwright implementados e aguardando execução no GitHub Actions.**
+**Status: parcial; Playwright validado localmente, CI implementado e hardening 11.4C aguardando gate completo.**
 
 - Playwright — implementado em 11.4B;
 - GitHub Actions — implementado em 11.4A;
-- validação de Compose, secrets e dependências;
+- hardening de Compose, secrets, CSRF, imagens e dependências implementado no 11.4C;
 - checklist e evidências de release.
 
 Referência: `docs/INCREMENT_11_4.md`.

@@ -23,15 +23,24 @@ test("sessão expirada do professor resulta em estado não autenticado", async (
 });
 
 test("login envia credenciais e preserva cookie de sessão", async () => {
+  let calls = 0;
   globalThis.fetch = async (input, init) => {
+    calls += 1;
+    if (calls === 1) {
+      assert.equal(String(input), "http://localhost:8080/api/auth/csrf");
+      assert.equal(init?.credentials, "include");
+      return jsonResponse({ token: "csrf-test-token" });
+    }
     assert.equal(String(input), "http://localhost:8080/api/auth/login");
     assert.equal(init?.method, "POST");
     assert.equal(init?.credentials, "include");
+    assert.equal(new Headers(init?.headers).get("X-XSRF-TOKEN"), "csrf-test-token");
     assert.deepEqual(JSON.parse(String(init?.body)), { username: "professor", password: "segredo" });
     return jsonResponse({ username: "professor", role: "TEACHER" });
   };
 
   assert.deepEqual(await loginTeacher("professor", "segredo"), { username: "professor", role: "TEACHER" });
+  assert.equal(calls, 2);
 });
 
 test("carregamento da turma combina turmas, alunos e matrículas", async () => {

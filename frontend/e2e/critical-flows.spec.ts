@@ -25,24 +25,32 @@ test("professor entra na Arena e participante reconecta à sessão", async ({ br
 
   const api: APIRequestContext = await request.newContext({ baseURL: apiBaseUrl });
   try {
+    const csrfResponse = await api.get("/api/auth/csrf");
+    await expectOk(csrfResponse, "Token CSRF E2E");
+    const { token: csrfToken } = await csrfResponse.json() as { token: string };
+    const csrfHeaders = { "X-XSRF-TOKEN": csrfToken };
+
     const login = await api.post("/api/auth/login", {
       data: { username: teacherUsername, password: teacherPassword },
+      headers: csrfHeaders,
     });
     await expectOk(login, "Login E2E");
 
     const classroomResponse = await api.post("/api/classrooms", {
       data: { name: classroomName, code: null },
+      headers: csrfHeaders,
     });
     await expectOk(classroomResponse, "Criação da turma E2E");
     const classroom = await classroomResponse.json() as ClassroomView;
 
     const studentResponse = await api.post("/api/students", {
       data: { registration, name: studentName, nickname: studentNickname },
+      headers: csrfHeaders,
     });
     await expectOk(studentResponse, "Criação do aluno E2E");
     const student = await studentResponse.json() as StudentView;
 
-    const enrollment = await api.post(`/api/classrooms/${classroom.id}/students/${student.id}`);
+    const enrollment = await api.post(`/api/classrooms/${classroom.id}/students/${student.id}`, { headers: csrfHeaders });
     await expectOk(enrollment, "Matrícula E2E");
 
     const sessionResponse = await api.post("/api/sessions", {
@@ -51,6 +59,7 @@ test("professor entra na Arena e participante reconecta à sessão", async ({ br
         title: sessionTitle,
         presentStudentIds: [student.id],
       },
+      headers: csrfHeaders,
     });
     await expectOk(sessionResponse, "Criação da sessão E2E");
     const session = await sessionResponse.json() as SessionView;
@@ -62,7 +71,11 @@ test("professor entra na Arena e participante reconecta à sessão", async ({ br
     await page.goto("/");
     await page.getByLabel("Usuário").fill(teacherUsername);
     await page.getByLabel("Senha").fill(teacherPassword);
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    const [browserLogin] = await Promise.all([
+      page.waitForResponse((response) => response.url().endsWith("/api/auth/login")),
+      page.getByRole("button", { name: "Entrar", exact: true }).click(),
+    ]);
+    expect(browserLogin.status(), await browserLogin.text()).toBe(200);
 
     await expect(page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
     await page.getByLabel("Selecionar turma atual").selectOption(classroom.id);

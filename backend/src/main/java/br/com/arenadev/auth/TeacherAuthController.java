@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +26,11 @@ public class TeacherAuthController {
 
     public TeacherAuthController(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
+    }
+
+    @GetMapping("/csrf")
+    public CsrfTokenView csrf(CsrfToken token) {
+        return new CsrfTokenView(token.getToken());
     }
 
     @PostMapping("/login")
@@ -54,6 +60,8 @@ public class TeacherAuthController {
     }
 
     public record LoginRequest(@NotBlank String username, @NotBlank String password) {}
+
+    public record CsrfTokenView(String token) {}
 
     public record TeacherSessionView(String username, String role) {
         static TeacherSessionView from(Authentication authentication) {

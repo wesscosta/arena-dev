@@ -1,6 +1,6 @@
 # Incremento 11.4 — E2E, CI e release hardening
 
-**Status:** parcial — fatias 11.4A e 11.4B implementadas; execução no GitHub Actions e fatias 11.4C–11.4D pendentes.
+**Status:** parcial — fatias 11.4A e 11.4B implementadas e validadas localmente; 11.4C implementada, aguardando gate completo; 11.4D pendente.
 
 ## Objetivo
 
@@ -71,8 +71,8 @@ docker compose build backend frontend
 - [x] login, turma, Arena, join e reconexão participam do mesmo fluxo ponta a ponta;
 - [x] credenciais E2E são explícitas e não dependem de secrets do repositório;
 - [x] artefatos e logs de falha estão configurados;
-- [ ] cenário executado com sucesso em Chromium, backend e PostgreSQL reais;
-- [ ] evidência da execução registrada neste documento.
+- [x] cenário executado com sucesso em Chromium, backend e PostgreSQL reais;
+- [x] evidência da execução local registrada em 31/08/2026.
 
 ### Validação local
 
@@ -94,15 +94,51 @@ cd ..
 docker compose down --volumes --remove-orphans
 ```
 
-## Próximas fatias
-
 ### 11.4C — Hardening de configuração e dependências
 
-- defaults e secrets de produção;
-- cookies, CORS e CSRF;
-- configuração Compose de produção;
-- auditoria de dependências e imagens;
-- política de atualização automatizada.
+#### Implementado
+
+- proteção CSRF por token para login e mutações autenticadas do professor;
+- teste de integração que rejeita POST administrativo sem token CSRF;
+- cookies de sessão `HttpOnly`, `Secure` e `SameSite=Strict` no perfil `prod`;
+- perfil Spring de produção sem fallback para banco, credenciais, origem ou professor;
+- overlay `compose.prod.yaml` que exige secrets, não publica PostgreSQL e liga serviços somente ao loopback;
+- URL pública da API injetada no build standalone do Next.js;
+- runtimes frontend standalone e backend/frontend não-root;
+- auditoria npm, validação do Compose de produção e inspeção das imagens incorporadas ao CI;
+- Dependabot semanal para npm, Maven, GitHub Actions e Dockerfiles.
+
+#### Critérios de aceite
+
+- [x] mutações administrativas exigem token CSRF;
+- [x] rotas públicas do participante permanecem independentes da sessão do professor;
+- [x] configuração de produção falha quando secrets e origens não são fornecidos;
+- [x] PostgreSQL não é publicado pelo overlay de produção;
+- [x] cookies seguros são obrigatórios no perfil `prod`;
+- [x] imagens finais declaram usuário não-root e frontend usa saída standalone;
+- [x] política automatizada de atualização está versionada;
+- [x] testes, TypeScript, build e auditoria npm passam localmente;
+- [x] `mvn verify` passa em Java 21 com Docker após a mudança CSRF: 14 testes, zero falhas;
+- [ ] Compose de produção e imagens endurecidas são validados no Docker;
+- [ ] CI remoto conclui verde.
+
+#### Execução de produção
+
+O overlay não fornece TLS nem proxy reverso. Ele liga frontend e backend apenas em `127.0.0.1`; um proxy HTTPS externo deve publicar ambos. As URLs informadas no build precisam coincidir com as URLs desse proxy.
+
+```bash
+export POSTGRES_PASSWORD='senha-longa-e-unica'
+export APP_FRONTEND_URL='https://arena.exemplo.com'
+export APP_ALLOWED_ORIGIN_PATTERNS='https://arena.exemplo.com'
+export APP_TEACHER_USERNAME='professor'
+export APP_TEACHER_PASSWORD='senha-longa-e-unica-do-professor'
+export NEXT_PUBLIC_API_URL='https://api.arena.exemplo.com'
+
+docker compose -f compose.yaml -f compose.prod.yaml config --quiet
+docker compose -f compose.yaml -f compose.prod.yaml up --detach --build --wait
+```
+
+## Próxima fatia
 
 ### 11.4D — Release
 
@@ -114,6 +150,7 @@ docker compose down --volumes --remove-orphans
 ## Limites
 
 - o workflow ainda não foi executado no GitHub e permanece **Implementado**, não **Validado**;
-- Playwright foi implementado, mas ainda aguarda execução em ambiente com Docker e Chromium;
-- os defaults de desenvolvimento e os limites de segurança documentados continuam inalterados;
+- Playwright foi validado localmente; o CI remoto ainda precisa registrar a execução verde;
+- os defaults fracos permanecem somente no perfil de desenvolvimento; `prod` não os aceita;
+- o overlay de produção pressupõe proxy TLS externo e não constitui sozinho uma plataforma completa de deploy;
 - nenhuma tag ou release deve ser criada antes das fatias 11.4B–11.4D.

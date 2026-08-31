@@ -57,6 +57,9 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Run frontend tests
         run: npm test
 
@@ -98,11 +101,26 @@ jobs:
       - name: Validate Compose model
         run: docker compose config --quiet
 
+      - name: Validate production Compose model
+        env:
+          POSTGRES_PASSWORD: ci-production-database-password
+          APP_FRONTEND_URL: https://arena.example.test
+          APP_ALLOWED_ORIGIN_PATTERNS: https://arena.example.test
+          APP_TEACHER_USERNAME: professor
+          APP_TEACHER_PASSWORD: ci-production-teacher-password
+          NEXT_PUBLIC_API_URL: https://api.arena.example.test
+        run: docker compose -f compose.yaml -f compose.prod.yaml config --quiet
+
       - name: Build application images
         run: docker compose build backend frontend
 
       - name: Start application stack
         run: docker compose up --detach --wait
+
+      - name: Verify non-root runtime containers
+        run: |
+          test "$(docker compose exec -T backend id -un)" = "arena"
+          test "$(docker compose exec -T frontend id -un)" = "arena"
 
       - name: Run browser critical flows
         working-directory: frontend

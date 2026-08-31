@@ -112,20 +112,23 @@ class SecurityAndMigrationIT {
 
     @Test
     void authenticatesTeacherPersistsSessionAndInvalidatesItOnLogout() throws Exception {
+        String csrfToken = csrfToken(sessionClient);
         HttpResponse<String> login = send(
                 sessionClient,
                 "POST",
                 "/api/auth/login",
-                "{\"username\":\"test-teacher\",\"password\":\"test-password\"}"
+                "{\"username\":\"test-teacher\",\"password\":\"test-password\"}",
+                csrfToken
         );
         HttpResponse<String> session = send(sessionClient, "GET", "/api/auth/session", null);
         HttpResponse<String> createClassroom = send(
                 sessionClient,
                 "POST",
                 "/api/classrooms",
-                "{\"name\":\"Turma de integração\",\"code\":\"test-11-3\"}"
+                "{\"name\":\"Turma de integração\",\"code\":\"test-11-3\"}",
+                csrfToken
         );
-        HttpResponse<String> logout = send(sessionClient, "POST", "/api/auth/logout", "");
+        HttpResponse<String> logout = send(sessionClient, "POST", "/api/auth/logout", "", csrfToken);
         HttpResponse<String> afterLogout = send(sessionClient, "GET", "/api/auth/session", null);
 
         assertThat(login.statusCode()).isEqualTo(200);
@@ -140,26 +143,50 @@ class SecurityAndMigrationIT {
 
     @Test
     void rejectsInvalidTeacherCredentialsWithoutLeakingDetails() throws Exception {
+        String csrfToken = csrfToken(sessionClient);
         HttpResponse<String> response = send(
-                anonymousClient,
+                sessionClient,
                 "POST",
                 "/api/auth/login",
-                "{\"username\":\"test-teacher\",\"password\":\"wrong-password\"}"
+                "{\"username\":\"test-teacher\",\"password\":\"wrong-password\"}",
+                csrfToken
         );
 
         assertThat(response.statusCode()).isEqualTo(401);
         assertThat(response.body()).contains("\"message\":\"Usuário ou senha inválidos.\"");
     }
 
+    @Test
+    void rejectsUnsafeTeacherRequestWithoutCsrfToken() throws Exception {
+        HttpResponse<String> response = send(
+                anonymousClient,
+                "POST",
+                "/api/auth/login",
+                "{\"username\":\"test-teacher\",\"password\":\"test-password\"}"
+        );
+
+        assertThat(response.statusCode()).isEqualTo(403);
+    }
+
+    private String csrfToken(HttpClient client) throws IOException, InterruptedException {
+        HttpResponse<String> response = send(client, "GET", "/api/auth/csrf", null);
+        assertThat(response.statusCode()).isEqualTo(200);
+        return response.body().replaceFirst(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*", "$1");
+    }
+
     private HttpResponse<String> send(HttpClient client, String method, String path, String body)
+            throws IOException, InterruptedException {
+        return send(client, method, path, body, null);
+    }
+
+    private HttpResponse<String> send(HttpClient client, String method, String path, String body, String csrfToken)
             throws IOException, InterruptedException {
         HttpRequest.BodyPublisher publisher = body == null
                 ? HttpRequest.BodyPublishers.noBody()
                 : HttpRequest.BodyPublishers.ofString(body);
-        HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
-                .header("Content-Type", "application/json")
-                .method(method, publisher)
-                .build();
-        return client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpRequest.Builder request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
+                .header("Content-Type", "application/json");
+        if (csrfToken != null) request.header("X-XSRF-TOKEN", csrfToken);
+        return client.send(request.method(method, publisher).build(), HttpResponse.BodyHandlers.ofString());
     }
 }

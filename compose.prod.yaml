@@ -1,0 +1,25 @@
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD para produção}
+    ports: !reset []
+    restart: unless-stopped
+
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD para produção}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:?Defina APP_FRONTEND_URL com HTTPS}
+      APP_ALLOWED_ORIGIN_PATTERNS: ${APP_ALLOWED_ORIGIN_PATTERNS:?Defina a origem HTTPS permitida}
+      APP_TEACHER_USERNAME: ${APP_TEACHER_USERNAME:?Defina APP_TEACHER_USERNAME}
+      APP_TEACHER_PASSWORD: ${APP_TEACHER_PASSWORD:?Defina APP_TEACHER_PASSWORD}
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  frontend:
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Defina NEXT_PUBLIC_API_URL com HTTPS}
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
+    restart: unless-stopped
