@@ -69,7 +69,7 @@ test("professor entra na Arena e participante reconecta à sessão", async ({ br
     await expect(page.getByLabel("Selecionar turma atual")).toHaveValue(classroom.id);
     await expect(page.locator("header.topbar").getByText("Sessão ativa", { exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "Arena", exact: true }).click();
+    await page.locator("nav.nav-list").getByRole("button", { name: /Arena$/ }).click();
     await expect(page.locator("header.topbar").getByRole("heading", { name: "Arena", exact: true })).toBeVisible();
     await expect(page.getByText(sessionTitle, { exact: true })).toBeVisible();
 
