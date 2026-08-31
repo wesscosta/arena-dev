@@ -4,11 +4,11 @@
 
 The project started as a simple Java desktop application for student management and is now being reengineered into a modern full-stack platform using **Java, Spring Boot, Next.js, PostgreSQL and Docker**.
 
-> **Status:** under active development — Arena Dev v1.
+> **Status:** Arena Dev v1 under active development. The current quality gate is Increment 11.3 — automated tests.
 
-> **Migration strategy:** the current Next.js interface is the product baseline and remains intentionally unchanged while persistence is migrated incrementally from `localStorage` to Spring Boot + PostgreSQL. As of Increment 10, classrooms, students, enrollments, sessions, presence, ScoreEvents, activities, questions, game mechanics, external-result import audit, session join codes and Buzzer rounds use the backend/PostgreSQL as their source of truth. The navigation is organized as system overview → classroom workspace → live Arena, while real-time participation uses WebSocket only where immediate synchronization adds value.
+> **Current persistence:** the operational domains migrated through Increment 10 use Spring Boot + PostgreSQL as their source of truth. `localStorage` is not authoritative for domain data; it stores the selected-classroom preference and, on `/join`, the participant's temporary access needed for reconnection.
 
-> **Architecture decisions:** accepted product, UX and technical decisions are versioned in [`docs/adr/README.md`](docs/adr/README.md).
+> **Project documentation:** see [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for the current evidence-backed state and [`docs/adr/README.md`](docs/adr/README.md) for accepted product, UX and architecture decisions.
 
 ---
 
@@ -66,9 +66,9 @@ This makes the scoring system auditable and allows future analytics by student, 
 
 ---
 
-## Planned game mechanics
+## Game mechanics
 
-Arena Dev is being designed around several classroom mechanics.
+Arena Dev implements several classroom mechanics and keeps later additions explicitly separated.
 
 ### Smart Draw
 
@@ -143,11 +143,14 @@ See `docs/ACTIVITY_QUESTIONS.md`, `docs/INCREMENT_10.md`, `docs/adr/README.md` a
 
 Activities are scoped to the selected classroom. They can be copied into another classroom as independent content and can optionally feed questions into an Arena session without removing the Arena's free/oral mode.
 
+### Boss Battle and Buzzer
+
+Boss Battle state is persisted per class session. The Buzzer supports temporary session codes, QR entry, participant identification and server-authoritative ordering over WebSocket.
+
 ### Future mechanics
 
 Planned mechanics include:
 
-* Boss Battles;
 * badges;
 * achievements;
 * streaks;
@@ -231,14 +234,21 @@ All services are orchestrated using **Docker Compose**.
 * Docker
 * Docker Compose
 
-### Planned additions
+### Implemented platform components
 
-* Flyway (implemented)
-* Spring Security
-* JWT
-* WebSocket / real-time sessions
-* PWA
-* Microsoft Graph / Microsoft Teams integration
+* Flyway migrations;
+* Spring Security with HTTP session authentication for the teacher area;
+* Spring WebSocket for session participation and Buzzer state;
+* QR-based temporary participant access.
+
+### Planned platform additions
+
+* automated backend, concurrency and frontend tests;
+* CI and release hardening;
+* dedicated projector/public view;
+* PWA support;
+* Microsoft Graph / Microsoft Teams integration;
+* persistent account model if the product requires it. JWT is not used by the current MVP.
 
 ---
 
@@ -292,9 +302,7 @@ Game rules should remain isolated from HTTP and persistence concerns whenever po
 
 ## Current development status
 
-Arena Dev v1 is currently transitioning from the first local prototype to the Java backend.
-
-The migration is domain-oriented. `Classroom`, `Student`, `Enrollment`, `ClassSession`, `SessionParticipant` and `ScoreEvent` are already persisted through REST/PostgreSQL. Activities and game mechanics remain temporarily local-first; session mechanics use a local runtime keyed by the persistent session UUID.
+Arena Dev v1 has completed the domain migration covered by Increments 1–10. `Classroom`, `Student`, `Enrollment`, `ClassSession`, `SessionParticipant`, `ScoreEvent`, activities, questions, external-result imports, session mechanics, join codes and Buzzer rounds are persisted through REST/PostgreSQL.
 
 The current runtime path for the migrated domain is:
 
@@ -308,29 +316,26 @@ Spring Boot
 PostgreSQL
 ```
 
-The next development stage is migrating activities and game mechanics while preserving the existing Arena experience.
+The current stabilization stage covers the teacher security boundary and realtime hardening implemented in Increments 11.1 and 11.2. The next quality gate is Increment 11.3: unit, integration, Testcontainers and Buzzer-concurrency tests. See [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for implementation limits and validation evidence.
 
 ---
 
-## Initial domain model
+## Current domain model
 
-The core domain is expected to evolve around:
+The implemented core is organized around:
 
 ```text
-Teacher
-   │
-   └── Classroom
-          │
-          ├── Enrollment ─── Student
-          │
-          └── GameSession
-                │
-                ├── Attendance
-                ├── DrawEvent
-                ├── Challenge
-                └── ScoreEvent
-                       │
-                       └── Student
+Classroom
+├── Enrollment ── Student
+├── Activity
+│   └── ActivityQuestion
+└── ClassSession
+    ├── SessionParticipant
+    ├── SessionDynamic
+    ├── ScoreEvent
+    ├── SessionJoinCode
+    └── BuzzerRound
+        └── BuzzerPress
 ```
 
 One of the main architectural decisions is that XP should be derived from **Score Events** rather than maintained only as a mutable total.
@@ -509,30 +514,31 @@ docker compose down -v
 * [x] Student enrollment — REST/PostgreSQL
 * [x] Class sessions — REST/PostgreSQL
 * [x] Session presence — REST/PostgreSQL
-* [ ] Game sessions
-* [ ] Attendance
 * [x] Score events — REST/PostgreSQL
 * [x] XP calculation — projection from ScoreEvents
 * [x] Ranking — projection from ScoreEvents
 
 ### Game engine
 
-* [x] Smart student draw — local-first baseline
-* [x] Participation history — local-first baseline
-* [x] Individual / pair / trio / group organization — local-first baseline
-* [x] Previous-pairing-aware group generation — local-first baseline
-* [x] Activity question packages + JSON import — local-first baseline
-* [x] Provider-agnostic AI prompt builder — local-first baseline
-* [ ] Persist activities/questions in backend
+* [x] Server-authoritative smart student draw
+* [x] ScoreEvent participation history
+* [x] Individual / pair / trio / group organization
+* [x] Previous-pairing-aware group generation in the backend
+* [x] Activity question packages + JSON import
+* [x] Provider-agnostic AI prompt builder
+* [x] Persisted activities and questions
+* [x] Persisted Boss Battle state
+* [x] Activity → Arena flow
+* [x] External-result CSV/TSV import
+* [x] Server-authoritative Buzzer
 * [ ] Challenges
 * [ ] Debug battles
 * [ ] Timers
 * [ ] Combos
-* [ ] Boss Battles
 
 ### Gamification
 
-* [ ] Levels
+* [x] XP-derived levels and progress display
 * [ ] Achievements
 * [ ] Badges
 * [ ] Streaks
@@ -540,11 +546,13 @@ docker compose down -v
 
 ### Platform evolution
 
-* [ ] Authentication
-* [ ] Teacher accounts
-* [ ] Student access
-* [ ] QR Code session join
-* [ ] Real-time classroom sessions
+* [x] Teacher authentication for the MVP administrative area
+* [x] Temporary student access by session code/QR
+* [x] Real-time Buzzer participation
+* [ ] Persistent teacher/student account model
+* [ ] Dedicated projector/public view
+* [ ] Automated test gate
+* [ ] CI and release hardening
 * [ ] PWA support
 * [ ] Microsoft Teams integration
 * [ ] Analytics dashboard
@@ -721,7 +729,7 @@ A license will be defined before the first stable public release.
 
 ## Migration increment 1 — persistent foundation
 
-The current frontend remains intentionally local-first while the persistent backend is validated.
+At Increment 1, the frontend intentionally remained local-first while the persistent foundation was validated. Later increments completed the migration of the operational domains listed in [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md).
 
 Implemented in the backend:
 
@@ -785,3 +793,9 @@ See `docs/INCREMENT_7.md` and ADR-0020.
 ## Increment 8 — External activity results
 
 External activities can import CSV/TSV results through a preview-first workflow. The importer recognizes common exports from Wayground/Quizizz, Microsoft Forms, Google Forms and Kahoot plus a generic CSV shape. Student matching is validated against active classroom enrollments, unresolved rows require manual mapping, XP is calculated proportionally to the Activity XP, and every confirmed import is audited in PostgreSQL before creating ScoreEvents. Duplicate report content is blocked per Activity by fingerprint.
+
+## Increments 9–11 — UX, realtime and stabilization
+
+Increments 9.1 and 9.2 established the current `system overview → classroom workspace → live Arena` navigation. Increment 10 added session code/QR, `/join`, WebSocket participation and the server-authoritative Buzzer. Increments 11.1 and 11.2 added the teacher security boundary and realtime hardening.
+
+The remaining stabilization work starts with automated tests in Increment 11.3 and continues with E2E, CI and release hardening in Increment 11.4. Current evidence and known limitations are maintained in [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md).
