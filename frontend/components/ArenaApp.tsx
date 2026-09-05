@@ -20,6 +20,12 @@ import type { TimerState } from "@/lib/timer-api";
 import { fetchWordCloudState, type WordCloudState } from "@/lib/word-cloud-api";
 import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
 import { activeSessionId, selectPreferredClassroomId } from "@/lib/app-state";
+import {
+  loadRecentClassroomIds,
+  orderOverviewClassrooms,
+  rememberClassroomAccess,
+  type ClassroomSortMode,
+} from "@/lib/classroom-overview";
 import type { Activity, ActivityQuestion, ArenaData, Classroom, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 
 type View = "dashboard" | "classroom" | "arena" | "backup";
@@ -202,6 +208,7 @@ export default function ArenaApp() {
 
   function setActiveClassroom(id: string) {
     setArenaActivityId(undefined);
+    rememberClassroomAccess(id);
     patch((current) => {
       return { ...current, activeClassroomId: id, currentSessionId: activeSessionId(current.sessions, id) };
     });
@@ -412,16 +419,26 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
   const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [query, setQuery] = useState("");
+  const [sortMode, setSortMode] = useState<ClassroomSortMode>("RECENT");
+  const [recentClassroomIds] = useState<string[]>(() => loadRecentClassroomIds());
   const [createOpen, setCreateOpen] = useState(false);
   const [editingClassroom, setEditingClassroom] = useState<Classroom | undefined>();
   const [editIntent, setEditIntent] = useState<"edit" | "delete">("edit");
 
-  const visibleClassrooms = data.classrooms.filter((classroom) => {
+  const activeSessions = data.sessions.filter((session) => session.status === "ACTIVE" && !session.endedAt);
+  const filteredClassrooms = data.classrooms.filter((classroom) => {
     if (filter === "ACTIVE") return classroom.active;
     if (filter === "INACTIVE") return !classroom.active;
     return true;
   });
-  const activeSessions = data.sessions.filter((session) => session.status === "ACTIVE" && !session.endedAt);
+  const visibleClassrooms = orderOverviewClassrooms(filteredClassrooms, {
+    query,
+    sortMode,
+    selectedClassroomId: data.activeClassroomId,
+    activeSessionClassroomIds: activeSessions.map((session) => session.classroomId),
+    recentClassroomIds,
+  });
   const activeClassroomIds = new Set(data.classrooms.filter((classroom) => classroom.active).map((classroom) => classroom.id));
   const activeEnrollments = data.enrollments.filter((enrollment) => enrollment.active && activeClassroomIds.has(enrollment.classroomId));
 
@@ -435,11 +452,47 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
       </div>
 
       <div className="overview-toolbar">
-        <div className="segmented-control" aria-label="Filtrar turmas">
-          <button className={filter === "ALL" ? "active" : ""} onClick={() => setFilter("ALL")}>Todas <span>{data.classrooms.length}</span></button>
-          <button className={filter === "ACTIVE" ? "active" : ""} onClick={() => setFilter("ACTIVE")}>Ativas <span>{data.classrooms.filter((item) => item.active).length}</span></button>
-          <button className={filter === "INACTIVE" ? "active" : ""} onClick={() => setFilter("INACTIVE")}>Inativas <span>{data.classrooms.filter((item) => !item.active).length}</span></button>
+        <div className="overview-toolbar-main">
+          <div className="segmented-control" aria-label="Filtrar turmas">
+            <button className={filter === "ALL" ? "active" : ""} onClick={() => setFilter("ALL")}>Todas <span>{data.classrooms.length}</span></button>
+            <button className={filter === "ACTIVE" ? "active" : ""} onClick={() => setFilter("ACTIVE")}>Ativas <span>{data.classrooms.filter((item) => item.active).length}</span></button>
+            <button className={filter === "INACTIVE" ? "active" : ""} onClick={() => setFilter("INACTIVE")}>Inativas <span>{data.classrooms.filter((item) => !item.active).length}</span></button>
+          </div>
+
+          <label className="overview-search">
+            <span aria-hidden="true">⌕</span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar por nome ou código"
+              aria-label="Buscar turma por nome ou código"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Limpar busca"
+                title="Limpar busca"
+              >
+                ×
+              </button>
+            )}
+          </label>
+
+          <select
+            className="select overview-sort"
+            value={sortMode}
+            onChange={(event) => setSortMode(event.target.value as ClassroomSortMode)}
+            aria-label="Ordenar cards das turmas"
+          >
+            <option value="RECENT">Recentes primeiro</option>
+            <option value="NAME_ASC">Nome A–Z</option>
+            <option value="NAME_DESC">Nome Z–A</option>
+            <option value="CODE_ASC">Código A–Z</option>
+            <option value="CODE_DESC">Código Z–A</option>
+          </select>
         </div>
+
         <button className="button primary overview-new-classroom" onClick={() => setCreateOpen(true)}>+ Nova turma</button>
       </div>
 
@@ -451,7 +504,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
           onAction={() => setCreateOpen(true)}
         />
       ) : !visibleClassrooms.length ? (
-        <MiniEmpty text="Nenhuma turma corresponde a este filtro." />
+        <MiniEmpty text={query ? "Nenhuma turma encontrada para esta busca." : "Nenhuma turma corresponde a este filtro."} />
       ) : (
         <div className="classroom-card-grid">
           {visibleClassrooms.map((classroom) => {

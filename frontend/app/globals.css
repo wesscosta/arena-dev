@@ -278,3 +278,119 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 
 @media(max-width:900px){.timer-setup-grid{grid-template-columns:1fr}.timer-settings-content{grid-template-columns:1fr}.timer-selected-duration{text-align:left}.timer-setup-heading{flex-direction:column}}
 @media(max-width:620px){.timer-active-toolbar{flex-direction:column}.timer-focus-launch{align-self:stretch}.timer-duration-editor{gap:5px}.timer-duration-segment>div{grid-template-columns:28px minmax(48px,1fr) 28px}.timer-duration-segment input{font-size:18px;padding:10px 2px}.timer-duration-colon{font-size:18px}.timer-setup-actions{display:grid;grid-template-columns:1fr 1fr}.timer-focus-overlay{padding:16px}.timer-focus-header .button{padding:8px 10px}.timer-focus-time{font-size:clamp(72px,23vw,130px)}}
+
+
+/* Incremento 12.3D.1 — Visão geral como hub de turmas */
+.overview-toolbar-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.overview-search {
+  min-width: 240px;
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #09120f;
+  transition: .15s ease;
+}
+
+.overview-search:focus-within {
+  border-color: rgba(88,243,167,.42);
+  box-shadow: 0 0 0 3px rgba(88,243,167,.055);
+}
+
+.overview-search > span {
+  color: #6f847b;
+  font-size: 15px;
+}
+
+.overview-search input {
+  min-width: 0;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.overview-search input::placeholder {
+  color: #657970;
+}
+
+.overview-search button {
+  width: 25px;
+  height: 25px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(255,255,255,.035);
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.overview-sort {
+  min-width: 176px;
+  height: 42px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+@media (max-width: 1120px) {
+  .overview-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .overview-toolbar-main {
+    width: 100%;
+  }
+
+  .overview-new-classroom {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 820px) {
+  .overview-toolbar-main {
+    display: grid;
+    grid-template-columns: 1fr 180px;
+  }
+
+  .overview-toolbar-main .segmented-control {
+    grid-column: 1 / -1;
+  }
+
+  .overview-search {
+    min-width: 0;
+  }
+
+  .overview-sort {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .overview-toolbar-main {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-toolbar-main .segmented-control {
+    grid-column: auto;
+  }
+
+  .overview-new-classroom {
+    align-self: stretch;
+  }
+}

@@ -138,6 +138,18 @@ fricção para o professor.
 - [ ] CTA `Projetar Nuvem` no painel do professor;
 - [ ] fullscreen continua sendo controlado pelo navegador no Modo Projetor.
 
+### 12.3D — Refatoração da navegação e dashboard do professor
+
+#### 12.3D.1 — Visão geral como hub de turmas
+
+- [ ] busca instantânea por nome ou código da turma;
+- [ ] ordenação `Recentes`, `Nome A–Z/Z–A` e `Código A–Z/Z–A`;
+- [ ] modo `Recentes` prioriza turma selecionada com sessão ativa, demais sessões ativas e histórico de acesso;
+- [ ] persistir sequência de acesso como preferência local de interface, sem virar fonte de verdade de domínio;
+- [ ] cards continuam sendo a entrada principal para o workspace da turma;
+- [ ] preservar filtros `Todas`, `Ativas` e `Inativas`;
+- [ ] manter `Turma` e `Arena` na sidebar até concluir 12.3D.2/12.3D.3.
+
 ### 12.4 — SessionEvent
 
 Generalizar a linha do tempo da aula somente após Timer, Projetor e Nuvem
