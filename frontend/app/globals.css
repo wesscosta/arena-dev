@@ -214,3 +214,67 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .teacher-login-form{display:grid;gap:15px}.teacher-login-form label{display:grid;gap:7px;font-size:12px;color:var(--muted)}.teacher-login-form .button{width:100%;justify-content:center;margin-top:4px}
 .teacher-login-error{margin:0}.teacher-login-note{display:block;margin-top:18px;color:var(--muted);text-align:center}.teacher-login-note code{color:var(--accent)}
 .topbar-logout{padding-inline:12px}.release-device{margin-left:auto;font-size:10px;white-space:nowrap}
+
+
+/* Incremento 12.1C — refinamento UX do Timer */
+.timer-workspace{gap:18px}
+.timer-active-card,.timer-setup-card,.timer-settings-panel{border:1px solid var(--border);border-radius:16px;background:linear-gradient(145deg,rgba(88,243,167,.025),transparent 48%),var(--surface);box-shadow:0 16px 44px rgba(0,0,0,.12)}
+.timer-active-card{padding:22px}
+.timer-active-toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.timer-active-toolbar>div>strong{display:block;margin-top:5px;font-size:15px}
+.timer-focus-launch{white-space:nowrap}
+.timer-active-display{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:220px;text-align:center;padding:24px 16px}
+.timer-active-display>strong{margin:13px 0 3px;font-variant-numeric:tabular-nums;font-size:clamp(52px,7vw,88px);line-height:1;letter-spacing:-.055em}
+.timer-active-display>p{max-width:720px;margin:7px auto 0;color:var(--muted);font-size:12px;line-height:1.5}
+.timer-progress,.timer-focus-progress{overflow:hidden;height:5px;border-radius:999px;background:rgba(255,255,255,.055)}
+.timer-progress>span,.timer-focus-progress>span{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .25s linear}
+.timer-action-row{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:18px}
+.timer-setup-card{padding:22px}
+.timer-setup-heading{display:flex;justify-content:space-between;gap:22px;align-items:flex-start;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.timer-setup-heading h3{margin:5px 0 5px;font-size:20px;letter-spacing:-.025em}
+.timer-setup-heading p{margin:0;max-width:700px;color:var(--muted);font-size:11px;line-height:1.5}
+.timer-selected-duration{min-width:124px;text-align:right}
+.timer-selected-duration small,.timer-selected-duration strong{display:block}
+.timer-selected-duration small{color:var(--muted);font-size:8px;letter-spacing:.12em}
+.timer-selected-duration strong{margin-top:4px;color:var(--accent-2);font-size:26px;font-variant-numeric:tabular-nums}
+.timer-setup-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);gap:20px;padding-top:20px}
+.timer-duration-box,.timer-details-box{min-width:0;padding:18px;border:1px solid var(--border);border-radius:13px;background:#0a1411}
+.timer-duration-editor{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:end;gap:10px;margin-top:12px}
+.timer-duration-segment{display:flex;flex-direction:column;gap:7px}
+.timer-duration-segment>span{color:var(--muted);font-size:9px}
+.timer-duration-segment>div{display:grid;grid-template-columns:34px minmax(60px,1fr) 34px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#07110e}
+.timer-duration-segment button{border:0;background:rgba(255,255,255,.03);color:var(--muted);font-size:17px}
+.timer-duration-segment button:hover{background:rgba(88,243,167,.08);color:var(--accent)}
+.timer-duration-segment input{min-width:0;width:100%;border:0;border-inline:1px solid var(--border);outline:0;background:transparent;color:var(--text);padding:12px 4px;text-align:center;font-size:24px;font-weight:850;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.timer-duration-segment input::-webkit-outer-spin-button,.timer-duration-segment input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.timer-duration-colon{align-self:center;margin-top:19px;color:#71847b;font-size:24px;font-weight:800}
+.timer-preset-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}
+.timer-preset-chips button{border:1px solid var(--border);border-radius:999px;padding:7px 11px;background:transparent;color:#98aaa2;font-size:10px;font-weight:800}
+.timer-preset-chips button:hover,.timer-preset-chips button.active{border-color:rgba(88,243,167,.32);background:rgba(88,243,167,.08);color:var(--accent-2)}
+.timer-details-box{display:flex;flex-direction:column;gap:14px}
+.timer-details-box .field{display:flex;flex-direction:column;gap:7px}.timer-details-box .field>span{color:var(--muted);font-size:10px}
+.timer-option-row{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.012);color:#c8d5d0;font-size:10px}
+.timer-option-row input{margin-top:2px;accent-color:var(--accent)}
+.timer-option-row strong,.timer-option-row small{display:block}.timer-option-row strong{font-size:10px}.timer-option-row small{margin-top:3px;color:var(--muted);font-size:9px;line-height:1.4}
+.timer-setup-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px;padding-top:18px;border-top:1px solid var(--border)}
+.timer-settings-panel{overflow:hidden}
+.timer-settings-panel>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 18px;cursor:pointer}
+.timer-settings-panel>summary::-webkit-details-marker{display:none}
+.timer-settings-panel>summary>div strong,.timer-settings-panel>summary>div span{display:block}
+.timer-settings-panel>summary>div strong{font-size:11px}.timer-settings-panel>summary>div span{margin-top:3px;color:var(--muted);font-size:9px}
+.timer-settings-panel>summary>span{color:var(--accent);font-size:9px;font-weight:800}
+.timer-settings-content{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 18px 18px}
+.timer-settings-content .timer-option-row{align-items:center}
+.timer-focus-overlay{position:fixed;inset:0;z-index:1200;display:grid;grid-template-rows:auto 1fr auto;min-height:100dvh;padding:24px 30px;background:radial-gradient(circle at 50% 44%,rgba(88,243,167,.10),transparent 29%),#020806;color:var(--text)}
+.timer-focus-header{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.timer-focus-header>div{display:flex;align-items:center;gap:11px}.timer-focus-header>div>div strong,.timer-focus-header>div>div small{display:block}.timer-focus-header>div>div strong{font-size:12px;letter-spacing:.12em}.timer-focus-header>div>div small{margin-top:2px;color:var(--muted);font-size:9px}
+.timer-focus-main{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px 20px}
+.timer-focus-time{margin:20px 0 14px;font-size:clamp(92px,18vw,260px);font-weight:900;font-variant-numeric:tabular-nums;line-height:.9;letter-spacing:-.075em;text-shadow:0 0 70px rgba(88,243,167,.12)}
+.timer-focus-main h2{margin:0;font-size:clamp(22px,3vw,42px);letter-spacing:-.035em}.timer-focus-main p{max-width:900px;margin:10px auto 0;color:#9fb2aa;font-size:clamp(12px,1.3vw,18px);line-height:1.5}
+.timer-focus-progress{width:min(760px,76vw);margin-top:28px;height:7px}
+.timer-focus-footer{display:flex;flex-direction:column;align-items:center;gap:12px}
+.timer-focus-controls{display:flex;flex-wrap:wrap;justify-content:center;gap:9px}.timer-focus-controls .button{min-width:94px;padding:12px 16px}
+.timer-focus-footer>small{color:#61746b;font-size:9px}
+
+@media(max-width:900px){.timer-setup-grid{grid-template-columns:1fr}.timer-settings-content{grid-template-columns:1fr}.timer-selected-duration{text-align:left}.timer-setup-heading{flex-direction:column}}
+@media(max-width:620px){.timer-active-toolbar{flex-direction:column}.timer-focus-launch{align-self:stretch}.timer-duration-editor{gap:5px}.timer-duration-segment>div{grid-template-columns:28px minmax(48px,1fr) 28px}.timer-duration-segment input{font-size:18px;padding:10px 2px}.timer-duration-colon{font-size:18px}.timer-setup-actions{display:grid;grid-template-columns:1fr 1fr}.timer-focus-overlay{padding:16px}.timer-focus-header .button{padding:8px 10px}.timer-focus-time{font-size:clamp(72px,23vw,130px)}}

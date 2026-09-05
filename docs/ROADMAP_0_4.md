@@ -43,6 +43,23 @@ fricção para o professor.
 - eventos semânticos (`TIMER_STARTED`, `TIMER_PAUSED` etc.) ficam reservados
   para a futura linha do tempo `SessionEvent`, evitando duplicar contratos.
 
+#### 12.1C — Interface do professor
+
+- aba `Tempo` integrada à Arena;
+- presets de 30 s, 1, 2, 5, 10, 15, 20 e 30 minutos;
+- duração personalizada;
+- iniciar, pausar, retomar, estender, finalizar e cancelar;
+- extensões rápidas de +30 s, +1 min e +5 min;
+- countdown derivado de `endsAt`, sem persistência por segundo;
+- compensação de diferença de relógio usando `occurredAt` do WebSocket;
+- alertas locais de 5 min, 1 min e encerramento;
+- snapshot REST como fallback e `TIMER_STATE` como sincronização entre telas;
+- estado terminal calculado visualmente quando `endsAt` é alcançado;
+- editor compacto de duração em horas, minutos e segundos, com presets rápidos;
+- ação `Iniciar agora` para criar e iniciar em um único fluxo;
+- modo foco em tela cheia para projeção durante a condução, minimizável sem pausar;
+- ação explícita para reabrir o Timer em tela cheia durante a sessão.
+
 ### 12.2 — Modo Projetor / Visão Pública
 
 - rota dedicada para projeção;
