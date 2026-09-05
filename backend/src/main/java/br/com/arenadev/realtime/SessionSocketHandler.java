@@ -3,6 +3,7 @@ package br.com.arenadev.realtime;
 import br.com.arenadev.session.SessionJoinService;
 import br.com.arenadev.session.SessionParticipant;
 import br.com.arenadev.timer.SessionTimerService;
+import br.com.arenadev.wordcloud.WordCloudService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -12,6 +13,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -29,18 +31,21 @@ public class SessionSocketHandler extends TextWebSocketHandler {
     private final SessionJoinService joinService;
     private final BuzzerService buzzerService;
     private final SessionTimerService timerService;
+    private final WordCloudService wordCloudService;
     private final JsonMapper json = JsonMapper.builder().build();
 
     public SessionSocketHandler(
             SessionRealtimeGateway gateway,
             SessionJoinService joinService,
             BuzzerService buzzerService,
-            SessionTimerService timerService
+            SessionTimerService timerService,
+            WordCloudService wordCloudService
     ) {
         this.gateway = gateway;
         this.joinService = joinService;
         this.buzzerService = buzzerService;
         this.timerService = timerService;
+        this.wordCloudService = wordCloudService;
     }
 
     @Override
@@ -91,6 +96,10 @@ public class SessionSocketHandler extends TextWebSocketHandler {
                 String token = (String) socket.getAttributes().get(ATTR_TOKEN);
                 if (token == null) throw new IllegalArgumentException("Somente participantes identificados podem acionar o Buzzer.");
                 buzzerService.press(sessionId, token);
+                return;
+            }
+            if ("WORD_CLOUD_SUBMIT".equals(type)) {
+                submitWordCloud(socket, sessionId, payload.get("words"));
             }
         } catch (RuntimeException error) {
             gateway.send(socket, "ERROR", sessionId, Map.of("message", error.getMessage() == null ? "Evento inválido." : error.getMessage()));
@@ -128,15 +137,54 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         gateway.broadcast(sessionId, "PARTICIPANT_CONNECTED", view);
         gateway.send(socket, "AUTH_OK", sessionId, view);
         sendSessionState(socket, sessionId);
+        gateway.send(
+                socket,
+                "WORD_CLOUD_PARTICIPANT_STATE",
+                sessionId,
+                wordCloudService.participantState(sessionId, participant.getId())
+        );
+    }
+
+    private void submitWordCloud(
+            WebSocketSession socket,
+            UUID sessionId,
+            Object rawWords
+    ) {
+        UUID participantId = (UUID) socket.getAttributes().get(ATTR_PARTICIPANT_ID);
+        if (participantId == null) {
+            throw new IllegalArgumentException(
+                    "Somente participantes identificados podem enviar palavras."
+            );
+        }
+        if (!(rawWords instanceof List<?> values)) {
+            throw new IllegalArgumentException("Envie a resposta no formato de lista.");
+        }
+
+        List<String> words = values.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .toList();
+
+        WordCloudService.ParticipantStateView participantState =
+                wordCloudService.submit(sessionId, participantId, words);
+
+        gateway.send(
+                socket,
+                "WORD_CLOUD_PARTICIPANT_STATE",
+                sessionId,
+                participantState
+        );
     }
 
     private void sendSessionState(WebSocketSession socket, UUID sessionId) {
         gateway.send(socket, "BUZZER_STATE", sessionId, buzzerService.state(sessionId));
         gateway.send(socket, "TIMER_STATE", sessionId, timerService.state(sessionId));
+        gateway.send(socket, "WORD_CLOUD_STATE", sessionId, wordCloudService.state(sessionId));
     }
 
     private void sendProjectorState(WebSocketSession socket, UUID sessionId) {
         gateway.send(socket, "TIMER_STATE", sessionId, timerService.state(sessionId));
+        gateway.send(socket, "WORD_CLOUD_STATE", sessionId, wordCloudService.state(sessionId));
     }
 
     @Override

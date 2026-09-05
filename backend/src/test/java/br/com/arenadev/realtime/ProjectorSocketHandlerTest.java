@@ -2,6 +2,7 @@ package br.com.arenadev.realtime;
 
 import br.com.arenadev.session.SessionJoinService;
 import br.com.arenadev.timer.SessionTimerService;
+import br.com.arenadev.wordcloud.WordCloudService;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -31,6 +32,7 @@ class ProjectorSocketHandlerTest {
         SessionJoinService joinService = mock(SessionJoinService.class);
         BuzzerService buzzerService = mock(BuzzerService.class);
         SessionTimerService timerService = mock(SessionTimerService.class);
+        WordCloudService wordCloudService = mock(WordCloudService.class);
         WebSocketSession socket = mock(WebSocketSession.class);
 
         var access = new SessionJoinService.PublicSessionView(
@@ -41,17 +43,20 @@ class ProjectorSocketHandlerTest {
                 Instant.parse("2026-09-06T03:00:00Z")
         );
         var timerState = new SessionTimerService.TimerStateView(null);
+        var wordCloudState = WordCloudService.StateView.empty();
 
         when(socket.getUri()).thenReturn(URI.create("ws://localhost/ws/projector/" + sessionId));
         when(socket.getAttributes()).thenReturn(new HashMap<>());
         when(joinService.validateProjectorAccess(sessionId, code)).thenReturn(access);
         when(timerService.state(sessionId)).thenReturn(timerState);
+        when(wordCloudService.state(sessionId)).thenReturn(wordCloudState);
 
         SessionSocketHandler handler = new SessionSocketHandler(
                 gateway,
                 joinService,
                 buzzerService,
-                timerService
+                timerService,
+                wordCloudService
         );
 
         handler.afterConnectionEstablished(socket);
@@ -80,5 +85,6 @@ class ProjectorSocketHandlerTest {
                 any()
         );
         ordered.verify(gateway).send(socket, "TIMER_STATE", sessionId, timerState);
+        ordered.verify(gateway).send(socket, "WORD_CLOUD_STATE", sessionId, wordCloudState);
     }
 }

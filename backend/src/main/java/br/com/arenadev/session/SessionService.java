@@ -9,6 +9,7 @@ import br.com.arenadev.realtime.BuzzerService;
 import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import br.com.arenadev.timer.SessionTimerService;
+import br.com.arenadev.wordcloud.WordCloudService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class SessionService {
     private final BuzzerService buzzerService;
     private final SessionTimerService timerService;
     private final SessionRealtimeGateway realtimeGateway;
+    private final WordCloudService wordCloudService;
 
     public SessionService(
             ClassSessionRepository sessionRepository,
@@ -37,7 +39,8 @@ public class SessionService {
             SessionJoinService joinService,
             BuzzerService buzzerService,
             SessionTimerService timerService,
-            SessionRealtimeGateway realtimeGateway
+            SessionRealtimeGateway realtimeGateway,
+            WordCloudService wordCloudService
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -47,6 +50,7 @@ public class SessionService {
         this.buzzerService = buzzerService;
         this.timerService = timerService;
         this.realtimeGateway = realtimeGateway;
+        this.wordCloudService = wordCloudService;
     }
 
     @Transactional
@@ -143,6 +147,7 @@ public class SessionService {
         joinService.deactivate(sessionId);
         buzzerService.closeForFinishedSession(sessionId);
         timerService.cancelOpenForFinishedSession(sessionId);
+        wordCloudService.closeOpenForFinishedSession(sessionId);
 
         SessionView view = SessionView.from(session);
         realtimeGateway.broadcastAfterCommit(sessionId, "SESSION_FINISHED", view);

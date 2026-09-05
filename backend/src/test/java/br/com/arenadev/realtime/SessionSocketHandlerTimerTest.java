@@ -3,6 +3,7 @@ package br.com.arenadev.realtime;
 import br.com.arenadev.session.SessionJoinService;
 import br.com.arenadev.session.SessionParticipant;
 import br.com.arenadev.timer.SessionTimerService;
+import br.com.arenadev.wordcloud.WordCloudService;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -30,6 +31,7 @@ class SessionSocketHandlerTimerTest {
         SessionJoinService joinService = mock(SessionJoinService.class);
         BuzzerService buzzerService = mock(BuzzerService.class);
         SessionTimerService timerService = mock(SessionTimerService.class);
+        WordCloudService wordCloudService = mock(WordCloudService.class);
 
         var buzzerState = new BuzzerService.BuzzerStateView(
                 "IDLE",
@@ -39,15 +41,18 @@ class SessionSocketHandlerTimerTest {
                 List.of()
         );
         var timerState = new SessionTimerService.TimerStateView(null);
+        var wordCloudState = WordCloudService.StateView.empty();
 
         when(buzzerService.state(sessionId)).thenReturn(buzzerState);
         when(timerService.state(sessionId)).thenReturn(timerState);
+        when(wordCloudService.state(sessionId)).thenReturn(wordCloudState);
 
         SessionSocketHandler handler = new SessionSocketHandler(
                 gateway,
                 joinService,
                 buzzerService,
-                timerService
+                timerService,
+                wordCloudService
         );
 
         WebSocketSession socket = socket(sessionId, () -> "teacher");
@@ -57,6 +62,7 @@ class SessionSocketHandlerTimerTest {
         order.verify(gateway).register(sessionId, socket);
         order.verify(gateway).send(socket, "BUZZER_STATE", sessionId, buzzerState);
         order.verify(gateway).send(socket, "TIMER_STATE", sessionId, timerState);
+        order.verify(gateway).send(socket, "WORD_CLOUD_STATE", sessionId, wordCloudState);
     }
 
     @Test
@@ -69,6 +75,7 @@ class SessionSocketHandlerTimerTest {
         SessionJoinService joinService = mock(SessionJoinService.class);
         BuzzerService buzzerService = mock(BuzzerService.class);
         SessionTimerService timerService = mock(SessionTimerService.class);
+        WordCloudService wordCloudService = mock(WordCloudService.class);
         SessionParticipant participant = mock(SessionParticipant.class);
 
         var connection = new SessionJoinService.ParticipantConnectionView(
@@ -85,6 +92,8 @@ class SessionSocketHandlerTimerTest {
                 List.of()
         );
         var timerState = new SessionTimerService.TimerStateView(null);
+        var wordCloudState = WordCloudService.StateView.empty();
+        var participantWordCloudState = WordCloudService.ParticipantStateView.empty();
 
         when(participant.getId()).thenReturn(participantId);
         when(joinService.validateParticipantToken(sessionId, token)).thenReturn(participant);
@@ -97,12 +106,15 @@ class SessionSocketHandlerTimerTest {
         when(joinService.markConnected(sessionId, token)).thenReturn(connection);
         when(buzzerService.state(sessionId)).thenReturn(buzzerState);
         when(timerService.state(sessionId)).thenReturn(timerState);
+        when(wordCloudService.state(sessionId)).thenReturn(wordCloudState);
+        when(wordCloudService.participantState(sessionId, participantId)).thenReturn(participantWordCloudState);
 
         SessionSocketHandler handler = new SessionSocketHandler(
                 gateway,
                 joinService,
                 buzzerService,
-                timerService
+                timerService,
+                wordCloudService
         );
 
         WebSocketSession socket = socket(sessionId, null);
@@ -123,6 +135,8 @@ class SessionSocketHandlerTimerTest {
         verify(gateway).send(socket, "AUTH_OK", sessionId, connection);
         verify(gateway).send(socket, "BUZZER_STATE", sessionId, buzzerState);
         verify(gateway).send(socket, "TIMER_STATE", sessionId, timerState);
+        verify(gateway).send(socket, "WORD_CLOUD_STATE", sessionId, wordCloudState);
+        verify(gateway).send(socket, "WORD_CLOUD_PARTICIPANT_STATE", sessionId, participantWordCloudState);
     }
 
     private WebSocketSession socket(UUID sessionId, Principal principal) {
