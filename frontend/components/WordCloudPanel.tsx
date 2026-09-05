@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import SessionAccessCard from "@/components/SessionAccessCard";
+import type { JoinCode } from "@/lib/realtime-api";
+import { wordCloudParticipationMetrics } from "@/lib/word-cloud-metrics";
 import {
   closeWordCloud,
   createWordCloud,
@@ -14,6 +17,11 @@ type Props = {
   state: WordCloudState;
   onStateChange: (state: WordCloudState) => void;
   notify: (message: string) => void;
+  joinCode: JoinCode | null;
+  publicBaseUrl: string;
+  realtimeStatus: "offline" | "connecting" | "online";
+  connectedCount: number;
+  presentCount: number;
 };
 
 function statusLabel(status: string) {
@@ -27,6 +35,11 @@ export default function WordCloudPanel({
   state,
   onStateChange,
   notify,
+  joinCode,
+  publicBaseUrl,
+  realtimeStatus,
+  connectedCount,
+  presentCount,
 }: Props) {
   const [prompt, setPrompt] = useState("");
   const [liveReveal, setLiveReveal] = useState(false);
@@ -36,6 +49,13 @@ export default function WordCloudPanel({
 
   const round = state.round;
   const showForm = !round || creating;
+  const participation = round
+    ? wordCloudParticipationMetrics(
+        presentCount,
+        round.participantCount,
+        round.submissionCount,
+      )
+    : wordCloudParticipationMetrics(presentCount, 0, 0);
 
   async function create() {
     if (!prompt.trim() || busy) return;
@@ -73,6 +93,20 @@ export default function WordCloudPanel({
 
   async function close() {
     if (!round || busy) return;
+
+    if (
+      round.status === "COLLECTING"
+      && participation.presentCount > 0
+      && participation.pendingCount > 0
+    ) {
+      const confirmed = window.confirm(
+        `${participation.answeredCount} de ${participation.presentCount} aluno(s) presente(s) responderam. `
+          + `${participation.pendingCount} ainda não participaram.\n\n`
+          + "Deseja encerrar a rodada mesmo assim?",
+      );
+      if (!confirmed) return;
+    }
+
     setBusy(true);
     try {
       const next = await closeWordCloud(sessionId, round.id);
@@ -85,9 +119,25 @@ export default function WordCloudPanel({
     }
   }
 
+  const accessCard = (
+    <SessionAccessCard
+      sessionId={sessionId}
+      joinCode={joinCode}
+      publicBaseUrl={publicBaseUrl}
+      notify={notify}
+      realtimeStatus={realtimeStatus}
+      connectedCount={connectedCount}
+      compact
+      title="Participação da Nuvem"
+      subtitle="Compartilhe uma única vez. Os alunos usam o mesmo /join durante toda a aula."
+    />
+  );
+
   if (showForm) {
     return (
-      <section className={styles.shell}>
+      <div>
+        {accessCard}
+        <section className={styles.shell}>
         <div className={styles.header}>
           <div>
             <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
@@ -149,14 +199,17 @@ export default function WordCloudPanel({
             {busy ? "Criando..." : "Abrir Nuvem de Palavras"}
           </button>
         </div>
-      </section>
+        </section>
+      </div>
     );
   }
 
-  if (!round) return null;
+  if (!round) return accessCard;
 
   return (
-    <section className={styles.shell}>
+    <div>
+      {accessCard}
+      <section className={styles.shell}>
       <div className={styles.header}>
         <div>
           <span className={styles.eyebrow}>NUVEM DE PALAVRAS</span>
@@ -169,9 +222,31 @@ export default function WordCloudPanel({
       </div>
 
       <div className={styles.stats}>
-        <div><strong>{round.participantCount}</strong><span>participantes</span></div>
-        <div><strong>{round.submissionCount}</strong><span>respostas</span></div>
-        <div><strong>{round.maxWordsPerParticipant}</strong><span>máx. por aluno</span></div>
+        <div>
+          <strong>{participation.presentCount}</strong>
+          <span>presentes</span>
+        </div>
+        <div>
+          <strong>{participation.answeredCount}</strong>
+          <span>responderam</span>
+        </div>
+        <div>
+          <strong>{participation.pendingCount}</strong>
+          <span>pendentes</span>
+        </div>
+        <div>
+          <strong>{participation.submissionCount}</strong>
+          <span>respostas</span>
+        </div>
+      </div>
+
+      <div className={styles.participationSummary}>
+        <span>
+          {participation.presentCount > 0
+            ? `${participation.answeredCount} de ${participation.presentCount} presentes participaram`
+            : "Nenhum participante está marcado como presente nesta sessão"}
+        </span>
+        <small>Máximo de {round.maxWordsPerParticipant} resposta(s) por aluno.</small>
       </div>
 
       {round.terms.length > 0 ? (
@@ -212,6 +287,7 @@ export default function WordCloudPanel({
           </button>
         )}
       </div>
-    </section>
+      </section>
+    </div>
   );
 }

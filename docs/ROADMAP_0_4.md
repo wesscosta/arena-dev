@@ -103,6 +103,27 @@ fricção para o professor.
 - restauração do estado privado do participante pelo backend;
 - respostas enviadas pelo WebSocket já autenticado da sessão.
 
+#### 12.3B.1 — Acesso reutilizável da sessão
+
+- extrair `SessionAccessCard` como componente compartilhado;
+- exibir URL pública completa, código temporário e QR Code;
+- ações `Copiar link` e `Abrir como aluno`;
+- aviso explícito quando a URL usa `localhost`/loopback;
+- reutilizar em `Arena → Ao vivo` e `Arena → Nuvem`;
+- manter rotação de código apenas no contexto administrativo `Ao vivo`;
+- nenhuma nova migration ou contrato de backend.
+
+#### 12.3B.2 — Refinamento de participação
+
+- ocultar o Buzzer no `/join` quando estiver `IDLE`;
+- exibir estado neutro `Aguardando próxima dinâmica` quando nada estiver liberado;
+- distinguir `presentes`, `responderam`, `pendentes` e `respostas` no painel da Nuvem;
+- usar `participantCount` como quantidade de participantes únicos que responderam, não como total da sessão;
+- derivar pendentes a partir dos participantes marcados como presentes;
+- confirmar encerramento da rodada quando ainda houver alunos pendentes;
+- manter o fechamento permitido após confirmação explícita do professor;
+- nenhuma migration ou alteração de contrato do backend.
+
 #### 12.3C — Projeção visual
 
 - renderização dedicada da nuvem no Modo Projetor;

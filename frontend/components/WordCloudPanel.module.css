@@ -172,7 +172,7 @@
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 22px;
 }
@@ -251,5 +251,36 @@
 
   .modeGroup > span {
     grid-column: auto;
+  }
+}
+
+
+.participationSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -10px 0 20px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+}
+
+.participationSummary span {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.participationSummary small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .participationSummary {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

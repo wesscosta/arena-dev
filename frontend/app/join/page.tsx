@@ -259,7 +259,7 @@ export default function JoinPage() {
 
             {sessionFinished ? (
               <div className="student-buzzer-state finished"><strong>Sessão encerrada</strong><p>O professor encerrou esta aula.</p></div>
-            ) : (
+            ) : buzzer.status !== "IDLE" ? (
               <div className={`student-buzzer-state ${buzzer.status.toLowerCase()}`}>
                 <span className="student-buzzer-label">BUZZER</span>
                 {buzzer.status === "OPEN" ? (
@@ -269,13 +269,17 @@ export default function JoinPage() {
                     <button className={`student-buzzer-button ${myPress ? "pressed" : ""}`} onClick={pressBuzzer} disabled={Boolean(myPress) || socketState !== "online"}>{myPress ? `#${myPress.position}` : "APERTAR"}</button>
                     {winner && <small className="student-winner-note">1º clique: {winner.nickname || winner.name}</small>}
                   </>
-                ) : buzzer.status === "CLOSED" ? (
-                  <><h2>Rodada encerrada</h2><p>Aguarde o professor abrir uma nova rodada.</p>{winner && <strong className="student-round-winner">Vencedor: {winner.nickname || winner.name}</strong>}</>
                 ) : (
-                  <><h2>Aguardando rodada</h2><p>Quando o professor abrir o Buzzer, o botão será liberado automaticamente.</p></>
+                  <><h2>Rodada encerrada</h2><p>Aguarde o professor liberar a próxima dinâmica.</p>{winner && <strong className="student-round-winner">Vencedor: {winner.nickname || winner.name}</strong>}</>
                 )}
               </div>
-            )}
+            ) : !wordCloud.round ? (
+              <div className={wordStyles.waiting}>
+                <span>ARENA DEV</span>
+                <strong>Aguardando próxima dinâmica</strong>
+                <p>Quando o professor liberar uma atividade, ela aparecerá aqui automaticamente.</p>
+              </div>
+            ) : null}
 
             <div className="student-session-footer"><span>Sessão {access.code}</span><span>{access.present ? "Presença marcada" : "Presença sob controle do professor"}</span></div>
           </div>

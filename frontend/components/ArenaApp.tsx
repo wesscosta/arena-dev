@@ -6,6 +6,7 @@ import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
 import WordCloudPanel from "@/components/WordCloudPanel";
+import SessionAccessCard from "@/components/SessionAccessCard";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi } from "@/lib/classroom-api";
@@ -13,7 +14,7 @@ import { createSession as createSessionApi, fetchSessionDomain, fetchSessionPart
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, fetchActivityDomain, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
 import { damageBoss as damageBossApi, drawStudent as drawStudentApi, mergeSessionMechanics, nextArenaQuestion as nextArenaQuestionApi, organizeGroups as organizeGroupsApi, restartArenaQuestions as restartArenaQuestionsApi, setArenaActivity as setArenaActivityApi, startBoss as startBossApi } from "@/lib/mechanics-api";
 import { createScoreEvent as createScoreEventApi, createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
-import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
+import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
 import type { TimerState } from "@/lib/timer-api";
 import { fetchWordCloudState, type WordCloudState } from "@/lib/word-cloud-api";
@@ -1408,16 +1409,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     }
   }
 
-  async function copyJoinLink() {
-    if (!joinCode || !publicBaseUrl) return;
-    try {
-      await navigator.clipboard.writeText(`${publicBaseUrl}/join?code=${joinCode.code}`);
-      notify("Link de entrada copiado.");
-    } catch {
-      notify("Não foi possível copiar o link automaticamente.");
-    }
-  }
-
   function openProjector() {
     if (!joinCode) {
       notify("Aguarde a geração do código da sessão.");
@@ -1610,30 +1601,28 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           state={wordCloudState}
           onStateChange={setWordCloudState}
           notify={notify}
+          joinCode={joinCode}
+          publicBaseUrl={publicBaseUrl}
+          realtimeStatus={realtimeStatus}
+          connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+          presentCount={sessionParticipants.filter((participant) => participant.present).length}
         />
       )}
 
       {arenaTab === "realtime" && (
         <div className="realtime-grid">
-          <Panel title="Entrada dos alunos" subtitle="Código temporário da sessão + QR Code">
-            <div className="join-access-layout">
-              <div className="join-code-block">
-                <span className="eyebrow accent">CÓDIGO DA SESSÃO</span>
-                <strong>{joinCode?.code ?? "------"}</strong>
-                <small>{joinCode ? `Válido até ${dateTime(joinCode.expiresAt)}` : "Gerando código..."}</small>
-                <div className="inline-actions solid-actions">
-                  <button className="button" onClick={() => { void copyJoinLink(); }} disabled={!joinCode}>Copiar link</button>
-                  <button className="button ghost" onClick={() => { void rotateSessionCode(); }} disabled={realtimeBusy}>Gerar novo código</button>
-                </div>
-              </div>
-              <div className="join-qr-block">
-                {joinCode && publicBaseUrl ? <img src={joinQrImageUrl(currentSession.id, publicBaseUrl, joinCode.code)} alt={`QR Code da sessão ${joinCode.code}`} /> : <div className="qr-placeholder">QR</div>}
-                <span>Escaneie para abrir <b>/join</b></span>
-              </div>
-            </div>
-            {publicBaseUrl.includes("localhost") && <div className="network-warning"><strong>Uso em celulares</strong><span>Abra o Arena Dev pelo IP da máquina na rede local (ex.: http://192.168.x.x:3000) antes de exibir o QR. “localhost” aponta para o próprio celular.</span></div>}
-            <div className="realtime-connection-row"><span className={`realtime-dot ${realtimeStatus}`} /><strong>{realtimeStatus === "online" ? "Tempo real conectado" : realtimeStatus === "connecting" ? "Conectando WebSocket..." : "WebSocket offline"}</strong><span>{sessionParticipants.filter((participant) => participant.connected).length} aluno(s) conectado(s)</span></div>
-          </Panel>
+          <SessionAccessCard
+            sessionId={currentSession.id}
+            joinCode={joinCode}
+            publicBaseUrl={publicBaseUrl}
+            notify={notify}
+            realtimeStatus={realtimeStatus}
+            connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+            onRotate={rotateSessionCode}
+            rotateBusy={realtimeBusy}
+            title="Entrada dos alunos"
+            subtitle="Código temporário da sessão, URL pública e QR Code."
+          />
 
           <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">
             <div className={`teacher-buzzer-state ${buzzerState.status.toLowerCase()}`}>
