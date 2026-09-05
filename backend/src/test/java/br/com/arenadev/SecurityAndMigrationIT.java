@@ -91,12 +91,13 @@ class SecurityAndMigrationIT {
                     'external_result_rows',
                     'session_join_codes',
                     'buzzer_rounds',
-                    'buzzer_presses'
+                    'buzzer_presses',
+                    'session_timers'
                   )
                 """, Integer.class);
 
-        assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6");
-        assertThat(expectedTables).isEqualTo(15);
+        assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7");
+        assertThat(expectedTables).isEqualTo(16);
     }
 
     @Test

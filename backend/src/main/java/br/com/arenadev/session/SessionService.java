@@ -7,6 +7,7 @@ import br.com.arenadev.classroom.EnrollmentRepository;
 import br.com.arenadev.classroom.Student;
 import br.com.arenadev.realtime.BuzzerService;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import br.com.arenadev.timer.SessionTimerService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ public class SessionService {
     private final EnrollmentRepository enrollmentRepository;
     private final SessionJoinService joinService;
     private final BuzzerService buzzerService;
+    private final SessionTimerService timerService;
 
     public SessionService(
             ClassSessionRepository sessionRepository,
@@ -31,7 +33,8 @@ public class SessionService {
             ClassroomRepository classroomRepository,
             EnrollmentRepository enrollmentRepository,
             SessionJoinService joinService,
-            BuzzerService buzzerService
+            BuzzerService buzzerService,
+            SessionTimerService timerService
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -39,6 +42,7 @@ public class SessionService {
         this.enrollmentRepository = enrollmentRepository;
         this.joinService = joinService;
         this.buzzerService = buzzerService;
+        this.timerService = timerService;
     }
 
     @Transactional
@@ -129,16 +133,22 @@ public class SessionService {
 
     @Transactional
     public SessionView finish(UUID sessionId) {
-        ClassSession session = getEntity(sessionId);
+        ClassSession session = getEntityForUpdate(sessionId);
         ensureActive(session);
         session.finish();
         joinService.deactivate(sessionId);
         buzzerService.closeForFinishedSession(sessionId);
+        timerService.cancelOpenForFinishedSession(sessionId);
         return SessionView.from(session);
     }
 
     private ClassSession getEntity(UUID id) {
         return sessionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+    }
+
+    private ClassSession getEntityForUpdate(UUID id) {
+        return sessionRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
     }
 
