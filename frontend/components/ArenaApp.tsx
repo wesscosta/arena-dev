@@ -29,15 +29,19 @@ import {
 import type { Activity, ActivityQuestion, ArenaData, Classroom, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 import { classroomArenaCtaState } from "@/lib/classroom-arena-cta";
 
-type View = "dashboard" | "classroom" | "arena" | "backup";
+type View = "dashboard" | "classroom" | "arena" | "settings";
 type ClassroomTab = "home" | "students" | "activities" | "ranking" | "history";
 
 const NAV: { id: View; label: string; icon: string }[] = [
   { id: "dashboard", label: "Visão geral", icon: "◫" },
-  { id: "classroom", label: "Turma", icon: "◎" },
-  { id: "arena", label: "Arena", icon: "◆" },
-  { id: "backup", label: "Backup", icon: "⇅" },
 ];
+
+const VIEW_LABEL: Record<View, string> = {
+  dashboard: "Visão geral",
+  classroom: "Turma",
+  arena: "Arena",
+  settings: "Configurações",
+};
 
 const CLASSROOM_TABS: { id: ClassroomTab; label: string; icon: string }[] = [
   { id: "home", label: "Home", icon: "⌂" },
@@ -82,6 +86,7 @@ export default function ArenaApp() {
   const [classroomTab, setClassroomTab] = useState<ClassroomTab>("home");
   const [toast, setToast] = useState("");
   const [apiError, setApiError] = useState("");
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [arenaActivityId, setArenaActivityId] = useState<string | undefined>();
 
   useEffect(() => {
@@ -252,12 +257,57 @@ export default function ArenaApp() {
           ))}
         </nav>
 
-        <div className="sidebar-foot">
-          <div className={apiError ? "status-dot error" : "status-dot"} />
-          <div>
-            <strong>{apiError ? "Backend indisponível" : "Persistência no backend"}</strong>
-            <small>{apiError ? "Verifique Spring Boot/PostgreSQL" : "Turmas, sessões, XP, atividades e mecânicas no PostgreSQL"}</small>
-          </div>
+        <div className="sidebar-profile-wrap">
+          {profileMenuOpen && (
+            <div className="sidebar-profile-menu">
+              <button
+                type="button"
+                onClick={() => {
+                  setView("settings");
+                  setProfileMenuOpen(false);
+                }}
+              >
+                <span>⚙</span>
+                <div>
+                  <strong>Configurações</strong>
+                  <small>Perfil, sistema e backup</small>
+                </div>
+              </button>
+              <button
+                type="button"
+                className="sidebar-profile-logout"
+                onClick={() => {
+                  void logoutTeacher().finally(() => {
+                    setTeacherSession(null);
+                    setData(EMPTY_DATA);
+                    setHydrated(false);
+                  });
+                }}
+              >
+                <span>↪</span>
+                <div>
+                  <strong>Sair</strong>
+                  <small>Encerrar sessão do professor</small>
+                </div>
+              </button>
+            </div>
+          )}
+
+          <button
+            type="button"
+            className={view === "settings" ? "sidebar-profile active" : "sidebar-profile"}
+            onClick={() => setProfileMenuOpen((open) => !open)}
+            aria-expanded={profileMenuOpen}
+          >
+            <span className="sidebar-profile-avatar">
+              {teacherSession.username.trim().charAt(0).toUpperCase() || "P"}
+            </span>
+            <span className="sidebar-profile-copy">
+              <strong>{teacherSession.username}</strong>
+              <small>Professor · Configurações</small>
+            </span>
+            <span className="sidebar-profile-more">•••</span>
+          </button>
         </div>
       </aside>
 
@@ -265,25 +315,28 @@ export default function ArenaApp() {
         <header className="topbar">
           <div>
             <span className="eyebrow">PAINEL DO PROFESSOR</span>
-            <h1>{NAV.find((item) => item.id === view)?.label}</h1>
+            <h1>{VIEW_LABEL[view]}</h1>
           </div>
           <div className="topbar-actions">
-            <select
-              className="select topbar-classroom-select"
-              value={activeClassroom?.id ?? ""}
-              onChange={(event) => setActiveClassroom(event.target.value)}
-              disabled={!data.classrooms.length}
-              aria-label="Selecionar turma atual"
-            >
-              {!data.classrooms.length && <option value="">Nenhuma turma</option>}
-              {data.classrooms.map((classroom) => (
-                <option key={classroom.id} value={classroom.id}>
-                  {classroom.name}{!classroom.active ? " · inativa" : ""}
-                </option>
-              ))}
-            </select>
-            {currentSession && <span className="live-pill"><span /> Sessão ativa</span>}
-            <button className="button ghost topbar-logout" onClick={() => { void logoutTeacher().finally(() => { setTeacherSession(null); setData(EMPTY_DATA); setHydrated(false); }); }}>Sair</button>
+            {(view === "classroom" || view === "arena") && (
+              <>
+                <select
+                  className="select topbar-classroom-select"
+                  value={activeClassroom?.id ?? ""}
+                  onChange={(event) => setActiveClassroom(event.target.value)}
+                  disabled={!data.classrooms.length}
+                  aria-label="Selecionar turma atual"
+                >
+                  {!data.classrooms.length && <option value="">Nenhuma turma</option>}
+                  {data.classrooms.map((classroom) => (
+                    <option key={classroom.id} value={classroom.id}>
+                      {classroom.name}{!classroom.active ? " · inativa" : ""}
+                    </option>
+                  ))}
+                </select>
+                {currentSession && <span className="live-pill"><span /> Sessão ativa</span>}
+              </>
+            )}
           </div>
         </header>
 
@@ -401,7 +454,71 @@ export default function ArenaApp() {
             )
           )}
 
-          {view === "backup" && <BackupView data={data} setData={setData} notify={notify} refreshClassroomDomain={refreshClassroomDomain} />}
+          {view === "settings" && (
+            <div className="settings-page stack-lg">
+              <div className="settings-heading">
+                <div>
+                  <span className="eyebrow accent">CONFIGURAÇÕES</span>
+                  <h2>Professor e sistema</h2>
+                  <p>Preferências administrativas do Arena Dev, informações do ambiente e rotinas de segurança.</p>
+                </div>
+                <button className="button ghost" onClick={() => setView("dashboard")}>
+                  ← Visão geral
+                </button>
+              </div>
+
+              <div className="settings-summary-grid">
+                <Panel title="Perfil do professor" subtitle="Sessão administrativa atual">
+                  <div className="teacher-profile-card">
+                    <span className="teacher-profile-avatar">
+                      {teacherSession.username.trim().charAt(0).toUpperCase() || "P"}
+                    </span>
+                    <div>
+                      <strong>{teacherSession.username}</strong>
+                      <span>Professor</span>
+                      <small>Acesso autenticado ao painel administrativo.</small>
+                    </div>
+                  </div>
+                </Panel>
+
+                <Panel title="Sistema" subtitle="Estado da persistência">
+                  <div className="settings-system-status">
+                    <span className={apiError ? "status-dot error" : "status-dot"} />
+                    <div>
+                      <strong>{apiError ? "Backend indisponível" : "Persistência operacional"}</strong>
+                      <small>
+                        {apiError
+                          ? "Verifique Spring Boot e PostgreSQL."
+                          : "Turmas, sessões, XP, atividades e mecânicas persistidas no backend."}
+                      </small>
+                    </div>
+                  </div>
+                  {apiError && (
+                    <button
+                      className="button ghost small settings-retry"
+                      onClick={() => { void refreshClassroomDomain(); }}
+                    >
+                      Tentar novamente
+                    </button>
+                  )}
+                </Panel>
+              </div>
+
+              <section className="settings-backup-section">
+                <div className="settings-section-heading">
+                  <span className="eyebrow accent">SEGURANÇA E DADOS</span>
+                  <h3>Backup e restauração</h3>
+                  <p>As operações de backup ficam dentro das configurações administrativas e deixam de ocupar a navegação principal.</p>
+                </div>
+                <BackupView
+                  data={data}
+                  setData={setData}
+                  notify={notify}
+                  refreshClassroomDomain={refreshClassroomDomain}
+                />
+              </section>
+            </div>
+          )}
         </section>
       </main>
 

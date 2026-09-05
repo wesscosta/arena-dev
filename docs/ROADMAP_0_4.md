@@ -170,6 +170,20 @@ fricção para o professor.
 - [ ] tratar as abas superiores como navegação principal do workspace pedagógico;
 - [ ] preservar métricas-resumo da Home sem duplicar conteúdo detalhado.
 
+#### 12.3D.3 — Sidebar enxuta, Perfil e Configurações
+
+- [ ] manter apenas `Visão geral` como entrada operacional global na sidebar;
+- [ ] remover `Turma` da sidebar: acesso passa pelos cards da Visão geral;
+- [ ] remover `Arena` da sidebar: acesso passa pelo CTA contextual da Home da turma;
+- [ ] preservar `classroom` e `arena` como views internas, sem atalhos globais redundantes;
+- [ ] ocultar seletor global de turma na Visão geral e em Configurações;
+- [ ] criar Perfil do professor no rodapé da sidebar;
+- [ ] menu toggle do perfil com `Configurações` e `Sair`;
+- [ ] criar view `Configurações`;
+- [ ] mover `Backup e restauração` para Configurações;
+- [ ] mover estado técnico de persistência/backend para Configurações;
+- [ ] manter fluxo principal `Visão geral → Turma → Arena`.
+
 ### 12.4 — SessionEvent
 
 Generalizar a linha do tempo da aula somente após Timer, Projetor e Nuvem
