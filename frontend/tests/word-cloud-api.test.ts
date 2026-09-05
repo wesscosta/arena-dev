@@ -27,8 +27,20 @@ test("loads teacher word cloud state from the active session", async () => {
 });
 
 test("creates a word cloud round with the selected participation mode", async () => {
+  let operationCalled = false;
+
   globalThis.fetch = async (input, init) => {
-    assert.equal(String(input), "http://localhost:8080/api/sessions/session-a/word-cloud");
+    const url = String(input);
+
+    if (url === "http://localhost:8080/api/auth/csrf") {
+      return new Response(JSON.stringify({ token: "csrf-test-token" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    operationCalled = true;
+    assert.equal(url, "http://localhost:8080/api/sessions/session-a/word-cloud");
     assert.equal(init?.method, "POST");
     assert.deepEqual(JSON.parse(String(init?.body)), {
       prompt: "Uma palavra sobre API",
@@ -46,12 +58,29 @@ test("creates a word cloud round with the selected participation mode", async ()
     liveReveal: false,
     maxWordsPerParticipant: 3,
   });
+
+  assert.equal(operationCalled, true);
   assert.equal(state.round?.id, "round-a");
 });
 
 test("reveals an existing word cloud round", async () => {
+  let operationCalled = false;
+
   globalThis.fetch = async (input, init) => {
-    assert.equal(String(input), "http://localhost:8080/api/sessions/session-a/word-cloud/round-a/reveal");
+    const url = String(input);
+
+    if (url === "http://localhost:8080/api/auth/csrf") {
+      return new Response(JSON.stringify({ token: "csrf-test-token" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    operationCalled = true;
+    assert.equal(
+      url,
+      "http://localhost:8080/api/sessions/session-a/word-cloud/round-a/reveal",
+    );
     assert.equal(init?.method, "POST");
     return new Response(JSON.stringify({
       round: { id: "round-a", status: "REVEALED" },
@@ -62,5 +91,7 @@ test("reveals an existing word cloud round", async () => {
   };
 
   const state = await revealWordCloud("session-a", "round-a");
+
+  assert.equal(operationCalled, true);
   assert.equal(state.round?.status, "REVEALED");
 });

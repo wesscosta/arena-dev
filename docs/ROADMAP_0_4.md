@@ -150,6 +150,16 @@ fricção para o professor.
 - [ ] preservar filtros `Todas`, `Ativas` e `Inativas`;
 - [ ] manter `Turma` e `Arena` na sidebar até concluir 12.3D.2/12.3D.3.
 
+#### 12.3D.2 — Home da turma e CTA da Arena
+
+- [ ] separar visualmente `Gerenciar turma` da principal ação pedagógica;
+- [ ] transformar `Iniciar Arena` em CTA dominante da Home da turma;
+- [ ] quando existir sessão ativa, trocar para `Continuar Arena`;
+- [ ] destacar visualmente estado de sessão em andamento;
+- [ ] manter CTA desabilitado em turma inativa, com mensagem explicativa;
+- [ ] preparar remoção futura do item global `Arena` da sidebar;
+- [ ] preservar `Arena` na sidebar até validar o fluxo contextual pela Home da turma.
+
 ### 12.4 — SessionEvent
 
 Generalizar a linha do tempo da aula somente após Timer, Projetor e Nuvem

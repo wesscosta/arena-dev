@@ -27,6 +27,7 @@ import {
   type ClassroomSortMode,
 } from "@/lib/classroom-overview";
 import type { Activity, ActivityQuestion, ArenaData, Classroom, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
+import { classroomArenaCtaState } from "@/lib/classroom-arena-cta";
 
 type View = "dashboard" | "classroom" | "arena" | "backup";
 type ClassroomTab = "home" | "students" | "activities" | "ranking" | "history";
@@ -650,6 +651,10 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
   const today = new Date().toDateString();
   const todayEvents = events.filter((event) => new Date(event.createdAt).toDateString() === today);
   const activityCount = data.activities.filter((activity) => activity.classroomId === classroom.id).length;
+  const arenaCta = classroomArenaCtaState(
+    classroom.active !== false,
+    currentSession?.title,
+  );
 
   return (
     <div className="stack-lg">
@@ -659,23 +664,55 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
           <button className="button small" onClick={() => setEditOpen(true)}>Gerenciar turma</button>
         </div>
       )}
-      <div className="hero-card classroom-home-hero">
-        <div>
-          <span className="eyebrow accent">HOME DA TURMA</span>
-          <h2>{classroom.name}</h2>
-          <p>Contexto pedagógico para alunos, atividades, ranking, histórico e preparação da aula.</p>
+      <section className="classroom-home-hero-v2">
+        <div className="classroom-home-hero-main">
+          <div>
+            <span className="eyebrow accent">HOME DA TURMA</span>
+            <h2>{classroom.name}</h2>
+            <p>Contexto pedagógico para alunos, atividades, ranking, histórico e preparação da aula.</p>
+          </div>
+
+          <button
+            className="button ghost classroom-manage-button"
+            onClick={() => setEditOpen(true)}
+          >
+            Gerenciar turma
+          </button>
         </div>
-        <div className="hero-actions">
-          <button className="button" onClick={() => setEditOpen(true)}>Gerenciar turma</button>
-          <button className="button primary large" onClick={onOpenArena} disabled={!classroom.active}>{currentSession ? "Continuar arena" : "Iniciar arena"}</button>
+
+        <div className={`arena-launch-card ${arenaCta.live ? "live" : ""} ${arenaCta.disabled ? "disabled" : ""}`}>
+          <div className="arena-launch-copy">
+            <div className="arena-launch-kicker">
+              {arenaCta.live && <span className="arena-launch-live-dot" />}
+              <span>{arenaCta.eyebrow}</span>
+            </div>
+            <strong>{arenaCta.title}</strong>
+            <p>{arenaCta.description}</p>
+          </div>
+
+          <button
+            className="arena-launch-button"
+            onClick={onOpenArena}
+            disabled={arenaCta.disabled}
+          >
+            <span className="arena-launch-icon">{arenaCta.live ? "↗" : "▶"}</span>
+            <span>
+              <small>{arenaCta.live ? "RETOMAR AULA" : "ABRIR SESSÃO AO VIVO"}</small>
+              <strong>{arenaCta.buttonLabel}</strong>
+            </span>
+          </button>
         </div>
-      </div>
+      </section>
 
       <div className="metrics-grid">
         <Metric label="Alunos ativos" value={students.length.toString()} hint="matriculados nesta turma" />
         <Metric label="Atividades" value={activityCount.toString()} hint="conteúdo da turma" />
         <Metric label="XP distribuído" value={totalXp.toString()} hint="acumulado da turma" />
-        <Metric label="Sessão" value={currentSession ? "ATIVA" : "—"} hint={currentSession ? currentSession.title : `${todayEvents.length} evento(s) hoje`} />
+        <Metric
+          label="Sessão"
+          value={currentSession ? "AO VIVO" : "—"}
+          hint={currentSession ? currentSession.title : `${todayEvents.length} evento(s) hoje`}
+        />
       </div>
 
       <div className="two-col">
