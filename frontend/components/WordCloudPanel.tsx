@@ -91,6 +91,19 @@ export default function WordCloudPanel({
     }
   }
 
+  function projectWordCloud() {
+    if (!joinCode) {
+      notify("Aguarde a geração do código da sessão.");
+      return;
+    }
+
+    window.open(
+      `/projector?code=${encodeURIComponent(joinCode.code)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  }
+
   async function close() {
     if (!round || busy) return;
 
@@ -271,6 +284,13 @@ export default function WordCloudPanel({
       )}
 
       <div className={styles.actions}>
+        <button
+          className={styles.secondary}
+          disabled={!joinCode}
+          onClick={projectWordCloud}
+        >
+          Projetar Nuvem ↗
+        </button>
         {round.status === "COLLECTING" && !round.liveReveal && (
           <button className={styles.primary} disabled={busy} onClick={() => void reveal()}>
             Revelar respostas

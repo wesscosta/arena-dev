@@ -126,10 +126,17 @@ fricção para o professor.
 
 #### 12.3C — Projeção visual
 
-- renderização dedicada da nuvem no Modo Projetor;
-- escala visual por frequência;
-- transição entre coleta, revelação e encerramento;
-- refinamento visual para projeção em sala.
+- [ ] consumir `WORD_CLOUD_STATE` no Modo Projetor;
+- [ ] Nuvem `COLLECTING` ou `REVEALED` assume o palco principal;
+- [ ] manter Timer ativo como informação secundária compacta quando coexistir;
+- [ ] pergunta em destaque para leitura à distância;
+- [ ] coleta oculta não revela termos antes do comando do professor;
+- [ ] modo ao vivo mostra termos conforme chegam;
+- [ ] escala tipográfica calculada pela frequência, evitando depender de `×N`;
+- [ ] manter contadores públicos anônimos de `responderam` e `respostas`;
+- [ ] preservar o resultado da rodada encerrada até outra dinâmica assumir o foco;
+- [ ] CTA `Projetar Nuvem` no painel do professor;
+- [ ] fullscreen continua sendo controlado pelo navegador no Modo Projetor.
 
 ### 12.4 — SessionEvent
 

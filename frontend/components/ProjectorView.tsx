@@ -9,6 +9,11 @@ import {
 } from "@/lib/projector-api";
 import type { SessionRealtimeEvent } from "@/lib/realtime-api";
 import type { TimerState } from "@/lib/timer-api";
+import type { WordCloudState } from "@/lib/word-cloud-api";
+import {
+  wordCloudFontSize,
+  wordCloudStatusLabel,
+} from "@/lib/word-cloud-visual";
 import {
   effectiveTimerStatus,
   formatTimer,
@@ -28,6 +33,7 @@ export default function ProjectorView() {
   const [draftCode, setDraftCode] = useState("");
   const [snapshot, setSnapshot] = useState<ProjectorSnapshot | null>(null);
   const [timerState, setTimerState] = useState<TimerState>({ timer: null });
+  const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [connection, setConnection] = useState<"offline" | "connecting" | "online">("offline");
   const [realtimeVersion, setRealtimeVersion] = useState(0);
@@ -46,6 +52,7 @@ export default function ProjectorView() {
     if (!code) {
       setSnapshot(null);
       setTimerState({ timer: null });
+      setWordCloudState({ round: null });
       setConnection("offline");
       return;
     }
@@ -105,6 +112,11 @@ export default function ProjectorView() {
           return;
         }
 
+        if (event.type === "WORD_CLOUD_STATE") {
+          setWordCloudState(event.payload as WordCloudState);
+          return;
+        }
+
         if (event.type === "SESSION_FINISHED") {
           finished = true;
           setSessionFinished(true);
@@ -158,6 +170,24 @@ export default function ProjectorView() {
   const progress = timer?.durationSeconds
     ? Math.max(0, Math.min(100, (remaining / timer.durationSeconds) * 100))
     : 0;
+
+  const wordCloudRound = wordCloudState.round;
+  const timerCanTakeFocus = Boolean(
+    timer
+      && status
+      && !["FINISHED", "CANCELLED"].includes(status),
+  );
+  const showWordCloud = Boolean(
+    wordCloudRound
+      && (
+        wordCloudRound.status !== "CLOSED"
+        || !timerCanTakeFocus
+      ),
+  );
+  const maxWordCount = wordCloudRound?.terms.reduce(
+    (current, term) => Math.max(current, term.count),
+    1,
+  ) ?? 1;
 
   function openCode(nextCode: string) {
     const normalized = normalizeJoinCode(nextCode);
@@ -255,12 +285,70 @@ export default function ProjectorView() {
         </div>
       </header>
 
-      <section className={styles.stage}>
+      <section className={`${styles.stage} ${showWordCloud ? styles.wordCloudFocus : ""}`}>
         {sessionFinished ? (
           <div className={styles.waiting}>
             <span className={styles.eyebrow}>SESSÃO ENCERRADA</span>
             <h1>A aula foi finalizada</h1>
             <p>O modo projetor pode ser fechado com segurança.</p>
+          </div>
+        ) : showWordCloud && wordCloudRound ? (
+          <div className={styles.wordCloudStage}>
+            <div className={styles.wordCloudTop}>
+              <div>
+                <span className={styles.eyebrow}>NUVEM DE PALAVRAS</span>
+                <h1>{wordCloudRound.prompt}</h1>
+              </div>
+              <div className={styles.wordCloudTopMeta}>
+                <span className={`${styles.wordCloudStatus} ${styles[wordCloudRound.status.toLowerCase()]}`}>
+                  {wordCloudStatusLabel(wordCloudRound.status)}
+                </span>
+                <small>
+                  {wordCloudRound.participantCount} responderam · {wordCloudRound.submissionCount} respostas
+                </small>
+              </div>
+            </div>
+
+            {timer && status && ["RUNNING", "PAUSED"].includes(status) && (
+              <div className={styles.miniTimer}>
+                <span>{timer.title}</span>
+                <strong>{formatTimer(remaining)}</strong>
+              </div>
+            )}
+
+            <div className={styles.wordCloudCanvas}>
+              {wordCloudRound.terms.length > 0 ? (
+                wordCloudRound.terms.map((term) => (
+                  <span
+                    key={term.normalizedText}
+                    className={styles.wordCloudTerm}
+                    style={{
+                      fontSize: `${wordCloudFontSize(term.count, maxWordCount)}px`,
+                      fontWeight: term.count === maxWordCount ? 900 : 720,
+                    }}
+                    title={`${term.count} ocorrência(s)`}
+                  >
+                    {term.text}
+                  </span>
+                ))
+              ) : wordCloudRound.status === "COLLECTING" && !wordCloudRound.liveReveal ? (
+                <div className={styles.wordCloudCollecting}>
+                  <strong>Respostas sendo coletadas</strong>
+                  <p>As palavras permanecem protegidas até o professor revelar a nuvem.</p>
+                  <span>{wordCloudRound.participantCount} aluno(s) já participaram</span>
+                </div>
+              ) : (
+                <div className={styles.wordCloudCollecting}>
+                  <strong>Aguardando respostas</strong>
+                  <p>As palavras aparecerão aqui conforme a turma participar.</p>
+                </div>
+              )}
+            </div>
+
+            <div className={styles.wordCloudLegend}>
+              <span>Quanto maior a repetição, maior o destaque da palavra.</span>
+              {wordCloudRound.status === "CLOSED" && <strong>Rodada encerrada</strong>}
+            </div>
           </div>
         ) : timer ? (
           <div className={styles.timerStage}>
@@ -279,7 +367,7 @@ export default function ProjectorView() {
           <div className={styles.waiting}>
             <span className={styles.eyebrow}>AULA AO VIVO</span>
             <h1>Aguardando próxima dinâmica</h1>
-            <p>Quando o professor preparar um Timer, ele aparecerá aqui automaticamente.</p>
+            <p>Timer, Nuvem de Palavras e outras dinâmicas aparecerão aqui automaticamente.</p>
           </div>
         )}
       </section>
