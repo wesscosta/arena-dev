@@ -6,6 +6,7 @@ import br.com.arenadev.classroom.Enrollment;
 import br.com.arenadev.classroom.EnrollmentRepository;
 import br.com.arenadev.classroom.Student;
 import br.com.arenadev.realtime.BuzzerService;
+import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import br.com.arenadev.timer.SessionTimerService;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class SessionService {
     private final SessionJoinService joinService;
     private final BuzzerService buzzerService;
     private final SessionTimerService timerService;
+    private final SessionRealtimeGateway realtimeGateway;
 
     public SessionService(
             ClassSessionRepository sessionRepository,
@@ -34,7 +36,8 @@ public class SessionService {
             EnrollmentRepository enrollmentRepository,
             SessionJoinService joinService,
             BuzzerService buzzerService,
-            SessionTimerService timerService
+            SessionTimerService timerService,
+            SessionRealtimeGateway realtimeGateway
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -43,6 +46,7 @@ public class SessionService {
         this.joinService = joinService;
         this.buzzerService = buzzerService;
         this.timerService = timerService;
+        this.realtimeGateway = realtimeGateway;
     }
 
     @Transactional
@@ -139,7 +143,11 @@ public class SessionService {
         joinService.deactivate(sessionId);
         buzzerService.closeForFinishedSession(sessionId);
         timerService.cancelOpenForFinishedSession(sessionId);
-        return SessionView.from(session);
+
+        SessionView view = SessionView.from(session);
+        realtimeGateway.broadcastAfterCommit(sessionId, "SESSION_FINISHED", view);
+        realtimeGateway.broadcastProjectorsAfterCommit(sessionId, "SESSION_FINISHED", view);
+        return view;
     }
 
     private ClassSession getEntity(UUID id) {

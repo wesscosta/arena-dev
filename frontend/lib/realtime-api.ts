@@ -48,7 +48,7 @@ export type BuzzerState = {
 };
 
 export type SessionRealtimeEvent = {
-  type: "BUZZER_STATE" | "PARTICIPANT_CONNECTED" | "PARTICIPANT_DISCONNECTED" | "SESSION_FINISHED" | "ERROR" | string;
+  type: "BUZZER_STATE" | "TIMER_STATE" | "PARTICIPANT_CONNECTED" | "PARTICIPANT_DISCONNECTED" | "SESSION_FINISHED" | "AUTH_OK" | "AUTH_REQUIRED" | "ERROR" | string;
   sessionId: string;
   occurredAt: string;
   payload: unknown;

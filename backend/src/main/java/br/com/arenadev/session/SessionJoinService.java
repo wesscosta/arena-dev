@@ -86,6 +86,15 @@ public class SessionJoinService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public PublicSessionView validateProjectorAccess(UUID sessionId, String rawCode) {
+        PublicSessionView access = lookup(rawCode);
+        if (!access.sessionId().equals(sessionId)) {
+            throw new IllegalArgumentException("Código não pertence à sessão informada.");
+        }
+        return access;
+    }
+
     @Transactional
     public JoinAccessView join(String rawCode, String identity) {
         SessionJoinCode joinCode = getUsableCode(rawCode);

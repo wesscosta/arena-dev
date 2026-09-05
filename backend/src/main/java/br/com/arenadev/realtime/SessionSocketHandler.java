@@ -20,6 +20,7 @@ public class SessionSocketHandler extends TextWebSocketHandler {
     private static final String ATTR_SESSION_ID = "arena.sessionId";
     private static final String ATTR_PARTICIPANT_ID = "arena.participantId";
     private static final String ATTR_TOKEN = "arena.participantToken";
+    private static final String ATTR_PROJECTOR = "arena.projector";
     private static final String ATTR_RATE_WINDOW = "arena.rateWindow";
     private static final String ATTR_RATE_COUNT = "arena.rateCount";
     private static final int MAX_MESSAGES_PER_SECOND = 8;
@@ -47,6 +48,14 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         UUID sessionId = resolveSessionId(socket.getUri());
         socket.getAttributes().put(ATTR_SESSION_ID, sessionId);
 
+        if (isProjectorSocket(socket.getUri())) {
+            gateway.send(socket, "AUTH_REQUIRED", sessionId, Map.of(
+                    "message",
+                    "Informe o código da sessão para abrir o modo projetor."
+            ));
+            return;
+        }
+
         // O professor chega autenticado pela sessão HTTP; o aluno autentica no primeiro frame.
         if (socket.getPrincipal() != null) {
             gateway.register(sessionId, socket);
@@ -66,6 +75,10 @@ public class SessionSocketHandler extends TextWebSocketHandler {
             Map<String, Object> payload = json.readValue(message.getPayload(), Map.class);
             String type = String.valueOf(payload.getOrDefault("type", ""));
 
+            if ("AUTH_PROJECTOR".equals(type)) {
+                authenticateProjector(socket, sessionId, String.valueOf(payload.getOrDefault("code", "")));
+                return;
+            }
             if ("AUTH_PARTICIPANT".equals(type)) {
                 authenticateParticipant(socket, sessionId, String.valueOf(payload.getOrDefault("token", "")));
                 return;
@@ -84,6 +97,23 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         } catch (Exception error) {
             gateway.send(socket, "ERROR", sessionId, Map.of("message", "Mensagem em tempo real inválida."));
         }
+    }
+
+    private void authenticateProjector(WebSocketSession socket, UUID sessionId, String code) {
+        if (!isProjectorSocket(socket.getUri())) {
+            throw new IllegalArgumentException("Autenticação de projetor disponível apenas no canal público.");
+        }
+        if (Boolean.TRUE.equals(socket.getAttributes().get(ATTR_PROJECTOR))) return;
+
+        SessionJoinService.PublicSessionView access = joinService.validateProjectorAccess(sessionId, code);
+        gateway.registerProjector(sessionId, socket);
+        socket.getAttributes().put(ATTR_PROJECTOR, true);
+        gateway.send(socket, "AUTH_OK", sessionId, Map.of(
+                "role", "PROJECTOR",
+                "code", access.code(),
+                "expiresAt", access.expiresAt().toString()
+        ));
+        sendProjectorState(socket, sessionId);
     }
 
     private void authenticateParticipant(WebSocketSession socket, UUID sessionId, String token) {
@@ -105,12 +135,21 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         gateway.send(socket, "TIMER_STATE", sessionId, timerService.state(sessionId));
     }
 
+    private void sendProjectorState(WebSocketSession socket, UUID sessionId) {
+        gateway.send(socket, "TIMER_STATE", sessionId, timerService.state(sessionId));
+    }
+
     @Override
     public void afterConnectionClosed(WebSocketSession socket, CloseStatus status) {
         UUID sessionId = (UUID) socket.getAttributes().get(ATTR_SESSION_ID);
         if (sessionId == null) return;
-        gateway.unregister(sessionId, socket);
 
+        if (Boolean.TRUE.equals(socket.getAttributes().get(ATTR_PROJECTOR))) {
+            gateway.unregisterProjector(sessionId, socket);
+            return;
+        }
+
+        gateway.unregister(sessionId, socket);
         UUID participantId = (UUID) socket.getAttributes().get(ATTR_PARTICIPANT_ID);
         String token = (String) socket.getAttributes().get(ATTR_TOKEN);
         if (participantId != null && token != null) {
@@ -145,10 +184,14 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         if (next > MAX_MESSAGES_PER_SECOND) throw new IllegalArgumentException("Muitas mensagens em sequência. Aguarde um instante.");
     }
 
+    private static boolean isProjectorSocket(URI uri) {
+        return uri != null && uri.getPath().contains("/ws/projector/");
+    }
+
     private static UUID resolveSessionId(URI uri) {
         if (uri == null) throw new IllegalArgumentException("Sessão WebSocket inválida.");
         String path = uri.getPath();
-        String prefix = "/ws/sessions/";
+        String prefix = isProjectorSocket(uri) ? "/ws/projector/" : "/ws/sessions/";
         int index = path.indexOf(prefix);
         if (index < 0) throw new IllegalArgumentException("Sessão WebSocket inválida.");
         String rawId = path.substring(index + prefix.length()).split("/")[0];

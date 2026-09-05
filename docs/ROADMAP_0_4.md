@@ -62,10 +62,21 @@ fricção para o professor.
 
 ### 12.2 — Modo Projetor / Visão Pública
 
-- rota dedicada para projeção;
-- título e instrução da dinâmica atual;
-- timer em destaque;
-- controles de visibilidade.
+- rota pública `/projector?code=...`, separada do painel administrativo;
+- acesso validado pelo mesmo código temporário da sessão;
+- endpoint público somente leitura sem dados de alunos ou controles do professor;
+- audiência WebSocket própria dentro do mesmo `SessionRealtimeGateway`;
+- projetor recebe apenas eventos explicitamente públicos;
+- snapshot inicial com turma, sessão, horário do servidor e estado do Timer;
+- `TIMER_STATE` reutilizado como contrato autoritativo em tempo real;
+- countdown local derivado de `endsAt` com compensação por horário do servidor;
+- título e instruções do Timer em destaque;
+- estado de espera quando nenhuma dinâmica está projetável;
+- código da sessão disponível para entrada dos alunos via `/join`;
+- botão `Modo Projetor` no painel do professor;
+- suporte a fullscreen do navegador;
+- encerramento da sessão propagado para a tela pública;
+- arquitetura preparada para Buzzer, Nuvem de Palavras e outras projeções seguras.
 
 ### 12.3 — Nuvem de Palavras
 

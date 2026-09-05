@@ -1406,6 +1406,15 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     }
   }
 
+  function openProjector() {
+    if (!joinCode) {
+      notify("Aguarde a geração do código da sessão.");
+      return;
+    }
+    const projectorUrl = `/projector?code=${encodeURIComponent(joinCode.code)}`;
+    window.open(projectorUrl, "_blank", "noopener,noreferrer");
+  }
+
   const selected = students.find((student) => student.id === selectedId);
   const selectedXp = selected ? xpForStudent(data.scoreEvents, classroomId, selected.id) : 0;
   const activeActivity = data.activities.find((activity) => activity.id === (currentSession?.activityId ?? activityId));
@@ -1458,7 +1467,10 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           <h2>{currentSession.title}</h2>
           <p>{currentSession.presentStudentIds.length} presentes · iniciada {dateTime(currentSession.startedAt)}</p>
         </div>
-        <button className="button danger-outline" onClick={() => { void endSession(); }} disabled={sessionBusy}>{sessionBusy ? "Encerrando..." : "Encerrar sessão"}</button>
+        <div className="topbar-actions">
+          <button className="button" onClick={openProjector} disabled={!joinCode}>Modo Projetor ↗</button>
+          <button className="button danger-outline" onClick={() => { void endSession(); }} disabled={sessionBusy}>{sessionBusy ? "Encerrando..." : "Encerrar sessão"}</button>
+        </div>
       </div>
 
       <div className="arena-tabs" role="tablist" aria-label="Ferramentas da sessão">

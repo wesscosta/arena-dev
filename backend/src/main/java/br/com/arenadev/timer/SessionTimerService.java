@@ -201,10 +201,16 @@ public class SessionTimerService {
     }
 
     private void broadcastStateAfterCommit(UUID sessionId, TimerView timer) {
+        TimerStateView state = new TimerStateView(timer);
         realtimeGateway.broadcastAfterCommit(
                 sessionId,
                 "TIMER_STATE",
-                new TimerStateView(timer)
+                state
+        );
+        realtimeGateway.broadcastProjectorsAfterCommit(
+                sessionId,
+                "TIMER_STATE",
+                state
         );
     }
 

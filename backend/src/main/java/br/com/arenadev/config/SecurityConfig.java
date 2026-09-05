@@ -61,7 +61,7 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, error) -> response.sendError(403))
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/health", "/api/auth/csrf", "/api/auth/login", "/api/join/**", "/ws/**").permitAll()
+                        .requestMatchers("/api/health", "/api/auth/csrf", "/api/auth/login", "/api/join/**", "/api/projector/**", "/ws/**").permitAll()
                         .requestMatchers("/api/**").hasRole("TEACHER")
                         .anyRequest().permitAll()
                 );
