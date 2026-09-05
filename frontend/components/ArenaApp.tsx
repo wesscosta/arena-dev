@@ -318,9 +318,6 @@ export default function ArenaApp() {
                     events={data.scoreEvents.filter((event) => event.classroomId === activeClassroom.id)}
                     currentSession={currentSession}
                     onOpenArena={() => setView("arena")}
-                    onOpenStudents={() => setClassroomTab("students")}
-                    onOpenActivities={() => setClassroomTab("activities")}
-                    onOpenRanking={() => setClassroomTab("ranking")}
                     notify={notify}
                     refreshClassroomDomain={refreshClassroomDomain}
                   />
@@ -632,7 +629,7 @@ function ClassroomWorkspaceTabs({ tab, onTabChange, studentCount, activityCount,
   );
 }
 
-function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, onOpenStudents, onOpenActivities, onOpenRanking, notify, refreshClassroomDomain }: {
+function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, notify, refreshClassroomDomain }: {
   classroom: Classroom;
   data: ArenaData;
   students: Student[];
@@ -640,9 +637,6 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
   events: ArenaData["scoreEvents"];
   currentSession?: ArenaData["sessions"][number];
   onOpenArena: () => void;
-  onOpenStudents: () => void;
-  onOpenActivities: () => void;
-  onOpenRanking: () => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
@@ -680,26 +674,14 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
           </button>
         </div>
 
-        <div className={`arena-launch-card ${arenaCta.live ? "live" : ""} ${arenaCta.disabled ? "disabled" : ""}`}>
-          <div className="arena-launch-copy">
-            <div className="arena-launch-kicker">
-              {arenaCta.live && <span className="arena-launch-live-dot" />}
-              <span>{arenaCta.eyebrow}</span>
-            </div>
-            <strong>{arenaCta.title}</strong>
-            <p>{arenaCta.description}</p>
-          </div>
-
+        <div className="classroom-home-hero-cta">
           <button
-            className="arena-launch-button"
+            className={`arena-launch-button arena-launch-button-centered ${arenaCta.live ? "live" : ""}`}
             onClick={onOpenArena}
             disabled={arenaCta.disabled}
           >
             <span className="arena-launch-icon">{arenaCta.live ? "↗" : "▶"}</span>
-            <span>
-              <small>{arenaCta.live ? "RETOMAR AULA" : "ABRIR SESSÃO AO VIVO"}</small>
-              <strong>{arenaCta.buttonLabel}</strong>
-            </span>
+            <strong>{arenaCta.buttonLabel}</strong>
           </button>
         </div>
       </section>
@@ -713,31 +695,6 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
           value={currentSession ? "AO VIVO" : "—"}
           hint={currentSession ? currentSession.title : `${todayEvents.length} evento(s) hoje`}
         />
-      </div>
-
-      <div className="two-col">
-        <Panel title="Top da turma" subtitle="Ranking por XP acumulado">
-          {leaderboard.length ? (
-            <div className="ranking-compact">
-              {leaderboard.slice(0, 5).map((row, index) => (
-                <div key={row.student.id} className="ranking-row">
-                  <span className="rank-number">{String(index + 1).padStart(2, "0")}</span>
-                  <Avatar student={row.student} />
-                  <div className="grow"><strong>{row.student.nickname || row.student.name}</strong><small>{getLevel(row.xp).name}</small></div>
-                  <b>{row.xp} XP</b>
-                </div>
-              ))}
-            </div>
-          ) : <MiniEmpty text="Ainda não há alunos ou pontuação." />}
-        </Panel>
-        <Panel title="Ações da turma" subtitle="Navegue pelo contexto selecionado">
-          <div className="quick-actions">
-            <button className="quick-button" onClick={onOpenStudents}><span>01</span><div><strong>Alunos</strong><small>Cadastro, importação e status</small></div></button>
-            <button className="quick-button" onClick={onOpenActivities}><span>02</span><div><strong>Atividades</strong><small>Questões, entregas e resultados</small></div></button>
-            <button className="quick-button" onClick={onOpenRanking}><span>03</span><div><strong>Ranking</strong><small>XP e progressão acumulada</small></div></button>
-            <button className="quick-button" onClick={onOpenArena} disabled={!classroom.active}><span>04</span><div><strong>Arena</strong><small>Condução ao vivo da sessão</small></div></button>
-          </div>
-        </Panel>
       </div>
 
       {editOpen && (

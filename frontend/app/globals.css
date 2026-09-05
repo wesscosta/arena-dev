@@ -603,3 +603,107 @@ button:disabled { cursor: not-allowed; opacity: .45; }
     align-self: flex-start;
   }
 }
+
+
+/* Ajuste 12.3D.2B — Home enxuta e tabs reforçadas */
+.classroom-home-hero-cta {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+.arena-launch-button-centered {
+  min-width: min(100%, 390px);
+  justify-content: center;
+  gap: 14px;
+  padding: 17px 28px;
+  border-radius: 13px;
+}
+
+.arena-launch-button-centered > strong {
+  font-size: 17px;
+  letter-spacing: -.01em;
+}
+
+.arena-launch-button-centered .arena-launch-icon {
+  width: 42px;
+  height: 42px;
+  font-size: 19px;
+}
+
+.arena-launch-button-centered.live {
+  box-shadow:
+    0 16px 38px rgba(49,225,137,.15),
+    0 0 0 1px rgba(88,243,167,.06);
+}
+
+.classroom-home-legacy-actions {
+  align-items: center;
+}
+
+.classroom-home-legacy-actions .classroom-home-hero-cta {
+  flex: 1;
+}
+
+.classroom-home-legacy-arena-button {
+  min-width: 330px;
+  padding: 15px 26px;
+  font-size: 15px;
+}
+
+/* As abas passam a ser a navegação principal da turma. */
+.classroom-section-tabs {
+  gap: 8px;
+}
+
+.classroom-section-tab {
+  min-height: 48px;
+  padding: 8px 14px;
+  gap: 9px;
+  border-radius: 10px;
+}
+
+.classroom-section-tab > span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.classroom-section-tab > strong {
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.classroom-section-tab > small {
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  font-size: 9px;
+}
+
+.classroom-section-tab.active {
+  border-color: rgba(88,243,167,.28);
+  background: rgba(88,243,167,.075);
+}
+
+.classroom-section-tab.active > span {
+  color: var(--accent);
+  background: rgba(88,243,167,.10);
+}
+
+@media (max-width: 720px) {
+  .arena-launch-button-centered,
+  .classroom-home-legacy-arena-button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .classroom-section-tab {
+    min-width: 128px;
+  }
+}

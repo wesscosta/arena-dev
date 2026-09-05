@@ -160,6 +160,16 @@ fricção para o professor.
 - [ ] preparar remoção futura do item global `Arena` da sidebar;
 - [ ] preservar `Arena` na sidebar até validar o fluxo contextual pela Home da turma.
 
+#### 12.3D.2B — Home enxuta e navegação por abas
+
+- [ ] remover o card interno do CTA da Arena;
+- [ ] manter apenas `Iniciar Arena` / `Continuar Arena` centralizado e com maior destaque;
+- [ ] remover `Top da turma` da Home, pois Ranking já possui aba própria;
+- [ ] remover `Ações da turma`, pois Alunos, Atividades, Ranking e Histórico já são acessados pelas abas;
+- [ ] aumentar fonte, ícone e área clicável das abas da turma;
+- [ ] tratar as abas superiores como navegação principal do workspace pedagógico;
+- [ ] preservar métricas-resumo da Home sem duplicar conteúdo detalhado.
+
 ### 12.4 — SessionEvent
 
 Generalizar a linha do tempo da aula somente após Timer, Projetor e Nuvem
