@@ -35,10 +35,6 @@ import { classroomArenaCtaState } from "@/lib/classroom-arena-cta";
 type View = "dashboard" | "classroom" | "arena" | "settings";
 type ClassroomTab = "home" | "students" | "activities" | "ranking" | "history";
 
-const NAV: { id: View; label: string; icon: string }[] = [
-  { id: "dashboard", label: "Visão geral", icon: "◫" },
-];
-
 const VIEW_LABEL: Record<View, string> = {
   dashboard: "Visão geral",
   classroom: "Turma",
@@ -241,105 +237,128 @@ export default function ArenaApp() {
   }
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark">A</div>
-          <div>
-            <strong>ARENA DEV</strong>
-            <small>Classroom Edition · V1</small>
-          </div>
-        </div>
-
-        <nav className="nav-list">
-          {NAV.map((item) => (
-            <button key={item.id} className={view === item.id ? "nav-item active" : "nav-item"} onClick={() => { if (item.id === "classroom") setClassroomTab("home"); setView(item.id); }}>
-              <span>{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="sidebar-profile-wrap">
-          {profileMenuOpen && (
-            <div className="sidebar-profile-menu">
-              <button
-                type="button"
-                onClick={() => {
-                  setView("settings");
-                  setProfileMenuOpen(false);
-                }}
-              >
-                <span>⚙</span>
-                <div>
-                  <strong>Configurações</strong>
-                  <small>Perfil, sistema e backup</small>
-                </div>
-              </button>
-              <button
-                type="button"
-                className="sidebar-profile-logout"
-                onClick={() => {
-                  void logoutTeacher().finally(() => {
-                    setTeacherSession(null);
-                    setData(EMPTY_DATA);
-                    setHydrated(false);
-                  });
-                }}
-              >
-                <span>↪</span>
-                <div>
-                  <strong>Sair</strong>
-                  <small>Encerrar sessão do professor</small>
-                </div>
-              </button>
-            </div>
-          )}
-
+    <div className="app-shell app-shell-no-sidebar">
+      <main className="main-area">
+        <header className="topbar app-topbar">
           <button
             type="button"
-            className={view === "settings" ? "sidebar-profile active" : "sidebar-profile"}
-            onClick={() => setProfileMenuOpen((open) => !open)}
-            aria-expanded={profileMenuOpen}
+            className="topbar-brand"
+            onClick={() => {
+              setView("dashboard");
+              setProfileMenuOpen(false);
+            }}
+            title="Voltar para a Visão geral"
           >
-            <span className="sidebar-profile-avatar">
-              {teacherSession.username.trim().charAt(0).toUpperCase() || "P"}
+            <span className="topbar-brand-mark">A</span>
+            <span>
+              <strong>ARENA DEV</strong>
+              <small>Classroom Edition · V1</small>
             </span>
-            <span className="sidebar-profile-copy">
-              <strong>{teacherSession.username}</strong>
-              <small>Professor · Configurações</small>
-            </span>
-            <span className="sidebar-profile-more">•••</span>
           </button>
-        </div>
-      </aside>
 
-      <main className="main-area">
-        <header className="topbar">
-          <div>
-            <span className="eyebrow">PAINEL DO PROFESSOR</span>
-            <h1>{VIEW_LABEL[view]}</h1>
+          <div className="topbar-context">
+            <span className="topbar-breadcrumb">
+              Visão geral
+              {view === "classroom" && activeClassroom ? ` / ${activeClassroom.name}` : ""}
+              {view === "arena" && activeClassroom ? ` / ${activeClassroom.name} / Arena` : ""}
+              {view === "settings" ? " / Configurações" : ""}
+            </span>
+            <h1>
+              {view === "dashboard"
+                ? "Visão geral"
+                : view === "classroom"
+                  ? activeClassroom?.name ?? VIEW_LABEL[view]
+                  : view === "arena"
+                    ? currentSession?.title ?? "Arena"
+                    : VIEW_LABEL[view]}
+            </h1>
           </div>
-          <div className="topbar-actions">
+
+          <div className="topbar-actions app-topbar-actions">
             {(view === "classroom" || view === "arena") && (
-              <>
-                <select
-                  className="select topbar-classroom-select"
-                  value={activeClassroom?.id ?? ""}
-                  onChange={(event) => setActiveClassroom(event.target.value)}
-                  disabled={!data.classrooms.length}
-                  aria-label="Selecionar turma atual"
-                >
-                  {!data.classrooms.length && <option value="">Nenhuma turma</option>}
-                  {data.classrooms.map((classroom) => (
-                    <option key={classroom.id} value={classroom.id}>
-                      {classroom.name}{!classroom.active ? " · inativa" : ""}
-                    </option>
-                  ))}
-                </select>
-                {currentSession && <span className="live-pill"><span /> Sessão ativa</span>}
-              </>
+              <select
+                className="select topbar-classroom-select"
+                value={activeClassroom?.id ?? ""}
+                onChange={(event) => setActiveClassroom(event.target.value)}
+                disabled={!data.classrooms.length}
+                aria-label="Selecionar turma atual"
+              >
+                {!data.classrooms.length && <option value="">Nenhuma turma</option>}
+                {data.classrooms.map((classroom) => (
+                  <option key={classroom.id} value={classroom.id}>
+                    {classroom.name}{!classroom.active ? " · inativa" : ""}
+                  </option>
+                ))}
+              </select>
             )}
+
+            {currentSession && (
+              <button
+                type="button"
+                className="topbar-live-action"
+                onClick={() => {
+                  setView("arena");
+                  setProfileMenuOpen(false);
+                }}
+                title="Voltar para a sessão ativa"
+              >
+                <span className="live-pill"><span /> Sessão ativa</span>
+              </button>
+            )}
+
+            <div className="topbar-profile-wrap">
+              <button
+                type="button"
+                className={profileMenuOpen ? "topbar-profile active" : "topbar-profile"}
+                onClick={() => setProfileMenuOpen((open) => !open)}
+                aria-expanded={profileMenuOpen}
+                aria-label="Abrir menu do professor"
+              >
+                <span className="topbar-profile-avatar">
+                  {teacherSession.username.trim().charAt(0).toUpperCase() || "P"}
+                </span>
+                <span className="topbar-profile-copy">
+                  <strong>{teacherSession.username}</strong>
+                  <small>Professor</small>
+                </span>
+                <span className="topbar-profile-chevron">⌄</span>
+              </button>
+
+              {profileMenuOpen && (
+                <div className="topbar-profile-menu">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setView("settings");
+                      setProfileMenuOpen(false);
+                    }}
+                  >
+                    <span>⚙</span>
+                    <div>
+                      <strong>Configurações</strong>
+                      <small>Perfil, sistema e backup</small>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="topbar-profile-logout"
+                    onClick={() => {
+                      void logoutTeacher().finally(() => {
+                        setTeacherSession(null);
+                        setData(EMPTY_DATA);
+                        setHydrated(false);
+                      });
+                    }}
+                  >
+                    <span>↪</span>
+                    <div>
+                      <strong>Sair</strong>
+                      <small>Encerrar sessão do professor</small>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -1129,7 +1148,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   notify: (message: string) => void;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
-  const [arenaTab, setArenaTab] = useState<"live" | "timer" | "wordcloud" | "realtime" | "presence" | "groups" | "boss">("live");
+  const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "presence" | "groups" | "boss">("live");
+  const [interactionTool, setInteractionTool] = useState<"wordcloud" | "buzzer">("wordcloud");
+  const [accessOpen, setAccessOpen] = useState(false);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
   const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
@@ -1637,28 +1658,54 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           <h2>{currentSession.title}</h2>
           <p>{currentSession.presentStudentIds.length} presentes · iniciada {dateTime(currentSession.startedAt)}</p>
         </div>
-        <div className="topbar-actions">
+        <div className="topbar-actions arena-session-actions">
+          <button
+            className={accessOpen ? "button primary" : "button"}
+            onClick={() => setAccessOpen((open) => !open)}
+            disabled={!joinCode}
+          >
+            {accessOpen ? "Fechar acesso" : "Acesso dos alunos"}
+          </button>
           <button className="button" onClick={openProjector} disabled={!joinCode}>Modo Projetor ↗</button>
           <button className="button danger-outline" onClick={() => { void endSession(); }} disabled={sessionBusy}>{sessionBusy ? "Encerrando..." : "Encerrar sessão"}</button>
         </div>
       </div>
 
-      <div className="arena-tabs" role="tablist" aria-label="Ferramentas da sessão">
+      {accessOpen && (
+        <div className="arena-session-access-wrap">
+          <SessionAccessCard
+            sessionId={currentSession.id}
+            joinCode={joinCode}
+            publicBaseUrl={publicBaseUrl}
+            notify={notify}
+            realtimeStatus={realtimeStatus}
+            connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+            onRotate={rotateSessionCode}
+            rotateBusy={realtimeBusy}
+            title="Entrada dos alunos"
+            subtitle="Este é o acesso único da sessão para todas as dinâmicas."
+          />
+        </div>
+      )}
+
+      <div className="arena-tabs arena-tabs-six" role="tablist" aria-label="Ferramentas da sessão">
         <button type="button" role="tab" aria-selected={arenaTab === "live"} className={arenaTab === "live" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("live")}>
           <span>Condução</span>
           <small>{activeActivity?.title ?? "Modo livre"}</small>
         </button>
+        <button type="button" role="tab" aria-selected={arenaTab === "interactions"} className={arenaTab === "interactions" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("interactions")}>
+          <span>Interações</span>
+          <small>
+            {buzzerState.status === "OPEN"
+              ? "Buzzer aberto"
+              : wordCloudState.round?.status === "COLLECTING"
+                ? "Nuvem coletando"
+                : "Nuvem · Buzzer"}
+          </small>
+        </button>
         <button type="button" role="tab" aria-selected={arenaTab === "timer"} className={arenaTab === "timer" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("timer")}>
           <span>Tempo</span>
           <small>{timerState.timer ? timerState.timer.title : "Controle de tempo"}</small>
-        </button>
-        <button type="button" role="tab" aria-selected={arenaTab === "wordcloud"} className={arenaTab === "wordcloud" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("wordcloud")}>
-          <span>Nuvem</span>
-          <small>{wordCloudState.round ? (wordCloudState.round.status === "COLLECTING" ? "Coletando respostas" : wordCloudState.round.status === "REVEALED" ? "Respostas reveladas" : "Rodada encerrada") : "Nuvem de Palavras"}</small>
-        </button>
-        <button type="button" role="tab" aria-selected={arenaTab === "realtime"} className={arenaTab === "realtime" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("realtime")}>
-          <span>Ao vivo</span>
-          <small>{joinCode ? `${joinCode.code} · ${buzzerState.status === "OPEN" ? "Buzzer aberto" : "QR + Buzzer"}` : "QR + Buzzer"}</small>
         </button>
         <button type="button" role="tab" aria-selected={arenaTab === "presence"} className={arenaTab === "presence" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("presence")}>
           <span>Presença</span>
@@ -1762,59 +1809,110 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         />
       )}
 
-      {arenaTab === "wordcloud" && (
-        <WordCloudPanel
-          sessionId={currentSession.id}
-          state={wordCloudState}
-          onStateChange={setWordCloudState}
-          notify={notify}
-          joinCode={joinCode}
-          publicBaseUrl={publicBaseUrl}
-          realtimeStatus={realtimeStatus}
-          connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
-          presentCount={sessionParticipants.filter((participant) => participant.present).length}
-        />
-      )}
-
-      {arenaTab === "realtime" && (
-        <div className="realtime-grid">
-          <SessionAccessCard
-            sessionId={currentSession.id}
-            joinCode={joinCode}
-            publicBaseUrl={publicBaseUrl}
-            notify={notify}
-            realtimeStatus={realtimeStatus}
-            connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
-            onRotate={rotateSessionCode}
-            rotateBusy={realtimeBusy}
-            title="Entrada dos alunos"
-            subtitle="Código temporário da sessão, URL pública e QR Code."
-          />
-
-          <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">
-            <div className={`teacher-buzzer-state ${buzzerState.status.toLowerCase()}`}>
-              <div className="teacher-buzzer-head">
-                <div><span className="eyebrow accent">RODADA</span><h3>{buzzerState.status === "OPEN" ? "Buzzer aberto" : buzzerState.status === "CLOSED" ? "Rodada encerrada" : "Pronto para abrir"}</h3></div>
-                <span className={`buzzer-status-pill ${buzzerState.status.toLowerCase()}`}>{buzzerState.status === "OPEN" ? "VALENDO" : buzzerState.status === "CLOSED" ? "FECHADO" : "AGUARDANDO"}</span>
+      {arenaTab === "interactions" && (
+        <div className="stack-lg arena-tab-content">
+          <div className="arena-interaction-switch" role="tablist" aria-label="Tipo de interação">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={interactionTool === "wordcloud"}
+              className={interactionTool === "wordcloud" ? "active" : ""}
+              onClick={() => setInteractionTool("wordcloud")}
+            >
+              <span>☁</span>
+              <div>
+                <strong>Nuvem de Palavras</strong>
+                <small>
+                  {wordCloudState.round
+                    ? wordCloudState.round.status === "COLLECTING"
+                      ? "Coletando respostas"
+                      : wordCloudState.round.status === "REVEALED"
+                        ? "Respostas reveladas"
+                        : "Rodada encerrada"
+                    : "Criar dinâmica aberta"}
+                </small>
               </div>
-              <div className="inline-actions solid-actions">
-                <button className="button primary" onClick={() => { void toggleBuzzer(true); }} disabled={realtimeBusy}>{buzzerState.status === "OPEN" ? "Nova rodada" : "Abrir Buzzer"}</button>
-                <button className="button danger-outline" onClick={() => { void toggleBuzzer(false); }} disabled={realtimeBusy || buzzerState.status !== "OPEN"}>Fechar</button>
-              </div>
-            </div>
+            </button>
 
-            {buzzerState.presses.length > 0 ? (
-              <div className="buzzer-order-list">
-                {buzzerState.presses.map((press) => (
-                  <div className={press.position === 1 ? "buzzer-order-row winner" : "buzzer-order-row"} key={press.id}>
-                    <b>#{press.position}</b>
-                    <div><strong>{press.nickname || press.name}</strong><small>{press.position === 1 ? "Primeiro clique confirmado pelo servidor" : dateTime(press.receivedAt)}</small></div>
-                    {press.position === 1 && <div className="buzzer-score-actions"><button onClick={() => { void addBuzzerScore(press.studentId, 5); }}>+5</button><button onClick={() => { void addBuzzerScore(press.studentId, 10); }}>+10</button></div>}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={interactionTool === "buzzer"}
+              className={interactionTool === "buzzer" ? "active" : ""}
+              onClick={() => setInteractionTool("buzzer")}
+            >
+              <span>⚡</span>
+              <div>
+                <strong>Buzzer</strong>
+                <small>
+                  {buzzerState.status === "OPEN"
+                    ? "Rodada valendo"
+                    : buzzerState.status === "CLOSED"
+                      ? "Rodada encerrada"
+                      : "Abrir rodada rápida"}
+                </small>
+              </div>
+            </button>
+          </div>
+
+          {interactionTool === "wordcloud" ? (
+            <WordCloudPanel
+              sessionId={currentSession.id}
+              state={wordCloudState}
+              onStateChange={setWordCloudState}
+              notify={notify}
+              joinCode={joinCode}
+              publicBaseUrl={publicBaseUrl}
+              realtimeStatus={realtimeStatus}
+              connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+              presentCount={sessionParticipants.filter((participant) => participant.present).length}
+              showAccessCard={false}
+            />
+          ) : (
+            <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">
+              <div className={`teacher-buzzer-state ${buzzerState.status.toLowerCase()}`}>
+                <div className="teacher-buzzer-head">
+                  <div>
+                    <span className="eyebrow accent">RODADA</span>
+                    <h3>{buzzerState.status === "OPEN" ? "Buzzer aberto" : buzzerState.status === "CLOSED" ? "Rodada encerrada" : "Pronto para abrir"}</h3>
                   </div>
-                ))}
+                  <span className={`buzzer-status-pill ${buzzerState.status.toLowerCase()}`}>
+                    {buzzerState.status === "OPEN" ? "VALENDO" : buzzerState.status === "CLOSED" ? "FECHADO" : "AGUARDANDO"}
+                  </span>
+                </div>
+                <div className="inline-actions solid-actions">
+                  <button className="button primary" onClick={() => { void toggleBuzzer(true); }} disabled={realtimeBusy}>
+                    {buzzerState.status === "OPEN" ? "Nova rodada" : "Abrir Buzzer"}
+                  </button>
+                  <button className="button danger-outline" onClick={() => { void toggleBuzzer(false); }} disabled={realtimeBusy || buzzerState.status !== "OPEN"}>
+                    Fechar
+                  </button>
+                </div>
               </div>
-            ) : <MiniEmpty text={buzzerState.status === "OPEN" ? "Aguardando o primeiro clique dos alunos conectados." : "Abra uma rodada quando quiser usar o Buzzer."} />}
-          </Panel>
+
+              {buzzerState.presses.length > 0 ? (
+                <div className="buzzer-order-list">
+                  {buzzerState.presses.map((press) => (
+                    <div className={press.position === 1 ? "buzzer-order-row winner" : "buzzer-order-row"} key={press.id}>
+                      <b>#{press.position}</b>
+                      <div>
+                        <strong>{press.nickname || press.name}</strong>
+                        <small>{press.position === 1 ? "Primeiro clique confirmado pelo servidor" : dateTime(press.receivedAt)}</small>
+                      </div>
+                      {press.position === 1 && (
+                        <div className="buzzer-score-actions">
+                          <button onClick={() => { void addBuzzerScore(press.studentId, 5); }}>+5</button>
+                          <button onClick={() => { void addBuzzerScore(press.studentId, 10); }}>+10</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <MiniEmpty text={buzzerState.status === "OPEN" ? "Aguardando o primeiro clique dos alunos conectados." : "Abra uma rodada quando quiser usar o Buzzer."} />
+              )}
+            </Panel>
+          )}
         </div>
       )}
 

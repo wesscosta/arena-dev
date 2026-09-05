@@ -184,6 +184,28 @@ fricção para o professor.
 - [ ] mover estado técnico de persistência/backend para Configurações;
 - [ ] manter fluxo principal `Visão geral → Turma → Arena`.
 
+#### 12.3D.4 — Shell sem sidebar
+
+- [ ] remover definitivamente a sidebar do shell;
+- [ ] transformar a marca `ARENA DEV` no retorno global para `Visão geral`;
+- [ ] mover perfil/configurações para o canto superior direito;
+- [ ] mostrar contexto por breadcrumb no cabeçalho;
+- [ ] manter seletor de turma apenas em `Turma` e `Arena`;
+- [ ] permitir retorno rápido à sessão ativa pelo cabeçalho;
+- [ ] ampliar a largura útil das páginas e da Arena.
+
+#### 12.3D.5 — Consolidação das Interações
+
+- [ ] remover as abas independentes `Nuvem` e `Ao vivo`;
+- [ ] criar a aba `Interações`;
+- [ ] disponibilizar `Nuvem de Palavras` e `Buzzer` como modos da mesma área;
+- [ ] não exibir opções ainda não implementadas como controles desabilitados;
+- [ ] mover URL, código e QR para `Acesso dos alunos`, ação global da sessão;
+- [ ] retirar o acesso duplicado de dentro da Nuvem;
+- [ ] preservar o mesmo join code para todas as dinâmicas;
+- [ ] manter `Condução` como fluxo planejado e `Interações` como ações ad hoc;
+- [ ] preparar inclusão futura de Votação sem criar nova aba principal.
+
 ### 12.4 — Roteiro ao Vivo
 
 A abstração de sequência passa a ser justificada por quatro blocos concretos:

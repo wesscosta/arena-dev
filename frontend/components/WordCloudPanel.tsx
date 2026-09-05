@@ -22,6 +22,7 @@ type Props = {
   realtimeStatus: "offline" | "connecting" | "online";
   connectedCount: number;
   presentCount: number;
+  showAccessCard?: boolean;
 };
 
 function statusLabel(status: string) {
@@ -40,6 +41,7 @@ export default function WordCloudPanel({
   realtimeStatus,
   connectedCount,
   presentCount,
+  showAccessCard = true,
 }: Props) {
   const [prompt, setPrompt] = useState("");
   const [liveReveal, setLiveReveal] = useState(false);
@@ -132,7 +134,7 @@ export default function WordCloudPanel({
     }
   }
 
-  const accessCard = (
+  const accessCard = showAccessCard ? (
     <SessionAccessCard
       sessionId={sessionId}
       joinCode={joinCode}
@@ -144,7 +146,7 @@ export default function WordCloudPanel({
       title="Participação da Nuvem"
       subtitle="Compartilhe uma única vez. Os alunos usam o mesmo /join durante toda a aula."
     />
-  );
+  ) : null;
 
   if (showForm) {
     return (
