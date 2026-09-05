@@ -48,6 +48,33 @@ export interface ActivityResource {
   url?: string;
 }
 
+export type ActivityStepType = "SLIDE" | "QUESTION" | "WORD_CLOUD" | "POLL";
+
+export interface PollOption {
+  id: string;
+  text: string;
+}
+
+export interface ActivityStep {
+  id?: string;
+  position: number;
+  type: ActivityStepType;
+  title?: string;
+  instructions?: string;
+  questionId?: string;
+  slideContent?: string;
+  wordCloud?: {
+    prompt: string;
+    maxWordsPerParticipant: number;
+    liveReveal: boolean;
+  };
+  poll?: {
+    prompt: string;
+    options: PollOption[];
+    liveResults: boolean;
+  };
+}
+
 export interface QuestionPackage {
   version: "1.0";
   activity?: {

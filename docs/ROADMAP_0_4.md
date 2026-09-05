@@ -184,12 +184,63 @@ fricção para o professor.
 - [ ] mover estado técnico de persistência/backend para Configurações;
 - [ ] manter fluxo principal `Visão geral → Turma → Arena`.
 
-### 12.4 — SessionEvent
+### 12.4 — Roteiro ao Vivo
 
-Generalizar a linha do tempo da aula somente após Timer, Projetor e Nuvem
-produzirem eventos concretos.
+A abstração de sequência passa a ser justificada por quatro blocos concretos:
+`SLIDE`, `QUESTION`, `WORD_CLOUD` e `POLL`.
 
-### 12.5 — Hardening
+#### 12.4A — Fundação persistente
+
+- [x] `ActivityStep` como template ordenado vinculado à `Activity`;
+- [x] tipos `SLIDE`, `QUESTION`, `WORD_CLOUD` e `POLL`;
+- [x] migration `V10__activity_steps.sql`;
+- [x] API administrativa `GET/PUT /api/activities/{id}/steps`;
+- [x] cópia de atividade preservando roteiro e remapeando questões;
+- [x] nenhum estado de sessão/runtime dentro de `activity_steps`.
+
+#### 12.4B — Editor de autoria
+
+- [ ] terceira aba `Roteiro` dentro do editor de Atividades;
+- [ ] adicionar, remover e reordenar blocos;
+- [ ] editar configuração de Slide, Questão, Nuvem e Votação;
+- [ ] salvar roteiro somente no backend;
+- [ ] persistir atividade/questões antes de referências `QUESTION`;
+- [ ] restaurar roteiro ao reabrir a atividade.
+
+#### 12.4C — Runtime do step atual
+
+- [ ] estado autoritativo do step atual vinculado à `ClassSession`;
+- [ ] ativar uma Activity como roteiro da sessão;
+- [ ] `Anterior` / `Próximo` controlados pelo professor;
+- [ ] não avançar automaticamente.
+
+#### 12.4D — Votação em runtime
+
+- [ ] `PollRound` e `PollVote`;
+- [ ] voto autenticado;
+- [ ] resultado oculto ou ao vivo;
+- [ ] projeção agregada sem identidade.
+
+#### 12.4E — Orquestração
+
+- [ ] `WORD_CLOUD` cria `WordCloudRound` ao ser ativado;
+- [ ] `QUESTION` reutiliza o domínio existente;
+- [ ] `SLIDE` é conteúdo/projeção;
+- [ ] Timer continua transversal.
+
+#### 12.4F — `/join` + Projetor
+
+- [ ] contrato `LIVE_STEP_STATE`;
+- [ ] `/join` renderiza a interação atual;
+- [ ] Projetor renderiza o conteúdo atual;
+- [ ] reconexão restaura o step autoritativo.
+
+### 12.5 — SessionEvent
+
+Generalizar a linha do tempo histórica somente depois de Timer, Nuvem,
+Votação e Roteiro ao Vivo produzirem eventos concretos.
+
+### 12.6 — Hardening
 
 - testes backend/frontend;
 - E2E;

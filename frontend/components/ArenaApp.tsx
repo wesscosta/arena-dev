@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import TeacherLogin from "@/components/TeacherLogin";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
+import ActivityStepEditor from "@/components/ActivityStepEditor";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
 import WordCloudPanel from "@/components/WordCloudPanel";
@@ -12,6 +13,8 @@ import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi } from "@/lib/classroom-api";
 import { createSession as createSessionApi, fetchSessionDomain, fetchSessionParticipants, finishSession as finishSessionApi, releaseParticipantDevice, setParticipantPresence } from "@/lib/session-api";
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, fetchActivityDomain, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
+import { fetchActivitySteps, replaceActivitySteps } from "@/lib/activity-step-api";
+import { validateActivitySteps } from "@/lib/activity-steps";
 import { damageBoss as damageBossApi, drawStudent as drawStudentApi, mergeSessionMechanics, nextArenaQuestion as nextArenaQuestionApi, organizeGroups as organizeGroupsApi, restartArenaQuestions as restartArenaQuestionsApi, setArenaActivity as setArenaActivityApi, startBoss as startBossApi } from "@/lib/mechanics-api";
 import { createScoreEvent as createScoreEventApi, createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
 import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
@@ -26,7 +29,7 @@ import {
   rememberClassroomAccess,
   type ClassroomSortMode,
 } from "@/lib/classroom-overview";
-import type { Activity, ActivityQuestion, ArenaData, Classroom, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
+import type { Activity, ActivityQuestion, ActivityStep, ArenaData, Classroom, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 import { classroomArenaCtaState } from "@/lib/classroom-arena-cta";
 
 type View = "dashboard" | "classroom" | "arena" | "settings";
@@ -1883,7 +1886,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   notify: (message: string) => void;
 }) {
   type ActivityModal = "editor" | "delivery" | "import" | "external-results" | null;
-  type EditorTab = "general" | "questions";
+  type EditorTab = "general" | "questions" | "flow";
 
   const [modal, setModal] = useState<ActivityModal>(null);
   const [editorTab, setEditorTab] = useState<EditorTab>("general");
@@ -1896,6 +1899,10 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   const [platform, setPlatform] = useState("");
   const [resourceUrl, setResourceUrl] = useState("");
   const [questions, setQuestions] = useState<ActivityQuestion[]>([]);
+  const [activitySteps, setActivitySteps] = useState<ActivityStep[]>([]);
+  const [stepsActivityId, setStepsActivityId] = useState<string | undefined>();
+  const [stepsLoading, setStepsLoading] = useState(false);
+  const [stepsDirty, setStepsDirty] = useState(false);
   const [deliveryActivityId, setDeliveryActivityId] = useState<string | undefined>();
   const [externalResultActivityId, setExternalResultActivityId] = useState<string | undefined>();
   const [delivered, setDelivered] = useState<string[]>([]);
@@ -1942,6 +1949,10 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
     setPlatform("");
     setResourceUrl("");
     setQuestions([]);
+    setActivitySteps([]);
+    setStepsActivityId(undefined);
+    setStepsLoading(false);
+    setStepsDirty(false);
     setEditorTab("general");
   }
 
@@ -1960,6 +1971,10 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
     setPlatform(activity.resource?.platform ?? "");
     setResourceUrl(activity.resource?.url ?? "");
     setQuestions(activity.questions ?? []);
+    setActivitySteps([]);
+    setStepsActivityId(undefined);
+    setStepsLoading(false);
+    setStepsDirty(false);
     setEditorTab(tab);
     setModal("editor");
   }
@@ -1980,8 +1995,8 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
     return true;
   }
 
-  async function saveActivity(closeAfter = true) {
-    if (!validateDraft() || activityBusy) return;
+  async function saveActivity(closeAfter = true): Promise<Activity | undefined> {
+    if (!validateDraft() || activityBusy) return undefined;
     setActivityBusy(true);
     try {
       const existing = activityId ? data.activities.find((activity) => activity.id === activityId) : undefined;
@@ -1998,6 +2013,58 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
       setQuestions(saved.questions ?? []);
       notify(existing ? "Atividade atualizada no PostgreSQL." : "Atividade criada no PostgreSQL.");
       if (closeAfter) setModal(null);
+      return saved;
+    } catch (error) {
+      notify(errorMessage(error));
+      return undefined;
+    } finally {
+      setActivityBusy(false);
+    }
+  }
+
+  async function loadFlow(activityIdToLoad: string) {
+    setStepsLoading(true);
+    try {
+      const steps = await fetchActivitySteps(activityIdToLoad);
+      setActivitySteps(steps);
+      setStepsActivityId(activityIdToLoad);
+      setStepsDirty(false);
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setStepsLoading(false);
+    }
+  }
+
+  async function openFlowTab() {
+    if (activityBusy || stepsLoading) return;
+
+    const saved = await saveActivity(false);
+    if (!saved) return;
+
+    if (stepsActivityId !== saved.id) {
+      await loadFlow(saved.id);
+    }
+
+    setEditorTab("flow");
+  }
+
+  async function saveFlow() {
+    if (!activityId || activityBusy || stepsLoading) return;
+
+    const errors = validateActivitySteps(activitySteps, questions);
+    if (errors.length) {
+      notify(errors[0]);
+      return;
+    }
+
+    setActivityBusy(true);
+    try {
+      const saved = await replaceActivitySteps(activityId, activitySteps);
+      setActivitySteps(saved);
+      setStepsActivityId(activityId);
+      setStepsDirty(false);
+      notify("Roteiro ao Vivo salvo no PostgreSQL.");
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -2157,6 +2224,14 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
         <div className="modal-tabs">
           <button className={editorTab === "general" ? "active" : ""} onClick={() => setEditorTab("general")}>Geral e XP</button>
           <button className={editorTab === "questions" ? "active" : ""} onClick={() => setEditorTab("questions")}>Questões <span>{questions.length}</span></button>
+          <button
+            className={editorTab === "flow" ? "active" : ""}
+            disabled={activityBusy || stepsLoading}
+            onClick={() => { void openFlowTab(); }}
+          >
+            Roteiro
+            {stepsActivityId === activityId && <span>{activitySteps.length}</span>}
+          </button>
         </div>
         {editorTab === "general" ? (
           <div className="modal-section-stack">
@@ -2173,10 +2248,43 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
             </div>
             <div className="activity-summary-line"><span>{questions.length} questão(ões) vinculadas</span><button className="text-button" onClick={() => setEditorTab("questions")}>Gerenciar questões →</button></div>
           </div>
-        ) : (
+        ) : editorTab === "questions" ? (
           <ActivityQuestionBuilder questions={questions} setQuestions={setQuestions} defaultTheme={topic || title} notify={notify} />
+        ) : stepsLoading ? (
+          <div className="loading-screen compact">Carregando roteiro...</div>
+        ) : (
+          <ActivityStepEditor
+            steps={activitySteps}
+            questions={questions}
+            disabled={activityBusy}
+            onChange={(steps) => {
+              setActivitySteps(steps);
+              setStepsDirty(true);
+            }}
+          />
         )}
-        <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!title.trim() || activityBusy} onClick={() => { void saveActivity(true); }}>Salvar atividade</button></div>
+        <div className="modal-footer">
+          <button className="button ghost" onClick={() => setModal(null)}>
+            {editorTab === "flow" && stepsDirty ? "Fechar sem salvar" : "Cancelar"}
+          </button>
+          {editorTab === "flow" ? (
+            <button
+              className="button primary"
+              disabled={!activityId || activityBusy || stepsLoading || !stepsDirty}
+              onClick={() => { void saveFlow(); }}
+            >
+              {activityBusy ? "Salvando..." : stepsDirty ? "Salvar roteiro" : "Roteiro salvo"}
+            </button>
+          ) : (
+            <button
+              className="button primary"
+              disabled={!title.trim() || activityBusy}
+              onClick={() => { void saveActivity(true); }}
+            >
+              Salvar atividade
+            </button>
+          )}
+        </div>
       </Modal>
 
       <Modal open={modal === "delivery"} title="Registrar entrega / participação" subtitle={deliveryActivity?.title} size="medium" onClose={() => setModal(null)}>
@@ -2212,7 +2320,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
               <label className="field-label">Atividade</label>
               <select className="select full" value={sourceActivityId} onChange={(e) => setSourceActivityId(e.target.value)}><option value="">Selecione</option>{sourceActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title} · {activity.questions?.length ?? 0} questões</option>)}</select>
             </div>
-            <div className="copy-policy"><strong>Será criada uma cópia independente.</strong><p>Conteúdo, questões, XP e recurso externo são copiados. Entregas, alunos, resultados, ScoreEvents e histórico não são copiados.</p></div>
+            <div className="copy-policy"><strong>Será criada uma cópia independente.</strong><p>Conteúdo, questões, roteiro, XP e recurso externo são copiados. Entregas, alunos, resultados, ScoreEvents e histórico não são copiados.</p></div>
             <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!sourceActivityId || activityBusy} onClick={() => { void importActivityCopy(); }}>Importar cópia</button></div>
           </div>
         ) : <MiniEmpty text="Crie uma segunda turma para reutilizar atividades entre contextos. Em uma evolução futura, modelos também poderão vir de uma biblioteca." />}

@@ -1,0 +1,354 @@
+.editor {
+  display: grid;
+  gap: 18px;
+}
+
+.intro {
+  display: flex;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 18px;
+  border: 1px solid rgba(88, 243, 167, .16);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(88, 243, 167, .07), transparent 58%);
+}
+
+.intro > div:first-child {
+  min-width: 0;
+}
+
+.intro span {
+  display: block;
+  color: var(--accent);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.intro strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 18px;
+  letter-spacing: -.02em;
+}
+
+.intro p {
+  max-width: 690px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.counter {
+  min-width: 82px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(0, 0, 0, .12);
+}
+
+.counter strong {
+  margin: 0;
+  font-size: 25px;
+}
+
+.counter span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.palette {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+}
+
+.palette button {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface-2);
+  color: var(--text);
+  text-align: left;
+}
+
+.palette button:hover:not(:disabled) {
+  border-color: rgba(88, 243, 167, .32);
+  background: rgba(88, 243, 167, .055);
+}
+
+.palette button:disabled {
+  opacity: .46;
+}
+
+.palette button > span {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(88, 243, 167, .08);
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.palette strong,
+.palette small {
+  display: block;
+}
+
+.palette strong {
+  font-size: 10px;
+}
+
+.palette small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.empty {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  padding: 28px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  text-align: center;
+}
+
+.empty > span {
+  color: var(--accent);
+  font-size: 26px;
+}
+
+.empty p {
+  max-width: 520px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.timeline {
+  display: grid;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.rail {
+  display: grid;
+  grid-template-rows: 32px 1fr;
+  justify-items: center;
+}
+
+.rail > span {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(88, 243, 167, .28);
+  border-radius: 9px;
+  background: #10251d;
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.rail > i {
+  width: 1px;
+  min-height: 18px;
+  background: linear-gradient(var(--border), rgba(88, 243, 167, .16));
+}
+
+.card {
+  margin-bottom: 12px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface-2);
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 13px;
+}
+
+.cardHead > div:first-child > strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+}
+
+.type {
+  color: var(--accent);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  gap: 5px;
+}
+
+.actions button,
+.pollOptionsHead button,
+.pollOption button {
+  min-width: 29px;
+  height: 29px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.actions .remove:hover:not(:disabled) {
+  border-color: rgba(255, 95, 105, .3);
+  color: #ff9da3;
+}
+
+.commonFields,
+.configGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+}
+
+.commonFields label,
+.fullField,
+.configGrid label,
+.pollConfig > label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.fullField {
+  margin-top: 11px;
+}
+
+.configGrid,
+.pollConfig {
+  margin-top: 11px;
+}
+
+.spanTwo {
+  grid-column: 1 / -1;
+}
+
+.toggleField {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 9px !important;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.toggleField strong,
+.toggleField small {
+  display: block;
+}
+
+.toggleField strong {
+  color: var(--text);
+  font-size: 9px;
+}
+
+.toggleField small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.pollConfig,
+.pollOptions {
+  display: grid;
+  gap: 8px;
+}
+
+.pollOptionsHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pollOptionsHead strong {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.pollOptionsHead button {
+  width: auto;
+  padding: 0 10px;
+  color: var(--accent);
+  font-size: 8px;
+}
+
+.pollOption {
+  display: grid;
+  grid-template-columns: 28px 1fr 30px;
+  align-items: center;
+  gap: 6px;
+}
+
+.pollOption > span {
+  height: 31px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+@media (max-width: 920px) {
+  .palette {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  .intro {
+    flex-direction: column;
+  }
+
+  .palette,
+  .commonFields,
+  .configGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .spanTwo {
+    grid-column: auto;
+  }
+
+  .step {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+}
