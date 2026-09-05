@@ -33,10 +33,15 @@ fricção para o professor.
 
 #### 12.1B — Realtime
 
-- eventos WebSocket de timer;
-- sincronização professor/projetor;
-- reconexão baseada no estado persistido;
-- alertas intermediários sem criar escrita contínua no banco.
+- `TIMER_STATE` como evento único de projeção do estado autoritativo;
+- broadcast somente após commit das mutações do timer;
+- snapshot inicial enviado ao professor e ao participante após autenticação;
+- reconexão baseada no último estado persistido no PostgreSQL;
+- `occurredAt` do envelope realtime e `endsAt` do timer como âncoras de tempo;
+- countdown e alertas intermediários derivados no cliente, sem evento por segundo;
+- o Modo Projetor reutilizará o mesmo contrato no Incremento 12.2;
+- eventos semânticos (`TIMER_STARTED`, `TIMER_PAUSED` etc.) ficam reservados
+  para a futura linha do tempo `SessionEvent`, evitando duplicar contratos.
 
 ### 12.2 — Modo Projetor / Visão Pública
 

@@ -1,6 +1,7 @@
 package br.com.arenadev;
 
 import br.com.arenadev.classroom.ClassroomService;
+import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.session.SessionService;
 import br.com.arenadev.timer.SessionTimerService;
 import br.com.arenadev.timer.TimerStatus;
@@ -12,12 +13,20 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Testcontainers
 @SpringBootTest
@@ -43,6 +52,9 @@ class SessionTimerIT {
 
     @Autowired
     private SessionTimerService timerService;
+
+    @Autowired
+    private SessionRealtimeGateway realtimeGateway;
 
     @Test
     void runsTheTimerLifecycleWithPauseExtensionResumeAndFinish() {
@@ -132,6 +144,58 @@ class SessionTimerIT {
     }
 
     @Test
+    void broadcastsAuthoritativeStateAfterCommittedTimerMutations() throws Exception {
+        UUID sessionId = createActiveSession();
+        List<String> messages = new ArrayList<>();
+        WebSocketSession socket = recordingSocket(messages);
+        realtimeGateway.register(sessionId, socket);
+
+        try {
+            var timer = timerService.create(sessionId, new SessionTimerService.CreateTimer(
+                    "Pesquisa com tempo",
+                    null,
+                    180
+            ));
+
+            assertThat(messages).hasSize(1);
+            assertThat(messages.getFirst())
+                    .contains("\"type\":\"TIMER_STATE\"")
+                    .contains(timer.id().toString())
+                    .contains("\"status\":\"READY\"");
+
+            messages.clear();
+            timerService.start(sessionId, timer.id());
+
+            assertThat(messages).hasSize(1);
+            assertThat(messages.getFirst())
+                    .contains("\"type\":\"TIMER_STATE\"")
+                    .contains("\"status\":\"RUNNING\"")
+                    .contains("\"endsAt\":");
+        } finally {
+            realtimeGateway.unregister(sessionId, socket);
+        }
+    }
+
+    @Test
+    void exposesTheLatestPersistedTimerAsReconnectSnapshot() {
+        UUID sessionId = createActiveSession();
+        var timer = timerService.create(sessionId, new SessionTimerService.CreateTimer(
+                "Reconexão",
+                "Continuar do estado persistido.",
+                240
+        ));
+        timerService.start(sessionId, timer.id());
+
+        var snapshot = timerService.state(sessionId);
+
+        assertThat(snapshot.timer()).isNotNull();
+        assertThat(snapshot.timer().id()).isEqualTo(timer.id());
+        assertThat(snapshot.timer().status()).isEqualTo(TimerStatus.RUNNING);
+        assertThat(snapshot.timer().endsAt()).isNotNull();
+        assertThat(snapshot.timer().remainingSeconds()).isBetween(239, 240);
+    }
+
+    @Test
     void rejectsInvalidDurationsAndChangesAfterTheSessionIsFinished() {
         UUID sessionId = createActiveSession();
 
@@ -153,6 +217,17 @@ class SessionTimerIT {
         assertThatThrownBy(() -> timerService.start(sessionId, timer.id()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Sessão não está ativa.");
+    }
+
+    private WebSocketSession recordingSocket(List<String> messages) throws Exception {
+        WebSocketSession socket = mock(WebSocketSession.class);
+        when(socket.isOpen()).thenReturn(true);
+        doAnswer(invocation -> {
+            TextMessage message = invocation.getArgument(0);
+            messages.add(message.getPayload());
+            return null;
+        }).when(socket).sendMessage(any(TextMessage.class));
+        return socket;
     }
 
     private UUID createActiveSession() {

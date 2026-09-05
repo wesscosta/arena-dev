@@ -1,5 +1,6 @@
 package br.com.arenadev.timer;
 
+import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.session.ClassSession;
 import br.com.arenadev.session.ClassSessionRepository;
 import br.com.arenadev.session.SessionStatus;
@@ -25,13 +26,16 @@ public class SessionTimerService {
 
     private final SessionTimerRepository timerRepository;
     private final ClassSessionRepository sessionRepository;
+    private final SessionRealtimeGateway realtimeGateway;
 
     public SessionTimerService(
             SessionTimerRepository timerRepository,
-            ClassSessionRepository sessionRepository
+            ClassSessionRepository sessionRepository,
+            SessionRealtimeGateway realtimeGateway
     ) {
         this.timerRepository = timerRepository;
         this.sessionRepository = sessionRepository;
+        this.realtimeGateway = realtimeGateway;
     }
 
     @Transactional
@@ -58,7 +62,9 @@ public class SessionTimerService {
                 normalizeInstructions(command.instructions()),
                 command.durationSeconds()
         ));
-        return TimerView.from(timer, now);
+        TimerView view = TimerView.from(timer, now);
+        broadcastStateAfterCommit(sessionId, view);
+        return view;
     }
 
     @Transactional
@@ -91,7 +97,9 @@ public class SessionTimerService {
         SessionTimer timer = lockTimer(sessionId, timerId);
         timer.refreshExpired(now);
         timer.start(now);
-        return TimerView.from(timer, now);
+        TimerView view = TimerView.from(timer, now);
+        broadcastStateAfterCommit(sessionId, view);
+        return view;
     }
 
     @Transactional
@@ -101,7 +109,9 @@ public class SessionTimerService {
         Instant now = Instant.now();
         SessionTimer timer = lockTimer(sessionId, timerId);
         timer.pause(now);
-        return TimerView.from(timer, now);
+        TimerView view = TimerView.from(timer, now);
+        broadcastStateAfterCommit(sessionId, view);
+        return view;
     }
 
     @Transactional
@@ -112,7 +122,9 @@ public class SessionTimerService {
         SessionTimer timer = lockTimer(sessionId, timerId);
         timer.refreshExpired(now);
         timer.resume(now);
-        return TimerView.from(timer, now);
+        TimerView view = TimerView.from(timer, now);
+        broadcastStateAfterCommit(sessionId, view);
+        return view;
     }
 
     @Transactional
@@ -129,7 +141,9 @@ public class SessionTimerService {
         }
 
         timer.extend(seconds, now);
-        return TimerView.from(timer, now);
+        TimerView view = TimerView.from(timer, now);
+        broadcastStateAfterCommit(sessionId, view);
+        return view;
     }
 
     @Transactional
@@ -139,7 +153,9 @@ public class SessionTimerService {
         Instant now = Instant.now();
         SessionTimer timer = lockTimer(sessionId, timerId);
         timer.finish(now);
-        return TimerView.from(timer, now);
+        TimerView view = TimerView.from(timer, now);
+        broadcastStateAfterCommit(sessionId, view);
+        return view;
     }
 
     @Transactional
@@ -149,14 +165,47 @@ public class SessionTimerService {
         Instant now = Instant.now();
         SessionTimer timer = lockTimer(sessionId, timerId);
         timer.cancel(now);
-        return TimerView.from(timer, now);
+        TimerView view = TimerView.from(timer, now);
+        broadcastStateAfterCommit(sessionId, view);
+        return view;
+    }
+
+    @Transactional
+    public TimerStateView state(UUID sessionId) {
+        getSession(sessionId);
+        Instant now = Instant.now();
+
+        return timerRepository.findFirstBySessionIdOrderByCreatedAtDesc(sessionId)
+                .map(timer -> {
+                    timer.refreshExpired(now);
+                    return TimerStateView.from(timer, now);
+                })
+                .orElseGet(TimerStateView::empty);
     }
 
     @Transactional
     public void cancelOpenForFinishedSession(UUID sessionId) {
         Instant now = Instant.now();
-        timerRepository.findOpenBySessionIdForUpdate(sessionId, OPEN_STATUSES)
-                .forEach(timer -> timer.cancel(now));
+        List<SessionTimer> openTimers = timerRepository.findOpenBySessionIdForUpdate(
+                sessionId,
+                OPEN_STATUSES
+        );
+        openTimers.forEach(timer -> timer.cancel(now));
+
+        if (!openTimers.isEmpty()) {
+            broadcastStateAfterCommit(
+                    sessionId,
+                    TimerView.from(openTimers.getFirst(), now)
+            );
+        }
+    }
+
+    private void broadcastStateAfterCommit(UUID sessionId, TimerView timer) {
+        realtimeGateway.broadcastAfterCommit(
+                sessionId,
+                "TIMER_STATE",
+                new TimerStateView(timer)
+        );
     }
 
     private SessionTimer lockTimer(UUID sessionId, UUID timerId) {
@@ -242,6 +291,16 @@ public class SessionTimerService {
             String instructions,
             int durationSeconds
     ) {
+    }
+
+    public record TimerStateView(TimerView timer) {
+        static TimerStateView empty() {
+            return new TimerStateView(null);
+        }
+
+        static TimerStateView from(SessionTimer timer, Instant now) {
+            return new TimerStateView(TimerView.from(timer, now));
+        }
     }
 
     public record TimerView(

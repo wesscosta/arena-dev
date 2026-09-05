@@ -38,3 +38,9 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.swp
+
+# Eclipse / Spring Tool Suite
+.classpath
+.project
+.settings/
+.factorypath

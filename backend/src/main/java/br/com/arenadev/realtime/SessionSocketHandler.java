@@ -2,6 +2,7 @@ package br.com.arenadev.realtime;
 
 import br.com.arenadev.session.SessionJoinService;
 import br.com.arenadev.session.SessionParticipant;
+import br.com.arenadev.timer.SessionTimerService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -26,12 +27,19 @@ public class SessionSocketHandler extends TextWebSocketHandler {
     private final SessionRealtimeGateway gateway;
     private final SessionJoinService joinService;
     private final BuzzerService buzzerService;
+    private final SessionTimerService timerService;
     private final JsonMapper json = JsonMapper.builder().build();
 
-    public SessionSocketHandler(SessionRealtimeGateway gateway, SessionJoinService joinService, BuzzerService buzzerService) {
+    public SessionSocketHandler(
+            SessionRealtimeGateway gateway,
+            SessionJoinService joinService,
+            BuzzerService buzzerService,
+            SessionTimerService timerService
+    ) {
         this.gateway = gateway;
         this.joinService = joinService;
         this.buzzerService = buzzerService;
+        this.timerService = timerService;
     }
 
     @Override
@@ -42,7 +50,7 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         // O professor chega autenticado pela sessão HTTP; o aluno autentica no primeiro frame.
         if (socket.getPrincipal() != null) {
             gateway.register(sessionId, socket);
-            gateway.send(socket, "BUZZER_STATE", sessionId, buzzerService.state(sessionId));
+            sendSessionState(socket, sessionId);
         } else {
             gateway.send(socket, "AUTH_REQUIRED", sessionId, Map.of("message", "Autentique o participante neste canal."));
         }
@@ -89,7 +97,12 @@ public class SessionSocketHandler extends TextWebSocketHandler {
                 : SessionJoinService.ParticipantConnectionView.from(participant);
         gateway.broadcast(sessionId, "PARTICIPANT_CONNECTED", view);
         gateway.send(socket, "AUTH_OK", sessionId, view);
+        sendSessionState(socket, sessionId);
+    }
+
+    private void sendSessionState(WebSocketSession socket, UUID sessionId) {
         gateway.send(socket, "BUZZER_STATE", sessionId, buzzerService.state(sessionId));
+        gateway.send(socket, "TIMER_STATE", sessionId, timerService.state(sessionId));
     }
 
     @Override

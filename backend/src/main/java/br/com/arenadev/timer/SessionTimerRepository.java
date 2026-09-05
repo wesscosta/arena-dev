@@ -14,6 +14,8 @@ import java.util.UUID;
 public interface SessionTimerRepository extends JpaRepository<SessionTimer, UUID> {
     List<SessionTimer> findBySessionIdOrderByCreatedAtDesc(UUID sessionId);
 
+    Optional<SessionTimer> findFirstBySessionIdOrderByCreatedAtDesc(UUID sessionId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select timer
