@@ -80,12 +80,35 @@ fricção para o professor.
 
 ### 12.3 — Nuvem de Palavras
 
+#### 12.3A — Fundação persistente e realtime
+
 - rodada vinculada à sessão;
-- respostas via `/join`;
+- migrations `V8` e correção de tipo em `V9`;
 - armazenamento das submissões;
-- normalização e frequência como projeção;
-- modo ao vivo e modo coletar → revelar;
-- projeção em tempo real.
+- normalização e frequência no backend;
+- limite de 1 a 5 respostas por participante;
+- `WORD_CLOUD_STATE` como projeção pública segura;
+- `WORD_CLOUD_PARTICIPANT_STATE` como estado privado do aluno;
+- submissão autenticada por `WORD_CLOUD_SUBMIT`;
+- modo ao vivo e modo coletar → revelar.
+
+#### 12.3B — Professor e participação via `/join`
+
+- aba `Nuvem` dentro da Arena com sessão ativa;
+- criação da pergunta, limite por participante e modo de revelação;
+- acompanhamento de participantes e respostas em tempo real;
+- revelar e encerrar a rodada pelo painel do professor;
+- nova rodada após encerramento;
+- formulário de participação integrado ao `/join`;
+- restauração do estado privado do participante pelo backend;
+- respostas enviadas pelo WebSocket já autenticado da sessão.
+
+#### 12.3C — Projeção visual
+
+- renderização dedicada da nuvem no Modo Projetor;
+- escala visual por frequência;
+- transição entre coleta, revelação e encerramento;
+- refinamento visual para projeção em sala.
 
 ### 12.4 — SessionEvent
 

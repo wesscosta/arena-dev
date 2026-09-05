@@ -11,6 +11,13 @@ import {
   type StudentJoinAccess,
 } from "@/lib/realtime-api";
 import { normalizeJoinCode, restoreStudentAccess, studentAccessStorageKey } from "@/lib/app-state";
+import {
+  emptyWordCloudParticipantState,
+  sendWordCloudSubmission,
+  type WordCloudParticipantState,
+  type WordCloudState,
+} from "@/lib/word-cloud-api";
+import wordStyles from "./word-cloud.module.css";
 
 function messageOf(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a operação.";
@@ -22,6 +29,9 @@ export default function JoinPage() {
   const [identity, setIdentity] = useState("");
   const [access, setAccess] = useState<StudentJoinAccess | null>(null);
   const [buzzer, setBuzzer] = useState<BuzzerState>({ status: "IDLE", presses: [] });
+  const [wordCloud, setWordCloud] = useState<WordCloudState>({ round: null });
+  const [wordCloudParticipant, setWordCloudParticipant] = useState<WordCloudParticipantState>(emptyWordCloudParticipantState());
+  const [wordDraft, setWordDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [socketState, setSocketState] = useState<"offline" | "connecting" | "online">("offline");
@@ -66,6 +76,24 @@ export default function JoinPage() {
     const socket = connectSessionSocket(access.sessionId, (event: SessionRealtimeEvent) => {
       if (!active) return;
       if (event.type === "BUZZER_STATE") setBuzzer(event.payload as BuzzerState);
+      if (event.type === "WORD_CLOUD_STATE") {
+        const state = event.payload as WordCloudState;
+        setWordCloud(state);
+        setWordCloudParticipant((current) => {
+          const round = state.round;
+          if (!round || current.roundId === round.id) return current;
+          return {
+            roundId: round.id,
+            canSubmit: round.status === "COLLECTING",
+            maxWords: round.maxWordsPerParticipant,
+            remainingWords: round.status === "COLLECTING" ? round.maxWordsPerParticipant : 0,
+            submittedWords: [],
+          };
+        });
+      }
+      if (event.type === "WORD_CLOUD_PARTICIPANT_STATE") {
+        setWordCloudParticipant(event.payload as WordCloudParticipantState);
+      }
       if (event.type === "SESSION_FINISHED") {
         setSessionFinished(true);
         setBuzzer({ status: "CLOSED", presses: [] });
@@ -124,6 +152,18 @@ export default function JoinPage() {
     socket.send(JSON.stringify({ type: "BUZZER_PRESS" }));
   }
 
+  function submitWord(event: FormEvent) {
+    event.preventDefault();
+    const socket = socketRef.current;
+    const value = wordDraft.trim();
+    if (!socket || !value || !wordCloud.round || wordCloud.round.status !== "COLLECTING") return;
+    if (!sendWordCloudSubmission(socket, [value])) {
+      setError("A conexão em tempo real ainda não está pronta.");
+      return;
+    }
+    setWordDraft("");
+  }
+
   const myPress = useMemo(
     () => access ? buzzer.presses.find((press) => press.studentId === access.studentId) : undefined,
     [buzzer.presses, access?.studentId],
@@ -159,6 +199,63 @@ export default function JoinPage() {
               <div><span className="student-live-kicker">{access.classroomName}</span><h1>{access.nickname || access.name}</h1><p>{access.sessionTitle}</p></div>
               <span className={`student-connection ${socketState}`}><i />{socketState === "online" ? "Conectado" : socketState === "connecting" ? "Conectando" : "Offline"}</span>
             </div>
+
+            {!sessionFinished && wordCloud.round && (
+              <section className={wordStyles.card}>
+                <div className={wordStyles.heading}>
+                  <div>
+                    <span>NUVEM DE PALAVRAS</span>
+                    <h2>{wordCloud.round.prompt}</h2>
+                  </div>
+                  <strong>{wordCloud.round.status === "COLLECTING" ? "COLETANDO" : wordCloud.round.status === "REVEALED" ? "REVELADA" : "ENCERRADA"}</strong>
+                </div>
+
+                {wordCloud.round.status === "COLLECTING" ? (
+                  <>
+                    <p className={wordStyles.hint}>
+                      Envie uma palavra ou expressão por vez. Você pode participar até {wordCloud.round.maxWordsPerParticipant} vez(es).
+                    </p>
+                    {wordCloudParticipant.roundId === wordCloud.round.id && wordCloudParticipant.submittedWords.length > 0 && (
+                      <div className={wordStyles.sentWords}>
+                        {wordCloudParticipant.submittedWords.map((word) => <span key={word}>{word}</span>)}
+                      </div>
+                    )}
+                    {(wordCloudParticipant.roundId !== wordCloud.round.id || wordCloudParticipant.canSubmit) ? (
+                      <form className={wordStyles.form} onSubmit={submitWord}>
+                        <input
+                          value={wordDraft}
+                          onChange={(event) => setWordDraft(event.target.value)}
+                          maxLength={60}
+                          placeholder="Sua palavra ou expressão"
+                          disabled={socketState !== "online"}
+                        />
+                        <button disabled={!wordDraft.trim() || socketState !== "online"}>Enviar</button>
+                      </form>
+                    ) : (
+                      <div className={wordStyles.done}>Envio concluído. Aguarde o professor revelar ou encerrar a rodada.</div>
+                    )}
+                    <small className={wordStyles.remaining}>
+                      {wordCloudParticipant.roundId === wordCloud.round.id
+                        ? `${wordCloudParticipant.remainingWords} envio(s) restante(s)`
+                        : `${wordCloud.round.maxWordsPerParticipant} envio(s) disponível(is)`}
+                    </small>
+                  </>
+                ) : (
+                  <>
+                    <p className={wordStyles.hint}>
+                      {wordCloud.round.status === "REVEALED" ? "As respostas da turma foram reveladas." : "Esta rodada foi encerrada."}
+                    </p>
+                    {wordCloud.round.terms.length > 0 && (
+                      <div className={wordStyles.terms}>
+                        {wordCloud.round.terms.slice(0, 12).map((term) => (
+                          <span key={term.normalizedText}>{term.text}<b>×{term.count}</b></span>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </section>
+            )}
 
             {sessionFinished ? (
               <div className="student-buzzer-state finished"><strong>Sessão encerrada</strong><p>O professor encerrou esta aula.</p></div>

@@ -5,6 +5,7 @@ import TeacherLogin from "@/components/TeacherLogin";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
+import WordCloudPanel from "@/components/WordCloudPanel";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi } from "@/lib/classroom-api";
@@ -15,6 +16,7 @@ import { createScoreEvent as createScoreEventApi, createScoreEvents as createSco
 import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
 import type { TimerState } from "@/lib/timer-api";
+import { fetchWordCloudState, type WordCloudState } from "@/lib/word-cloud-api";
 import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
 import { activeSessionId, selectPreferredClassroomId } from "@/lib/app-state";
 import type { Activity, ActivityQuestion, ArenaData, Classroom, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
@@ -959,7 +961,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   notify: (message: string) => void;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
-  const [arenaTab, setArenaTab] = useState<"live" | "timer" | "realtime" | "presence" | "groups" | "boss">("live");
+  const [arenaTab, setArenaTab] = useState<"live" | "timer" | "wordcloud" | "realtime" | "presence" | "groups" | "boss">("live");
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
   const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
@@ -975,6 +977,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [joinCode, setJoinCode] = useState<JoinCode | null>(null);
   const [buzzerState, setBuzzerState] = useState<BuzzerState>({ status: "IDLE", presses: [] });
   const [timerState, setTimerState] = useState<TimerState>({ timer: null });
+  const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
   const [realtimeStatus, setRealtimeStatus] = useState<"offline" | "connecting" | "online">("offline");
   const [realtimeVersion, setRealtimeVersion] = useState(0);
   const [publicBaseUrl, setPublicBaseUrl] = useState("");
@@ -1013,6 +1016,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       setJoinCode(null);
       setBuzzerState({ status: "IDLE", presses: [] });
       setTimerState({ timer: null });
+      setWordCloudState({ round: null });
       setRealtimeStatus("offline");
       return;
     }
@@ -1021,11 +1025,16 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     let reconnectTimer: number | undefined;
     setRealtimeStatus("connecting");
 
-    void Promise.all([fetchJoinCode(currentSession.id), fetchBuzzerState(currentSession.id)])
-      .then(([code, buzzer]) => {
+    void Promise.all([
+      fetchJoinCode(currentSession.id),
+      fetchBuzzerState(currentSession.id),
+      fetchWordCloudState(currentSession.id),
+    ])
+      .then(([code, buzzer, wordCloud]) => {
         if (!active) return;
         setJoinCode(code);
         setBuzzerState(buzzer);
+        setWordCloudState(wordCloud);
         if (buzzer.presses[0]) setSelectedId(buzzer.presses[0].studentId);
       })
       .catch((error) => { if (active) notify(errorMessage(error)); });
@@ -1043,6 +1052,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           serverOccurredAt: event.occurredAt,
           receivedAtMs: Date.now(),
         });
+      }
+      if (event.type === "WORD_CLOUD_STATE") {
+        setWordCloudState(event.payload as WordCloudState);
       }
       if (event.type === "PARTICIPANT_CONNECTED" || event.type === "PARTICIPANT_DISCONNECTED") {
         void refreshRealtimeParticipants(currentSession.id);
@@ -1482,6 +1494,10 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           <span>Tempo</span>
           <small>{timerState.timer ? timerState.timer.title : "Controle de tempo"}</small>
         </button>
+        <button type="button" role="tab" aria-selected={arenaTab === "wordcloud"} className={arenaTab === "wordcloud" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("wordcloud")}>
+          <span>Nuvem</span>
+          <small>{wordCloudState.round ? (wordCloudState.round.status === "COLLECTING" ? "Coletando respostas" : wordCloudState.round.status === "REVEALED" ? "Respostas reveladas" : "Rodada encerrada") : "Nuvem de Palavras"}</small>
+        </button>
         <button type="button" role="tab" aria-selected={arenaTab === "realtime"} className={arenaTab === "realtime" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("realtime")}>
           <span>Ao vivo</span>
           <small>{joinCode ? `${joinCode.code} · ${buzzerState.status === "OPEN" ? "Buzzer aberto" : "QR + Buzzer"}` : "QR + Buzzer"}</small>
@@ -1584,6 +1600,15 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           sessionId={currentSession.id}
           state={timerState}
           onStateChange={setTimerState}
+          notify={notify}
+        />
+      )}
+
+      {arenaTab === "wordcloud" && (
+        <WordCloudPanel
+          sessionId={currentSession.id}
+          state={wordCloudState}
+          onStateChange={setWordCloudState}
           notify={notify}
         />
       )}
