@@ -4,7 +4,7 @@
 
 The project started as a simple Java desktop application for student management and is now being reengineered into a modern full-stack platform using **Java, Spring Boot, Next.js, PostgreSQL and Docker**.
 
-> **Status:** Arena Dev `0.3.0` release candidate under active development. Increment 11.4D and the MIT license are integrated. The stable tag remains blocked until CI is green for the exact release commit, a real backup is restored successfully, rollback is rehearsed and the final release gate passes.
+> **Status:** Arena Dev `0.3.0` release candidate under final stabilization. The frontend security baseline is now Next.js `16.3.3`; the local frontend test, typecheck, production build and npm production audit pass. A real PostgreSQL backup/restore has already been validated. The stable tag remains blocked until the patched commit is merged to a clean synchronized `main`, CI is green for that exact SHA, rollback is rehearsed and the final release gate passes.
 
 > **Current persistence:** the operational domains migrated through Increment 10 use Spring Boot + PostgreSQL as their source of truth. `localStorage` is not authoritative for domain data; it stores the selected-classroom preference and, on `/join`, the participant's temporary access needed for reconnection.
 
@@ -334,7 +334,7 @@ Spring Boot
 PostgreSQL
 ```
 
-The current stabilization stage covers the teacher security boundary and realtime hardening implemented in Increments 11.1 and 11.2. Increment 11.3 completed the automated backend and frontend test gate. Increment 11.4 implemented CI, browser E2E, production hardening and release-readiness tooling. The MIT license is present. Publication of `v0.3.0` still depends on a clean synchronized `main`, a green remote CI run for the exact release commit, a verified real backup, a rollback rehearsal and the final release gate. See [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for implementation limits and validation evidence.
+The current stabilization stage covers the teacher security boundary and realtime hardening implemented in Increments 11.1 and 11.2. Increment 11.3 completed the automated backend and frontend test gate. Increment 11.4 implemented CI, browser E2E, production hardening and release-readiness tooling. The MIT license is present, a real PostgreSQL backup/restore has been validated, and the final frontend maintenance patch moves Next.js from `16.3.0` to `16.3.3` without broadening the React or TypeScript upgrade scope. Publication of `v0.3.0` now depends on a clean synchronized `main`, green remote CI for the exact patched release commit, a rollback rehearsal and the final release gate. See [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for implementation limits and validation evidence.
 
 ---
 
@@ -623,7 +623,7 @@ docker compose down -v
 * [ ] Dedicated projector/public view
 * [x] Automated test gate — backend 11.3A–11.3C and frontend 11.3D validated
 * [x] CI, browser E2E and production hardening implemented; local gates validated
-* [ ] Publish `v0.3.0` — blocked by exact-SHA CI evidence, real backup verification, rollback rehearsal and final gate
+* [ ] Publish `v0.3.0` — backup/restore validated; blocked by exact-SHA CI for the patched commit, rollback rehearsal and final gate
 * [ ] PWA support
 * [ ] Microsoft Teams integration
 * [ ] Analytics dashboard

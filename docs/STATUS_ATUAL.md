@@ -1,10 +1,10 @@
 # Estado atual — Arena Dev
 
-**Última auditoria documental:** 31 de agosto de 2026
+**Última auditoria documental:** 5 de setembro de 2026
 
 **Repositório canônico:** <https://github.com/wesscosta/arena-dev>
 
-**Baseline de release:** candidata `0.3.0`; a licença MIT foi integrada no commit `dbedac46519fb8be1e03c6c687e35a6b92c4c2c1`, mas o SHA final será registrado somente após esta consolidação documental, `main` limpa/sincronizada e CI remoto verde no mesmo commit.
+**Baseline de release:** candidata `0.3.0`. A baseline `958128db3ad2cee75e4fcebfd6bb0e828e968596` teve CI remoto verde na execução `33407968814` e backup/restore real validado. Um patch final de segurança atualiza o frontend de Next.js `16.3.0` para `16.3.3`; por alterar o SHA, a publicação exige nova CI verde no commit final da `main`, rollback ensaiado e gate final aprovado.
 
 Este documento registra o estado atual demonstrado pelo repositório. Os documentos `INCREMENT_*.md` e os ADRs preservam o histórico de evolução e não devem ser interpretados isoladamente como descrição do runtime atual.
 
@@ -22,7 +22,7 @@ Em caso de divergência:
 
 | Camada | Estado no repositório |
 | --- | --- |
-| Frontend | Next.js 16.3, React 19.2 e TypeScript 5.9 |
+| Frontend | Next.js 16.3.3, React 19.2 e TypeScript 5.9 |
 | Backend | Java 21 e Spring Boot 4.1 |
 | Persistência | PostgreSQL 17, JPA/Hibernate e Flyway |
 | Tempo real | Spring WebSocket |
@@ -96,9 +96,9 @@ Não existe migration `V7` na baseline auditada. O hardening dos Incrementos 11.
 
 | Item | Classificação |
 | --- | --- |
-| Build de produção do frontend | Validado na auditoria de 31/08/2026 |
-| TypeScript | Validado na auditoria de 31/08/2026 |
-| Auditoria npm de produção | Validada; zero vulnerabilidades conhecidas na execução |
+| Build de produção do frontend | Validado novamente em 05/09/2026 após o patch para Next.js `16.3.3` |
+| TypeScript | Validado novamente em 05/09/2026; sem erros |
+| Auditoria npm de produção | Validada após o patch: `npm audit --omit=dev` reportou zero vulnerabilidades |
 | Backend e migrations | Validados na fatia 11.3A: compilação Java 21, empacotamento, Flyway `V1`–`V6`, validação JPA e PostgreSQL 17.11 |
 | Incremento 10 | Implementado; validação manual Docker/LAN registrada no handoff |
 | Incrementos 11.1 e 11.2 | Implementados e cobertos pelas suítes de segurança, regras transacionais e concorrência |
@@ -107,9 +107,9 @@ Não existe migration `V7` na baseline auditada. O hardening dos Incrementos 11.
 | Testcontainers/PostgreSQL | Validado na fatia 11.3A com Testcontainers 2.0.5 e PostgreSQL 17.11 |
 | Concorrência do Buzzer | Validada em cinco cenários, repetidos cinco vezes consecutivas em Java 21/Docker |
 | Playwright | Validado localmente em Chromium com backend e PostgreSQL reais |
-| CI | Implementado; execuções `33388090556` (`4fd6b236...`) e `33402409771` (`dbedac465...`) verdes; o commit final após documentação/correção ainda exige CI própria |
+| CI | Implementado; a baseline `958128db...` foi aprovada na execução `33407968814`. O patch Next.js `16.3.3` exige nova execução verde no SHA final da `main` antes da tag |
 | Hardening 11.4C | Validado localmente: Compose de produção, imagens, healthchecks, runtime não-root, CSRF e auditoria npm |
-| Release readiness 11.4D | Implementado: versões `0.3.0`, gate, checklist, backup/restore e rollback; gate local aprovado em `2026-08-31T12:21:26Z`; correção do `pg_restore --list` preparada; validação final pendente |
+| Release readiness 11.4D | Implementado: versões `0.3.0`, gate, checklist, backup/restore e rollback. Backup real, checksum e restauração isolada em PostgreSQL 17 já foram validados; faltam nova CI do SHA pós-patch, ensaio de rollback e gate final |
 
 ## Fronteira de produto e licenciamento
 
@@ -137,21 +137,23 @@ A decisão completa está em [`adr/ADR-0026-community-mit-e-produto-comercial-ve
 | --- | --- |
 | **Validado** | Gate local 11.4D, backend, frontend, E2E, containers e licença MIT presente |
 | **Implementado** | Incrementos 1–11.4D e baseline operacional de release `0.3.0` |
-| **Parcial** | Publicação `v0.3.0`: falta CI do SHA final, backup/restore real, rollback, ambiente-alvo e gate final |
+| **Parcial** | Publicação `v0.3.0`: patch Next.js `16.3.3` validado localmente; faltam commit/CI do novo SHA final, rollback e gate final |
 | **Documentado** | Divisão Arena Dev Community × produto comercial Verit e sequência de separação dos repositórios |
 | **Planejado** | Produto comercial privado, Estudos/Concursos e módulos SaaS diferenciados |
 | **Hipótese** | Estudos como principal oferta B2C e Arena Community como aquisição/validação; depende de piloto e sinal econômico |
 | **Rejeitado/adiado** | Mesmo backend ou banco para Arena e Estudos, retirada retroativa da licença MIT, `v1.0.0`, microserviços e IA antes do MVP |
-| **Desconhecido** | SHA final e CI correspondente, evidências do ambiente-alvo, nome comercial, limites Free/Pro e instrumento de titularidade do código proprietário |
+| **Desconhecido** | SHA final pós-patch e CI correspondente, evidências do ambiente-alvo, nome comercial, limites Free/Pro e instrumento de titularidade do código proprietário |
 
 ## Próximo gate
 
-O **11.4D — Release Readiness** permanece como gate corrente. A implementação operacional e a licença MIT estão versionadas, mas a release ainda depende de evidências externas:
+O **11.4D — Release Readiness** permanece como gate corrente. O backup/restore real já foi validado e o patch Next.js `16.3.3` passou pelos gates frontend locais. A release ainda depende da consolidação final:
 
-1. registrar o SHA final desta consolidação e confirmar GitHub Actions verde no mesmo commit;
-2. criar um backup real e aprovar `verify-backup.sh`;
-3. simular o rollback e validar TLS, secrets e digests no ambiente-alvo;
-4. executar `release-gate.sh final`;
+1. publicar o patch de segurança e a documentação corrigida em `main`;
+2. registrar o novo SHA final e confirmar GitHub Actions verde exatamente nesse commit;
+3. simular o rollback de aplicação preservando o PostgreSQL;
+4. executar `release-gate.sh final` com a nova execução de CI e o backup validado;
 5. somente então criar a tag anotada `v0.3.0` e a GitHub Release.
+
+TLS, proxy reverso, DNS, secrets de produção, retenção externa de backups, observabilidade e digests de imagens permanecem responsabilidades do ambiente de implantação e devem ser validados antes da exposição pública, mas não bloqueiam a tag do código Community.
 
 Consulte [`INCREMENT_11_4.md`](INCREMENT_11_4.md) para o histórico do incremento e [`RELEASE_0_3_0.md`](RELEASE_0_3_0.md) para o procedimento completo. Nenhuma tag foi criada por esta implementação.

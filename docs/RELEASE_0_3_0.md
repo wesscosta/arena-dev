@@ -20,20 +20,24 @@ A candidata `v0.3.0` congela o MVP web do Arena Dev após:
 
 Não pertencem a esta release autenticação institucional, tela dedicada de projetor, PWA, rate limit distribuído, timer sincronizado ou respostas móveis além do Buzzer.
 
+### Patch final de segurança do frontend
+
+Antes da publicação estável, a candidata recebeu atualização isolada de Next.js `16.3.0` para `16.3.3`. O patch mantém React `19.2.0` e a linha TypeScript `5.9.x`, evitando incorporar o conjunto mais amplo de upgrades proposto pelo Dependabot. Como essa alteração modifica o commit candidato, a evidência de CI da baseline `958128d...` continua histórica, mas não substitui a execução remota exigida para o novo SHA final.
+
 ## Estado dos gates
 
-| Gate | Estado em 31/08/2026 |
+| Gate | Estado em 05/09/2026 |
 | --- | --- |
 | Backend e Flyway `V1–V6` | Validado localmente: 14 testes, zero falhas |
-| Frontend | Validado localmente: 12 testes, TypeScript e build |
-| Playwright | Validado localmente em Chromium |
-| Dependências de produção | Validado localmente: auditoria npm sem vulnerabilidades conhecidas |
+| Frontend | Patch de segurança atualizado para Next.js `16.3.3`; 12 testes aprovados, TypeScript e build de produção concluídos |
+| Playwright | Validado localmente em Chromium na baseline de release; deve ser repetido pelo gate após o patch final |
+| Dependências de produção | `npm audit --omit=dev` concluído após o patch do Next.js com zero vulnerabilidades reportadas |
 | Compose e imagens endurecidas | Validado localmente; serviços saudáveis e usuários não-root |
-| GitHub Actions | Execuções `33388090556` no SHA `4fd6b236...` e `33402409771` no SHA `dbedac465...` aprovadas; o SHA final após documentação/correção ainda exige execução própria |
-| Backup/restore | Dump real e checksum criados em 31/08/2026; correção de compatibilidade do verificador com PostgreSQL 17 incluída nesta consolidação; restauração isolada ainda deve ser reexecutada |
+| GitHub Actions | A baseline `958128db3ad2cee75e4fcebfd6bb0e828e968596` foi aprovada pela execução `33407968814`; como o patch Next.js `16.3.3` altera o SHA, a tag exige uma nova execução verde da `main` no commit final |
+| Backup/restore | Dump real, checksum e restauração isolada em PostgreSQL 17 validados; a evidência permanece válida para o gate final desde que o backup informado seja preservado |
 | Rollback | Procedimento documentado; simulação operacional ainda pendente |
 | Licença | Validada: MIT; arquivo `LICENSE` integrado no commit `dbedac46519fb8be1e03c6c687e35a6b92c4c2c1` |
-| Commit final | Pendente até esta consolidação documental estar na `main`, limpa, sincronizada e aprovada pelo CI |
+| Commit final | Pendente: publicar o patch de segurança/documentação em `main`, obter o novo SHA e validar CI remoto no mesmo commit |
 
 ## Comandos do gate
 
@@ -95,18 +99,20 @@ O modo `final` também exige:
 ## Checklist antes da tag
 
 - [x] versões Maven/npm/lockfile alinhadas em `0.3.0`;
+- [x] patch de segurança do frontend atualizado de Next.js `16.3.0` para `16.3.3`, sem ampliar React ou TypeScript;
+- [x] 12 testes frontend, TypeScript, build de produção e auditoria npm aprovados após o patch;
 - [x] gate local automatizado e evidência reproduzível;
-- [x] backup, verificação e restauração operacionalizados por scripts;
+- [x] backup, checksum, verificação e restauração real em PostgreSQL 17 validados;
 - [x] fronteira de rollback documentada;
 - [x] licença MIT escolhida e arquivo `LICENSE` adicionado;
-- [ ] `main` limpa e sincronizada com `origin/main`;
+- [ ] patch final publicado em `main` limpa e sincronizada com `origin/main`;
 - [ ] commit final registrado;
-- [ ] CI remoto verde no mesmo commit;
-- [ ] backup real criado e restaurado no verificador;
-- [ ] rollback simulado no ambiente-alvo;
-- [ ] proxy TLS e secrets do ambiente-alvo validados;
+- [ ] CI remoto verde no mesmo commit final;
+- [ ] rollback de aplicação simulado preservando o volume PostgreSQL;
 - [ ] gate `final` concluído sem falhas;
-- [ ] tag anotada e notas publicadas.
+- [ ] tag anotada `v0.3.0` e GitHub Release publicadas.
+
+> TLS, proxy reverso, DNS, rotação de secrets, retenção externa de backups, observabilidade e registro de digests são gates do **ambiente de implantação**, não pré-condições para a tag do código Community. Devem ser validados antes de uma exposição pública real.
 
 ## Criação da tag
 
