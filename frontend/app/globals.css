@@ -1,3 +1,7 @@
+@import "../styles/tokens.css";
+@import "../styles/base.css";
+@import "../styles/accessibility.css";
+
 :root {
   --bg: #08100e;
   --surface: #0d1714;
@@ -1445,4 +1449,169 @@ button:disabled { cursor: not-allowed; opacity: .45; }
     order: 3;
   }
   .context-trail-current { font-size: 9px; }
+}
+
+/* Incremento 12.3D.7A — Design System & Accessibility Foundation */
+
+.app-shell-no-sidebar .content {
+  max-width: var(--content-max);
+  padding-inline: var(--content-gutter);
+}
+
+.app-topbar {
+  min-height: 4.5rem;
+  gap: var(--space-5);
+  padding: var(--space-3) var(--content-gutter);
+}
+
+.topbar-brand {
+  min-height: var(--target-comfortable);
+  gap: var(--space-3);
+  border-radius: var(--radius-md);
+}
+
+.topbar-brand-mark {
+  width: var(--control-md);
+  height: var(--control-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-lg);
+}
+
+.topbar-brand > span:last-child strong {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-snug);
+  letter-spacing: 0.08em;
+}
+
+.topbar-brand > span:last-child small {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+}
+
+.context-trail { gap: var(--space-2); }
+
+.context-trail-home,
+.context-trail-current {
+  min-height: var(--target-min);
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-snug);
+}
+
+.context-trail-home {
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.context-trail-current { font-weight: var(--font-semibold); }
+.context-trail-separator { font-size: var(--font-size-md); }
+
+.topbar-profile {
+  min-height: var(--target-comfortable);
+  grid-template-columns: var(--control-md) minmax(0, auto) 1rem;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  border-radius: var(--radius-md);
+}
+
+.topbar-profile-avatar {
+  width: var(--control-md);
+  height: var(--control-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.topbar-profile-copy strong { font-size: var(--font-size-sm); }
+.topbar-profile-copy small { font-size: var(--font-size-xs); }
+
+.topbar-profile-menu {
+  width: 17rem;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-popover);
+}
+
+.topbar-profile-menu > button {
+  min-height: var(--target-comfortable);
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+}
+
+.topbar-profile-menu strong { font-size: var(--font-size-sm); }
+.topbar-profile-menu small { font-size: var(--font-size-xs); }
+
+.button {
+  min-height: var(--control-md);
+  padding-inline: var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-snug);
+  font-weight: var(--font-semibold);
+}
+
+.icon-action {
+  width: var(--target-min);
+  height: var(--target-min);
+  border-radius: var(--radius-sm);
+}
+
+.input,
+.select,
+.textarea {
+  min-height: var(--control-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  line-height: var(--line-normal);
+}
+
+.textarea { min-height: 6rem; }
+
+.arena-tabs {
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-bottom: 1px solid var(--ds-border);
+}
+
+.arena-tab {
+  min-height: 3.5rem;
+  padding: var(--space-2) var(--space-3);
+  border-color: transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: transparent;
+}
+
+.arena-tab:hover { background: rgba(88, 243, 167, 0.04); }
+
+.arena-tab.active {
+  border-color: transparent;
+  border-bottom: 2px solid var(--ds-accent);
+  background: rgba(88, 243, 167, 0.045);
+}
+
+.arena-tab > span {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-snug);
+  font-weight: var(--font-semibold);
+}
+
+.arena-tab > small {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+}
+
+.live-pill,
+.status,
+.selected-context-pill {
+  min-height: 1.75rem;
+  align-items: center;
+  font-size: var(--font-size-xs);
+}
+
+@media (max-width: 720px) {
+  .app-topbar { padding-inline: var(--space-3); }
+  .context-trail-home,
+  .context-trail-current { font-size: var(--font-size-xs); }
+  .arena-tab { min-height: 3.25rem; }
 }

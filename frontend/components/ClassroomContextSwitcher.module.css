@@ -199,3 +199,57 @@
     width: auto;
   }
 }
+
+/* 12.3D.7A — tokens globais */
+.trigger {
+  min-height: var(--target-comfortable);
+  max-width: min(38rem, 52vw);
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
+  border-radius: var(--radius-md);
+}
+
+.monogram {
+  width: var(--control-md);
+  height: var(--control-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.copy strong { font-size: var(--font-size-sm); }
+.copy small { font-size: var(--font-size-xs); }
+
+.popover {
+  width: min(36rem, 78vw);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-popover);
+}
+
+.search {
+  min-height: var(--control-md);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-md);
+}
+
+.search input {
+  min-height: var(--control-md);
+  font-size: var(--font-size-sm);
+}
+
+.list > button {
+  min-height: var(--target-comfortable);
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+}
+
+.itemCopy strong { font-size: var(--font-size-sm); }
+
+.itemCopy small,
+.live,
+.inactive,
+.empty {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-normal);
+}

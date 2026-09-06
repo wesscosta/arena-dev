@@ -342,3 +342,46 @@
     width: 100%;
   }
 }
+
+/* 12.3D.7A — hierarquia do Roteiro ao Vivo */
+.eyebrow { font-size: var(--font-size-xs); }
+
+.header h3 {
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-tight);
+}
+
+.header p { font-size: var(--font-size-sm); }
+
+.timelineItem {
+  min-width: 10.5rem;
+  min-height: var(--target-comfortable);
+}
+
+.timelineItem strong,
+.timelineItem small { font-size: var(--font-size-xs); }
+
+.currentHead > div > span,
+.teacherNote strong,
+.interactionPreview > span { font-size: var(--font-size-xs); }
+
+.currentHead h3 {
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-tight);
+}
+
+.teacherNote p,
+.notice,
+.controls > div span {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-normal);
+}
+
+.meta span,
+.previewMeta span {
+  min-height: 1.875rem;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--space-3);
+  font-size: var(--font-size-xs);
+}

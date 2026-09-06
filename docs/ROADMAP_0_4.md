@@ -217,6 +217,39 @@ fricção para o professor.
 - [ ] permitir Editar, Desativar/Reativar e Excluir;
 - [ ] impedir desativação de turma com sessão ativa.
 
+#### 12.3D.7 — Design System & Accessibility
+
+##### 12.3D.7A — Foundation
+
+- [ ] criar tokens globais;
+- [ ] criar base tipográfica semântica;
+- [ ] criar foundation de acessibilidade;
+- [ ] remover microtipografia funcional do header;
+- [ ] padronizar alvos interativos;
+- [ ] aplicar tokens em Header, seletor de turma, Arena tabs e Roteiro;
+- [ ] documentar Design System e Definition of Done.
+
+##### 12.3D.7B — Core UI Primitives
+
+- [ ] Button / IconButton / Badge;
+- [ ] Tabs / Menu / Breadcrumb;
+- [ ] Field / Card / EmptyState.
+
+##### 12.3D.7C — Accessibility Pass
+
+- [ ] skip link funcional e landmarks;
+- [ ] teclado completo para menus/tabs;
+- [ ] aria-live controlado para realtime;
+- [ ] contraste;
+- [ ] zoom/reflow 200% e 400%.
+
+##### 12.3D.7D — Arena Responsive & Visual Polish
+
+- [ ] reduzir card soup;
+- [ ] transformar Fonte da Arena em toolbar;
+- [ ] refinar Sorteio e Pontuação;
+- [ ] revisar responsividade, Projetor e /join.
+
 ### 12.4 — Roteiro ao Vivo
 
 A abstração de sequência passa a ser justificada por quatro blocos concretos:

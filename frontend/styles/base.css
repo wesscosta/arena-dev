@@ -1,0 +1,79 @@
+/*
+ * Arena Dev Base
+ */
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-md);
+  line-height: var(--line-normal);
+  text-rendering: optimizeLegibility;
+}
+
+button, input, select, textarea { font: inherit; }
+code, pre, kbd, samp { font-family: var(--font-family-mono); }
+
+h1, h2, h3, h4, p { text-wrap: pretty; }
+
+h1 {
+  font-size: var(--font-size-3xl);
+  line-height: var(--line-tight);
+  font-weight: var(--font-bold);
+  letter-spacing: -0.035em;
+}
+
+h2 {
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-tight);
+  font-weight: var(--font-bold);
+  letter-spacing: -0.025em;
+}
+
+h3 {
+  font-size: var(--font-size-xl);
+  line-height: var(--line-snug);
+  font-weight: var(--font-semibold);
+  letter-spacing: -0.015em;
+}
+
+h4 {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-snug);
+  font-weight: var(--font-semibold);
+}
+
+small {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-normal);
+}
+
+.ui-eyebrow {
+  color: var(--ds-accent);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-snug);
+  font-weight: var(--font-extrabold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ui-meta {
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-normal);
+}
+
+.ui-body {
+  color: var(--ds-text-primary);
+  font-size: var(--font-size-md);
+  line-height: var(--line-normal);
+}
+
+.ui-section-title {
+  font-size: var(--font-size-xl);
+  line-height: var(--line-snug);
+  font-weight: var(--font-bold);
+}
