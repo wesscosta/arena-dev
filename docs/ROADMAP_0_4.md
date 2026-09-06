@@ -231,10 +231,15 @@ A abstração de sequência passa a ser justificada por quatro blocos concretos:
 
 #### 12.4C — Runtime do step atual
 
-- [ ] estado autoritativo do step atual vinculado à `ClassSession`;
+- [ ] evoluir `SessionDynamic.ARENA` como fonte autoritativa do step atual;
+- [ ] persistir `currentStepId` e `currentStepPosition` sem nova tabela;
 - [ ] ativar uma Activity como roteiro da sessão;
-- [ ] `Anterior` / `Próximo` controlados pelo professor;
-- [ ] não avançar automaticamente.
+- [ ] `Anterior` / `Próximo` controlados exclusivamente pelo professor;
+- [ ] sincronizar step `QUESTION` com `currentQuestionId` existente;
+- [ ] preservar o fluxo legado para atividades sem `ActivityStep`;
+- [ ] restaurar o step após reload;
+- [ ] não avançar automaticamente por Timer, resposta ou outra dinâmica;
+- [ ] manter WebSocket `LIVE_STEP_STATE` fora deste incremento.
 
 #### 12.4D — Votação em runtime
 

@@ -1,4 +1,11 @@
-import type { BossState, GameSession, SessionRuntimeState } from "./types";
+import type {
+  ActivityStep,
+  ActivityStepType,
+  BossState,
+  GameSession,
+  PollOption,
+  SessionRuntimeState,
+} from "./types";
 import { apiFetch } from "./auth-api";
 
 
@@ -32,6 +39,8 @@ type RuntimeView = {
   activityId: string | null;
   currentQuestionId: string | null;
   answeredQuestionIds: string[];
+  currentStepId: string | null;
+  currentStepPosition: number | null;
   groups: string[][];
   groupSize: number;
 };
@@ -39,6 +48,94 @@ type RuntimeView = {
 type DrawResult = { studentId: string; runtime: RuntimeView };
 type GroupsResult = { groups: string[][]; runtime: RuntimeView };
 type ArenaQuestionResult = { questionId: string | null; completed: boolean; runtime: RuntimeView };
+
+type LiveStepView = {
+  id: string;
+  position: number;
+  type: ActivityStepType;
+  title: string | null;
+  instructions: string | null;
+  questionId: string | null;
+  slideContent: string | null;
+  wordCloud: {
+    prompt: string;
+    maxWordsPerParticipant: number | null;
+    liveReveal: boolean;
+  } | null;
+  poll: {
+    prompt: string;
+    options: PollOption[];
+    liveResults: boolean;
+  } | null;
+};
+
+type LiveFlowView = {
+  sessionId: string;
+  activityId: string | null;
+  activityTitle: string | null;
+  steps: LiveStepView[];
+  currentIndex: number | null;
+  started: boolean;
+  hasPrevious: boolean;
+  hasNext: boolean;
+};
+
+type LiveFlowResultView = {
+  liveFlow: LiveFlowView;
+  runtime: RuntimeView;
+};
+
+export type LiveFlowState = {
+  sessionId: string;
+  activityId?: string;
+  activityTitle?: string;
+  steps: ActivityStep[];
+  currentIndex?: number;
+  started: boolean;
+  hasPrevious: boolean;
+  hasNext: boolean;
+};
+
+export type LiveFlowNavigationResult = {
+  liveFlow: LiveFlowState;
+  runtime: SessionRuntimeState;
+};
+
+function mapLiveFlow(row: LiveFlowView): LiveFlowState {
+  return {
+    sessionId: row.sessionId,
+    activityId: row.activityId ?? undefined,
+    activityTitle: row.activityTitle ?? undefined,
+    steps: (row.steps ?? []).map((step) => ({
+      id: step.id,
+      position: step.position,
+      type: step.type,
+      title: step.title ?? undefined,
+      instructions: step.instructions ?? undefined,
+      questionId: step.questionId ?? undefined,
+      slideContent: step.slideContent ?? undefined,
+      wordCloud: step.wordCloud
+        ? {
+            prompt: step.wordCloud.prompt,
+            maxWordsPerParticipant:
+              step.wordCloud.maxWordsPerParticipant ?? 1,
+            liveReveal: step.wordCloud.liveReveal,
+          }
+        : undefined,
+      poll: step.poll
+        ? {
+            prompt: step.poll.prompt,
+            options: step.poll.options ?? [],
+            liveResults: step.poll.liveResults,
+          }
+        : undefined,
+    })),
+    currentIndex: row.currentIndex ?? undefined,
+    started: row.started,
+    hasPrevious: row.hasPrevious,
+    hasNext: row.hasNext,
+  };
+}
 
 export function mapRuntime(row: RuntimeView): SessionRuntimeState {
   return {
@@ -49,6 +146,8 @@ export function mapRuntime(row: RuntimeView): SessionRuntimeState {
     activityId: row.activityId ?? undefined,
     currentQuestionId: row.currentQuestionId ?? undefined,
     answeredQuestionIds: row.answeredQuestionIds ?? [],
+    currentStepId: row.currentStepId ?? undefined,
+    currentStepPosition: row.currentStepPosition ?? undefined,
     groups: row.groups ?? [],
     groupSize: row.groupSize ?? 2,
   };
@@ -63,6 +162,8 @@ export function mergeSessionMechanics(session: GameSession, runtime: SessionRunt
     activityId: runtime.activityId,
     currentQuestionId: runtime.currentQuestionId,
     answeredQuestionIds: runtime.answeredQuestionIds ?? [],
+    currentStepId: runtime.currentStepId,
+    currentStepPosition: runtime.currentStepPosition,
     groups: runtime.groups ?? [],
     groupSize: runtime.groupSize ?? 2,
   };
@@ -113,4 +214,48 @@ export async function nextArenaQuestion(sessionId: string): Promise<{ questionId
 
 export async function restartArenaQuestions(sessionId: string): Promise<SessionRuntimeState> {
   return mapRuntime(await request<RuntimeView>(`/api/sessions/${sessionId}/mechanics/arena/restart`, { method: "POST" }));
+}
+
+
+export async function fetchLiveFlow(
+  sessionId: string,
+): Promise<LiveFlowState> {
+  return mapLiveFlow(
+    await request<LiveFlowView>(
+      `/api/sessions/${sessionId}/mechanics/arena/flow`,
+    ),
+  );
+}
+
+async function liveFlowCommand(
+  sessionId: string,
+  command: "start" | "next" | "previous",
+): Promise<LiveFlowNavigationResult> {
+  const result = await request<LiveFlowResultView>(
+    `/api/sessions/${sessionId}/mechanics/arena/flow/${command}`,
+    { method: "POST" },
+  );
+
+  return {
+    liveFlow: mapLiveFlow(result.liveFlow),
+    runtime: mapRuntime(result.runtime),
+  };
+}
+
+export function startLiveFlow(
+  sessionId: string,
+): Promise<LiveFlowNavigationResult> {
+  return liveFlowCommand(sessionId, "start");
+}
+
+export function nextLiveFlow(
+  sessionId: string,
+): Promise<LiveFlowNavigationResult> {
+  return liveFlowCommand(sessionId, "next");
+}
+
+export function previousLiveFlow(
+  sessionId: string,
+): Promise<LiveFlowNavigationResult> {
+  return liveFlowCommand(sessionId, "previous");
 }

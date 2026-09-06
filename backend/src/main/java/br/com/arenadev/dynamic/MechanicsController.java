@@ -47,6 +47,26 @@ public class MechanicsController {
         return service.restartArenaQuestions(sessionId);
     }
 
+    @GetMapping("/arena/flow")
+    public MechanicsService.LiveFlowView liveFlow(@PathVariable UUID sessionId) {
+        return service.getLiveFlow(sessionId);
+    }
+
+    @PostMapping("/arena/flow/start")
+    public MechanicsService.LiveFlowResult startFlow(@PathVariable UUID sessionId) {
+        return service.startLiveFlow(sessionId);
+    }
+
+    @PostMapping("/arena/flow/next")
+    public MechanicsService.LiveFlowResult nextFlow(@PathVariable UUID sessionId) {
+        return service.nextLiveFlow(sessionId);
+    }
+
+    @PostMapping("/arena/flow/previous")
+    public MechanicsService.LiveFlowResult previousFlow(@PathVariable UUID sessionId) {
+        return service.previousLiveFlow(sessionId);
+    }
+
     public record GroupsInput(int groupSize) {}
     public record BossInput(String name, int maxHp) {}
     public record DamageInput(int amount) {}

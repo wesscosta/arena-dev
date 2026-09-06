@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import TeacherLogin from "@/components/TeacherLogin";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import ActivityStepEditor from "@/components/ActivityStepEditor";
+import LiveFlowConductor from "@/components/LiveFlowConductor";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
 import WordCloudPanel from "@/components/WordCloudPanel";
@@ -15,7 +16,21 @@ import { createSession as createSessionApi, fetchSessionDomain, fetchSessionPart
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, fetchActivityDomain, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
 import { fetchActivitySteps, replaceActivitySteps } from "@/lib/activity-step-api";
 import { validateActivitySteps } from "@/lib/activity-steps";
-import { damageBoss as damageBossApi, drawStudent as drawStudentApi, mergeSessionMechanics, nextArenaQuestion as nextArenaQuestionApi, organizeGroups as organizeGroupsApi, restartArenaQuestions as restartArenaQuestionsApi, setArenaActivity as setArenaActivityApi, startBoss as startBossApi } from "@/lib/mechanics-api";
+import {
+  damageBoss as damageBossApi,
+  drawStudent as drawStudentApi,
+  fetchLiveFlow,
+  mergeSessionMechanics,
+  nextArenaQuestion as nextArenaQuestionApi,
+  nextLiveFlow,
+  organizeGroups as organizeGroupsApi,
+  previousLiveFlow,
+  restartArenaQuestions as restartArenaQuestionsApi,
+  setArenaActivity as setArenaActivityApi,
+  startBoss as startBossApi,
+  startLiveFlow,
+  type LiveFlowState,
+} from "@/lib/mechanics-api";
 import { createScoreEvent as createScoreEventApi, createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
 import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
@@ -1171,8 +1186,10 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [realtimeVersion, setRealtimeVersion] = useState(0);
   const [publicBaseUrl, setPublicBaseUrl] = useState("");
   const [realtimeBusy, setRealtimeBusy] = useState(false);
+  const [liveFlowState, setLiveFlowState] = useState<LiveFlowState | null>(null);
+  const [liveFlowBusy, setLiveFlowBusy] = useState(false);
   const classActivities = useMemo(
-    () => data.activities.filter((activity) => activity.classroomId === classroomId && (activity.questions?.length ?? 0) > 0),
+    () => data.activities.filter((activity) => activity.classroomId === classroomId),
     [data.activities, classroomId],
   );
   const [activityId, setActivityId] = useState<string>(currentSession?.activityId ?? preferredActivityId ?? "");
@@ -1180,6 +1197,26 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   useEffect(() => {
     if (typeof window !== "undefined") setPublicBaseUrl(window.location.origin);
   }, []);
+
+  useEffect(() => {
+    if (!currentSession) {
+      setLiveFlowState(null);
+      return;
+    }
+
+    let active = true;
+    void fetchLiveFlow(currentSession.id)
+      .then((flow) => {
+        if (active) setLiveFlowState(flow);
+      })
+      .catch((error) => {
+        if (active) notify(errorMessage(error));
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [currentSession?.id, currentSession?.activityId]);
 
   async function refreshRealtimeParticipants(sessionId: string) {
     try {
@@ -1337,6 +1374,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       setSelectedId(undefined);
       setGroups([]);
       setArenaTab("live");
+      setLiveFlowState(null);
       onPreferredActivityChange(undefined);
       notify("Sessão encerrada e persistida.");
     } catch (error) {
@@ -1436,19 +1474,77 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     if (!currentSession || mechanicsBusy) return;
     setMechanicsBusy(true);
     try {
-      const runtime = await setArenaActivityApi(currentSession.id, nextActivityId || undefined);
+      const runtime = await setArenaActivityApi(
+        currentSession.id,
+        nextActivityId || undefined,
+      );
       patch((current) => ({
         ...current,
-        sessions: current.sessions.map((session) => session.id === currentSession.id
-          ? mergeSessionMechanics(session, runtime)
-          : session),
+        sessions: current.sessions.map((session) =>
+          session.id === currentSession.id
+            ? mergeSessionMechanics(session, runtime)
+            : session
+        ),
       }));
-      notify(nextActivityId ? "Atividade conectada à Arena e persistida." : "Arena em modo livre.");
+
+      const flow = await fetchLiveFlow(currentSession.id);
+      setLiveFlowState(flow);
+
+      notify(
+        nextActivityId
+          ? "Atividade conectada à Arena e persistida."
+          : "Arena em modo livre.",
+      );
     } catch (error) {
       setActivityId(currentSession.activityId ?? "");
       notify(errorMessage(error));
     } finally {
       setMechanicsBusy(false);
+    }
+  }
+
+  function applyLiveFlowResult(result: {
+    liveFlow: LiveFlowState;
+    runtime: import("@/lib/types").SessionRuntimeState;
+  }) {
+    setLiveFlowState(result.liveFlow);
+    if (!currentSession) return;
+
+    patch((current) => ({
+      ...current,
+      sessions: current.sessions.map((session) =>
+        session.id === currentSession.id
+          ? mergeSessionMechanics(session, result.runtime)
+          : session
+      ),
+    }));
+  }
+
+  async function startPreparedFlow() {
+    if (!currentSession || liveFlowBusy) return;
+    setLiveFlowBusy(true);
+    try {
+      applyLiveFlowResult(await startLiveFlow(currentSession.id));
+      notify("Roteiro ao Vivo iniciado.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setLiveFlowBusy(false);
+    }
+  }
+
+  async function movePreparedFlow(direction: "previous" | "next") {
+    if (!currentSession || liveFlowBusy) return;
+    setLiveFlowBusy(true);
+    try {
+      const result = direction === "next"
+        ? await nextLiveFlow(currentSession.id)
+        : await previousLiveFlow(currentSession.id);
+      applyLiveFlowResult(result);
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setLiveFlowBusy(false);
     }
   }
 
@@ -1623,7 +1719,18 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <option value="">Modo livre — pergunta oral ou conteúdo externo</option>
               {classActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title} · {activity.questions?.length ?? 0} questões</option>)}
             </select>
-            {activeActivity && <div className="arena-source-note"><strong>{activeActivity.title}</strong><span>{activeActivity.topic || "Sem tópico"} · {activeActivity.questions?.length ?? 0} questão(ões)</span></div>}
+            {activeActivity && (
+              <div className="arena-source-note">
+                <strong>{activeActivity.title}</strong>
+                <span>
+                  {activeActivity.topic || "Sem tópico"} ·{" "}
+                  {liveFlowState?.activityId === activeActivity.id
+                    && liveFlowState.steps.length > 0
+                    ? `${liveFlowState.steps.length} bloco(s) no roteiro`
+                    : `${activeActivity.questions?.length ?? 0} questão(ões)`}
+                </span>
+              </div>
+            )}
           </div>
           <div className="attendance-head"><strong>Presença</strong><span>{presentIds.length}/{students.length} presentes</span></div>
           <div className="attendance-list">
@@ -1727,7 +1834,14 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             <div>
               <span className="eyebrow accent">FONTE DA ARENA</span>
               <strong>{activeActivity?.title ?? "Modo livre"}</strong>
-              <small>{activeActivity ? `${activeActivity.questions?.length ?? 0} questões disponíveis` : "Pergunte oralmente ou utilize qualquer recurso da aula"}</small>
+              <small>
+                {activeActivity
+                  ? liveFlowState?.activityId === activeActivity.id
+                    && liveFlowState.steps.length > 0
+                    ? `${liveFlowState.steps.length} blocos no Roteiro ao Vivo`
+                    : `${activeActivity.questions?.length ?? 0} questões disponíveis`
+                  : "Pergunte oralmente ou utilize qualquer recurso da aula"}
+              </small>
             </div>
             <select className="select" value={currentSession.activityId ?? ""} onChange={(e) => { void changeArenaActivity(e.target.value); }}>
               <option value="">Modo livre</option>
@@ -1735,22 +1849,69 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             </select>
           </div>
 
-          {activeActivity && (
-            <Panel title="Questão da Arena" subtitle={`${activeActivity.title} · ${(currentSession.answeredQuestionIds ?? []).length}/${activeActivity.questions?.length ?? 0} apresentadas`}>
-              {currentQuestion ? (
-                <div className="arena-question-card">
-                  <div className="question-meta"><span>{QUESTION_TYPE_LABEL[currentQuestion.type]}</span><span>{QUESTION_DIFFICULTY_LABEL[currentQuestion.difficulty]}</span><span>{currentQuestion.points} XP sugeridos</span></div>
-                  <h3>{currentQuestion.statement}</h3>
-                  {currentQuestion.code && <pre>{currentQuestion.code}</pre>}
-                  {currentQuestion.options && <div className="arena-question-options">{currentQuestion.options.map((option) => <div key={option.id}><b>{option.id}</b><span>{option.text}</span></div>)}</div>}
+          {activeActivity
+            && liveFlowState?.activityId === activeActivity.id
+            && liveFlowState.steps.length > 0 ? (
+              <LiveFlowConductor
+                flow={liveFlowState}
+                currentQuestion={currentQuestion}
+                busy={liveFlowBusy}
+                onStart={() => { void startPreparedFlow(); }}
+                onPrevious={() => { void movePreparedFlow("previous"); }}
+                onNext={() => { void movePreparedFlow("next"); }}
+                onOpenWordCloud={() => {
+                  setArenaTab("interactions");
+                  setInteractionTool("wordcloud");
+                }}
+              />
+            ) : activeActivity ? (
+              <Panel
+                title="Questão da Arena"
+                subtitle={`${activeActivity.title} · ${(currentSession.answeredQuestionIds ?? []).length}/${activeActivity.questions?.length ?? 0} apresentadas`}
+              >
+                {currentQuestion ? (
+                  <div className="arena-question-card">
+                    <div className="question-meta">
+                      <span>{QUESTION_TYPE_LABEL[currentQuestion.type]}</span>
+                      <span>{QUESTION_DIFFICULTY_LABEL[currentQuestion.difficulty]}</span>
+                      <span>{currentQuestion.points} XP sugeridos</span>
+                    </div>
+                    <h3>{currentQuestion.statement}</h3>
+                    {currentQuestion.code && <pre>{currentQuestion.code}</pre>}
+                    {currentQuestion.options && (
+                      <div className="arena-question-options">
+                        {currentQuestion.options.map((option) => (
+                          <div key={option.id}>
+                            <b>{option.id}</b>
+                            <span>{option.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <MiniEmpty text="Clique em próxima questão quando quiser usar o conteúdo da atividade na Arena." />
+                )}
+                <div className="inline-actions solid-actions">
+                  {(currentSession.answeredQuestionIds?.length ?? 0)
+                    >= (activeActivity.questions?.length ?? 0)
+                    && (
+                      <button
+                        className="button ghost"
+                        onClick={() => { void restartActivityQuestions(); }}
+                      >
+                        Reiniciar questões
+                      </button>
+                    )}
+                  <button
+                    className="button primary"
+                    onClick={() => { void nextActivityQuestion(); }}
+                  >
+                    Próxima questão
+                  </button>
                 </div>
-              ) : <MiniEmpty text="Clique em próxima questão quando quiser usar o conteúdo da atividade na Arena." />}
-              <div className="inline-actions solid-actions">
-                {(currentSession.answeredQuestionIds?.length ?? 0) >= (activeActivity.questions?.length ?? 0) && <button className="button ghost" onClick={() => { void restartActivityQuestions(); }}>Reiniciar questões</button>}
-                <button className="button primary" onClick={() => { void nextActivityQuestion(); }}>Próxima questão</button>
-              </div>
-            </Panel>
-          )}
+              </Panel>
+            ) : null}
 
           <div className="arena-grid">
             <div className="arena-main-card">
