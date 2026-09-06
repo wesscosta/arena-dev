@@ -206,6 +206,17 @@ fricção para o professor.
 - [ ] manter `Condução` como fluxo planejado e `Interações` como ações ad hoc;
 - [ ] preparar inclusão futura de Votação sem criar nova aba principal.
 
+#### 12.3D.6 — Navegação contextual e cards de turma
+
+- [ ] consolidar `Visão geral › Turma › Arena`;
+- [ ] transformar o nome da turma em seletor com busca por nome/código;
+- [ ] remover select isolado e selo global `Sessão ativa`;
+- [ ] remover badges redundantes `Ativa` e `Selecionada`;
+- [ ] mostrar apenas `INATIVA` ou `AO VIVO` quando aplicável;
+- [ ] consolidar ações do card em `⋯`;
+- [ ] permitir Editar, Desativar/Reativar e Excluir;
+- [ ] impedir desativação de turma com sessão ativa.
+
 ### 12.4 — Roteiro ao Vivo
 
 A abstração de sequência passa a ser justificada por quatro blocos concretos:

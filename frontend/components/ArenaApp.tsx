@@ -9,6 +9,7 @@ import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
 import WordCloudPanel from "@/components/WordCloudPanel";
 import SessionAccessCard from "@/components/SessionAccessCard";
+import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi } from "@/lib/classroom-api";
@@ -254,7 +255,7 @@ export default function ArenaApp() {
   return (
     <div className="app-shell app-shell-no-sidebar">
       <main className="main-area">
-        <header className="topbar app-topbar">
+        <header className="topbar app-topbar contextual-topbar">
           <button
             type="button"
             className="topbar-brand"
@@ -271,56 +272,59 @@ export default function ArenaApp() {
             </span>
           </button>
 
-          <div className="topbar-context">
-            <span className="topbar-breadcrumb">
-              Visão geral
-              {view === "classroom" && activeClassroom ? ` / ${activeClassroom.name}` : ""}
-              {view === "arena" && activeClassroom ? ` / ${activeClassroom.name} / Arena` : ""}
-              {view === "settings" ? " / Configurações" : ""}
-            </span>
-            <h1>
-              {view === "dashboard"
-                ? "Visão geral"
-                : view === "classroom"
-                  ? activeClassroom?.name ?? VIEW_LABEL[view]
-                  : view === "arena"
-                    ? currentSession?.title ?? "Arena"
-                    : VIEW_LABEL[view]}
-            </h1>
-          </div>
-
-          <div className="topbar-actions app-topbar-actions">
-            {(view === "classroom" || view === "arena") && (
-              <select
-                className="select topbar-classroom-select"
-                value={activeClassroom?.id ?? ""}
-                onChange={(event) => setActiveClassroom(event.target.value)}
-                disabled={!data.classrooms.length}
-                aria-label="Selecionar turma atual"
-              >
-                {!data.classrooms.length && <option value="">Nenhuma turma</option>}
-                {data.classrooms.map((classroom) => (
-                  <option key={classroom.id} value={classroom.id}>
-                    {classroom.name}{!classroom.active ? " · inativa" : ""}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            {currentSession && (
+          <nav className="context-trail" aria-label="Navegação contextual">
+            {view === "dashboard" ? (
+              <span className="context-trail-current">Visão geral</span>
+            ) : (
               <button
                 type="button"
-                className="topbar-live-action"
+                className="context-trail-home"
                 onClick={() => {
-                  setView("arena");
+                  setView("dashboard");
                   setProfileMenuOpen(false);
                 }}
-                title="Voltar para a sessão ativa"
               >
-                <span className="live-pill"><span /> Sessão ativa</span>
+                Visão geral
               </button>
             )}
 
+            {(view === "classroom" || view === "arena") && activeClassroom && (
+              <>
+                <span className="context-trail-separator">›</span>
+                <ClassroomContextSwitcher
+                  classrooms={data.classrooms}
+                  activeClassroomId={activeClassroom.id}
+                  liveClassroomIds={data.sessions
+                    .filter((session) => session.status === "ACTIVE" && !session.endedAt)
+                    .map((session) => session.classroomId)}
+                  onSelect={(classroomId) => {
+                    const changed = classroomId !== activeClassroom.id;
+                    setActiveClassroom(classroomId);
+                    if (view === "arena" && changed) {
+                      setClassroomTab("home");
+                      setView("classroom");
+                    }
+                  }}
+                />
+              </>
+            )}
+
+            {view === "arena" && (
+              <>
+                <span className="context-trail-separator">›</span>
+                <span className="context-trail-current">Arena</span>
+              </>
+            )}
+
+            {view === "settings" && (
+              <>
+                <span className="context-trail-separator">›</span>
+                <span className="context-trail-current">Configurações</span>
+              </>
+            )}
+          </nav>
+
+          <div className="topbar-actions app-topbar-actions">
             <div className="topbar-profile-wrap">
               <button
                 type="button"
@@ -577,6 +581,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingClassroom, setEditingClassroom] = useState<Classroom | undefined>();
   const [editIntent, setEditIntent] = useState<"edit" | "delete">("edit");
+  const [openCardMenuId, setOpenCardMenuId] = useState<string | null>(null);
 
   const activeSessions = data.sessions.filter((session) => session.status === "ACTIVE" && !session.endedAt);
   const filteredClassrooms = data.classrooms.filter((classroom) => {
@@ -593,6 +598,33 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
   });
   const activeClassroomIds = new Set(data.classrooms.filter((classroom) => classroom.active).map((classroom) => classroom.id));
   const activeEnrollments = data.enrollments.filter((enrollment) => enrollment.active && activeClassroomIds.has(enrollment.classroomId));
+
+  async function toggleClassroomActive(classroom: Classroom) {
+    const hasActiveSession = activeSessions.some(
+      (session) => session.classroomId === classroom.id,
+    );
+
+    if (classroom.active && hasActiveSession) {
+      notify("Encerre a sessão ativa antes de desativar esta turma.");
+      setOpenCardMenuId(null);
+      return;
+    }
+
+    try {
+      await updateClassroomApi({
+        id: classroom.id,
+        name: classroom.name,
+        code: classroom.code,
+        active: !classroom.active,
+      });
+      await refreshClassroomDomain(classroom.id);
+      notify(classroom.active ? "Turma desativada." : "Turma reativada.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setOpenCardMenuId(null);
+    }
+  }
 
   return (
     <div className="stack-lg overview-page">
@@ -682,28 +714,83 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
                   <div className="overview-class-identity">
                     <div className="classroom-monogram">{classroom.name.trim().charAt(0).toUpperCase()}</div>
                     <div>
-                      <div className="status-line">
-                        <span className={classroom.active ? "status active" : "status"}>{classroom.active ? "Ativa" : "Inativa"}</span>
-                        {data.activeClassroomId === classroom.id && <span className="selected-context-pill">Selecionada</span>}
-                        {session && <span className="live-pill compact"><span /> Sessão ativa</span>}
-                      </div>
+                      {(session || !classroom.active) && (
+                        <div className="status-line">
+                          {session ? (
+                            <span className="live-pill compact"><span /> AO VIVO</span>
+                          ) : (
+                            <span className="status">Inativa</span>
+                          )}
+                        </div>
+                      )}
                       <h3>{classroom.name}</h3>
                       <p>{classroom.code || "Sem código"}</p>
                     </div>
                   </div>
                   <div className="overview-card-actions">
-                    <button
-                      className="icon-action"
-                      title="Editar turma"
-                      aria-label={`Editar ${classroom.name}`}
-                      onClick={(event) => { event.stopPropagation(); setEditIntent("edit"); setEditingClassroom(classroom); }}
-                    >✎</button>
-                    <button
-                      className="icon-action danger"
-                      title="Excluir ou inativar turma"
-                      aria-label={`Excluir ou inativar ${classroom.name}`}
-                      onClick={(event) => { event.stopPropagation(); setEditIntent("delete"); setEditingClassroom(classroom); }}
-                    >⌫</button>
+                    <div
+                      className="classroom-card-menu-wrap"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        className="icon-action classroom-card-menu-trigger"
+                        title="Ações da turma"
+                        aria-label={`Ações de ${classroom.name}`}
+                        aria-expanded={openCardMenuId === classroom.id}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setOpenCardMenuId((current) =>
+                            current === classroom.id ? null : classroom.id
+                          );
+                        }}
+                      >
+                        ⋯
+                      </button>
+
+                      {openCardMenuId === classroom.id && (
+                        <div className="classroom-card-menu">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenCardMenuId(null);
+                              setEditIntent("edit");
+                              setEditingClassroom(classroom);
+                            }}
+                          >
+                            <span>✎</span>
+                            Editar turma
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={classroom.active && Boolean(session)}
+                            title={
+                              classroom.active && session
+                                ? "Encerre a sessão antes de desativar."
+                                : undefined
+                            }
+                            onClick={() => { void toggleClassroomActive(classroom); }}
+                          >
+                            <span>{classroom.active ? "○" : "●"}</span>
+                            {classroom.active ? "Desativar turma" : "Reativar turma"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="danger"
+                            onClick={() => {
+                              setOpenCardMenuId(null);
+                              setEditIntent("delete");
+                              setEditingClassroom(classroom);
+                            }}
+                          >
+                            <span>⌫</span>
+                            Excluir turma
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="overview-class-stats">

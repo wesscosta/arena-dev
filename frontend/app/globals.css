@@ -1331,3 +1331,118 @@ button:disabled { cursor: not-allowed; opacity: .45; }
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Incremento 12.3D.6 — navegação contextual e cards */
+.contextual-topbar {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 66px;
+}
+
+.context-trail {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.context-trail-home {
+  flex: 0 0 auto;
+  padding: 5px 6px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #879a91;
+  font-size: 9px;
+  font-weight: 720;
+}
+
+.context-trail-home:hover {
+  background: rgba(88, 243, 167, .045);
+  color: var(--text);
+}
+
+.context-trail-current {
+  flex: 0 0 auto;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.context-trail-separator {
+  flex: 0 0 auto;
+  color: #52655c;
+  font-size: 12px;
+}
+
+.classroom-card-menu-wrap {
+  position: relative;
+  z-index: 8;
+}
+
+.classroom-card-menu-trigger {
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: .08em;
+}
+
+.classroom-card-menu {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 184px;
+  display: grid;
+  gap: 3px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0b1612;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .42);
+}
+
+.classroom-card-menu > button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  padding: 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font-size: 8px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.classroom-card-menu > button:hover:not(:disabled) {
+  background: rgba(88, 243, 167, .055);
+}
+
+.classroom-card-menu > button:disabled {
+  cursor: not-allowed;
+  opacity: .38;
+}
+
+.classroom-card-menu > button > span {
+  color: var(--accent);
+  text-align: center;
+}
+
+.classroom-card-menu > button.danger,
+.classroom-card-menu > button.danger > span {
+  color: #ff9da3;
+}
+
+@media (max-width: 720px) {
+  .contextual-topbar {
+    grid-template-columns: auto auto;
+  }
+  .context-trail {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+  .context-trail-current { font-size: 9px; }
+}
