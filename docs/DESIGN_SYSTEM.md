@@ -95,3 +95,17 @@ Os primitives vivem em `frontend/components/ui/`.
 
 Novas interfaces devem consumir esses primitives antes de criar padrões locais.
 A migração do legado é progressiva para evitar uma refatoração big bang.
+
+
+## Accessibility Pass — 12.3D.7C
+
+O Design System passa a exigir:
+
+- skip navigation para o `main`;
+- `LiveRegion` para mensagens assíncronas relevantes;
+- menus com navegação direcional e retorno de foco;
+- diálogos com foco inicial, focus trap e retorno ao opener;
+- ausência de anúncios por segundo do Timer;
+- gate manual de zoom/reflow.
+
+Mudanças realtime devem ser anunciadas por significado, não por frequência.

@@ -76,3 +76,25 @@
     outline: 3px solid CanvasText;
   }
 }
+
+
+/* 12.3D.7C — Accessibility Pass */
+#main-content {
+  scroll-margin-top: 5rem;
+}
+
+#main-content:focus {
+  outline: none;
+}
+
+[role="dialog"][tabindex="-1"]:focus {
+  outline: none;
+}
+
+@media (max-width: 40rem) {
+  .skip-link {
+    right: var(--space-3);
+    max-width: calc(100vw - 1.5rem);
+    text-align: center;
+  }
+}

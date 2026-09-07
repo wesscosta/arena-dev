@@ -6,6 +6,7 @@ export { default as Card } from "./Card";
 export { default as EmptyState } from "./EmptyState";
 export { default as Field } from "./Field";
 export { default as IconButton } from "./IconButton";
+export { default as LiveRegion } from "./LiveRegion";
 export { Menu, MenuItem } from "./Menu";
 export { default as Tabs } from "./Tabs";
 export type { TabItem } from "./Tabs";

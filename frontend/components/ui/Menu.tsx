@@ -2,10 +2,11 @@
 
 import {
   createContext,
+  type KeyboardEvent,
   type KeyboardEventHandler,
   type MouseEventHandler,
   type ReactNode,
-  type RefObject,
+  type Ref,
   useContext,
   useEffect,
   useRef,
@@ -18,14 +19,24 @@ type TriggerProps = {
   "aria-expanded": boolean;
   onClick: MouseEventHandler<HTMLButtonElement>;
   onKeyDown: KeyboardEventHandler<HTMLButtonElement>;
+  ref: Ref<HTMLButtonElement>;
 };
 
 type MenuContextValue = {
-  close: () => void;
-  firstItemRef: RefObject<HTMLButtonElement | null>;
+  close: (returnFocus?: boolean) => void;
 };
 
 const MenuContext = createContext<MenuContextValue | null>(null);
+
+function enabledMenuItems(root: HTMLElement | null): HTMLButtonElement[] {
+  if (!root) return [];
+
+  return Array.from(
+    root.querySelectorAll<HTMLButtonElement>(
+      '[role="menuitem"]:not(:disabled)'
+    )
+  );
+}
 
 export function Menu({
   trigger,
@@ -38,7 +49,25 @@ export function Menu({
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const firstItemRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  function close(returnFocus = false) {
+    setOpen(false);
+    if (returnFocus) {
+      queueMicrotask(() => triggerRef.current?.focus());
+    }
+  }
+
+  function focusFirst() {
+    queueMicrotask(() => enabledMenuItems(rootRef.current)[0]?.focus());
+  }
+
+  function focusLast() {
+    queueMicrotask(() => {
+      const items = enabledMenuItems(rootRef.current);
+      items.at(-1)?.focus();
+    });
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -48,12 +77,15 @@ export function Menu({
         rootRef.current
         && !rootRef.current.contains(event.target as Node)
       ) {
-        setOpen(false);
+        close(false);
       }
     };
 
     const escape = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close(true);
+      }
     };
 
     window.addEventListener("pointerdown", outside);
@@ -66,6 +98,7 @@ export function Menu({
   }, [open]);
 
   const triggerProps: TriggerProps = {
+    ref: triggerRef,
     "aria-haspopup": "menu",
     "aria-expanded": open,
     onClick: () => setOpen((value) => !value),
@@ -73,7 +106,13 @@ export function Menu({
       if (event.key === "ArrowDown") {
         event.preventDefault();
         setOpen(true);
-        queueMicrotask(() => firstItemRef.current?.focus());
+        focusFirst();
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setOpen(true);
+        focusLast();
       }
     },
   };
@@ -87,13 +126,13 @@ export function Menu({
           className={styles.menuPopover}
           role="menu"
           style={align === "start" ? { right: "auto", left: 0 } : undefined}
+          onKeyDown={(event) => {
+            if (event.key === "Tab") {
+              close(false);
+            }
+          }}
         >
-          <MenuContext.Provider
-            value={{
-              close: () => setOpen(false),
-              firstItemRef,
-            }}
-          >
+          <MenuContext.Provider value={{ close }}>
             {children}
           </MenuContext.Provider>
         </div>
@@ -119,9 +158,36 @@ export function MenuItem({
 }) {
   const context = useContext(MenuContext);
 
+  function navigate(event: KeyboardEvent<HTMLButtonElement>) {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const menu = event.currentTarget.closest<HTMLElement>('[role="menu"]');
+    const items = enabledMenuItems(menu);
+    const current = items.indexOf(event.currentTarget);
+
+    if (current < 0 || !items.length) return;
+
+    if (event.key === "Home") {
+      items[0]?.focus();
+      return;
+    }
+
+    if (event.key === "End") {
+      items.at(-1)?.focus();
+      return;
+    }
+
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    const next = (current + direction + items.length) % items.length;
+    items[next]?.focus();
+  }
+
   return (
     <button
-      ref={context?.firstItemRef}
       type="button"
       role="menuitem"
       disabled={disabled}
@@ -129,9 +195,10 @@ export function MenuItem({
         styles.menuItem,
         danger ? styles.menuItemDanger : "",
       ].filter(Boolean).join(" ")}
+      onKeyDown={navigate}
       onClick={() => {
         onSelect();
-        context?.close();
+        context?.close(true);
       }}
     >
       <span className={styles.menuItemIcon}>{icon ?? "·"}</span>

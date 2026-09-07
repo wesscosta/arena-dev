@@ -16,6 +16,7 @@ import {
   Button,
   Menu,
   MenuItem,
+  LiveRegion,
   Tabs,
   type BreadcrumbItem,
   type TabItem,
@@ -263,7 +264,11 @@ export default function ArenaApp() {
 
   return (
     <div className="app-shell app-shell-no-sidebar">
-      <main className="main-area">
+      <a className="skip-link" href="#main-content">
+        Pular para o conteúdo principal
+      </a>
+      <LiveRegion>{toast}</LiveRegion>
+      <main id="main-content" className="main-area" tabIndex={-1}>
         <header className="topbar app-topbar contextual-topbar">
           <button
             type="button"
@@ -383,7 +388,7 @@ export default function ArenaApp() {
         </header>
 
         <section className="content">
-          {apiError && <div className="api-alert"><strong>API indisponível.</strong><span>{apiError}</span><button className="text-button" onClick={() => { void refreshClassroomDomain(); }}>Tentar novamente</button></div>}
+          {apiError && <div className="api-alert" role="alert" aria-live="assertive"><strong>API indisponível.</strong><span>{apiError}</span><button className="text-button" onClick={() => { void refreshClassroomDomain(); }}>Tentar novamente</button></div>}
 
           {view === "dashboard" && (
             <OverviewView
@@ -1629,6 +1634,19 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         ? await nextLiveFlow(currentSession.id)
         : await previousLiveFlow(currentSession.id);
       applyLiveFlowResult(result);
+
+      const currentIndex = result.liveFlow.currentIndex;
+      const currentStep =
+        currentIndex === undefined
+          ? undefined
+          : result.liveFlow.steps[currentIndex];
+
+      if (currentStep) {
+        notify(
+          `Bloco ${currentIndex! + 1} de ${result.liveFlow.steps.length}: `
+          + `${currentStep.title || currentStep.type}.`
+        );
+      }
     } catch (error) {
       notify(errorMessage(error));
     } finally {
