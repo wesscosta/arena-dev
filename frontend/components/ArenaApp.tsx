@@ -10,6 +10,16 @@ import TimerPanel from "@/components/TimerPanel";
 import WordCloudPanel from "@/components/WordCloudPanel";
 import SessionAccessCard from "@/components/SessionAccessCard";
 import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
+import {
+  Badge,
+  Breadcrumb,
+  Button,
+  Menu,
+  MenuItem,
+  Tabs,
+  type BreadcrumbItem,
+  type TabItem,
+} from "@/components/ui";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi } from "@/lib/classroom-api";
@@ -101,7 +111,6 @@ export default function ArenaApp() {
   const [classroomTab, setClassroomTab] = useState<ClassroomTab>("home");
   const [toast, setToast] = useState("");
   const [apiError, setApiError] = useState("");
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [arenaActivityId, setArenaActivityId] = useState<string | undefined>();
 
   useEffect(() => {
@@ -261,7 +270,6 @@ export default function ArenaApp() {
             className="topbar-brand"
             onClick={() => {
               setView("dashboard");
-              setProfileMenuOpen(false);
             }}
             title="Voltar para a Visão geral"
           >
@@ -272,112 +280,105 @@ export default function ArenaApp() {
             </span>
           </button>
 
-          <nav className="context-trail" aria-label="Navegação contextual">
-            {view === "dashboard" ? (
-              <span className="context-trail-current">Visão geral</span>
-            ) : (
-              <button
-                type="button"
-                className="context-trail-home"
-                onClick={() => {
-                  setView("dashboard");
-                  setProfileMenuOpen(false);
-                }}
-              >
-                Visão geral
-              </button>
-            )}
-
-            {(view === "classroom" || view === "arena") && activeClassroom && (
-              <>
-                <span className="context-trail-separator">›</span>
-                <ClassroomContextSwitcher
-                  classrooms={data.classrooms}
-                  activeClassroomId={activeClassroom.id}
-                  liveClassroomIds={data.sessions
-                    .filter((session) => session.status === "ACTIVE" && !session.endedAt)
-                    .map((session) => session.classroomId)}
-                  onSelect={(classroomId) => {
-                    const changed = classroomId !== activeClassroom.id;
-                    setActiveClassroom(classroomId);
-                    if (view === "arena" && changed) {
-                      setClassroomTab("home");
-                      setView("classroom");
-                    }
-                  }}
-                />
-              </>
-            )}
-
-            {view === "arena" && (
-              <>
-                <span className="context-trail-separator">›</span>
-                <span className="context-trail-current">Arena</span>
-              </>
-            )}
-
-            {view === "settings" && (
-              <>
-                <span className="context-trail-separator">›</span>
-                <span className="context-trail-current">Configurações</span>
-              </>
-            )}
-          </nav>
+          <Breadcrumb
+            className="context-trail"
+            items={[
+              {
+                id: "dashboard",
+                label: "Visão geral",
+                current: view === "dashboard",
+                onClick: view === "dashboard"
+                  ? undefined
+                  : () => {
+                      setView("dashboard");
+                    },
+              },
+              ...((view === "classroom" || view === "arena") && activeClassroom
+                ? [{
+                    id: "classroom",
+                    label: (
+                      <ClassroomContextSwitcher
+                        classrooms={data.classrooms}
+                        activeClassroomId={activeClassroom.id}
+                        liveClassroomIds={data.sessions
+                          .filter((session) =>
+                            session.status === "ACTIVE" && !session.endedAt
+                          )
+                          .map((session) => session.classroomId)}
+                        onSelect={(classroomId) => {
+                          const changed = classroomId !== activeClassroom.id;
+                          setActiveClassroom(classroomId);
+                          if (view === "arena" && changed) {
+                            setClassroomTab("home");
+                            setView("classroom");
+                          }
+                        }}
+                      />
+                    ),
+                    current: view === "classroom",
+                  } satisfies BreadcrumbItem]
+                : []),
+              ...(view === "arena"
+                ? [{
+                    id: "arena",
+                    label: "Arena",
+                    current: true,
+                  } satisfies BreadcrumbItem]
+                : []),
+              ...(view === "settings"
+                ? [{
+                    id: "settings",
+                    label: "Configurações",
+                    current: true,
+                  } satisfies BreadcrumbItem]
+                : []),
+            ]}
+          />
 
           <div className="topbar-actions app-topbar-actions">
-            <div className="topbar-profile-wrap">
-              <button
-                type="button"
-                className={profileMenuOpen ? "topbar-profile active" : "topbar-profile"}
-                onClick={() => setProfileMenuOpen((open) => !open)}
-                aria-expanded={profileMenuOpen}
-                aria-label="Abrir menu do professor"
-              >
-                <span className="topbar-profile-avatar">
-                  {teacherSession.username.trim().charAt(0).toUpperCase() || "P"}
-                </span>
-                <span className="topbar-profile-copy">
-                  <strong>{teacherSession.username}</strong>
-                  <small>Professor</small>
-                </span>
-                <span className="topbar-profile-chevron">⌄</span>
-              </button>
-
-              {profileMenuOpen && (
-                <div className="topbar-profile-menu">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setView("settings");
-                      setProfileMenuOpen(false);
-                    }}
-                  >
-                    <span>⚙</span>
-                    <div>
-                      <strong>Configurações</strong>
-                      <small>Perfil, sistema e backup</small>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className="topbar-profile-logout"
-                    onClick={() => {
-                      void logoutTeacher().finally(() => {
-                        setTeacherSession(null);
-                        setData(EMPTY_DATA);
-                        setHydrated(false);
-                      });
-                    }}
-                  >
-                    <span>↪</span>
-                    <div>
-                      <strong>Sair</strong>
-                      <small>Encerrar sessão do professor</small>
-                    </div>
-                  </button>
-                </div>
+            <Menu
+              trigger={(triggerProps) => (
+                <button
+                  {...triggerProps}
+                  type="button"
+                  className="topbar-profile"
+                  aria-label="Abrir menu do professor"
+                >
+                  <span className="topbar-profile-avatar">
+                    {teacherSession.username.trim().charAt(0).toUpperCase() || "P"}
+                  </span>
+                  <span className="topbar-profile-copy">
+                    <strong>{teacherSession.username}</strong>
+                    <small>Professor</small>
+                  </span>
+                  <span className="topbar-profile-chevron">⌄</span>
+                </button>
               )}
-            </div>
+            >
+              <MenuItem
+                icon="⚙"
+                description="Perfil, sistema e backup"
+                onSelect={() => {
+                  setView("settings");
+                }}
+              >
+                Configurações
+              </MenuItem>
+              <MenuItem
+                icon="↪"
+                danger
+                description="Encerrar sessão do professor"
+                onSelect={() => {
+                  void logoutTeacher().finally(() => {
+                    setTeacherSession(null);
+                    setData(EMPTY_DATA);
+                    setHydrated(false);
+                  });
+                }}
+              >
+                Sair
+              </MenuItem>
+            </Menu>
           </div>
         </header>
 
@@ -1848,20 +1849,33 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     <div className="stack-lg arena-session-workspace">
       <div className="arena-header compact">
         <div>
-          <span className="live-pill"><span /> AO VIVO</span>
+          <Badge variant="live" dot>AO VIVO</Badge>
           <h2>{currentSession.title}</h2>
           <p>{currentSession.presentStudentIds.length} presentes · iniciada {dateTime(currentSession.startedAt)}</p>
         </div>
         <div className="topbar-actions arena-session-actions">
-          <button
-            className={accessOpen ? "button primary" : "button"}
+          <Button
+            variant={accessOpen ? "primary" : "secondary"}
             onClick={() => setAccessOpen((open) => !open)}
             disabled={!joinCode}
           >
             {accessOpen ? "Fechar acesso" : "Acesso dos alunos"}
-          </button>
-          <button className="button" onClick={openProjector} disabled={!joinCode}>Modo Projetor ↗</button>
-          <button className="button danger-outline" onClick={() => { void endSession(); }} disabled={sessionBusy}>{sessionBusy ? "Encerrando..." : "Encerrar sessão"}</button>
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={openProjector}
+            disabled={!joinCode}
+          >
+            Modo Projetor ↗
+          </Button>
+          <Button
+            variant="danger"
+            loading={sessionBusy}
+            loadingLabel="Encerrando..."
+            onClick={() => { void endSession(); }}
+          >
+            Encerrar sessão
+          </Button>
         </div>
       </div>
 
@@ -1882,38 +1896,62 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </div>
       )}
 
-      <div className="arena-tabs arena-tabs-six" role="tablist" aria-label="Ferramentas da sessão">
-        <button type="button" role="tab" aria-selected={arenaTab === "live"} className={arenaTab === "live" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("live")}>
-          <span>Condução</span>
-          <small>{activeActivity?.title ?? "Modo livre"}</small>
-        </button>
-        <button type="button" role="tab" aria-selected={arenaTab === "interactions"} className={arenaTab === "interactions" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("interactions")}>
-          <span>Interações</span>
-          <small>
-            {buzzerState.status === "OPEN"
-              ? "Buzzer aberto"
-              : wordCloudState.round?.status === "COLLECTING"
-                ? "Nuvem coletando"
-                : "Nuvem · Buzzer"}
-          </small>
-        </button>
-        <button type="button" role="tab" aria-selected={arenaTab === "timer"} className={arenaTab === "timer" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("timer")}>
-          <span>Tempo</span>
-          <small>{timerState.timer ? timerState.timer.title : "Controle de tempo"}</small>
-        </button>
-        <button type="button" role="tab" aria-selected={arenaTab === "presence"} className={arenaTab === "presence" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("presence")}>
-          <span>Presença</span>
-          <small>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</small>
-        </button>
-        <button type="button" role="tab" aria-selected={arenaTab === "groups"} className={arenaTab === "groups" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("groups")}>
-          <span>Organização</span>
-          <small>{groupSize === 1 ? "Individual" : groupSize === 2 ? "Duplas" : groupSize === 3 ? "Trios" : `Grupos de ${groupSize}`}</small>
-        </button>
-        <button type="button" role="tab" aria-selected={arenaTab === "boss"} className={arenaTab === "boss" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("boss")}>
-          <span>Boss Battle</span>
-          <small>{currentSession.boss ? `${currentSession.boss.currentHp}/${currentSession.boss.maxHp} HP` : "Não iniciado"}</small>
-        </button>
-      </div>
+      <Tabs
+        className="arena-tabs-six"
+        label="Ferramentas da sessão"
+        activeId={arenaTab}
+        onChange={(id) => {
+          setArenaTab(
+            id as "live" | "interactions" | "timer" | "presence" | "groups" | "boss"
+          );
+        }}
+        items={[
+          {
+            id: "live",
+            label: "Condução",
+            description: activeActivity?.title ?? "Modo livre",
+          },
+          {
+            id: "interactions",
+            label: "Interações",
+            description:
+              buzzerState.status === "OPEN"
+                ? "Buzzer aberto"
+                : wordCloudState.round?.status === "COLLECTING"
+                  ? "Nuvem coletando"
+                  : "Nuvem · Buzzer",
+          },
+          {
+            id: "timer",
+            label: "Tempo",
+            description: timerState.timer?.title ?? "Controle de tempo",
+          },
+          {
+            id: "presence",
+            label: "Presença",
+            description: `${currentSession.presentStudentIds.length}/${sessionParticipants.length} presentes`,
+          },
+          {
+            id: "groups",
+            label: "Organização",
+            description:
+              groupSize === 1
+                ? "Individual"
+                : groupSize === 2
+                  ? "Duplas"
+                  : groupSize === 3
+                    ? "Trios"
+                    : `Grupos de ${groupSize}`,
+          },
+          {
+            id: "boss",
+            label: "Boss Battle",
+            description: currentSession.boss
+              ? `${currentSession.boss.currentHp}/${currentSession.boss.maxHp} HP`
+              : "Não iniciado",
+          },
+        ] satisfies TabItem[]}
+      />
 
       {arenaTab === "live" && (
         <div className="stack-lg arena-tab-content">

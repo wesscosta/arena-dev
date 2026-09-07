@@ -77,3 +77,21 @@ Usar `aria-live` apenas em mudanças semanticamente importantes: início/fim de 
 7. cards;
 8. estados vazios;
 9. Projetor e `/join`.
+
+
+## Core UI Primitives — 12.3D.7B
+
+Os primitives vivem em `frontend/components/ui/`.
+
+- `Button`: ações textuais;
+- `IconButton`: ações apenas por ícone, com label obrigatório;
+- `Badge`: status curto;
+- `Tabs`: navegação entre painéis equivalentes;
+- `Menu`: ações secundárias/contextuais;
+- `Breadcrumb`: localização hierárquica;
+- `Field`: label, hint, erro e controle;
+- `Card`: agrupamento visual sem impor heading;
+- `EmptyState`: ausência de conteúdo com orientação.
+
+Novas interfaces devem consumir esses primitives antes de criar padrões locais.
+A migração do legado é progressiva para evitar uma refatoração big bang.
