@@ -1,6 +1,7 @@
 @import "../styles/tokens.css";
 @import "../styles/base.css";
 @import "../styles/accessibility.css";
+@import "../styles/arena-polish.css";
 
 :root {
   --bg: #08100e;

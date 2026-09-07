@@ -109,3 +109,22 @@ O Design System passa a exigir:
 - gate manual de zoom/reflow.
 
 Mudanças realtime devem ser anunciadas por significado, não por frequência.
+
+
+## Arena Visual Polish — 12.3D.7D
+
+A Arena passa a ter uma camada de composição específica em
+`styles/arena-polish.css`.
+
+Essa camada pode organizar componentes existentes, mas não pode inventar
+novos valores de tipografia, spacing ou controles quando já existir token.
+
+Princípios aplicados:
+
+- reduzir *card soup*;
+- configuração deve parecer toolbar/configuração;
+- ação principal deve ter maior peso visual;
+- metadado não compete com conteúdo;
+- layouts devem reflow antes de ficarem comprimidos;
+- zoom alto deve se comportar como viewport estreito;
+- responsividade não pode depender de esconder ações essenciais.
