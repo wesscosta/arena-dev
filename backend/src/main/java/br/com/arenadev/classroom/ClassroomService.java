@@ -104,6 +104,14 @@ public class ClassroomService {
     }
 
     @Transactional
+    public EnrollmentView updatePreferredName(UUID classroomId, UUID studentId, String preferredName) {
+        Enrollment enrollment = enrollmentRepository.findByClassroomIdAndStudentId(classroomId, studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Matrícula do aluno na turma não encontrada."));
+        enrollment.setPreferredName(preferredName);
+        return EnrollmentView.from(enrollment);
+    }
+
+    @Transactional
     public EnrollmentView setEnrollmentActive(UUID classroomId, UUID studentId, boolean active) {
         Enrollment enrollment = enrollmentRepository.findByClassroomIdAndStudentId(classroomId, studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Matrícula do aluno na turma não encontrada."));
@@ -151,6 +159,7 @@ public class ClassroomService {
             String registration,
             String name,
             String nickname,
+            String preferredName,
             boolean studentActive,
             boolean enrollmentActive,
             Instant joinedAt
@@ -163,6 +172,7 @@ public class ClassroomService {
                     student.getRegistration(),
                     student.getName(),
                     student.getNickname(),
+                    enrollment.getPreferredName(),
                     student.isActive(),
                     enrollment.isActive(),
                     enrollment.getJoinedAt()

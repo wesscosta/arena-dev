@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   activeSessionId,
+  deviceClaimStorageKey,
   normalizeJoinCode,
   selectPreferredClassroomId,
   restoreStudentAccess,
@@ -50,9 +51,10 @@ test("seleciona somente a sessão ativa e não encerrada da turma", () => {
   assert.equal(activeSessionId(sessions, "missing"), undefined);
 });
 
-test("normaliza código e chave de armazenamento do participante", () => {
+test("normaliza código e separa armazenamento de sessão e dispositivo", () => {
   assert.equal(normalizeJoinCode(" ab12cd "), "AB12CD");
   assert.equal(studentAccessStorageKey(" ab12cd "), "arena-dev-student:AB12CD");
+  assert.equal(deviceClaimStorageKey("class-a"), "arena-dev-device:class-a");
 });
 
 test("restaura somente token válido da mesma sessão", () => {
@@ -65,6 +67,7 @@ test("restaura somente token válido da mesma sessão", () => {
     participantId: "participant-a",
     studentId: "student-a",
     name: "Ana",
+    displayName: "Ana",
     present: true,
     expiresAt: "2026-09-01T00:00:00Z",
   } satisfies StudentJoinAccess;

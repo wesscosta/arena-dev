@@ -58,6 +58,8 @@ type ParticipantView = {
   registration: string | null;
   name: string;
   nickname: string | null;
+  preferredName: string | null;
+  displayName: string;
   present: boolean;
   connected: boolean;
 };
@@ -70,6 +72,8 @@ function mapParticipant(sessionId: string, item: ParticipantView): SessionPartic
     registration: item.registration ?? "",
     name: item.name,
     nickname: item.nickname ?? "",
+    preferredName: item.preferredName ?? "",
+    displayName: item.displayName,
     present: item.present,
     connected: item.connected,
   };

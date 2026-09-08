@@ -7,6 +7,7 @@ import br.com.arenadev.activity.ActivityStep;
 import br.com.arenadev.activity.ActivityStepType;
 import br.com.arenadev.session.*;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import br.com.arenadev.stage.LiveStageService;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class MechanicsService {
     private final SessionDynamicRepository dynamicRepository;
     private final GroupHistoryRepository groupHistoryRepository;
     private final ActivityRepository activityRepository;
+    private final LiveStageService liveStageService;
     private final JsonMapper objectMapper = JsonMapper.builder().build();
 
     public MechanicsService(
@@ -29,13 +31,15 @@ public class MechanicsService {
             SessionParticipantRepository participantRepository,
             SessionDynamicRepository dynamicRepository,
             GroupHistoryRepository groupHistoryRepository,
-            ActivityRepository activityRepository
+            ActivityRepository activityRepository,
+            LiveStageService liveStageService
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
         this.dynamicRepository = dynamicRepository;
         this.groupHistoryRepository = groupHistoryRepository;
         this.activityRepository = activityRepository;
+        this.liveStageService = liveStageService;
     }
 
     @Transactional(readOnly = true)
@@ -72,6 +76,7 @@ public class MechanicsService {
 
         counts.put(winner.toString(), counts.getOrDefault(winner.toString(), 0) + 1);
         saveState(session, DynamicType.QUICK_DRAW, new DrawState(counts, winner.toString()));
+        liveStageService.showDraw(sessionId, winner);
         return new DrawResult(winner, runtime(sessionId));
     }
 

@@ -58,11 +58,33 @@ public class SessionJoinController {
     }
 
     @PostMapping("/api/join/{code}")
-    public SessionJoinService.JoinAccessView join(
+    public SessionJoinService.JoinResultView join(
             @PathVariable String code,
             @Valid @RequestBody JoinRequest request
     ) {
-        return joinService.join(code, request.identity());
+        return joinService.join(code, request.identity(), request.rememberDevice());
+    }
+
+    @PostMapping("/api/join/{code}/device/recognize")
+    public SessionJoinService.DeviceRecognitionView recognizeDevice(
+            @PathVariable String code,
+            @Valid @RequestBody DeviceRequest request
+    ) {
+        return joinService.recognizeDevice(code, request.deviceToken());
+    }
+
+    @PostMapping("/api/join/{code}/device")
+    public SessionJoinService.JoinAccessView joinRememberedDevice(
+            @PathVariable String code,
+            @Valid @RequestBody DeviceRequest request
+    ) {
+        return joinService.joinRememberedDevice(code, request.deviceToken());
+    }
+
+    @PostMapping("/api/join/device/revoke")
+    public ResponseEntity<Void> revokeDevice(@Valid @RequestBody DeviceRequest request) {
+        joinService.revokeDevice(request.deviceToken());
+        return ResponseEntity.noContent().build();
     }
 
     private static String validateBaseUrl(String raw) {
@@ -79,6 +101,9 @@ public class SessionJoinController {
         }
     }
 
-    public record JoinRequest(@NotBlank String identity) {
+    public record JoinRequest(@NotBlank String identity, boolean rememberDevice) {
+    }
+
+    public record DeviceRequest(@NotBlank String deviceToken) {
     }
 }

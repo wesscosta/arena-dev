@@ -6,7 +6,7 @@
 >
 > **Current development line:** `v0.4 — Live Classroom`, branch `feat/v0.4-live-classroom`.
 >
-> **Current checkpoint:** Timer, Projector, Word Cloud, ActivityStep/live-flow runtime, contextual navigation, Design System, accessibility and responsive Arena polish are implemented and validated. **Next: 12.4D — Poll/Voting runtime.**
+> **Current checkpoint:** Timer, Projector, Word Cloud, ActivityStep/live-flow runtime, contextual navigation, Design System, accessibility and responsive Arena polish are consolidated. `12.4D.0 — Live Stage + identity foundation` is implemented locally, including per-enrollment `preferredName` and opaque remembered-device claims. `12.4D.1 — Poll/Voting runtime` is also implemented locally across teacher, `/join` and Projector. **Next: 12.4E progressive Live Flow ↔ Live Stage orchestration and remaining stage adapters.**
 
 ## Product model
 
@@ -33,6 +33,7 @@ Arena Dev centralizes attendance, activities, smart draws, XP, rankings, groups,
 - Public Projector.
 - Student `/join`.
 - Ordered live-flow authoring through `ActivityStep`.
+- Authoritative `LiveStageState` with audience-specific Projector and `/join` projections.
 
 ### Live flow
 
@@ -82,13 +83,35 @@ Completed:
 - **12.3D.7C** Accessibility Pass;
 - **12.3D.7D** Responsive & Visual Polish.
 
+Current foundation and runtime:
+
+- **12.4D.0A** authoritative Live Stage / presentation state;
+- **12.4D.0B** adapters: Draw, Word Cloud, Buzzer and Poll under `Dinâmicas`;
+- **12.4D.0C** `Enrollment.preferredName` + backend-resolved `displayName`;
+- **12.4D.0D** opaque device recognition separated from the temporary participant token;
+- **12.4D.1** Poll/Voting runtime with anonymous aggregate public projection.
+
 Next:
 
-- **12.4D** Poll/Voting runtime;
-- **12.4E** interaction orchestration;
-- **12.4F** `/join` + Projector synchronization by live step;
+- **12.4E** progressive Live Flow ↔ Live Stage orchestration;
+- **12.4F** public `/join` + Projector consolidation;
 - **12.5** chronological `SessionEvent`, after concrete semantics stabilize;
 - **12.6** hardening and `v0.4.0` gate.
+
+## Live Stage
+
+```text
+Teacher ──controls──► LiveStageState
+                        ├── primary
+                        ├── audience
+                        └── timer overlay
+                         ↙          ↘
+                  /projector       /join
+```
+
+Projector and participant UI are different projections of the same authoritative session state. Public clients receive only the data needed for their audience; for example, a projected draw receives `displayName` rather than the student UUID. Specialized events such as `WORD_CLOUD_STATE`, `BUZZER_STATE` and `TIMER_STATE` still own detailed module runtime.
+
+See [`docs/INCREMENT_12_4D_0.md`](docs/INCREMENT_12_4D_0.md), [`docs/INCREMENT_12_4D_1.md`](docs/INCREMENT_12_4D_1.md), ADR-0027 and ADR-0028.
 
 ## Poll semantics
 
@@ -194,7 +217,8 @@ Current:
 
 - [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
 - [`docs/ROADMAP_0_4.md`](docs/ROADMAP_0_4.md)
-- [`docs/CHECKPOINT_PRE_12_4D.md`](docs/CHECKPOINT_PRE_12_4D.md)
+- [`docs/INCREMENT_12_4D_0.md`](docs/INCREMENT_12_4D_0.md)
+- [`docs/CHECKPOINT_PRE_12_4D.md`](docs/CHECKPOINT_PRE_12_4D.md) — historical checkpoint
 - [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md)
 - [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)
 - [`docs/ACCESSIBILITY.md`](docs/ACCESSIBILITY.md)

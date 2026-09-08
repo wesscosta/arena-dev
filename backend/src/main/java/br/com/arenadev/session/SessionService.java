@@ -5,6 +5,9 @@ import br.com.arenadev.classroom.ClassroomRepository;
 import br.com.arenadev.classroom.Enrollment;
 import br.com.arenadev.classroom.EnrollmentRepository;
 import br.com.arenadev.classroom.Student;
+import br.com.arenadev.identity.DisplayNamePolicy;
+import br.com.arenadev.identity.DisplayNameService;
+import br.com.arenadev.poll.PollService;
 import br.com.arenadev.realtime.BuzzerService;
 import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.shared.ResourceNotFoundException;
@@ -30,6 +33,8 @@ public class SessionService {
     private final SessionTimerService timerService;
     private final SessionRealtimeGateway realtimeGateway;
     private final WordCloudService wordCloudService;
+    private final PollService pollService;
+    private final DisplayNameService displayNameService;
 
     public SessionService(
             ClassSessionRepository sessionRepository,
@@ -40,7 +45,9 @@ public class SessionService {
             BuzzerService buzzerService,
             SessionTimerService timerService,
             SessionRealtimeGateway realtimeGateway,
-            WordCloudService wordCloudService
+            WordCloudService wordCloudService,
+            PollService pollService,
+            DisplayNameService displayNameService
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -51,6 +58,8 @@ public class SessionService {
         this.timerService = timerService;
         this.realtimeGateway = realtimeGateway;
         this.wordCloudService = wordCloudService;
+        this.pollService = pollService;
+        this.displayNameService = displayNameService;
     }
 
     @Transactional
@@ -114,7 +123,7 @@ public class SessionService {
         getEntity(sessionId);
         return participantRepository.findBySessionIdOrderByStudentNameAsc(sessionId)
                 .stream()
-                .map(ParticipantView::from)
+                .map(this::participantView)
                 .toList();
     }
 
@@ -128,7 +137,7 @@ public class SessionService {
             throw new IllegalArgumentException("Participante não pertence à sessão informada.");
         }
         participant.setPresent(present);
-        return ParticipantView.from(participant);
+        return participantView(participant);
     }
 
 
@@ -136,7 +145,7 @@ public class SessionService {
     public ParticipantView releaseDevice(UUID sessionId, UUID participantId) {
         ClassSession session = getEntity(sessionId);
         ensureActive(session);
-        return ParticipantView.from(joinService.releaseDevice(sessionId, participantId));
+        return participantView(joinService.releaseDevice(sessionId, participantId));
     }
 
     @Transactional
@@ -148,11 +157,28 @@ public class SessionService {
         buzzerService.closeForFinishedSession(sessionId);
         timerService.cancelOpenForFinishedSession(sessionId);
         wordCloudService.closeOpenForFinishedSession(sessionId);
+        pollService.closeOpenForFinishedSession(sessionId);
 
         SessionView view = SessionView.from(session);
         realtimeGateway.broadcastAfterCommit(sessionId, "SESSION_FINISHED", view);
         realtimeGateway.broadcastProjectorsAfterCommit(sessionId, "SESSION_FINISHED", view);
         return view;
+    }
+
+    private ParticipantView participantView(SessionParticipant participant) {
+        Student student = participant.getStudent();
+        UUID classroomId = participant.getSession().getClassroom().getId();
+        return new ParticipantView(
+                participant.getId(),
+                student.getId(),
+                student.getRegistration(),
+                student.getName(),
+                student.getNickname(),
+                displayNameService.preferredName(classroomId, student),
+                displayNameService.resolve(classroomId, student, DisplayNamePolicy.PREFERRED_NAME),
+                participant.isPresent(),
+                participant.isConnected()
+        );
     }
 
     private ClassSession getEntity(UUID id) {
@@ -199,20 +225,10 @@ public class SessionService {
             String registration,
             String name,
             String nickname,
+            String preferredName,
+            String displayName,
             boolean present,
             boolean connected
     ) {
-        static ParticipantView from(SessionParticipant participant) {
-            Student student = participant.getStudent();
-            return new ParticipantView(
-                    participant.getId(),
-                    student.getId(),
-                    student.getRegistration(),
-                    student.getName(),
-                    student.getNickname(),
-                    participant.isPresent(),
-                    participant.isConnected()
-            );
-        }
     }
 }

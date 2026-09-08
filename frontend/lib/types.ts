@@ -106,6 +106,7 @@ export interface Enrollment {
   id: string;
   classroomId: string;
   studentId: string;
+  preferredName: string;
   active: boolean;
   joinedAt: string;
 }
@@ -137,6 +138,8 @@ export interface SessionParticipant {
   registration?: string;
   name: string;
   nickname: string;
+  preferredName: string;
+  displayName: string;
   present: boolean;
   connected: boolean;
 }

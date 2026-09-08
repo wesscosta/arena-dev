@@ -62,7 +62,7 @@ test("external result dialog traps focus and restores the opener", () => {
   assert.match(source, /role="dialog"/);
   assert.match(source, /aria-modal="true"/);
   assert.match(source, /dialogRef/);
-  assert.match(source, /event\.key === "Tab"/);
+  assert.match(source, /event\.key (?:===|!==) "Tab"/);
   assert.match(source, /previousActive\?\.focus/);
 });
 

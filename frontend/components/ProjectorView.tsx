@@ -8,8 +8,10 @@ import {
   type ProjectorSnapshot,
 } from "@/lib/projector-api";
 import type { SessionRealtimeEvent } from "@/lib/realtime-api";
+import { emptyLiveStageState, type LiveStageState } from "@/lib/live-stage-api";
 import type { TimerState } from "@/lib/timer-api";
 import type { WordCloudState } from "@/lib/word-cloud-api";
+import type { PollState } from "@/lib/poll-api";
 import {
   wordCloudFontSize,
   wordCloudStatusLabel,
@@ -21,6 +23,18 @@ import {
   timerStatusLabel,
 } from "@/lib/timer-clock";
 import styles from "@/app/projector/projector.module.css";
+
+type ProjectorBuzzerState = {
+  status: "IDLE" | "OPEN" | "CLOSED";
+  roundId?: string | null;
+  openedAt?: string | null;
+  closedAt?: string | null;
+  presses: Array<{
+    position: number;
+    displayName: string;
+    receivedAt: string;
+  }>;
+};
 
 function errorMessage(error: unknown) {
   return error instanceof Error
@@ -34,6 +48,9 @@ export default function ProjectorView() {
   const [snapshot, setSnapshot] = useState<ProjectorSnapshot | null>(null);
   const [timerState, setTimerState] = useState<TimerState>({ timer: null });
   const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
+  const [pollState, setPollState] = useState<PollState>({ round: null });
+  const [liveStage, setLiveStage] = useState<LiveStageState>(() => emptyLiveStageState());
+  const [buzzerState, setBuzzerState] = useState<ProjectorBuzzerState>({ status: "IDLE", presses: [] });
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [connection, setConnection] = useState<"offline" | "connecting" | "online">("offline");
   const [realtimeVersion, setRealtimeVersion] = useState(0);
@@ -53,6 +70,9 @@ export default function ProjectorView() {
       setSnapshot(null);
       setTimerState({ timer: null });
       setWordCloudState({ round: null });
+      setPollState({ round: null });
+      setLiveStage(emptyLiveStageState());
+      setBuzzerState({ status: "IDLE", presses: [] });
       setConnection("offline");
       return;
     }
@@ -71,6 +91,8 @@ export default function ProjectorView() {
           serverOccurredAt: next.serverTime,
           receivedAtMs: Date.now(),
         });
+        setLiveStage(next.stage ?? emptyLiveStageState(next.sessionId));
+        setPollState(next.poll ?? { round: null });
       })
       .catch((failure) => {
         if (!active) return;
@@ -103,6 +125,16 @@ export default function ProjectorView() {
           return;
         }
 
+        if (event.type === "LIVE_STAGE_STATE") {
+          setLiveStage(event.payload as LiveStageState);
+          return;
+        }
+
+        if (event.type === "BUZZER_STATE") {
+          setBuzzerState(event.payload as ProjectorBuzzerState);
+          return;
+        }
+
         if (event.type === "TIMER_STATE") {
           setTimerState({
             ...(event.payload as TimerState),
@@ -114,6 +146,11 @@ export default function ProjectorView() {
 
         if (event.type === "WORD_CLOUD_STATE") {
           setWordCloudState(event.payload as WordCloudState);
+          return;
+        }
+
+        if (event.type === "POLL_STATE") {
+          setPollState(event.payload as PollState);
           return;
         }
 
@@ -172,17 +209,20 @@ export default function ProjectorView() {
     : 0;
 
   const wordCloudRound = wordCloudState.round;
+  const primaryType = liveStage.primary.type;
   const timerCanTakeFocus = Boolean(
     timer
       && status
       && !["FINISHED", "CANCELLED"].includes(status),
   );
-  const showWordCloud = Boolean(
-    wordCloudRound
-      && (
-        wordCloudRound.status !== "CLOSED"
-        || !timerCanTakeFocus
-      ),
+  const showWordCloud = primaryType === "WORD_CLOUD" && Boolean(wordCloudRound);
+  const pollRound = pollState.round;
+  const showPoll = primaryType === "POLL" && Boolean(pollRound);
+  const showBuzzer = primaryType === "BUZZER";
+  const showDraw = primaryType === "DRAW" && Boolean(liveStage.primary.displayName);
+  const showTimerPrimary = primaryType === "TIMER" || (primaryType === "IDLE" && timerCanTakeFocus);
+  const showTimerOverlay = liveStage.overlays.timer && Boolean(
+    timer && status && ["RUNNING", "PAUSED"].includes(status),
   );
   const maxWordCount = wordCloudRound?.terms.reduce(
     (current, term) => Math.max(current, term.count),
@@ -285,12 +325,53 @@ export default function ProjectorView() {
         </div>
       </header>
 
-      <section className={`${styles.stage} ${showWordCloud ? styles.wordCloudFocus : ""}`}>
+      <section className={`${styles.stage} ${showWordCloud ? styles.wordCloudFocus : ""} ${showPoll ? styles.pollFocus : ""}`}>
         {sessionFinished ? (
           <div className={styles.waiting}>
             <span className={styles.eyebrow}>SESSÃO ENCERRADA</span>
             <h1>A aula foi finalizada</h1>
             <p>O modo projetor pode ser fechado com segurança.</p>
+          </div>
+        ) : showDraw ? (
+          <div className={styles.drawStage}>
+            <span className={styles.eyebrow}>SORTEIO</span>
+            <p>Aluno sorteado</p>
+            <h1>{liveStage.primary.displayName}</h1>
+            {showTimerOverlay && timer && status && (
+              <div className={styles.miniTimer}>
+                <span>{timer.title}</span>
+                <strong>{formatTimer(remaining)}</strong>
+              </div>
+            )}
+          </div>
+        ) : showBuzzer ? (
+          <div className={styles.buzzerStage}>
+            <div className={styles.buzzerHeading}>
+              <div>
+                <span className={styles.eyebrow}>BUZZER</span>
+                <h1>{buzzerState.status === "OPEN" ? "Valendo!" : buzzerState.status === "CLOSED" ? "Rodada encerrada" : "Aguardando rodada"}</h1>
+              </div>
+              {showTimerOverlay && timer && status && (
+                <div className={styles.miniTimer}>
+                  <span>{timer.title}</span>
+                  <strong>{formatTimer(remaining)}</strong>
+                </div>
+              )}
+            </div>
+            {buzzerState.presses.length > 0 ? (
+              <div className={styles.buzzerRanking}>
+                {buzzerState.presses.slice(0, 8).map((press) => (
+                  <div key={`${press.position}-${press.receivedAt}`} className={press.position === 1 ? styles.buzzerWinner : undefined}>
+                    <b>#{press.position}</b>
+                    <strong>{press.displayName}</strong>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.buzzerWaiting}>
+                <strong>{buzzerState.status === "OPEN" ? "Aguardando o primeiro clique" : "O professor abrirá a próxima rodada."}</strong>
+              </div>
+            )}
           </div>
         ) : showWordCloud && wordCloudRound ? (
           <div className={styles.wordCloudStage}>
@@ -309,7 +390,7 @@ export default function ProjectorView() {
               </div>
             </div>
 
-            {timer && status && ["RUNNING", "PAUSED"].includes(status) && (
+            {showTimerOverlay && timer && status && (
               <div className={styles.miniTimer}>
                 <span>{timer.title}</span>
                 <strong>{formatTimer(remaining)}</strong>
@@ -350,7 +431,25 @@ export default function ProjectorView() {
               {wordCloudRound.status === "CLOSED" && <strong>Rodada encerrada</strong>}
             </div>
           </div>
-        ) : timer ? (
+        ) : showPoll && pollRound ? (
+          <div className={styles.pollStage}>
+            <div className={styles.pollTop}>
+              <div><span className={styles.eyebrow}>VOTAÇÃO</span><h1>{pollRound.prompt}</h1></div>
+              <div className={styles.pollMeta}><strong>{pollRound.totalVotes} voto(s)</strong><span>{pollRound.status === "OPEN" ? "ABERTA" : pollRound.status === "REVEALED" ? "REVELADA" : "ENCERRADA"}</span></div>
+            </div>
+            {showTimerOverlay && timer && status && <div className={styles.miniTimer}><span>{timer.title}</span><strong>{formatTimer(remaining)}</strong></div>}
+            {pollRound.publicResultsVisible ? (
+              <div className={styles.pollResults}>
+                {pollRound.options.map((option) => <div className={styles.pollOption} key={option.id}>
+                  <div><span>{String.fromCharCode(65 + option.position)}. {option.label}</span><strong>{option.voteCount ?? 0} · {(option.percentage ?? 0).toFixed(0)}%</strong></div>
+                  <div className={styles.pollBar}><span style={{ width: `${option.percentage ?? 0}%` }}/></div>
+                </div>)}
+              </div>
+            ) : (
+              <div className={styles.pollProtected}><strong>Votação em andamento</strong><p>Os resultados serão revelados pelo professor.</p><span>{pollRound.totalVotes} voto(s) recebido(s)</span></div>
+            )}
+          </div>
+        ) : showTimerPrimary && timer ? (
           <div className={styles.timerStage}>
             <span className={`${styles.status} ${styles[status?.toLowerCase() ?? "ready"]}`}>
               <i />
@@ -367,7 +466,7 @@ export default function ProjectorView() {
           <div className={styles.waiting}>
             <span className={styles.eyebrow}>AULA AO VIVO</span>
             <h1>Aguardando próxima dinâmica</h1>
-            <p>Timer, Nuvem de Palavras e outras dinâmicas aparecerão aqui automaticamente.</p>
+            <p>Sorteio, Nuvem, Buzzer, Timer e outras dinâmicas aparecerão aqui quando o professor as colocar no palco.</p>
           </div>
         )}
       </section>

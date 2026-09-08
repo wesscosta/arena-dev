@@ -25,5 +25,18 @@ public interface SessionParticipantRepository extends JpaRepository<SessionParti
     List<SessionParticipant> findBySessionIdForUpdate(@Param("sessionId") UUID sessionId);
 
     Optional<SessionParticipant> findByIdAndSessionId(UUID id, UUID sessionId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select participant
+            from SessionParticipant participant
+            join fetch participant.student
+            where participant.id = :participantId
+              and participant.session.id = :sessionId
+            """)
+    Optional<SessionParticipant> findByIdAndSessionIdForUpdate(
+            @Param("participantId") UUID participantId,
+            @Param("sessionId") UUID sessionId
+    );
     boolean existsBySessionIdAndStudentId(UUID sessionId, UUID studentId);
 }

@@ -71,6 +71,15 @@ public class ClassroomController {
         return service.enroll(id, studentId);
     }
 
+    @PatchMapping("/{id}/students/{studentId}/preferred-name")
+    public ClassroomService.EnrollmentView updatePreferredName(
+            @PathVariable UUID id,
+            @PathVariable UUID studentId,
+            @RequestBody EnrollmentPreferredNameRequest request
+    ) {
+        return service.updatePreferredName(id, studentId, request.preferredName());
+    }
+
     @PatchMapping("/{id}/students/{studentId}")
     public ClassroomService.EnrollmentView setEnrollmentActive(
             @PathVariable UUID id,
@@ -93,5 +102,8 @@ public class ClassroomController {
     }
 
     public record EnrollmentStatusRequest(boolean active) {
+    }
+
+    public record EnrollmentPreferredNameRequest(String preferredName) {
     }
 }

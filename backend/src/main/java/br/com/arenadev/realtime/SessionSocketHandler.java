@@ -2,8 +2,10 @@ package br.com.arenadev.realtime;
 
 import br.com.arenadev.session.SessionJoinService;
 import br.com.arenadev.session.SessionParticipant;
+import br.com.arenadev.stage.LiveStageService;
 import br.com.arenadev.timer.SessionTimerService;
 import br.com.arenadev.wordcloud.WordCloudService;
+import br.com.arenadev.poll.PollService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -32,6 +34,8 @@ public class SessionSocketHandler extends TextWebSocketHandler {
     private final BuzzerService buzzerService;
     private final SessionTimerService timerService;
     private final WordCloudService wordCloudService;
+    private final PollService pollService;
+    private final LiveStageService liveStageService;
     private final JsonMapper json = JsonMapper.builder().build();
 
     public SessionSocketHandler(
@@ -39,13 +43,17 @@ public class SessionSocketHandler extends TextWebSocketHandler {
             SessionJoinService joinService,
             BuzzerService buzzerService,
             SessionTimerService timerService,
-            WordCloudService wordCloudService
+            WordCloudService wordCloudService,
+            PollService pollService,
+            LiveStageService liveStageService
     ) {
         this.gateway = gateway;
         this.joinService = joinService;
         this.buzzerService = buzzerService;
         this.timerService = timerService;
         this.wordCloudService = wordCloudService;
+        this.pollService = pollService;
+        this.liveStageService = liveStageService;
     }
 
     @Override
@@ -63,8 +71,8 @@ public class SessionSocketHandler extends TextWebSocketHandler {
 
         // O professor chega autenticado pela sessão HTTP; o aluno autentica no primeiro frame.
         if (socket.getPrincipal() != null) {
-            gateway.register(sessionId, socket);
-            sendSessionState(socket, sessionId);
+            gateway.registerTeacher(sessionId, socket);
+            sendTeacherState(socket, sessionId);
         } else {
             gateway.send(socket, "AUTH_REQUIRED", sessionId, Map.of("message", "Autentique o participante neste canal."));
         }
@@ -100,6 +108,10 @@ public class SessionSocketHandler extends TextWebSocketHandler {
             }
             if ("WORD_CLOUD_SUBMIT".equals(type)) {
                 submitWordCloud(socket, sessionId, payload.get("words"));
+                return;
+            }
+            if ("POLL_VOTE".equals(type)) {
+                submitPollVote(socket, sessionId, payload.get("optionId"));
             }
         } catch (RuntimeException error) {
             gateway.send(socket, "ERROR", sessionId, Map.of("message", error.getMessage() == null ? "Evento inválido." : error.getMessage()));
@@ -136,12 +148,18 @@ public class SessionSocketHandler extends TextWebSocketHandler {
                 : SessionJoinService.ParticipantConnectionView.from(participant);
         gateway.broadcast(sessionId, "PARTICIPANT_CONNECTED", view);
         gateway.send(socket, "AUTH_OK", sessionId, view);
-        sendSessionState(socket, sessionId);
+        sendParticipantState(socket, sessionId);
         gateway.send(
                 socket,
                 "WORD_CLOUD_PARTICIPANT_STATE",
                 sessionId,
                 wordCloudService.participantState(sessionId, participant.getId())
+        );
+        gateway.send(
+                socket,
+                "POLL_PARTICIPANT_STATE",
+                sessionId,
+                pollService.participantState(sessionId, participant.getId())
         );
     }
 
@@ -176,15 +194,51 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         );
     }
 
-    private void sendSessionState(WebSocketSession socket, UUID sessionId) {
+    private void submitPollVote(
+            WebSocketSession socket,
+            UUID sessionId,
+            Object rawOptionId
+    ) {
+        UUID participantId = (UUID) socket.getAttributes().get(ATTR_PARTICIPANT_ID);
+        if (participantId == null) {
+            throw new IllegalArgumentException("Somente participantes identificados podem votar.");
+        }
+        UUID optionId;
+        try {
+            optionId = UUID.fromString(String.valueOf(rawOptionId));
+        } catch (IllegalArgumentException error) {
+            throw new IllegalArgumentException("Opção de votação inválida.");
+        }
+        PollService.ParticipantStateView participantState = pollService.vote(
+                sessionId,
+                participantId,
+                optionId
+        );
+        gateway.send(socket, "POLL_PARTICIPANT_STATE", sessionId, participantState);
+    }
+
+    private void sendTeacherState(WebSocketSession socket, UUID sessionId) {
+        gateway.send(socket, "LIVE_STAGE_STATE", sessionId, liveStageService.state(sessionId));
         gateway.send(socket, "BUZZER_STATE", sessionId, buzzerService.state(sessionId));
         gateway.send(socket, "TIMER_STATE", sessionId, timerService.state(sessionId));
         gateway.send(socket, "WORD_CLOUD_STATE", sessionId, wordCloudService.state(sessionId));
+        gateway.send(socket, "POLL_STATE", sessionId, pollService.state(sessionId));
+    }
+
+    private void sendParticipantState(WebSocketSession socket, UUID sessionId) {
+        gateway.send(socket, "LIVE_STAGE_STATE", sessionId, liveStageService.participantState(sessionId));
+        gateway.send(socket, "BUZZER_STATE", sessionId, buzzerService.state(sessionId));
+        gateway.send(socket, "TIMER_STATE", sessionId, timerService.state(sessionId));
+        gateway.send(socket, "WORD_CLOUD_STATE", sessionId, wordCloudService.state(sessionId));
+        gateway.send(socket, "POLL_STATE", sessionId, pollService.publicState(sessionId));
     }
 
     private void sendProjectorState(WebSocketSession socket, UUID sessionId) {
+        gateway.send(socket, "LIVE_STAGE_STATE", sessionId, liveStageService.projectorState(sessionId));
+        gateway.send(socket, "BUZZER_STATE", sessionId, buzzerService.projectorState(sessionId));
         gateway.send(socket, "TIMER_STATE", sessionId, timerService.state(sessionId));
         gateway.send(socket, "WORD_CLOUD_STATE", sessionId, wordCloudService.state(sessionId));
+        gateway.send(socket, "POLL_STATE", sessionId, pollService.publicState(sessionId));
     }
 
     @Override
@@ -199,6 +253,9 @@ public class SessionSocketHandler extends TextWebSocketHandler {
 
         gateway.unregister(sessionId, socket);
         UUID participantId = (UUID) socket.getAttributes().get(ATTR_PARTICIPANT_ID);
+        if (participantId == null && socket.getPrincipal() != null) {
+            gateway.unregisterTeacher(sessionId, socket);
+        }
         String token = (String) socket.getAttributes().get(ATTR_TOKEN);
         if (participantId != null && token != null) {
             int remaining = gateway.unregisterParticipant(sessionId, participantId, socket);

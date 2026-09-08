@@ -1,6 +1,6 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 7 de setembro de 2026
+**Última sincronização documental:** 8 de setembro de 2026
 
 **Release estável:** `v0.3.0`, publicada em 05/09/2026.
 
@@ -8,7 +8,9 @@
 
 **Branch:** `feat/v0.4-live-classroom`.
 
-**Próximo incremento:** **12.4D — Poll/Votação em runtime**.
+**Checkpoint local:** **12.4D.0A–D concluídos localmente e 12.4D.1 — Poll/Votação implementado de ponta a ponta para professor, `/join` e Projetor.**
+
+**Próximo incremento recomendado:** **12.4E — orquestração progressiva Live Flow ↔ Live Stage e conclusão incremental dos adapters de Slide/Question/Boss/Quiz.**
 
 Este arquivo é a referência técnica versionada do estado corrente. Documentos de incremento preservam histórico e podem conter estados superados.
 
@@ -20,7 +22,7 @@ Este arquivo é a referência técnica versionada do estado corrente. Documentos
 4. ADRs aceitos;
 5. documentos históricos.
 
-A branch remota pode ficar temporariamente atrás da árvore local durante validações.
+A branch remota pode ficar temporariamente atrás da árvore local durante validações. Em 08/09/2026, o ZIP de trabalho analisado estava 14 commits à frente da referência remota disponível no início deste incremento.
 
 ## Baseline estável v0.3.0
 
@@ -45,15 +47,28 @@ Não há evidência registrada de que ensaio local de rollback ou `release-gate.
 | Infra local | Docker Compose |
 | Arquitetura | monólito modular |
 
-## Produto
+## Produto e arquitetura de informação
 
 ```text
 Visão geral = nível sistema
 Turma       = contexto pedagógico
 Arena       = operação da aula ao vivo
+
+Arena
+├── Condução
+├── Dinâmicas
+│   ├── Sorteio
+│   ├── Nuvem de Palavras
+│   ├── Buzzer
+│   ├── Votação         implementada
+│   ├── Quiz            futuro
+│   └── Boss Battle     migração progressiva para palco
+├── Tempo
+├── Presença
+└── Organização
 ```
 
-Arena Dev não é LMS.
+Arena Dev não é LMS. Não reintroduzir sidebar global apenas para duplicar o contexto já resolvido por `Visão geral › Turma › Arena`.
 
 ## Consolidado
 
@@ -79,7 +94,64 @@ v0.4:
 - 12.3D.7A Design System;
 - 12.3D.7B Core UI Primitives;
 - 12.3D.7C Accessibility Pass;
-- 12.3D.7D Responsive & Visual Polish.
+- 12.3D.7D Responsive & Visual Polish;
+- 12.4D.0A Live Stage / Presentation State;
+- 12.4D.0B: `Dinâmicas`, Sorteio/Nuvem/Buzzer/Poll no palco;
+- 12.4D.0C: `Enrollment.preferredName` e `DisplayNameService`;
+- 12.4D.0D: device claim opaco separado do participant token;
+- 12.4D.1: Poll single-choice, resultados agregados/anônimos, `/join` e Projetor.
+
+## Live Stage / Projection State
+
+A sessão possui **um único palco principal autoritativo**, em vez de flags concorrentes por feature.
+
+```text
+Professor ──comanda──► LiveStageState
+                         │
+                         ├── primary.type
+                         ├── audience
+                         └── overlays.timer
+                           ↙             ↘
+                    /projector           /join
+                   visão pública      visão individual
+```
+
+`DynamicType.LIVE_STAGE` reutiliza `session_dynamics`; não exige migration nova.
+
+Tipos do contrato:
+
+```text
+IDLE
+DRAW
+SLIDE
+QUESTION
+QUIZ
+WORD_CLOUD
+POLL
+BUZZER
+BOSS_BATTLE
+TIMER
+```
+
+Audiências:
+
+```text
+PROJECTOR
+PARTICIPANTS
+BOTH
+```
+
+Regras:
+
+- apenas um `primary` por sessão;
+- Timer pode continuar transversal via overlay;
+- professor, Projetor e participante recebem projeções próprias do mesmo estado;
+- clientes públicos não devem decidir política de exposição de identidade;
+- `LIVE_STAGE_STATE` seleciona o palco, enquanto eventos especializados mantêm o detalhe do módulo;
+- Sorteio, Nuvem e Buzzer já ativam o palco automaticamente;
+- não ativar tipos sem adapter/renderização correspondente.
+
+Consulte [`INCREMENT_12_4D_0.md`](INCREMENT_12_4D_0.md) e ADR-0027.
 
 ## ActivityStep / Live Flow
 
@@ -102,11 +174,27 @@ currentStepId
 currentStepPosition
 ```
 
-Professor controla `start`, `previous` e `next`. Timer é transversal.
+Professor controla `start`, `previous` e `next`. O Live Flow e o Live Stage continuam abstrações distintas: **roteiro define sequência; palco define o que está sendo apresentado agora**. A orquestração entre ambos permanece incremental.
+
+## Identidade — implementação local concluída
+
+```text
+Student           = identidade canônica
+Enrollment        = preferredName no contexto da turma
+Device claim      = identificador opaco persistente por matrícula
+Participant token = credencial temporária da sessão
+```
+
+- `V11` adiciona `Enrollment.preferredName` com backfill do nickname legado;
+- `DisplayNameService` resolve a política no backend antes da projeção pública;
+- `V12` adiciona claims opacos de dispositivo, expirados/revogáveis;
+- `localStorage` contém somente device claim por turma;
+- `sessionStorage` contém somente participant token da aula atual;
+- reconhecer o dispositivo apenas facilita a reentrada e **não** concede permissão direta de voto/Buzzer/WebSocket.
 
 ## Flyway
 
-Maior migration detectada: **V10**.
+Maior migration detectada: **V13**.
 
 - `V1` — `classroom session foundation`.
 - `V2` — `one active session per classroom`.
@@ -118,8 +206,11 @@ Maior migration detectada: **V10**.
 - `V8` — `word cloud`.
 - `V9` — `word cloud max words integer`.
 - `V10` — `activity steps`.
+- `V11` — `enrollment preferred name`.
+- `V12` — `enrollment device claims`.
+- `V13` — `poll runtime` (`poll_rounds`, `poll_options`, `poll_votes`).
 
-O runtime do step atual não cria nova migration além da fundação persistente de ActivityStep.
+Live Stage usa `SessionDynamic` e **não adiciona migration**.
 
 ## UI e acessibilidade
 
@@ -160,33 +251,41 @@ Baseline:
 - LiveRegion controlado;
 - Timer sem anúncio por segundo.
 
-## Próximo — 12.4D Poll
+## Validação do checkpoint local — 08/09/2026
 
-Ainda não implementado em runtime.
+Frontend:
 
-Escopo:
+```text
+npm test          73/73 OK
+npm run typecheck OK
+npm run build     OK
+```
 
-- PollRound;
-- PollVote;
-- single-choice no MVP;
-- um voto por participante/rodada;
-- resultado agregado/anônimo;
-- live ou collect→reveal;
-- POLL_STATE;
-- POLL_PARTICIPANT_STATE;
-- POLL_VOTE;
-- professor + /join + Projetor.
+Backend:
 
-Poll não possui resposta correta nem XP no MVP.
+```text
+compilação Java 21 de todos os fontes main: OK
+```
 
-## Depois
+`LiveStageIT`, `DeviceClaimIT` e `PollIT` foram adicionados para o gate normal com PostgreSQL/Testcontainers. A compilação Java 21 dos fontes `main` após Poll está verde.
 
-- 12.4E — orquestração Word Cloud/Poll a partir do step;
-- 12.4F — `/join` + Projector pelo live step;
-- 12.5 — SessionEvent cronológico;
-- 12.6 — hardening e gate v0.4.
+**Limitação deste ambiente:** Maven e Docker não estão disponíveis, portanto `mvn -B -ntp verify` e `docker compose up -d --build` não foram executados neste checkpoint. O último gate completo anterior permanece como referência histórica, mas as mudanças 12.4D.0 ainda precisam passar pelo gate backend/Compose no ambiente normal ou CI.
 
-## Gate
+## Próxima sequência
+
+```text
+12.4E orquestração progressiva Live Flow ↔ Live Stage
+↓
+adapters de Slide / Question / Boss / Quiz
+↓
+12.4F consolidação pública /join + Projector
+↓
+12.5 SessionEvent
+↓
+12.6 hardening e gate v0.4
+```
+
+## Gate normal
 
 ```bash
 cd frontend
@@ -194,17 +293,13 @@ npm test
 npm run typecheck
 npm run build
 
+cd ../backend
+mvn -B -ntp verify
+
 cd ..
 docker compose up -d --build
 sleep 5
 docker compose ps
-```
-
-Backend alterado:
-
-```bash
-cd backend
-mvn -B -ntp verify
 ```
 
 ## Versionamento

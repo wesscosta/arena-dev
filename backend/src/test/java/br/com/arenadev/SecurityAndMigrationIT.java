@@ -95,12 +95,16 @@ class SecurityAndMigrationIT {
                     'session_timers',
                     'word_cloud_rounds',
                     'word_cloud_submissions',
-                    'activity_steps'
+                    'activity_steps',
+                    'enrollment_device_claims',
+                    'poll_rounds',
+                    'poll_options',
+                    'poll_votes'
                   )
                 """, Integer.class);
 
-        assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
-        assertThat(expectedTables).isEqualTo(19);
+        assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13");
+        assertThat(expectedTables).isEqualTo(23);
     }
 
     @Test

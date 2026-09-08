@@ -43,6 +43,8 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0024](ADR-0024-fronteira-de-seguranca-e-hardening-realtime.md) | Fronteira de segurança do professor e hardening realtime | Aceito |
 | [ADR-0025](ADR-0025-release-readiness-e-versionamento.md) | Release readiness, versionamento `0.3.x` e fronteira de rollback | Aceito |
 | [ADR-0026](ADR-0026-community-mit-e-produto-comercial-verit.md) | Arena Dev Community sob MIT e produto comercial Verit em repositório privado separado | Aceito |
+| [ADR-0027](ADR-0027-live-stage-e-projecoes-por-audiencia.md) | Live Stage autoritativo e projeções por audiência | Aceito |
+| [ADR-0028](ADR-0028-preferred-name-e-identidade-de-dispositivo.md) | Preferred name por matrícula e identidade opaca de dispositivo | Aceito |
 
 ## Template
 

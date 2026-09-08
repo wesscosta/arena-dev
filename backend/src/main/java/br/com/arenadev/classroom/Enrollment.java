@@ -35,6 +35,9 @@ public class Enrollment {
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
+    @Column(name = "preferred_name", length = 80)
+    private String preferredName;
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -47,6 +50,7 @@ public class Enrollment {
     public Enrollment(Classroom classroom, Student student) {
         this.classroom = classroom;
         this.student = student;
+        this.preferredName = normalizeOptional(student.getNickname());
     }
 
     public UUID getId() {
@@ -61,6 +65,10 @@ public class Enrollment {
         return student;
     }
 
+    public String getPreferredName() {
+        return preferredName;
+    }
+
     public boolean isActive() {
         return active;
     }
@@ -71,5 +79,13 @@ public class Enrollment {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public void setPreferredName(String preferredName) {
+        this.preferredName = normalizeOptional(preferredName);
+    }
+
+    private static String normalizeOptional(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

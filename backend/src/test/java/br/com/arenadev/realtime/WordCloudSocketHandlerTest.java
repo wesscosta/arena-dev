@@ -1,5 +1,7 @@
 package br.com.arenadev.realtime;
 
+import br.com.arenadev.poll.PollService;
+import br.com.arenadev.stage.LiveStageService;
 import br.com.arenadev.session.SessionJoinService;
 import br.com.arenadev.session.SessionParticipant;
 import br.com.arenadev.timer.SessionTimerService;
@@ -32,6 +34,8 @@ class WordCloudSocketHandlerTest {
         BuzzerService buzzerService = mock(BuzzerService.class);
         SessionTimerService timerService = mock(SessionTimerService.class);
         WordCloudService wordCloudService = mock(WordCloudService.class);
+        PollService pollService = mock(PollService.class);
+        LiveStageService liveStageService = mock(LiveStageService.class);
         SessionParticipant participant = mock(SessionParticipant.class);
 
         var connection = new SessionJoinService.ParticipantConnectionView(
@@ -62,6 +66,9 @@ class WordCloudSocketHandlerTest {
                 .thenReturn(new SessionTimerService.TimerStateView(null));
         when(wordCloudService.state(sessionId))
                 .thenReturn(WordCloudService.StateView.empty());
+        when(pollService.publicState(sessionId)).thenReturn(PollService.StateView.empty());
+        when(pollService.participantState(sessionId, participantId)).thenReturn(PollService.ParticipantStateView.empty());
+        when(liveStageService.participantState(sessionId)).thenReturn(mock(LiveStageService.StateView.class));
         when(wordCloudService.participantState(sessionId, participantId))
                 .thenReturn(WordCloudService.ParticipantStateView.empty());
         when(wordCloudService.submit(
@@ -75,7 +82,9 @@ class WordCloudSocketHandlerTest {
                 joinService,
                 buzzerService,
                 timerService,
-                wordCloudService
+                wordCloudService,
+                pollService,
+                liveStageService
         );
 
         WebSocketSession socket = mock(WebSocketSession.class);

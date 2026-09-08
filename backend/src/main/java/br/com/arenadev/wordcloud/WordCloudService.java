@@ -7,6 +7,7 @@ import br.com.arenadev.session.SessionParticipant;
 import br.com.arenadev.session.SessionParticipantRepository;
 import br.com.arenadev.session.SessionStatus;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import br.com.arenadev.stage.LiveStageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,19 +39,22 @@ public class WordCloudService {
     private final ClassSessionRepository sessionRepository;
     private final SessionParticipantRepository participantRepository;
     private final SessionRealtimeGateway realtimeGateway;
+    private final LiveStageService liveStageService;
 
     public WordCloudService(
             WordCloudRoundRepository roundRepository,
             WordCloudSubmissionRepository submissionRepository,
             ClassSessionRepository sessionRepository,
             SessionParticipantRepository participantRepository,
-            SessionRealtimeGateway realtimeGateway
+            SessionRealtimeGateway realtimeGateway,
+            LiveStageService liveStageService
     ) {
         this.roundRepository = roundRepository;
         this.submissionRepository = submissionRepository;
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
         this.realtimeGateway = realtimeGateway;
+        this.liveStageService = liveStageService;
     }
 
     @Transactional
@@ -80,6 +84,7 @@ public class WordCloudService {
         ));
 
         StateView state = stateOf(round);
+        liveStageService.showWordCloud(sessionId, round.getId());
         broadcastStateAfterCommit(sessionId, state);
         return state;
     }

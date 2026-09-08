@@ -8,6 +8,7 @@ import LiveFlowConductor from "@/components/LiveFlowConductor";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
 import WordCloudPanel from "@/components/WordCloudPanel";
+import PollPanel from "@/components/PollPanel";
 import SessionAccessCard from "@/components/SessionAccessCard";
 import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
 import {
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
-import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi } from "@/lib/classroom-api";
+import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName } from "@/lib/classroom-api";
 import { createSession as createSessionApi, fetchSessionDomain, fetchSessionParticipants, finishSession as finishSessionApi, releaseParticipantDevice, setParticipantPresence } from "@/lib/session-api";
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, fetchActivityDomain, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
 import { fetchActivitySteps, replaceActivitySteps } from "@/lib/activity-step-api";
@@ -48,6 +49,7 @@ import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, 
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
 import type { TimerState } from "@/lib/timer-api";
 import { fetchWordCloudState, type WordCloudState } from "@/lib/word-cloud-api";
+import { fetchPollState, type PollState } from "@/lib/poll-api";
 import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
 import { activeSessionId, selectPreferredClassroomId } from "@/lib/app-state";
 import {
@@ -981,7 +983,8 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
   showSummary?: boolean;
 }) {
   const [name, setName] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [preferredName, setPreferredName] = useState("");
+  const [preferredDrafts, setPreferredDrafts] = useState<Record<string, string>>({});
   const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -992,11 +995,11 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
     .sort((a, b) => a.student.name.localeCompare(b.student.name));
   const activeCount = allRows.filter((row) => row.enrollment.active).length;
 
-  async function addStudent(studentName: string, studentNickname = "", silent = false) {
+  async function addStudent(studentName: string, studentPreferredName = "", silent = false) {
     if (!studentName.trim() || (!silent && busy)) return false;
     if (!silent) setBusy(true);
     try {
-      await createAndEnrollStudent(classroomId, { name: studentName.trim(), nickname: studentNickname.trim() });
+      await createAndEnrollStudent(classroomId, { name: studentName.trim(), preferredName: studentPreferredName.trim() });
       if (!silent) {
         await refreshClassroomDomain(classroomId);
         notify("Aluno cadastrado e vinculado à turma.");
@@ -1041,6 +1044,20 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
     }
   }
 
+  async function savePreferredName(studentId: string, currentValue: string) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await updateEnrollmentPreferredName(classroomId, studentId, currentValue);
+      await refreshClassroomDomain(classroomId);
+      notify("Nome de exibição atualizado para esta turma.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function toggleStudent(studentId: string, active: boolean) {
     if (busy) return;
     setBusy(true);
@@ -1061,8 +1078,8 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
         <Panel title="Adicionar aluno" subtitle="Cadastro individual">
           <div className="form-grid">
             <input className="input" placeholder="Nome completo" value={name} onChange={(event) => setName(event.target.value)} disabled={busy} />
-            <input className="input" placeholder="Apelido (opcional)" value={nickname} onChange={(event) => setNickname(event.target.value)} disabled={busy} />
-            <button className="button primary" disabled={busy || !name.trim()} onClick={() => { void addStudent(name, nickname).then((created) => { if (created) { setName(""); setNickname(""); } }); }}>Adicionar aluno</button>
+            <input className="input" placeholder="Nome de exibição na turma (opcional)" value={preferredName} onChange={(event) => setPreferredName(event.target.value)} disabled={busy} />
+            <button className="button primary" disabled={busy || !name.trim()} onClick={() => { void addStudent(name, preferredName).then((created) => { if (created) { setName(""); setPreferredName(""); } }); }}>Adicionar aluno</button>
           </div>
         </Panel>
         <Panel title="Importar lista" subtitle="Um aluno por linha">
@@ -1080,7 +1097,7 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
                 const xp = xpForStudent(data.scoreEvents, classroomId, student.id);
                 return (
                   <div className="table-row" key={enrollment.id}>
-                    <div className="student-cell"><Avatar student={student} /><div><strong>{student.name}</strong><small>{student.nickname || "Sem apelido"}</small></div></div>
+                    <div className="student-cell"><Avatar student={student} /><div><strong>{student.name}</strong><small>Exibição: {enrollment.preferredName || student.nickname || student.name}</small><div className="row-actions"><input className="input" aria-label={`Nome de exibição de ${student.name}`} value={preferredDrafts[student.id] ?? enrollment.preferredName} onChange={(event) => setPreferredDrafts((current) => ({ ...current, [student.id]: event.target.value }))} placeholder="Nome público" disabled={busy} /><button className="text-button" disabled={busy} onClick={() => { void savePreferredName(student.id, preferredDrafts[student.id] ?? enrollment.preferredName); }}>Salvar nome</button></div></div></div>
                     <span className={enrollment.active ? "status active" : "status"}>{enrollment.active ? "Ativo" : "Inativo"}</span>
                     <b>{xp} XP</b>
                     <div className="row-actions">
@@ -1257,7 +1274,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
   const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "presence" | "groups" | "boss">("live");
-  const [interactionTool, setInteractionTool] = useState<"wordcloud" | "buzzer">("wordcloud");
+  const [interactionTool, setInteractionTool] = useState<"draw" | "wordcloud" | "poll" | "buzzer">("draw");
   const [accessOpen, setAccessOpen] = useState(false);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
@@ -1275,6 +1292,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [buzzerState, setBuzzerState] = useState<BuzzerState>({ status: "IDLE", presses: [] });
   const [timerState, setTimerState] = useState<TimerState>({ timer: null });
   const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
+  const [pollState, setPollState] = useState<PollState>({ round: null });
   const [realtimeStatus, setRealtimeStatus] = useState<"offline" | "connecting" | "online">("offline");
   const [realtimeVersion, setRealtimeVersion] = useState(0);
   const [publicBaseUrl, setPublicBaseUrl] = useState("");
@@ -1336,6 +1354,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       setBuzzerState({ status: "IDLE", presses: [] });
       setTimerState({ timer: null });
       setWordCloudState({ round: null });
+      setPollState({ round: null });
       setRealtimeStatus("offline");
       return;
     }
@@ -1348,12 +1367,14 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       fetchJoinCode(currentSession.id),
       fetchBuzzerState(currentSession.id),
       fetchWordCloudState(currentSession.id),
+      fetchPollState(currentSession.id),
     ])
-      .then(([code, buzzer, wordCloud]) => {
+      .then(([code, buzzer, wordCloud, poll]) => {
         if (!active) return;
         setJoinCode(code);
         setBuzzerState(buzzer);
         setWordCloudState(wordCloud);
+        setPollState(poll);
         if (buzzer.presses[0]) setSelectedId(buzzer.presses[0].studentId);
       })
       .catch((error) => { if (active) notify(errorMessage(error)); });
@@ -1374,6 +1395,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }
       if (event.type === "WORD_CLOUD_STATE") {
         setWordCloudState(event.payload as WordCloudState);
+      }
+      if (event.type === "POLL_STATE") {
+        setPollState(event.payload as PollState);
       }
       if (event.type === "PARTICIPANT_CONNECTED" || event.type === "PARTICIPANT_DISCONNECTED") {
         void refreshRealtimeParticipants(currentSession.id);
@@ -1508,7 +1532,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         ...current,
         sessionParticipants: current.sessionParticipants.map((item) => item.id === updated.id ? updated : item),
       }));
-      notify(`Dispositivo de ${participant.nickname || participant.name} liberado.`);
+      notify(`Dispositivo de ${participant.displayName || participant.preferredName || participant.nickname || participant.name} liberado.`);
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1931,13 +1955,15 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           },
           {
             id: "interactions",
-            label: "Interações",
+            label: "Dinâmicas",
             description:
               buzzerState.status === "OPEN"
                 ? "Buzzer aberto"
                 : wordCloudState.round?.status === "COLLECTING"
                   ? "Nuvem coletando"
-                  : "Nuvem · Buzzer",
+                  : selected
+                    ? `Sorteio · ${selected.nickname || selected.name}`
+                    : "Sorteio · Nuvem · Buzzer",
           },
           {
             id: "timer",
@@ -2056,6 +2082,101 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               </Panel>
             ) : null}
 
+        </div>
+      )}
+
+      {arenaTab === "timer" && (
+        <TimerPanel
+          sessionId={currentSession.id}
+          state={timerState}
+          onStateChange={setTimerState}
+          notify={notify}
+        />
+      )}
+
+      {arenaTab === "interactions" && (
+        <div className="stack-lg arena-tab-content">
+          <div className="arena-interaction-switch" role="tablist" aria-label="Tipo de dinâmica">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={interactionTool === "draw"}
+              className={interactionTool === "draw" ? "active" : ""}
+              onClick={() => setInteractionTool("draw")}
+            >
+              <span>◎</span>
+              <div>
+                <strong>Sorteio</strong>
+                <small>{selected ? `Último: ${selected.nickname || selected.name}` : "Sorteio inteligente da turma"}</small>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={interactionTool === "wordcloud"}
+              className={interactionTool === "wordcloud" ? "active" : ""}
+              onClick={() => setInteractionTool("wordcloud")}
+            >
+              <span>☁</span>
+              <div>
+                <strong>Nuvem de Palavras</strong>
+                <small>
+                  {wordCloudState.round
+                    ? wordCloudState.round.status === "COLLECTING"
+                      ? "Coletando respostas"
+                      : wordCloudState.round.status === "REVEALED"
+                        ? "Respostas reveladas"
+                        : "Rodada encerrada"
+                    : "Criar dinâmica aberta"}
+                </small>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={interactionTool === "poll"}
+              className={interactionTool === "poll" ? "active" : ""}
+              onClick={() => setInteractionTool("poll")}
+            >
+              <span>◉</span>
+              <div>
+                <strong>Votação</strong>
+                <small>
+                  {pollState.round
+                    ? pollState.round.status === "OPEN"
+                      ? `${pollState.round.totalVotes} voto(s)`
+                      : pollState.round.status === "REVEALED"
+                        ? "Resultados revelados"
+                        : "Rodada encerrada"
+                    : "Criar votação rápida"}
+                </small>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={interactionTool === "buzzer"}
+              className={interactionTool === "buzzer" ? "active" : ""}
+              onClick={() => setInteractionTool("buzzer")}
+            >
+              <span>⚡</span>
+              <div>
+                <strong>Buzzer</strong>
+                <small>
+                  {buzzerState.status === "OPEN"
+                    ? "Rodada valendo"
+                    : buzzerState.status === "CLOSED"
+                      ? "Rodada encerrada"
+                      : "Abrir rodada rápida"}
+                </small>
+              </div>
+            </button>
+          </div>
+
+          {interactionTool === "draw" ? (
           <div className="arena-grid">
             <div className="arena-main-card">
               <span className="eyebrow accent">SORTEIO INTELIGENTE</span>
@@ -2101,69 +2222,24 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {arenaTab === "timer" && (
-        <TimerPanel
-          sessionId={currentSession.id}
-          state={timerState}
-          onStateChange={setTimerState}
-          notify={notify}
-        />
-      )}
-
-      {arenaTab === "interactions" && (
-        <div className="stack-lg arena-tab-content">
-          <div className="arena-interaction-switch" role="tablist" aria-label="Tipo de interação">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "wordcloud"}
-              className={interactionTool === "wordcloud" ? "active" : ""}
-              onClick={() => setInteractionTool("wordcloud")}
-            >
-              <span>☁</span>
-              <div>
-                <strong>Nuvem de Palavras</strong>
-                <small>
-                  {wordCloudState.round
-                    ? wordCloudState.round.status === "COLLECTING"
-                      ? "Coletando respostas"
-                      : wordCloudState.round.status === "REVEALED"
-                        ? "Respostas reveladas"
-                        : "Rodada encerrada"
-                    : "Criar dinâmica aberta"}
-                </small>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "buzzer"}
-              className={interactionTool === "buzzer" ? "active" : ""}
-              onClick={() => setInteractionTool("buzzer")}
-            >
-              <span>⚡</span>
-              <div>
-                <strong>Buzzer</strong>
-                <small>
-                  {buzzerState.status === "OPEN"
-                    ? "Rodada valendo"
-                    : buzzerState.status === "CLOSED"
-                      ? "Rodada encerrada"
-                      : "Abrir rodada rápida"}
-                </small>
-              </div>
-            </button>
-          </div>
-
-          {interactionTool === "wordcloud" ? (
+          ) : interactionTool === "wordcloud" ? (
             <WordCloudPanel
               sessionId={currentSession.id}
               state={wordCloudState}
               onStateChange={setWordCloudState}
+              notify={notify}
+              joinCode={joinCode}
+              publicBaseUrl={publicBaseUrl}
+              realtimeStatus={realtimeStatus}
+              connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+              presentCount={sessionParticipants.filter((participant) => participant.present).length}
+              showAccessCard={false}
+            />
+          ) : interactionTool === "poll" ? (
+            <PollPanel
+              sessionId={currentSession.id}
+              state={pollState}
+              onStateChange={setPollState}
               notify={notify}
               joinCode={joinCode}
               publicBaseUrl={publicBaseUrl}
@@ -2200,7 +2276,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                     <div className={press.position === 1 ? "buzzer-order-row winner" : "buzzer-order-row"} key={press.id}>
                       <b>#{press.position}</b>
                       <div>
-                        <strong>{press.nickname || press.name}</strong>
+                        <strong>{press.displayName || press.nickname || press.name}</strong>
                         <small>{press.position === 1 ? "Primeiro clique confirmado pelo servidor" : dateTime(press.receivedAt)}</small>
                       </div>
                       {press.position === 1 && (
@@ -2810,7 +2886,7 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
       const names = ["Ana Luiza", "Carlos Henrique", "João Pedro", "Maria Francisca", "Pedro Augusto", "Rafael Lima"];
       const createdStudents: Student[] = [];
       for (const name of names) {
-        const result = await createAndEnrollStudent(classroom.id, { name, nickname: name.split(" ")[0] });
+        const result = await createAndEnrollStudent(classroom.id, { name, preferredName: name.split(" ")[0] });
         createdStudents.push(result.student);
       }
 

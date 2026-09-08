@@ -2,6 +2,8 @@ import { apiFetch, browserApiBaseUrl } from "./auth-api";
 import { normalizeJoinCode } from "./app-state";
 import type { SessionRealtimeEvent } from "./realtime-api";
 import type { SessionTimer } from "./timer-api";
+import type { LiveStageState } from "./live-stage-api";
+import type { PollState } from "./poll-api";
 
 export type ProjectorSnapshot = {
   sessionId: string;
@@ -11,6 +13,8 @@ export type ProjectorSnapshot = {
   expiresAt: string;
   serverTime: string;
   timer: SessionTimer | null;
+  stage: LiveStageState;
+  poll: PollState;
 };
 
 type ApiErrorBody = { message?: string };

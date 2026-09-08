@@ -1,12 +1,12 @@
 # Checkpoint v0.4 — pré-12.4D
 
-**Data:** 07/09/2026
-
+**Data histórica:** 07/09/2026
 **Branch:** `feat/v0.4-live-classroom`
+**Status:** **checkpoint histórico, supersedido em 08/09/2026 pela fundação 12.4D.0.**
 
-**Próximo:** `12.4D — Poll/Votação em runtime`
+> Este documento preserva o ponto imediatamente anterior à decisão de introduzir Live Stage. A indicação original “Poll como próximo passo” não é mais vigente. Consulte [`STATUS_ATUAL.md`](STATUS_ATUAL.md) e [`INCREMENT_12_4D_0.md`](INCREMENT_12_4D_0.md).
 
-## Fechado
+## Fechado até este checkpoint
 
 - Timer;
 - Projector;
@@ -20,7 +20,7 @@
 - Accessibility Pass;
 - Responsive & Visual Polish.
 
-## Último gate informado
+## Gate registrado naquele momento
 
 ```text
 npm test           OK
@@ -29,7 +29,7 @@ npm run build      OK
 docker compose     OK
 ```
 
-## Flyway
+## Flyway naquele checkpoint
 
 Maior migration detectada: `V10`.
 
@@ -44,7 +44,7 @@ Maior migration detectada: `V10`.
 - `V9` — `word cloud max words integer`.
 - `V10` — `activity steps`.
 
-## Próxima sequência
+## Sequência originalmente prevista
 
 ```text
 12.4D Poll runtime
@@ -52,19 +52,22 @@ Maior migration detectada: `V10`.
 12.4E Orquestração
 ↓
 12.4F /join + Projector pelo live step
-↓
-12.5 SessionEvent
-↓
-12.6 Hardening
 ```
 
-## Restrições
+## Decisão posterior — 08/09/2026
 
-Não abrir antes do Poll, salvo regressão real:
+A sequência acima foi corrigida antes do Poll para evitar arquitetura orientada a flags/features:
 
-- microserviços;
-- Redis/Kafka;
-- Kubernetes;
-- event bus genérico;
-- nova refatoração transversal de UI;
-- alteração casual da versão dos manifests.
+```text
+12.4D.0A Live Stage / Presentation State
+↓
+12.4D.0B Dinâmicas + adapters de palco
+↓
+12.4D.0C preferredName / displayName
+↓
+12.4D.0D device claim opaco
+↓
+12.4D.1 Poll runtime
+```
+
+O checkpoint continua versionado como evidência histórica; não deve ser usado como fonte corrente de roadmap.

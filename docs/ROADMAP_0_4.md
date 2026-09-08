@@ -1,9 +1,10 @@
 # Arena Dev v0.4.0 — Experiência de Aula ao Vivo
 
-> **Checkpoint 07/09/2026:** `v0.3.0` está publicada. Na v0.4 já estão
-> concluídos Timer, Projector, Word Cloud, ActivityStep/editor/runtime,
-> navegação contextual e 12.3D.7A–D. **Próximo: 12.4D — Poll/Votação em
-> runtime.**
+> **Checkpoint 08/09/2026:** `v0.3.0` está publicada. Na v0.4 estão
+> consolidados Timer, Projector, Word Cloud, ActivityStep/editor/runtime,
+> navegação contextual e 12.3D.7A–D. **12.4D.0A — Live Stage / Presentation
+> State está implementado localmente** e Sorteio, Nuvem e Buzzer já usam o
+> palco compartilhado. **12.4D.0C/0D e 12.4D.1 Poll estão implementados localmente. Próximo: 12.4E — orquestração progressiva Live Flow ↔ Live Stage.**
 
 A `v0.4.0` evolui o Arena Dev Community a partir da baseline estável `v0.3.0`,
 mantendo a sessão de aula como contexto central e evitando ampliar o produto
@@ -199,61 +200,61 @@ fricção para o professor.
 - [ ] permitir retorno rápido à sessão ativa pelo cabeçalho;
 - [ ] ampliar a largura útil das páginas e da Arena.
 
-#### 12.3D.5 — Consolidação das Interações
+#### 12.3D.5 — Consolidação das Dinâmicas *(historicamente “Interações”)*
 
-- [ ] remover as abas independentes `Nuvem` e `Ao vivo`;
-- [ ] criar a aba `Interações`;
-- [ ] disponibilizar `Nuvem de Palavras` e `Buzzer` como modos da mesma área;
-- [ ] não exibir opções ainda não implementadas como controles desabilitados;
-- [ ] mover URL, código e QR para `Acesso dos alunos`, ação global da sessão;
-- [ ] retirar o acesso duplicado de dentro da Nuvem;
-- [ ] preservar o mesmo join code para todas as dinâmicas;
-- [ ] manter `Condução` como fluxo planejado e `Interações` como ações ad hoc;
-- [ ] preparar inclusão futura de Votação sem criar nova aba principal.
+- [x] remover as abas independentes `Nuvem` e `Ao vivo`;
+- [x] consolidar a área visual como `Dinâmicas` (ID interno `interactions` preservado por compatibilidade);
+- [x] disponibilizar `Sorteio`, `Nuvem de Palavras` e `Buzzer` como modos da mesma área;
+- [x] não exibir opções ainda não implementadas como controles desabilitados;
+- [x] mover URL, código e QR para `Acesso dos alunos`, ação global da sessão;
+- [x] retirar o acesso duplicado de dentro da Nuvem;
+- [x] preservar o mesmo join code para todas as dinâmicas;
+- [x] manter `Condução` como fluxo planejado e `Dinâmicas` como ações ad hoc;
+- [x] preparar inclusão futura de Votação sem criar nova aba principal.
 
 #### 12.3D.6 — Navegação contextual e cards de turma
 
-- [ ] consolidar `Visão geral › Turma › Arena`;
-- [ ] transformar o nome da turma em seletor com busca por nome/código;
-- [ ] remover select isolado e selo global `Sessão ativa`;
-- [ ] remover badges redundantes `Ativa` e `Selecionada`;
-- [ ] mostrar apenas `INATIVA` ou `AO VIVO` quando aplicável;
-- [ ] consolidar ações do card em `⋯`;
-- [ ] permitir Editar, Desativar/Reativar e Excluir;
-- [ ] impedir desativação de turma com sessão ativa.
+- [x] consolidar `Visão geral › Turma › Arena`;
+- [x] transformar o nome da turma em seletor com busca por nome/código;
+- [x] remover select isolado e selo global `Sessão ativa`;
+- [x] remover badges redundantes `Ativa` e `Selecionada`;
+- [x] mostrar apenas `INATIVA` ou `AO VIVO` quando aplicável;
+- [x] consolidar ações do card em `⋯`;
+- [x] permitir Editar, Desativar/Reativar e Excluir;
+- [x] impedir desativação de turma com sessão ativa.
 
 #### 12.3D.7 — Design System & Accessibility
 
 ##### 12.3D.7A — Foundation
 
-- [ ] criar tokens globais;
-- [ ] criar base tipográfica semântica;
-- [ ] criar foundation de acessibilidade;
-- [ ] remover microtipografia funcional do header;
-- [ ] padronizar alvos interativos;
-- [ ] aplicar tokens em Header, seletor de turma, Arena tabs e Roteiro;
-- [ ] documentar Design System e Definition of Done.
+- [x] criar tokens globais;
+- [x] criar base tipográfica semântica;
+- [x] criar foundation de acessibilidade;
+- [x] remover microtipografia funcional do header;
+- [x] padronizar alvos interativos;
+- [x] aplicar tokens em Header, seletor de turma, Arena tabs e Roteiro;
+- [x] documentar Design System e Definition of Done.
 
 ##### 12.3D.7B — Core UI Primitives
 
-- [ ] Button / IconButton / Badge;
-- [ ] Tabs / Menu / Breadcrumb;
-- [ ] Field / Card / EmptyState.
+- [x] Button / IconButton / Badge;
+- [x] Tabs / Menu / Breadcrumb;
+- [x] Field / Card / EmptyState.
 
 ##### 12.3D.7C — Accessibility Pass
 
-- [ ] skip link funcional e landmarks;
-- [ ] teclado completo para menus/tabs;
-- [ ] aria-live controlado para realtime;
-- [ ] contraste;
-- [ ] zoom/reflow 200% e 400%.
+- [x] skip link funcional e landmarks;
+- [x] teclado completo para menus/tabs;
+- [x] aria-live controlado para realtime;
+- [x] contraste;
+- [x] zoom/reflow 200% e 400%.
 
 ##### 12.3D.7D — Arena Responsive & Visual Polish
 
-- [ ] reduzir card soup;
-- [ ] transformar Fonte da Arena em toolbar;
-- [ ] refinar Sorteio e Pontuação;
-- [ ] revisar responsividade, Projetor e /join.
+- [x] reduzir card soup;
+- [x] transformar Fonte da Arena em toolbar;
+- [x] refinar Sorteio e Pontuação;
+- [x] revisar responsividade, Projetor e /join.
 
 ### 12.4 — Roteiro ao Vivo
 
@@ -271,45 +272,89 @@ A abstração de sequência passa a ser justificada por quatro blocos concretos:
 
 #### 12.4B — Editor de autoria
 
-- [ ] terceira aba `Roteiro` dentro do editor de Atividades;
-- [ ] adicionar, remover e reordenar blocos;
-- [ ] editar configuração de Slide, Questão, Nuvem e Votação;
-- [ ] salvar roteiro somente no backend;
-- [ ] persistir atividade/questões antes de referências `QUESTION`;
-- [ ] restaurar roteiro ao reabrir a atividade.
+- [x] terceira aba `Roteiro` dentro do editor de Atividades;
+- [x] adicionar, remover e reordenar blocos;
+- [x] editar configuração de Slide, Questão, Nuvem e Votação;
+- [x] salvar roteiro somente no backend;
+- [x] persistir atividade/questões antes de referências `QUESTION`;
+- [x] restaurar roteiro ao reabrir a atividade.
 
 #### 12.4C — Runtime do step atual
 
-- [ ] evoluir `SessionDynamic.ARENA` como fonte autoritativa do step atual;
-- [ ] persistir `currentStepId` e `currentStepPosition` sem nova tabela;
-- [ ] ativar uma Activity como roteiro da sessão;
-- [ ] `Anterior` / `Próximo` controlados exclusivamente pelo professor;
-- [ ] sincronizar step `QUESTION` com `currentQuestionId` existente;
-- [ ] preservar o fluxo legado para atividades sem `ActivityStep`;
-- [ ] restaurar o step após reload;
-- [ ] não avançar automaticamente por Timer, resposta ou outra dinâmica;
-- [ ] manter WebSocket `LIVE_STEP_STATE` fora deste incremento.
+- [x] evoluir `SessionDynamic.ARENA` como fonte autoritativa do step atual;
+- [x] persistir `currentStepId` e `currentStepPosition` sem nova tabela;
+- [x] ativar uma Activity como roteiro da sessão;
+- [x] `Anterior` / `Próximo` controlados exclusivamente pelo professor;
+- [x] sincronizar step `QUESTION` com `currentQuestionId` existente;
+- [x] preservar o fluxo legado para atividades sem `ActivityStep`;
+- [x] restaurar o step após reload;
+- [x] não avançar automaticamente por Timer, resposta ou outra dinâmica;
+- [x] manter WebSocket `LIVE_STEP_STATE` fora deste incremento.
 
-#### 12.4D — Votação em runtime
+#### 12.4D.0 — Fundação de Live Stage, Dinâmicas e identidade
 
-- [ ] `PollRound` e `PollVote`;
-- [ ] voto autenticado;
-- [ ] resultado oculto ou ao vivo;
-- [ ] projeção agregada sem identidade.
+##### 12.4D.0A — Live Stage / Presentation State
 
-#### 12.4E — Orquestração
+- [x] `LiveStageState` autoritativo por sessão;
+- [x] um único `primary`, sem flags concorrentes por feature;
+- [x] audiências `PROJECTOR`, `PARTICIPANTS` e `BOTH`;
+- [x] Timer como overlay transversal e tipo de palco opcional;
+- [x] persistência via `SessionDynamic.LIVE_STAGE`, sem migration nova;
+- [x] evento `LIVE_STAGE_STATE`;
+- [x] projeções diferentes para professor, Projetor e `/join`.
 
-- [ ] `WORD_CLOUD` cria `WordCloudRound` ao ser ativado;
-- [ ] `QUESTION` reutiliza o domínio existente;
-- [ ] `SLIDE` é conteúdo/projeção;
-- [ ] Timer continua transversal.
+##### 12.4D.0B — Dinâmicas e adapters de palco
 
-#### 12.4F — `/join` + Projetor
+- [x] nomenclatura visual `Interações` → `Dinâmicas`;
+- [x] Sorteio dentro de Dinâmicas;
+- [x] `DRAW` projetável com `displayName` resolvido no backend;
+- [x] `WORD_CLOUD` assume o palco ao abrir rodada;
+- [x] `BUZZER` assume o palco ao abrir rodada;
+- [x] payload público do Buzzer evita IDs administrativos;
+- [ ] adapters completos para `SLIDE`, `QUESTION` e `BOSS_BATTLE`;
+- [ ] `QUIZ` somente quando existir runtime próprio;
+- [x] `POLL` integrado pelo 12.4D.1.
 
-- [ ] contrato `LIVE_STEP_STATE`;
-- [ ] `/join` renderiza a interação atual;
-- [ ] Projetor renderiza o conteúdo atual;
-- [ ] reconexão restaura o step autoritativo.
+##### 12.4D.0C — Identidade de exibição
+
+- [x] mover `preferredName` para `Enrollment`;
+- [x] definir política de `displayName` resolvida no backend;
+- [x] não enviar nome completo + apelido para clientes públicos decidirem localmente;
+- [x] `Student.nickname` deixa de ser autoridade contextual e permanece apenas como fallback legado.
+
+##### 12.4D.0D — Reconhecimento opaco do dispositivo
+
+- [x] device claim opaco e relativamente persistente;
+- [x] separar device claim do participant token temporário;
+- [x] reentrada com baixa fricção sem cookie/localStorage como fonte de domínio;
+- [x] prever revogação e dispositivo compartilhado.
+
+#### 12.4D.1 — Votação em runtime
+
+- [x] `PollRound`, `PollOption` e `PollVote`;
+- [x] voto autenticado pelo participant token da sessão;
+- [x] single-choice no MVP;
+- [x] resultado oculto ou ao vivo;
+- [x] projeção agregada/anônima;
+- [x] `/join` e Projetor derivados do mesmo Live Stage.
+
+#### 12.4E — Orquestração Live Flow ↔ Live Stage
+
+- [ ] `WORD_CLOUD` preparado no roteiro pode abrir/reativar rodada sem duplicar domínio;
+- [ ] `QUESTION` reutiliza o domínio existente e assume o palco quando comandado;
+- [ ] `SLIDE` ganha projeção própria;
+- [ ] Boss Battle recebe adapter de palco;
+- [ ] Timer continua transversal;
+- [ ] não avançar automaticamente o roteiro por evento de dinâmica.
+
+#### 12.4F — Consolidação pública `/join` + Projetor
+
+- [x] contrato `LIVE_STAGE_STATE` e snapshot inicial;
+- [x] `/join` já seleciona Sorteio/Nuvem/Buzzer/Poll pelo palco;
+- [x] Projetor já seleciona Sorteio/Nuvem/Buzzer/Poll pelo palco;
+- [x] aplicar `displayName`/device claim finais;
+- [ ] concluir adapters de Slide/Question/Boss/Quiz conforme forem implementados;
+- [ ] reconexão restaurar integralmente palco + estado especializado.
 
 ### 12.5 — SessionEvent
 
