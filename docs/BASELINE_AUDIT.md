@@ -1,3 +1,8 @@
+> **Documento histórico.** Este arquivo registra uma fase anterior da migração.
+> O estado corrente está em [`STATUS_ATUAL.md`](STATUS_ATUAL.md) e
+> [`ROADMAP_0_4.md`](ROADMAP_0_4.md). Itens abaixo descritos como “adições
+> posteriores” podem já estar implementados na v0.4.
+
 # Arena Dev — Baseline de Produto
 
 Esta versão assume o frontend existente como **baseline oficial de UX e funcionalidades**.

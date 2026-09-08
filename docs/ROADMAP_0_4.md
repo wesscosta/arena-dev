@@ -1,5 +1,10 @@
 # Arena Dev v0.4.0 — Experiência de Aula ao Vivo
 
+> **Checkpoint 07/09/2026:** `v0.3.0` está publicada. Na v0.4 já estão
+> concluídos Timer, Projector, Word Cloud, ActivityStep/editor/runtime,
+> navegação contextual e 12.3D.7A–D. **Próximo: 12.4D — Poll/Votação em
+> runtime.**
+
 A `v0.4.0` evolui o Arena Dev Community a partir da baseline estável `v0.3.0`,
 mantendo a sessão de aula como contexto central e evitando ampliar o produto
 para um LMS.

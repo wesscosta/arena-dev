@@ -1,874 +1,208 @@
 # Arena Dev Community
 
-**Arena Dev Community** is an open-source, self-hosted classroom platform designed to increase student participation through challenges, XP, rankings, smart student draws, group generation and interactive learning sessions.
+**Arena Dev Community** is an open-source, self-hosted platform for running and gamifying live classroom dynamics with low friction for the teacher.
 
-The project started as a simple Java desktop application for student management and is now being reengineered into a modern full-stack platform using **Java, Spring Boot, Next.js, PostgreSQL and Docker**.
+> **Stable release:** `v0.3.0`, published on **September 5, 2026**.
+>
+> **Current development line:** `v0.4 — Live Classroom`, branch `feat/v0.4-live-classroom`.
+>
+> **Current checkpoint:** Timer, Projector, Word Cloud, ActivityStep/live-flow runtime, contextual navigation, Design System, accessibility and responsive Arena polish are implemented and validated. **Next: 12.4D — Poll/Voting runtime.**
 
-> **Status:** Arena Dev `0.3.0` release candidate under final stabilization. The frontend security baseline is now Next.js `16.3.3`; the local frontend test, typecheck, production build and npm production audit pass. A real PostgreSQL backup/restore has already been validated. The stable tag remains blocked until the patched commit is merged to a clean synchronized `main`, CI is green for that exact SHA, rollback is rehearsed and the final release gate passes.
-
-> **Current persistence:** the operational domains migrated through Increment 10 use Spring Boot + PostgreSQL as their source of truth. `localStorage` is not authoritative for domain data; it stores the selected-classroom preference and, on `/join`, the participant's temporary access needed for reconnection.
-
-> **Project documentation:** see [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for the evidence-backed state, [`docs/RELEASE_0_3_0.md`](docs/RELEASE_0_3_0.md) for the remaining release gates and [`docs/adr/README.md`](docs/adr/README.md) for accepted product, UX and architecture decisions.
-
----
-
-## Overview
-
-Arena Dev Community is designed for classroom environments where students frequently participate in questions, programming challenges, debugging activities and practical assignments.
-
-Instead of managing participation manually, the platform provides a centralized environment for:
-
-* student and classroom management;
-* attendance control;
-* intelligent student draws;
-* XP and scoring;
-* rankings;
-* classroom challenges;
-* individual and group activities;
-* participation history;
-* gamified learning sessions.
-
-The goal is not to turn learning into a competition, but to use gamification as a mechanism to improve **engagement, participation, consistency and visibility of student progress**.
-
----
-
-## Community edition and commercial evolution
-
-This repository is the public **Community Edition** and remains licensed under MIT. It contains the self-hosted classroom core and does not contain a proprietary Verit product.
-
-A more complete commercial SaaS is planned for a separate private repository owned and operated by Verit. That product may reuse the MIT core while preserving its copyright and license notice, but its proprietary modules, operation and commercial terms will be maintained separately.
-
-| Arena Dev Community — this repository | Future Verit commercial product — planned |
-| --- | --- |
-| Classroom, students, sessions and attendance | Persistent accounts, organizations and advanced roles |
-| Score events, ranking and audit trail | Multi-tenancy, plans, billing and entitlements |
-| Activities, question packages and external-result import | Studies/exams workspace, adaptive review and advanced analytics |
-| Smart Draw, groups, Boss Battle, Buzzer and self-hosted Docker | Managed SaaS, premium content, institutional administration and AI-assisted features |
-
-The studies/exams product remains a separate domain, backend and database. Any future connection to Arena must use versioned APIs or contracts instead of a shared database. The accepted boundary and repository-split sequence are recorded in [ADR-0026](docs/adr/ADR-0026-community-mit-e-produto-comercial-verit.md).
-
----
-
-## Core concepts
-
-The game is based on a simple cycle:
+## Product model
 
 ```text
-Teacher launches an activity
-        ↓
-Students participate
-        ↓
-Questions / challenges / deliveries
-        ↓
-XP events are registered
-        ↓
-Ranking and progression are updated
-        ↓
-Participation history is preserved
+Overview = system level
+Classroom = pedagogical context
+Arena = live classroom operation
 ```
 
-XP is designed around **events**, rather than storing only a final score.
+Arena Dev centralizes attendance, activities, smart draws, XP, rankings, groups, realtime participation and public projection without becoming a full LMS.
 
-For example:
+## Main capabilities
+
+- Classroom, students, enrollment and attendance.
+- Activities and questions.
+- Smart student draw.
+- XP through auditable `ScoreEvent`.
+- Ranking derived from score events.
+- Individual/pairs/trios/groups.
+- Boss Battle.
+- Buzzer.
+- Synchronized Timer.
+- Word Cloud.
+- Public Projector.
+- Student `/join`.
+- Ordered live-flow authoring through `ActivityStep`.
+
+### Live flow
 
 ```text
-Maria
-├── +10 XP → Correct answer
-├── +15 XP → Debug challenge
-├── +10 XP → Assignment delivered
-└── +5 XP  → Collaboration
+Activity
+└── ActivityStep[]
+    ├── SLIDE
+    ├── QUESTION
+    ├── WORD_CLOUD
+    └── POLL
 ```
 
-This makes the scoring system auditable and allows future analytics by student, classroom, activity and period.
-
----
-
-## Game mechanics
-
-Arena Dev implements several classroom mechanics and keeps later additions explicitly separated.
-
-### Smart Draw
-
-Students can be selected dynamically during classroom activities.
-
-The draw algorithm considers factors such as:
-
-* attendance;
-* previous selections;
-* participation frequency;
-* time since last participation.
-
-The objective is to preserve randomness while reducing excessive repetition.
-
-### XP and progression
-
-Students accumulate XP through classroom participation and activities.
-
-Examples:
-
-| Event                 |  XP |
-| --------------------- | --: |
-| Correct answer        | +10 |
-| Partial answer        |  +5 |
-| Explain reasoning     |  +5 |
-| Debug challenge       | +15 |
-| Programming challenge | +20 |
-| Assignment delivered  | +10 |
-| Delivered on time     |  +5 |
-| Collaboration         |  +5 |
-
-Scoring rules will be configurable as the platform evolves.
-
-### Ranking
-
-The platform provides multiple perspectives instead of relying exclusively on a global leaderboard:
-
-* overall ranking;
-* weekly progression;
-* individual evolution;
-* participation statistics.
-
-### Game Sessions
-
-Each class can create a game session containing:
-
-* students present;
-* draws;
-* challenges;
-* score events;
-* classroom activity history.
-
-### Individual, pairs and groups
-
-Arena Dev supports changing the classroom organization during the same session:
-
-* individual;
-* pairs;
-* trios;
-* groups;
-* programming teams or other collaborative arrangements.
-
-The group generator considers previous combinations to reduce repeated pairings when possible. Returning to **Individual** does not create artificial one-person group history.
-
-### Activities and question packages
-
-Activities can contain their own question set and may also reference an external resource. Questions can be created manually, imported using the versioned Arena Dev JSON format or generated through a provider-agnostic prompt builder.
-
-Supported question families currently include multiple choice, open response, true/false, bug fixing, analysis, practical tasks and scenario-based problems. Direct AI API integration is intentionally deferred; the current flow generates a structured prompt that can be copied to the teacher's preferred AI and imported back as validated JSON.
-
-See `docs/ACTIVITY_QUESTIONS.md`, `docs/INCREMENT_10.md`, `docs/adr/README.md` and `docs/question-package-v1.schema.json`.
-
-Activities are scoped to the selected classroom. They can be copied into another classroom as independent content and can optionally feed questions into an Arena session without removing the Arena's free/oral mode.
-
-### Boss Battle and Buzzer
-
-Boss Battle state is persisted per class session. The Buzzer supports temporary session codes, QR entry, participant identification and server-authoritative ordering over WebSocket.
-
-### Future mechanics
-
-Planned mechanics include:
-
-* badges;
-* achievements;
-* streaks;
-* combos;
-* power-ups;
-* timers;
-* classroom team battles;
-* richer mobile responses beyond Buzzer.
-
----
+`ActivityStep` is authoring data. Runtime interactions belong to the live session. The teacher controls progression manually and the backend is authoritative for the current step.
 
 ## Architecture
 
-Arena Dev follows a separated frontend/backend architecture.
-
 ```mermaid
-flowchart TD
-    U["Teacher / Browser"]
-    F["Next.js + TypeScript"]
-    B["Spring Boot REST API"]
-    D["PostgreSQL"]
-
-    U --> F
-    F -->|REST / JSON| B
-    F <-->|WebSocket| B
-    B -->|JPA / Hibernate| D
+flowchart LR
+    T["Teacher"] --> F["Next.js 16.3.3 + React 19.2"]
+    S["Student /join"] --> F
+    P["Projector"] --> F
+    F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
+    F <-->|"WebSocket"| B
+    B --> D["PostgreSQL 17 + Flyway"]
 ```
 
-### Runtime architecture
+Principles:
+
+- modular monolith;
+- REST for durable state and administrative commands;
+- WebSocket only for immediate synchronization;
+- backend-authoritative session mechanics;
+- `localStorage` is not a domain source of truth;
+- no Redis, Kafka, Kubernetes or microservices without demonstrated need.
+
+## Current v0.4 status
+
+Completed:
+
+- **12.1** Timer;
+- **12.2** Projector;
+- **12.3** Word Cloud;
+- **12.4A/B/C foundation** ActivityStep, editor and authoritative current-step runtime;
+- **12.3D.6** contextual navigation without redundant sidebar;
+- **12.3D.7A** Design System foundation;
+- **12.3D.7B** Core UI Primitives;
+- **12.3D.7C** Accessibility Pass;
+- **12.3D.7D** Responsive & Visual Polish.
+
+Next:
+
+- **12.4D** Poll/Voting runtime;
+- **12.4E** interaction orchestration;
+- **12.4F** `/join` + Projector synchronization by live step;
+- **12.5** chronological `SessionEvent`, after concrete semantics stabilize;
+- **12.6** hardening and `v0.4.0` gate.
+
+## Poll semantics
 
 ```text
-┌──────────────────────────────┐
-│           Frontend           │
-│     Next.js + TypeScript     │
-│            :3000             │
-└──────────────┬───────────────┘
-               │
-               │ REST
-               ▼
-┌──────────────────────────────┐
-│            Backend           │
-│    Java 21 + Spring Boot     │
-│            :8080             │
-└──────────────┬───────────────┘
-               │
-               │ JPA / JDBC
-               ▼
-┌──────────────────────────────┐
-│         PostgreSQL           │
-│            :5432             │
-└──────────────────────────────┘
+POLL       = opinion / diagnostic / collective single-choice
+QUESTION   = evaluated question / correctness / XP
+WORD_CLOUD = free-text collective response
 ```
 
-All services are orchestrated using **Docker Compose**.
+Poll public results are aggregated and anonymous. Identity is used only for uniqueness/audit rules.
 
----
+## Design System and accessibility
 
-## Tech stack
-
-### Frontend
-
-* Next.js
-* React
-* TypeScript
-
-### Backend
-
-* Java 21
-* Spring Boot
-* Spring Web
-* Spring Data JPA
-* Hibernate
-* Jakarta Validation
-
-### Database
-
-* PostgreSQL
-
-### Infrastructure
-
-* Docker
-* Docker Compose
-
-### Implemented platform components
-
-* Flyway migrations;
-* Spring Security with HTTP session authentication for the teacher area;
-* Spring WebSocket for session participation and Buzzer state;
-* QR-based temporary participant access.
-
-### Planned platform additions
-
-* final `v0.3.0` evidence and deployment validation;
-* dedicated projector/public view;
-* PWA support;
-* Microsoft Graph / Microsoft Teams integration;
-* Community features accepted into the public roadmap.
-
-Persistent multi-role accounts, multi-tenancy, billing and the studies/exams SaaS belong to the planned commercial product boundary. They are not implemented in this repository. JWT is not used by the current MVP.
-
----
-
-## Project structure
+New UI must reuse the existing primitives:
 
 ```text
-arena-dev/
-│
-├── backend/
-│   ├── src/
-│   │   └── main/
-│   │       ├── java/
-│   │       └── resources/
-│   ├── Dockerfile
-│   ├── .dockerignore
-│   └── pom.xml
-│
-├── frontend/
-│   ├── app/
-│   ├── components/
-│   ├── lib/
-│   ├── Dockerfile
-│   ├── .dockerignore
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── compose.yaml
-├── .env.example
-├── .gitignore
-└── README.md
+Button
+IconButton
+Badge
+Tabs
+Menu
+Breadcrumb
+Field
+Card
+EmptyState
+LiveRegion
 ```
 
-As the backend evolves, its application structure will follow responsibilities such as:
+Style layers:
 
 ```text
-backend/
-└── src/main/java/
-    └── ...
-        ├── controller/
-        ├── service/
-        ├── repository/
-        ├── domain/
-        ├── dto/
-        ├── exception/
-        └── config/
+frontend/styles/
+├── tokens.css
+├── base.css
+├── accessibility.css
+└── arena-polish.css
 ```
 
-Game rules should remain isolated from HTTP and persistence concerns whenever possible.
+Requirements include keyboard operation, visible focus, semantic hierarchy, contrast, reduced motion, zoom/reflow and controlled `aria-live`.
 
----
-
-## Current development status
-
-Arena Dev Community has completed the domain migration covered by Increments 1–10. `Classroom`, `Student`, `Enrollment`, `ClassSession`, `SessionParticipant`, `ScoreEvent`, activities, questions, external-result imports, session mechanics, join codes and Buzzer rounds are persisted through REST/PostgreSQL.
-
-The current runtime path for the migrated domain is:
-
-```text
-Next.js
-    ↓
-REST API
-    ↓
-Spring Boot
-    ↓
-PostgreSQL
-```
-
-The current stabilization stage covers the teacher security boundary and realtime hardening implemented in Increments 11.1 and 11.2. Increment 11.3 completed the automated backend and frontend test gate. Increment 11.4 implemented CI, browser E2E, production hardening and release-readiness tooling. The MIT license is present, a real PostgreSQL backup/restore has been validated, and the final frontend maintenance patch moves Next.js from `16.3.0` to `16.3.3` without broadening the React or TypeScript upgrade scope. Publication of `v0.3.0` now depends on a clean synchronized `main`, green remote CI for the exact patched release commit, a rollback rehearsal and the final release gate. See [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md) for implementation limits and validation evidence.
-
----
-
-## Current domain model
-
-The implemented core is organized around:
-
-```text
-Classroom
-├── Enrollment ── Student
-├── Activity
-│   └── ActivityQuestion
-└── ClassSession
-    ├── SessionParticipant
-    ├── SessionDynamic
-    ├── ScoreEvent
-    ├── SessionJoinCode
-    └── BuzzerRound
-        └── BuzzerPress
-```
-
-One of the main architectural decisions is that XP should be derived from **Score Events** rather than maintained only as a mutable total.
-
-Conceptually:
-
-```text
-Student XP = SUM(ScoreEvent.points)
-```
-
-This enables:
-
-* auditability;
-* score corrections;
-* historical reports;
-* statistics by activity;
-* statistics by class;
-* individual progression analysis.
-
----
+See [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) and [`docs/ACCESSIBILITY.md`](docs/ACCESSIBILITY.md).
 
 ## Running locally
-
-### Requirements
-
-The easiest way to run Arena Dev is through Docker.
-
-You need:
-
-* Docker
-* Docker Compose
-
-For development outside containers, the project also uses:
-
-* Java 21
-* Maven
-* Node.js
-* npm
-
----
-
-### Clone the repository
 
 ```bash
 git clone https://github.com/wesscosta/arena-dev.git
 cd arena-dev
-```
-
----
-
-### Configure environment variables
-
-Create your local environment file:
-
-```bash
 cp .env.example .env
-```
-
-Example:
-
-```dotenv
-POSTGRES_DB=arena_dev
-POSTGRES_USER=arena
-POSTGRES_PASSWORD=change_me
-```
-
-Never commit the real `.env` file.
-
----
-
-### Start the application
-
-```bash
-docker compose up --build
-```
-
-The first execution may take longer because Docker needs to download and build the application images.
-
----
-
-### Hardened production baseline
-
-Production uses the `prod` Spring profile and requires explicit database, teacher and origin values. The overlay binds the application to loopback and expects an external HTTPS reverse proxy; it does not provide TLS by itself.
-
-```bash
-export POSTGRES_PASSWORD='use-a-long-unique-password'
-export APP_FRONTEND_URL='https://arena.example.com'
-export APP_ALLOWED_ORIGIN_PATTERNS='https://arena.example.com'
-export APP_TEACHER_USERNAME='teacher'
-export APP_TEACHER_PASSWORD='use-another-long-unique-password'
-export NEXT_PUBLIC_API_URL='https://api.arena.example.com'
-
-docker compose -f compose.yaml -f compose.prod.yaml config --quiet
-docker compose -f compose.yaml -f compose.prod.yaml up --detach --build --wait
-```
-
-The production profile enables secure session cookies and administrative CSRF protection. PostgreSQL is not published by the production overlay. See [`docs/INCREMENT_11_4.md`](docs/INCREMENT_11_4.md) and [`docs/RELEASE_0_3_0.md`](docs/RELEASE_0_3_0.md) for the remaining deployment and release gates.
-
-### Release-readiness gate
-
-The release scripts validate metadata, repeat the local technical gates and provide explicit PostgreSQL backup/restore procedures. They never create a tag automatically.
-
-```bash
-scripts/release/check-metadata.sh
-scripts/release/release-gate.sh local
-
-BACKUP_FILE="$(scripts/release/backup-postgres.sh)"
-scripts/release/verify-backup.sh "$BACKUP_FILE"
-```
-
-The final mode additionally verifies the remote GitHub Actions run, exact commit, repository state, license and restorable backup. Full commands and rollback boundaries are documented in [`docs/RELEASE_0_3_0.md`](docs/RELEASE_0_3_0.md).
-
----
-
-## Application endpoints
-
-### Frontend
-
-```text
-http://localhost:3000
-```
-
-### Backend
-
-```text
-http://localhost:8080
-```
-
-### Backend health check
-
-```text
-http://localhost:8080/api/health
-```
-
-You can also test it from the terminal:
-
-```bash
-curl http://localhost:8080/api/health
-```
-
----
-
-## Automated tests
-
-The backend separates fast unit tests from PostgreSQL integration tests:
-
-```bash
-cd backend
-
-# JUnit tests that do not require Docker
-mvn test
-
-# Full backend gate, including PostgreSQL 17 via Testcontainers
-mvn verify
-```
-
-The integration gate starts the application on a random port, applies every Flyway migration and exercises the real HTTP security boundary. It requires Java 21, Maven and a Docker-compatible runtime.
-
----
-
-## Docker commands
-
-### Check running services
-
-```bash
+docker compose up -d --build
 docker compose ps
 ```
 
-### Follow all logs
+Frontend: `http://localhost:3000`
+
+Backend: `http://localhost:8080`
+
+Health: `http://localhost:8080/api/health`
+
+## Development gates
+
+Frontend:
 
 ```bash
-docker compose logs -f
+cd frontend
+npm test
+npm run typecheck
+npm run build
 ```
 
-### Backend logs
+Backend changes:
 
 ```bash
-docker compose logs -f backend
+cd backend
+mvn -B -ntp verify
 ```
 
-### Frontend logs
+Compose:
 
 ```bash
-docker compose logs -f frontend
+docker compose up -d --build
+sleep 5
+docker compose ps
 ```
 
-### PostgreSQL logs
+## Stable release v0.3.0
 
-```bash
-docker compose logs -f postgres
-```
+- commit: `6015d6d416edc26bfb8295c2aa6af141b9d6b9ad`;
+- final recorded CI: `33964844054`;
+- release: <https://github.com/wesscosta/arena-dev/releases/tag/v0.3.0>;
+- MIT licensed.
 
-### Stop the application
+`v0.1-legacy`, `v0.2.0` and `v0.2.1` belong to the old desktop application and are not web rollback targets.
 
-```bash
-docker compose down
-```
+The `v0.3.0` tag is frozen and must not be moved or recreated.
 
-This keeps the PostgreSQL volume.
+## Version metadata during v0.4 development
 
-### Stop and remove database data
+Maven/npm manifests intentionally remain on `0.3.0` while the release tooling still validates that version. Do not casually bump versions until the versioning strategy is explicitly updated.
 
-```bash
-docker compose down -v
-```
+## Documentation
 
-> Warning: this command deletes the PostgreSQL Docker volume used by the project.
+Current:
 
----
+- [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
+- [`docs/ROADMAP_0_4.md`](docs/ROADMAP_0_4.md)
+- [`docs/CHECKPOINT_PRE_12_4D.md`](docs/CHECKPOINT_PRE_12_4D.md)
+- [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md)
+- [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)
+- [`docs/ACCESSIBILITY.md`](docs/ACCESSIBILITY.md)
+- [`docs/RELEASE_0_3_0.md`](docs/RELEASE_0_3_0.md)
+- [`docs/adr/README.md`](docs/adr/README.md)
 
-## Development roadmap
-
-### Foundation
-
-* [x] Define Arena Dev concept
-* [x] Create Next.js frontend
-* [x] Create Java 21 backend
-* [x] Configure Spring Boot
-* [x] Configure PostgreSQL
-* [x] Containerize the application
-* [x] Configure Docker Compose
-* [x] Add backend health check
-
-### Core domain
-
-* [x] Classroom management — REST/PostgreSQL
-* [x] Student management — REST/PostgreSQL
-* [x] Student enrollment — REST/PostgreSQL
-* [x] Class sessions — REST/PostgreSQL
-* [x] Session presence — REST/PostgreSQL
-* [x] Score events — REST/PostgreSQL
-* [x] XP calculation — projection from ScoreEvents
-* [x] Ranking — projection from ScoreEvents
-
-### Game engine
-
-* [x] Server-authoritative smart student draw
-* [x] ScoreEvent participation history
-* [x] Individual / pair / trio / group organization
-* [x] Previous-pairing-aware group generation in the backend
-* [x] Activity question packages + JSON import
-* [x] Provider-agnostic AI prompt builder
-* [x] Persisted activities and questions
-* [x] Persisted Boss Battle state
-* [x] Activity → Arena flow
-* [x] External-result CSV/TSV import
-* [x] Server-authoritative Buzzer
-* [ ] Challenges
-* [ ] Debug battles
-* [ ] Timers
-* [ ] Combos
-
-### Gamification
-
-* [x] XP-derived levels and progress display
-* [ ] Achievements
-* [ ] Badges
-* [ ] Streaks
-* [ ] Power-ups
-
-### Platform evolution
-
-* [x] Teacher authentication for the MVP administrative area
-* [x] Temporary student access by session code/QR
-* [x] Real-time Buzzer participation
-* [ ] Persistent multi-role account model — commercial product boundary; not part of the Community `v0.3.0`
-* [ ] Dedicated projector/public view
-* [x] Automated test gate — backend 11.3A–11.3C and frontend 11.3D validated
-* [x] CI, browser E2E and production hardening implemented; local gates validated
-* [ ] Publish `v0.3.0` — backup/restore validated; blocked by exact-SHA CI for the patched commit, rollback rehearsal and final gate
-* [ ] PWA support
-* [ ] Microsoft Teams integration
-* [ ] Analytics dashboard
-
----
-
-## Project evolution
-
-Arena Dev is also the result of the technical evolution of an older Java project.
-
-### v0.1 — Java ControleAlunos
-
-The original project was developed during the early stages of learning Java.
-
-```text
-Java 8
-Swing
-Ant
-JDBC
-MySQL
-```
-
-Its main purpose was basic student management.
-
-### v0.2 — Legacy Stabilized
-
-The legacy application was later modernized while intentionally preserving its desktop architecture.
-
-```text
-Java 21
-Swing
-Maven
-JDBC
-MySQL
-Docker
-```
-
-This version introduced improvements such as:
-
-* complete CRUD;
-* improved persistence;
-* validation;
-* Maven build;
-* database containerization;
-* import/export improvements;
-* better resource management.
-
-### Arena Dev Community web
-
-The project is now being completely reengineered as a web platform.
-
-```text
-Java 21
-Spring Boot
-REST API
-PostgreSQL
-Next.js
-TypeScript
-Docker
-```
-
-The objective is not to simply rewrite the old application with newer technologies.
-
-Arena Dev expands the original student-management domain into a platform focused on **classroom interaction and gamified learning**.
-
-```text
-Java ControleAlunos
-        │
-        │ modernization
-        ▼
-Legacy Stabilized
-        │
-        │ reengineering
-        ▼
-Arena Dev
-```
-
-The original versions remain available through the repository history, branches and Git tags.
-
----
-
-## Version history
-
-Historical versions include:
-
-```text
-v0.1-legacy
-v0.2.0
-```
-
-The next web release candidate is `v0.3.0`. The `v1.0.0` milestone remains deferred until broader functional and operational validation.
-
----
-
-## Design principles
-
-Arena Dev follows a few important principles.
-
-### Learning first
-
-Gamification should support learning rather than replace it.
-
-The intended balance is:
-
-```text
-Learning
-    +
-Participation
-    +
-Gamification
-```
-
-Game mechanics are tools for increasing attention, participation and consistency.
-
-### Traceable scoring
-
-Every score change should have a reason and history.
-
-### Fair participation
-
-Smart draws should reduce the probability that the same students dominate classroom participation.
-
-### Minimal student data
-
-Arena Dev should collect only the data required by its classroom use cases.
-
-### Progressive architecture
-
-Features should be added when the problem justifies them.
-
-The project intentionally avoids introducing distributed systems, microservices or other infrastructure without a concrete need.
-
----
-
-## Contributing
-
-Arena Dev is currently under active development.
-
-Issues, suggestions and discussions about:
-
-* gamification mechanics;
-* classroom workflows;
-* backend architecture;
-* frontend UX;
-* educational use cases;
-
-are welcome.
-
-Before submitting large changes, open an issue describing the proposed improvement and its motivation.
-
----
-
-## Repository
-
-GitHub:
-
-```text
-https://github.com/wesscosta/arena-dev
-```
-
----
-
-## Author
-
-Developed by **Weslley Costa**.
-
----
+Historical `INCREMENT_*.md` documents remain versioned as implementation history.
 
 ## License
 
-Arena Dev Community is licensed under the [MIT License](LICENSE).
-
-The planned proprietary Verit product is a separate product and repository. Reuse of this Community code must preserve the MIT copyright and license notice; the product and intellectual-property boundary is documented in [ADR-0026](docs/adr/ADR-0026-community-mit-e-produto-comercial-verit.md).
-
----
-
-## Migration increment 1 — persistent foundation
-
-At Increment 1, the frontend intentionally remained local-first while the persistent foundation was validated. Later increments completed the migration of the operational domains listed in [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md).
-
-Implemented in the backend:
-
-- Flyway versioned migrations;
-- Classroom;
-- Student (optional registration during migration);
-- Enrollment;
-- ClassSession;
-- SessionParticipant / attendance;
-- REST endpoints for those domains;
-- Hibernate schema validation instead of automatic schema mutation.
-
-## Migration increment 2 — activities and classroom organization
-
-Implemented without redesigning the baseline UI:
-
-- Individual, pairs, trios and groups inside the same session;
-- individual mode excluded from pairing history;
-- Activity-owned questions;
-- manual question creation;
-- Arena Dev Question Package JSON v1;
-- JSON validation/import by paste or file;
-- AI prompt builder with compact inputs and presets;
-- optional external activity platform + URL;
-- existing XP/delivery workflow preserved.
-
-See:
-
-- `docs/BASELINE_AUDIT.md`
-- `docs/MIGRATION_PLAN.md`
-- `docs/API_INCREMENT_1.md`
-- `docs/ACTIVITY_QUESTIONS.md`
-- `docs/question-package-v1.schema.json`
-
-## Migration increment 5 — sessions and presence
-
-`ClassSession` and `SessionParticipant` are now loaded and mutated through the Spring Boot API. Reloading the browser restores the active session and attendance from PostgreSQL. One active session is allowed per classroom.
-
-The temporary `SessionRuntimeState` introduced in Increment 5 has now been retired. Current mechanics are persisted as `SessionDynamic` state associated with the persistent session UUID; draw and group decisions are authoritative on the backend.
-
-See `docs/INCREMENT_5.md` and ADR-0019.
-
-## Migration increment 6 — ScoreEvent and ranking
-
-`ScoreEvent` is now persisted through Spring Boot/PostgreSQL and is the only source of truth for XP. The ranking remains a projection of the event stream instead of a separately persisted counter. Arena scoring and activity deliveries use the API, including transactional batch creation.
-
-History corrections no longer delete events: the backend creates an inverse `ADJUSTMENT` event with `reversalOf`, preserving the original launch for auditability. ScoreEvents are no longer written to `localStorage`, and local backup restore does not overwrite PostgreSQL scoring.
-
-See `docs/INCREMENT_6.md` and ADR-0007.
-
-
-## Migration increment 7 — activities and persistent mechanics
-
-`Activity` and `ActivityQuestion` are now persisted through Spring Boot/PostgreSQL. Activity copy between classrooms is performed server-side and receives independent UUIDs. The JSON Question Package v1 and external-AI Prompt Builder remain unchanged as interchange mechanisms.
-
-`QUICK_DRAW`, `GROUPS`, `BOSS_BATTLE` and `ARENA` now persist their current state through `SessionDynamic`. Smart draw and balanced group formation are decided by the backend; group pairing history is persisted separately. The browser no longer stores operational domain state in `localStorage`, only the selected classroom preference.
-
-See `docs/INCREMENT_7.md` and ADR-0020.
-
-
-## Increment 8 — External activity results
-
-External activities can import CSV/TSV results through a preview-first workflow. The importer recognizes common exports from Wayground/Quizizz, Microsoft Forms, Google Forms and Kahoot plus a generic CSV shape. Student matching is validated against active classroom enrollments, unresolved rows require manual mapping, XP is calculated proportionally to the Activity XP, and every confirmed import is audited in PostgreSQL before creating ScoreEvents. Duplicate report content is blocked per Activity by fingerprint.
-
-## Increments 9–11 — UX, realtime and stabilization
-
-Increments 9.1 and 9.2 established the current `system overview → classroom workspace → live Arena` navigation. Increment 10 added session code/QR, `/join`, WebSocket participation and the server-authoritative Buzzer. Increments 11.1 and 11.2 added the teacher security boundary and realtime hardening.
-
-Increment 11.3 completed the automated test baseline. Increment 11.4 implemented CI, E2E, production hardening and release-readiness procedures. The remaining work is evidence and operational validation for the `v0.3.0` tag, not a new product feature. Current evidence and known limitations are maintained in [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md).
+MIT.
