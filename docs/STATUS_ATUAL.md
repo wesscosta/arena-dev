@@ -1,16 +1,16 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 8 de setembro de 2026
+**Última sincronização documental:** 9 de setembro de 2026
 
 **Release estável:** `v0.3.0`, publicada em 05/09/2026.
 
-**Linha ativa:** `v0.4 — Live Classroom`.
+**Linha ativa:** `v0.4.0 — Live Classroom` release candidate.
 
 **Branch:** `feat/v0.4-live-classroom`.
 
-**Checkpoint local:** **12.4D, 12.4E, 12.4F e 12.5 concluídos localmente. `SessionEvent` registra a linha do tempo operacional em V14 e o Histórico separa fatos da aula de `ScoreEvent`/XP.**
+**Checkpoint local:** **12.1–12.6 implementados localmente. A candidate `0.4.0` possui hardening de login, `X-Request-Id`, liveness/readiness, três cenários Playwright críticos e tooling de release alinhado a V1–V14.**
 
-**Próximo incremento recomendado:** **12.6 — hardening, E2E, segurança/observabilidade e gate da v0.4.0.**
+**Próximo passo:** **fechar evidências externas da release candidate: `mvn verify`, Compose/Playwright, CI remoto, backup/restore, rollback ensaiado e `release-gate.sh final` no mesmo SHA.**
 
 Este arquivo é a referência técnica versionada do estado corrente. Documentos de incremento preservam histórico e podem conter estados superados.
 
@@ -198,7 +198,7 @@ Participant token = credencial temporária da sessão
 
 ## Flyway
 
-Maior migration detectada: **V13**.
+Maior migration detectada: **V14**.
 
 - `V1` — `classroom session foundation`.
 - `V2` — `one active session per classroom`.
@@ -213,8 +213,9 @@ Maior migration detectada: **V13**.
 - `V11` — `enrollment preferred name`.
 - `V12` — `enrollment device claims`.
 - `V13` — `poll runtime` (`poll_rounds`, `poll_options`, `poll_votes`).
+- `V14` — `session events` / linha do tempo operacional.
 
-Live Stage usa `SessionDynamic` e **não adiciona migration**.
+Live Stage e o hardening 12.6 **não adicionam migration**.
 
 ## UI e acessibilidade
 
@@ -298,7 +299,9 @@ compilação Java 21 de todos os fontes main: OK
 ↓
 12.5 SessionEvent / linha do tempo         concluído
 ↓
-12.6 hardening e gate v0.4                 próximo
+12.6 hardening + E2E + gate v0.4.0         implementado localmente
+↓
+release evidence / main / tag v0.4.0       pendente
 ```
 
 ## Gate normal
@@ -320,4 +323,4 @@ docker compose ps
 
 ## Versionamento
 
-Os manifests permanecem em `0.3.0` enquanto o tooling de release esperar `0.3.0`. Isso é deliberado.
+Os manifests e o tooling de release estão alinhados em `0.4.0` desde o 12.6. A tag `v0.4.0` ainda não existe e só pode ser criada após o gate final documentado em `RELEASE_0_4_0.md`.

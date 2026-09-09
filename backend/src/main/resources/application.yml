@@ -25,3 +25,12 @@ app:
   teacher:
     username: ${APP_TEACHER_USERNAME:professor}
     password: ${APP_TEACHER_PASSWORD:arena-dev-change-me}
+  security:
+    login-rate-limit:
+      max-failures: ${APP_LOGIN_RATE_LIMIT_MAX_FAILURES:5}
+      window-seconds: ${APP_LOGIN_RATE_LIMIT_WINDOW_SECONDS:60}
+      block-seconds: ${APP_LOGIN_RATE_LIMIT_BLOCK_SECONDS:300}
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level requestId=%X{requestId:-} [%thread] %logger{36} - %msg%n"

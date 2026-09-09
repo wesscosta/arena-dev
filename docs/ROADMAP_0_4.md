@@ -4,7 +4,7 @@
 > consolidados Timer, Projector, Word Cloud, ActivityStep/editor/runtime,
 > navegação contextual e 12.3D.7A–D. **12.4D.0A — Live Stage / Presentation
 > State está implementado localmente** e Sorteio, Nuvem e Buzzer já usam o
-> palco compartilhado. **12.4D, 12.4E, 12.4F e 12.5 estão implementados localmente. Próximo: 12.6 — hardening, E2E e gate da v0.4.0.**
+> palco compartilhado. **12.4D, 12.4E, 12.4F, 12.5 e 12.6 estão implementados localmente. A linha está em release candidate `0.4.0`; faltam apenas as evidências externas do gate final antes da tag.**
 
 A `v0.4.0` evolui o Arena Dev Community a partir da baseline estável `v0.3.0`,
 mantendo a sessão de aula como contexto central e evitando ampliar o produto
@@ -21,7 +21,7 @@ fricção para o professor.
 
 - congelar `v0.3.0` como baseline;
 - registrar o escopo da `v0.4.0`;
-- manter o tooling de release `0.3.0` intacto até o próximo gate de versão.
+- manter o tooling de release `0.3.0` intacto até o gate de versão do 12.6; depois alinhar tudo em `0.4.0`.
 
 ### 12.1 — Controle de tempo da aula
 
@@ -379,12 +379,20 @@ A abstração de sequência passa a ser justificada por quatro blocos concretos:
 
 ### 12.6 — Hardening
 
-- testes backend/frontend;
-- E2E;
-- concorrência;
-- segurança;
-- observabilidade mínima;
-- gate da release `v0.4.0`.
+- [x] testes backend/frontend preservados e ampliados;
+- [x] E2E Chromium com três fluxos críticos da v0.4;
+- [x] concorrência permanece coberta pelos ITs autoritativos do backend;
+- [x] rate limit de login e headers de segurança explícitos;
+- [x] `X-Request-Id` + MDC e health separado em liveness/readiness;
+- [x] manifests e tooling alinhados em `0.4.0`;
+- [x] restore-check atualizado para Flyway V1–V14;
+- [x] release gate local passa a validar readiness/liveness;
+- [ ] `mvn verify` verde no estado final no ambiente normal/CI;
+- [ ] Compose + três E2E verdes no estado final;
+- [ ] CI remoto verde no mesmo SHA;
+- [ ] backup real + restore-check + rollback ensaiado;
+- [ ] `release-gate.sh final` verde;
+- [ ] merge em `main`, tag `v0.4.0` e GitHub Release.
 
 ## Limites de escopo
 

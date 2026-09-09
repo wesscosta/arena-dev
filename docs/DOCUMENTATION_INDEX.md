@@ -10,14 +10,17 @@
 6. [`INCREMENT_12_4E.md`](INCREMENT_12_4E.md)
 7. [`INCREMENT_12_4F.md`](INCREMENT_12_4F.md)
 8. [`INCREMENT_12_5.md`](INCREMENT_12_5.md)
-9. [`CHECKPOINT_PRE_12_4D.md`](CHECKPOINT_PRE_12_4D.md) — histórico/supersedido
-10. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md)
-11. [`ACCESSIBILITY.md`](ACCESSIBILITY.md)
-12. [`adr/README.md`](adr/README.md)
+9. [`INCREMENT_12_6.md`](INCREMENT_12_6.md)
+10. [`RELEASE_0_4_0.md`](RELEASE_0_4_0.md) — release candidate
+11. [`CHECKPOINT_PRE_12_4D.md`](CHECKPOINT_PRE_12_4D.md) — histórico/supersedido
+12. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md)
+13. [`ACCESSIBILITY.md`](ACCESSIBILITY.md)
+14. [`adr/README.md`](adr/README.md)
 
-## Release estável
+## Releases
 
-- [`RELEASE_0_3_0.md`](RELEASE_0_3_0.md)
+- [`RELEASE_0_3_0.md`](RELEASE_0_3_0.md) — estável/publicada
+- [`RELEASE_0_4_0.md`](RELEASE_0_4_0.md) — candidate, ainda não publicada
 
 ## Histórico
 
@@ -33,4 +36,4 @@ Ao concluir um incremento:
 4. manter checkpoint de fase;
 5. não reescrever evidência histórica para fazê-la parecer mais completa.
 
-Atualizado em 09/09/2026 após a implementação local de `12.5 — SessionEvent / linha do tempo operacional`.
+Atualizado em 09/09/2026 após a implementação local de `12.6 — hardening, E2E e gate da v0.4.0`.

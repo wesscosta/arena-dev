@@ -48,6 +48,7 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0029](ADR-0029-orquestracao-live-flow-live-stage.md) | Live Flow orquestra Live Stage sem duplicar runtimes especializados | Aceito |
 | [ADR-0030](ADR-0030-runtime-snapshot-publico-e-reconnect.md) | Snapshot público de runtime e política de reconnect | Aceito |
 | [ADR-0031](ADR-0031-session-event-linha-do-tempo-operacional.md) | SessionEvent como linha do tempo operacional, não como runtime | Aceito |
+| [ADR-0032](ADR-0032-hardening-e-release-gate-v0-4.md) | Hardening, E2E e fronteira de evidência para a release v0.4.0 | Aceito |
 
 ## Template
 

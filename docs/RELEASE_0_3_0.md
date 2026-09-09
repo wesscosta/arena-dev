@@ -56,7 +56,7 @@ A publicação não transforma automaticamente esses passos em evidência execut
 
 ## Tooling
 
-O tooling de release continua disponível e ainda espera `0.3.0`.
+O tooling usado nesta release foi originalmente fixado em `0.3.0`. A partir do 12.6 da linha v0.4, o tooling corrente foi atualizado para `0.4.0`; isso não altera nem move a tag histórica `v0.3.0`.
 
 ```bash
 scripts/release/check-metadata.sh

@@ -4,9 +4,9 @@
 
 > **Stable release:** `v0.3.0`, published on **September 5, 2026**.
 >
-> **Current development line:** `v0.4 — Live Classroom`, branch `feat/v0.4-live-classroom`.
+> **Current development line:** `v0.4.0 — Live Classroom` release candidate, branch `feat/v0.4-live-classroom`.
 >
-> **Current checkpoint:** Timer, Projector, Word Cloud, ActivityStep/live-flow runtime, contextual navigation, Design System, accessibility and responsive Arena polish are consolidated. `12.4D — Live Stage, identity and Poll`, `12.4E — Live Flow ↔ Live Stage orchestration`, `12.4F — public /join + Projector consolidation` and `12.5 — SessionEvent / operational timeline` are implemented locally. The classroom History now separates the operational timeline from reversible XP history. **Next: 12.6 hardening, E2E and the v0.4.0 gate.**
+> **Current checkpoint:** `12.1–12.6` are implemented locally. The candidate now includes Live Stage, Live Flow orchestration, public reconnect, SessionEvent, login rate limiting, request correlation, liveness/readiness and expanded Chromium E2E. **Publication remains blocked until the final Maven/Compose/CI/backup/restore gate is green on the same SHA.**
 
 ## Product model
 
@@ -95,9 +95,9 @@ Current foundation and runtime:
 - **12.4F** public `/join` + Projector consolidation and reconnect hardening;
 - **12.5** chronological `SessionEvent` / operational timeline, separated from reversible `ScoreEvent` history.
 
-Next:
+Release candidate closure:
 
-- **12.6** hardening, E2E, security/observability review and `v0.4.0` gate.
+- **12.6** hardening, E2E, security/observability and `v0.4.0` release gate — implemented locally; external final evidence pending.
 
 ## Live Stage
 
@@ -182,7 +182,9 @@ Frontend: `http://localhost:3000`
 
 Backend: `http://localhost:8080`
 
-Health: `http://localhost:8080/api/health`
+Health readiness: `http://localhost:8080/api/health/ready`
+
+Health liveness: `http://localhost:8080/api/health/live`
 
 ## Development gates
 
@@ -221,9 +223,9 @@ docker compose ps
 
 The `v0.3.0` tag is frozen and must not be moved or recreated.
 
-## Version metadata during v0.4 development
+## v0.4.0 release candidate metadata
 
-Maven/npm manifests intentionally remain on `0.3.0` while the release tooling still validates that version. Do not casually bump versions until the versioning strategy is explicitly updated.
+Maven, npm and release tooling are aligned on `0.4.0` as part of 12.6. This does **not** mean the tag is published: `v0.4.0` may be created only after the final CI, backup/restore and release gate are green on the same commit.
 
 ## Documentation
 
@@ -232,6 +234,8 @@ Current:
 - [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
 - [`docs/ROADMAP_0_4.md`](docs/ROADMAP_0_4.md)
 - [`docs/INCREMENT_12_4D_0.md`](docs/INCREMENT_12_4D_0.md)
+- [`docs/INCREMENT_12_6.md`](docs/INCREMENT_12_6.md)
+- [`docs/RELEASE_0_4_0.md`](docs/RELEASE_0_4_0.md) — release candidate checklist
 - [`docs/CHECKPOINT_PRE_12_4D.md`](docs/CHECKPOINT_PRE_12_4D.md) — historical checkpoint
 - [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md)
 - [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)
