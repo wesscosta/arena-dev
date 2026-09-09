@@ -7,6 +7,7 @@ import type {
   SessionRuntimeState,
 } from "./types";
 import { apiFetch } from "./auth-api";
+import type { LiveStageState } from "./live-stage-api";
 
 
 type ApiErrorBody = { message?: string; fields?: Record<string, string> };
@@ -83,6 +84,7 @@ type LiveFlowView = {
 type LiveFlowResultView = {
   liveFlow: LiveFlowView;
   runtime: RuntimeView;
+  stage: LiveStageState;
 };
 
 export type LiveFlowState = {
@@ -99,6 +101,7 @@ export type LiveFlowState = {
 export type LiveFlowNavigationResult = {
   liveFlow: LiveFlowState;
   runtime: SessionRuntimeState;
+  stage: LiveStageState;
 };
 
 function mapLiveFlow(row: LiveFlowView): LiveFlowState {
@@ -239,6 +242,7 @@ async function liveFlowCommand(
   return {
     liveFlow: mapLiveFlow(result.liveFlow),
     runtime: mapRuntime(result.runtime),
+    stage: result.stage,
   };
 }
 

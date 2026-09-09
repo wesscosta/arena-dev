@@ -5,9 +5,11 @@ import br.com.arenadev.activity.ActivityQuestion;
 import br.com.arenadev.activity.ActivityRepository;
 import br.com.arenadev.activity.ActivityStep;
 import br.com.arenadev.activity.ActivityStepType;
+import br.com.arenadev.poll.PollService;
 import br.com.arenadev.session.*;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import br.com.arenadev.stage.LiveStageService;
+import br.com.arenadev.wordcloud.WordCloudService;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,8 @@ public class MechanicsService {
     private final GroupHistoryRepository groupHistoryRepository;
     private final ActivityRepository activityRepository;
     private final LiveStageService liveStageService;
+    private final WordCloudService wordCloudService;
+    private final PollService pollService;
     private final JsonMapper objectMapper = JsonMapper.builder().build();
 
     public MechanicsService(
@@ -32,7 +36,9 @@ public class MechanicsService {
             SessionDynamicRepository dynamicRepository,
             GroupHistoryRepository groupHistoryRepository,
             ActivityRepository activityRepository,
-            LiveStageService liveStageService
+            LiveStageService liveStageService,
+            WordCloudService wordCloudService,
+            PollService pollService
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -40,6 +46,8 @@ public class MechanicsService {
         this.groupHistoryRepository = groupHistoryRepository;
         this.activityRepository = activityRepository;
         this.liveStageService = liveStageService;
+        this.wordCloudService = wordCloudService;
+        this.pollService = pollService;
     }
 
     @Transactional(readOnly = true)
@@ -104,6 +112,7 @@ public class MechanicsService {
         if (maxHp < 10) throw new IllegalArgumentException("O Boss precisa ter ao menos 10 HP.");
         String normalizedName = name == null || name.isBlank() ? "Boss" : name.trim();
         saveState(session, DynamicType.BOSS_BATTLE, new BossState(normalizedName, maxHp, maxHp));
+        liveStageService.showBossBattle(sessionId);
         return runtime(sessionId);
     }
 
@@ -124,7 +133,7 @@ public class MechanicsService {
             saveState(
                     session,
                     DynamicType.ARENA,
-                    new ArenaState(null, null, List.of(), null, null)
+                    new ArenaState(null, null, List.of(), null, null, Map.of())
             );
             return runtime(sessionId);
         }
@@ -144,7 +153,8 @@ public class MechanicsService {
                         null,
                         List.of(),
                         null,
-                        null
+                        null,
+                        Map.of()
                 )
         );
         return runtime(sessionId);
@@ -196,7 +206,8 @@ public class MechanicsService {
                         next.getId().toString(),
                         new ArrayList<>(answered),
                         null,
-                        null
+                        null,
+                        runtimeBindings(state)
                 )
         );
         return new ArenaQuestionResult(next.getId(), false, runtime(sessionId));
@@ -216,7 +227,7 @@ public class MechanicsService {
         saveState(
                 session,
                 DynamicType.ARENA,
-                new ArenaState(state.activityId(), null, List.of(), null, null)
+                new ArenaState(state.activityId(), null, List.of(), null, null, runtimeBindings(state))
         );
         return runtime(sessionId);
     }
@@ -243,7 +254,8 @@ public class MechanicsService {
         if (current != null) {
             return new LiveFlowResult(
                     liveFlowView(session, state),
-                    runtime(sessionId)
+                    runtime(sessionId),
+                    liveStageService.state(sessionId)
             );
         }
 
@@ -270,7 +282,8 @@ public class MechanicsService {
         if (current >= activity.getSteps().size() - 1) {
             return new LiveFlowResult(
                     liveFlowView(session, state),
-                    runtime(sessionId)
+                    runtime(sessionId),
+                    liveStageService.state(sessionId)
             );
         }
 
@@ -287,7 +300,8 @@ public class MechanicsService {
         if (current == null || current <= 0) {
             return new LiveFlowResult(
                     liveFlowView(session, state),
-                    runtime(sessionId)
+                    runtime(sessionId),
+                    liveStageService.state(sessionId)
             );
         }
 
@@ -337,7 +351,7 @@ public class MechanicsService {
                 sessionId,
                 DynamicType.ARENA,
                 ArenaState.class,
-                new ArenaState(null, null, List.of(), null, null)
+                new ArenaState(null, null, List.of(), null, null, Map.of())
         );
     }
 
@@ -414,20 +428,97 @@ public class MechanicsService {
             answered.add(currentQuestionId);
         }
 
+        Map<String, String> bindings = new LinkedHashMap<>(runtimeBindings(previous));
+        LiveStageService.StateView stage = orchestratePreparedStep(
+                session,
+                step,
+                bindings
+        );
+
         ArenaState next = new ArenaState(
                 activity.getId().toString(),
                 currentQuestionId,
                 new ArrayList<>(answered),
                 step.getId().toString(),
-                index
+                index,
+                Map.copyOf(bindings)
         );
 
         saveState(session, DynamicType.ARENA, next);
 
         return new LiveFlowResult(
                 liveFlowView(session, next),
-                runtime(session.getId())
+                runtime(session.getId()),
+                stage
         );
+    }
+
+    private LiveStageService.StateView orchestratePreparedStep(
+            ClassSession session,
+            ActivityStep step,
+            Map<String, String> bindings
+    ) {
+        UUID sessionId = session.getId();
+        String stepKey = step.getId().toString();
+
+        return switch (step.getType()) {
+            case SLIDE -> liveStageService.showSlide(sessionId, step.getId());
+            case QUESTION -> liveStageService.showQuestion(sessionId, step.getId());
+            case WORD_CLOUD -> {
+                UUID existingRoundId = parseBoundRuntimeId(bindings.get(stepKey));
+                WordCloudService.StateView state = wordCloudService.activatePrepared(
+                        sessionId,
+                        existingRoundId,
+                        new WordCloudService.CreateCommand(
+                                step.getWordCloudPrompt(),
+                                Boolean.TRUE.equals(step.getWordCloudLiveReveal()),
+                                step.getWordCloudMaxWords() == null
+                                        ? 1
+                                        : step.getWordCloudMaxWords()
+                        )
+                );
+                if (state.round() != null) {
+                    bindings.put(stepKey, state.round().id().toString());
+                }
+                yield liveStageService.state(sessionId);
+            }
+            case POLL -> {
+                UUID existingRoundId = parseBoundRuntimeId(bindings.get(stepKey));
+                List<String> options = readJson(
+                        step.getPollOptionsJson(),
+                        new TypeReference<List<PollOptionView>>() {},
+                        List.of()
+                ).stream().map(PollOptionView::text).toList();
+                PollService.StateView state = pollService.activatePrepared(
+                        sessionId,
+                        existingRoundId,
+                        new PollService.CreateCommand(
+                                step.getPollPrompt(),
+                                options,
+                                Boolean.TRUE.equals(step.getPollLiveResults())
+                        )
+                );
+                if (state.round() != null) {
+                    bindings.put(stepKey, state.round().id().toString());
+                }
+                yield liveStageService.state(sessionId);
+            }
+        };
+    }
+
+    private static Map<String, String> runtimeBindings(ArenaState state) {
+        return state.stepRuntimeIds() == null
+                ? Map.of()
+                : state.stepRuntimeIds();
+    }
+
+    private static UUID parseBoundRuntimeId(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
     }
 
     private LiveFlowView liveFlowView(
@@ -617,7 +708,8 @@ public class MechanicsService {
             String currentQuestionId,
             List<String> answeredQuestionIds,
             String currentStepId,
-            Integer currentStepPosition
+            Integer currentStepPosition,
+            Map<String, String> stepRuntimeIds
     ) {}
     private record GroupsState(List<List<String>> groups, int groupSize) {}
 
@@ -674,7 +766,8 @@ public class MechanicsService {
 
     public record LiveFlowResult(
             LiveFlowView liveFlow,
-            RuntimeView runtime
+            RuntimeView runtime,
+            LiveStageService.StateView stage
     ) {}
 
     public record DrawResult(UUID studentId, RuntimeView runtime) {}

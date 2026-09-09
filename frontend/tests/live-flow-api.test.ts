@@ -29,6 +29,27 @@ const liveFlowPayload = {
   hasNext: true,
 };
 
+
+const stagePayload = {
+  sessionId: "session-a",
+  primary: {
+    type: "SLIDE",
+    sourceId: "step-1",
+    displayName: null,
+    step: {
+      id: "step-1",
+      title: "Abertura",
+      instructions: null,
+      slideContent: "# APIs",
+      question: null,
+    },
+    activatedAt: "2026-09-08T18:00:00Z",
+  },
+  overlays: { timer: true },
+  audience: "PROJECTOR",
+  occurredAt: "2026-09-08T18:00:00Z",
+};
+
 const runtimePayload = {
   sessionId: "session-a",
   drawCounts: {},
@@ -91,6 +112,7 @@ test("starts the live flow using csrf protected command", async () => {
           hasNext: false,
         },
         runtime: runtimePayload,
+        stage: stagePayload,
       }),
       {
         status: 200,
@@ -104,6 +126,8 @@ test("starts the live flow using csrf protected command", async () => {
   assert.equal(commandCalled, true);
   assert.equal(result.liveFlow.currentIndex, 0);
   assert.equal(result.runtime.currentStepPosition, 0);
+  assert.equal(result.stage.primary.type, "SLIDE");
+  assert.equal(result.stage.primary.step?.slideContent, "# APIs");
 });
 
 test("moves to the next step through the backend command", async () => {
@@ -135,6 +159,7 @@ test("moves to the next step through the backend command", async () => {
           hasNext: false,
         },
         runtime: runtimePayload,
+        stage: stagePayload,
       }),
       {
         status: 200,
@@ -147,4 +172,5 @@ test("moves to the next step through the backend command", async () => {
 
   assert.equal(commandCalled, true);
   assert.equal(result.liveFlow.started, true);
+  assert.equal(result.stage.primary.sourceId, "step-1");
 });

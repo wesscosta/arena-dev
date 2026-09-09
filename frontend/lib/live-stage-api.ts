@@ -20,6 +20,21 @@ export type LiveStageState = {
     type: LiveStageType;
     sourceId?: string | null;
     displayName?: string | null;
+    step?: {
+      id: string;
+      title?: string | null;
+      instructions?: string | null;
+      slideContent?: string | null;
+      question?: {
+        id: string;
+        type: "MULTIPLE_CHOICE" | "OPEN" | "TRUE_FALSE" | "BUG_FIX" | "ANALYSIS" | "PRACTICAL" | "SCENARIO";
+        statement: string;
+        points: number;
+        options: Array<{ id: string; text: string }>;
+        code?: string | null;
+        language?: string | null;
+      } | null;
+    } | null;
     activatedAt?: string | null;
   };
   overlays: {
@@ -52,6 +67,7 @@ export function emptyLiveStageState(sessionId = ""): LiveStageState {
       type: "IDLE",
       sourceId: null,
       displayName: null,
+      step: null,
       activatedAt: null,
     },
     overlays: { timer: true },

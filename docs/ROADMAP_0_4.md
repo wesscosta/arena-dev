@@ -4,7 +4,7 @@
 > consolidados Timer, Projector, Word Cloud, ActivityStep/editor/runtime,
 > navegação contextual e 12.3D.7A–D. **12.4D.0A — Live Stage / Presentation
 > State está implementado localmente** e Sorteio, Nuvem e Buzzer já usam o
-> palco compartilhado. **12.4D.0C/0D e 12.4D.1 Poll estão implementados localmente. Próximo: 12.4E — orquestração progressiva Live Flow ↔ Live Stage.**
+> palco compartilhado. **12.4D e 12.4E estão implementados localmente. Próximo: 12.4F — consolidação pública `/join` + Projetor e hardening de reconexão.**
 
 A `v0.4.0` evolui o Arena Dev Community a partir da baseline estável `v0.3.0`,
 mantendo a sessão de aula como contexto central e evitando ampliar o produto
@@ -340,21 +340,23 @@ A abstração de sequência passa a ser justificada por quatro blocos concretos:
 
 #### 12.4E — Orquestração Live Flow ↔ Live Stage
 
-- [ ] `WORD_CLOUD` preparado no roteiro pode abrir/reativar rodada sem duplicar domínio;
-- [ ] `QUESTION` reutiliza o domínio existente e assume o palco quando comandado;
-- [ ] `SLIDE` ganha projeção própria;
-- [ ] Boss Battle recebe adapter de palco;
-- [ ] Timer continua transversal;
-- [ ] não avançar automaticamente o roteiro por evento de dinâmica.
+- [x] `WORD_CLOUD` preparado no roteiro pode abrir/reativar rodada sem duplicar domínio;
+- [x] `POLL` preparado no roteiro reutiliza/reativa a mesma rodada vinculada ao step;
+- [x] `QUESTION` reutiliza o domínio existente e assume o palco quando comandado;
+- [x] `SLIDE` ganha projeção própria;
+- [x] Boss Battle recebe adapter de palco;
+- [x] Timer continua transversal;
+- [x] não avançar automaticamente o roteiro por evento de dinâmica.
 
 #### 12.4F — Consolidação pública `/join` + Projetor
 
 - [x] contrato `LIVE_STAGE_STATE` e snapshot inicial;
-- [x] `/join` já seleciona Sorteio/Nuvem/Buzzer/Poll pelo palco;
-- [x] Projetor já seleciona Sorteio/Nuvem/Buzzer/Poll pelo palco;
+- [x] `/join` já seleciona Sorteio/Nuvem/Buzzer/Poll/Question/Boss pelo palco;
+- [x] Projetor já seleciona Sorteio/Nuvem/Buzzer/Poll/Slide/Question/Boss pelo palco;
 - [x] aplicar `displayName`/device claim finais;
-- [ ] concluir adapters de Slide/Question/Boss/Quiz conforme forem implementados;
-- [ ] reconexão restaurar integralmente palco + estado especializado.
+- [ ] concluir `QUIZ` somente quando existir runtime próprio;
+- [ ] reconexão restaurar integralmente palco + estado especializado;
+- [ ] revisar acabamento visual público e estados de fallback/reentrada.
 
 ### 12.5 — SessionEvent
 

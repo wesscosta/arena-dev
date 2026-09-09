@@ -61,7 +61,7 @@ test("validates question ownership and poll configuration", () => {
 
   assert.ok(errors.some((error) => error.includes("não pertence à atividade")));
   assert.ok(errors.some((error) => error.includes("pergunta da votação")));
-  assert.ok(errors.some((error) => error.includes("entre 2 e 8 opções")));
+  assert.ok(errors.some((error) => error.includes("entre 2 e 6 opções")));
 });
 
 test("picks the next available poll option identifier", () => {

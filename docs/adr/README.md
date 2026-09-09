@@ -45,6 +45,7 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0026](ADR-0026-community-mit-e-produto-comercial-verit.md) | Arena Dev Community sob MIT e produto comercial Verit em repositório privado separado | Aceito |
 | [ADR-0027](ADR-0027-live-stage-e-projecoes-por-audiencia.md) | Live Stage autoritativo e projeções por audiência | Aceito |
 | [ADR-0028](ADR-0028-preferred-name-e-identidade-de-dispositivo.md) | Preferred name por matrícula e identidade opaca de dispositivo | Aceito |
+| [ADR-0029](ADR-0029-orquestracao-live-flow-live-stage.md) | Live Flow orquestra Live Stage sem duplicar runtimes especializados | Aceito |
 
 ## Template
 

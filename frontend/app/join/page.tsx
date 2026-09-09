@@ -24,6 +24,7 @@ import {
 } from "@/lib/word-cloud-api";
 import wordStyles from "./word-cloud.module.css";
 import pollStyles from "./poll.module.css";
+import stepStyles from "./prepared-step.module.css";
 import { emptyPollParticipantState, sendPollVote, type PollParticipantState, type PollState } from "@/lib/poll-api";
 
 function messageOf(error: unknown) {
@@ -293,6 +294,31 @@ export default function JoinPage() {
               <span className={`student-connection ${socketState}`}><i />{socketState === "online" ? "Conectado" : socketState === "connecting" ? "Conectando" : "Offline"}</span>
             </div>
 
+            {!sessionFinished && liveStage.primary.type === "QUESTION" && liveStage.primary.step?.question && (
+              <section className={stepStyles.card}>
+                <div className={stepStyles.heading}>
+                  <span>QUESTÃO · ROTEIRO AO VIVO</span>
+                  <h2>{liveStage.primary.step.question.statement}</h2>
+                </div>
+                {liveStage.primary.step.instructions && (
+                  <p className={stepStyles.instructions}>{liveStage.primary.step.instructions}</p>
+                )}
+                {liveStage.primary.step.question.code && (
+                  <pre className={stepStyles.code}><code>{liveStage.primary.step.question.code}</code></pre>
+                )}
+                {liveStage.primary.step.question.options.length > 0 && (
+                  <div className={stepStyles.options}>
+                    {liveStage.primary.step.question.options.map((option, index) => (
+                      <div className={stepStyles.option} key={option.id}>
+                        <b>{String.fromCharCode(65 + index)}</b>
+                        <span>{option.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
             {!sessionFinished && liveStage.primary.type === "WORD_CLOUD" && wordCloud.round && (
               <section className={wordStyles.card}>
                 <div className={wordStyles.heading}>
@@ -396,7 +422,13 @@ export default function JoinPage() {
                   <><h2>Rodada encerrada</h2><p>Aguarde o professor liberar a próxima dinâmica.</p>{winner && <strong className="student-round-winner">Vencedor: {winner.displayName}</strong>}</>
                 )}
               </div>
-            ) : liveStage.primary.type !== "WORD_CLOUD" && liveStage.primary.type !== "POLL" ? (
+            ) : liveStage.primary.type === "BOSS_BATTLE" ? (
+              <div className="student-buzzer-state open">
+                <span className="student-buzzer-label">BOSS BATTLE</span>
+                <h2>Desafio em andamento</h2>
+                <p>O professor está conduzindo o progresso do Boss na Arena.</p>
+              </div>
+            ) : liveStage.primary.type !== "WORD_CLOUD" && liveStage.primary.type !== "POLL" && liveStage.primary.type !== "QUESTION" ? (
               <div className={wordStyles.waiting}>
                 <span>{liveStage.primary.type === "IDLE" ? "ARENA DEV" : liveStage.primary.type.replaceAll("_", " ")}</span>
                 <strong>Aguardando próxima dinâmica</strong>

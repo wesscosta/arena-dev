@@ -81,6 +81,28 @@ public class PollService {
         return teacher;
     }
 
+    @Transactional
+    public StateView activatePrepared(UUID sessionId, UUID roundId, CreateCommand command) {
+        if (roundId == null) {
+            return create(sessionId, command);
+        }
+
+        ClassSession session = sessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+        ensureActive(session);
+
+        PollRound round = roundRepository.findByIdForUpdate(roundId)
+                .orElseThrow(() -> new ResourceNotFoundException("Votação não encontrada."));
+        if (!round.getSession().getId().equals(sessionId)) {
+            throw new IllegalArgumentException("A votação não pertence a esta sessão.");
+        }
+
+        StateView teacher = stateOf(round, Projection.TEACHER);
+        liveStageService.showPoll(sessionId, round.getId());
+        broadcastStateAfterCommit(sessionId, round);
+        return teacher;
+    }
+
     @Transactional(readOnly = true)
     public StateView state(UUID sessionId) {
         getSession(sessionId);

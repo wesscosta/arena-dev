@@ -19,6 +19,7 @@ test("represents an idle live stage without feature flags", () => {
   assert.equal(state.primary.type, "IDLE");
   assert.equal(state.overlays.timer, true);
   assert.equal(state.audience, "BOTH");
+  assert.equal(state.primary.step, null);
 });
 
 test("fetches the authoritative stage state", async () => {
@@ -31,9 +32,27 @@ test("fetches the authoritative stage state", async () => {
     return new Response(JSON.stringify({
       sessionId: "session-a",
       primary: {
-        type: "DRAW",
-        sourceId: "student-a",
-        displayName: "Jota",
+        type: "QUESTION",
+        sourceId: "step-a",
+        displayName: null,
+        step: {
+          id: "step-a",
+          title: "Diagnóstico",
+          instructions: "Discuta antes de responder.",
+          slideContent: null,
+          question: {
+            id: "question-a",
+            type: "MULTIPLE_CHOICE",
+            statement: "Qual verbo HTTP realiza leitura?",
+            points: 10,
+            options: [
+              { id: "A", text: "GET" },
+              { id: "B", text: "DELETE" },
+            ],
+            code: null,
+            language: null,
+          },
+        },
         activatedAt: "2026-09-08T18:00:00Z",
       },
       overlays: { timer: true },
@@ -46,8 +65,9 @@ test("fetches the authoritative stage state", async () => {
   };
 
   const state = await fetchLiveStageState("session-a");
-  assert.equal(state.primary.type, "DRAW");
-  assert.equal(state.primary.displayName, "Jota");
+  assert.equal(state.primary.type, "QUESTION");
+  assert.equal(state.primary.step?.question?.statement, "Qual verbo HTTP realiza leitura?");
+  assert.equal(state.primary.step?.question?.options[0]?.text, "GET");
 });
 
 test("activates a stage with explicit audience through csrf protected command", async () => {

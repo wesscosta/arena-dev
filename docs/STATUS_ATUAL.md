@@ -8,9 +8,9 @@
 
 **Branch:** `feat/v0.4-live-classroom`.
 
-**Checkpoint local:** **12.4D.0A–D concluídos localmente e 12.4D.1 — Poll/Votação implementado de ponta a ponta para professor, `/join` e Projetor.**
+**Checkpoint local:** **12.4D concluído localmente e 12.4E — orquestração Live Flow ↔ Live Stage implementada para Slide, Question, Word Cloud, Poll e adapter de Boss.**
 
-**Próximo incremento recomendado:** **12.4E — orquestração progressiva Live Flow ↔ Live Stage e conclusão incremental dos adapters de Slide/Question/Boss/Quiz.**
+**Próximo incremento recomendado:** **12.4F — consolidação pública `/join` + Projetor, reconexão integral do palco e acabamento dos adapters públicos.**
 
 Este arquivo é a referência técnica versionada do estado corrente. Documentos de incremento preservam histórico e podem conter estados superados.
 
@@ -99,7 +99,8 @@ v0.4:
 - 12.4D.0B: `Dinâmicas`, Sorteio/Nuvem/Buzzer/Poll no palco;
 - 12.4D.0C: `Enrollment.preferredName` e `DisplayNameService`;
 - 12.4D.0D: device claim opaco separado do participant token;
-- 12.4D.1: Poll single-choice, resultados agregados/anônimos, `/join` e Projetor.
+- 12.4D.1: Poll single-choice, resultados agregados/anônimos, `/join` e Projetor;
+- 12.4E: Live Flow orquestra Live Stage; Slide/Question possuem projeção própria; Word Cloud/Poll reutilizam a rodada vinculada ao step; Boss ativa o palco compartilhado.
 
 ## Live Stage / Projection State
 
@@ -148,10 +149,12 @@ Regras:
 - professor, Projetor e participante recebem projeções próprias do mesmo estado;
 - clientes públicos não devem decidir política de exposição de identidade;
 - `LIVE_STAGE_STATE` seleciona o palco, enquanto eventos especializados mantêm o detalhe do módulo;
-- Sorteio, Nuvem e Buzzer já ativam o palco automaticamente;
+- Sorteio, Nuvem, Poll e Buzzer ativam o palco pelos runtimes especializados;
+- Slide e Question usam projeção preparada do `ActivityStep`;
+- Boss Battle já possui adapter de seleção do palco;
 - não ativar tipos sem adapter/renderização correspondente.
 
-Consulte [`INCREMENT_12_4D_0.md`](INCREMENT_12_4D_0.md) e ADR-0027.
+Consulte [`INCREMENT_12_4D_0.md`](INCREMENT_12_4D_0.md), [`INCREMENT_12_4E.md`](INCREMENT_12_4E.md), ADR-0027 e ADR-0029.
 
 ## ActivityStep / Live Flow
 
@@ -172,9 +175,10 @@ currentQuestionId
 answeredQuestionIds
 currentStepId
 currentStepPosition
+stepRuntimeIds      # vínculo stepId → roundId para runtimes preparados
 ```
 
-Professor controla `start`, `previous` e `next`. O Live Flow e o Live Stage continuam abstrações distintas: **roteiro define sequência; palco define o que está sendo apresentado agora**. A orquestração entre ambos permanece incremental.
+Professor controla `start`, `previous` e `next`. O Live Flow e o Live Stage continuam abstrações distintas: **roteiro define sequência; palco define o que está sendo apresentado agora**. Desde o 12.4E, os steps autorados acionam o palco e, para Word Cloud/Poll, reutilizam o runtime especializado já vinculado ao step sem criar domínio paralelo.
 
 ## Identidade — implementação local concluída
 
@@ -274,7 +278,7 @@ compilação Java 21 de todos os fontes main: OK
 ## Próxima sequência
 
 ```text
-12.4E orquestração progressiva Live Flow ↔ Live Stage
+12.4F consolidação pública `/join` + Projetor e reconexão integral do palco
 ↓
 adapters de Slide / Question / Boss / Quiz
 ↓

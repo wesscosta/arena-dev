@@ -151,8 +151,8 @@ export function validateActivitySteps(
       }
 
       const options = config?.options ?? [];
-      if (options.length < 2 || options.length > 8) {
-        errors.push(`${label}: a votação precisa possuir entre 2 e 8 opções.`);
+      if (options.length < 2 || options.length > 6) {
+        errors.push(`${label}: a votação precisa possuir entre 2 e 6 opções.`);
       }
 
       const ids = new Set<string>();

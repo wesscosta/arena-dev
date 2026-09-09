@@ -55,25 +55,25 @@ class LiveStageIT {
         liveStageService.activate(
                 scenario.sessionId(),
                 new LiveStageService.ActivateCommand(
-                        LiveStageType.SLIDE,
+                        LiveStageType.BOSS_BATTLE,
                         null,
-                        LiveStageAudience.PROJECTOR,
+                        LiveStageAudience.BOTH,
                         true
                 )
         );
         liveStageService.activate(
                 scenario.sessionId(),
                 new LiveStageService.ActivateCommand(
-                        LiveStageType.QUESTION,
+                        LiveStageType.TIMER,
                         null,
-                        LiveStageAudience.BOTH,
+                        LiveStageAudience.PROJECTOR,
                         false
                 )
         );
 
         LiveStageService.StateView reloaded = liveStageService.state(scenario.sessionId());
-        assertThat(reloaded.primary().type()).isEqualTo(LiveStageType.QUESTION);
-        assertThat(reloaded.audience()).isEqualTo(LiveStageAudience.BOTH);
+        assertThat(reloaded.primary().type()).isEqualTo(LiveStageType.TIMER);
+        assertThat(reloaded.audience()).isEqualTo(LiveStageAudience.PROJECTOR);
         assertThat(reloaded.overlays().timer()).isFalse();
     }
 
@@ -118,7 +118,7 @@ class LiveStageIT {
         liveStageService.activate(
                 scenario.sessionId(),
                 new LiveStageService.ActivateCommand(
-                        LiveStageType.SLIDE,
+                        LiveStageType.TIMER,
                         null,
                         LiveStageAudience.PROJECTOR,
                         true
@@ -126,11 +126,25 @@ class LiveStageIT {
         );
 
         assertThat(liveStageService.projectorState(scenario.sessionId()).primary().type())
-                .isEqualTo(LiveStageType.SLIDE);
+                .isEqualTo(LiveStageType.TIMER);
         assertThat(liveStageService.participantState(scenario.sessionId()).primary().type())
                 .isEqualTo(LiveStageType.IDLE);
         assertThat(liveStageService.state(scenario.sessionId()).primary().type())
-                .isEqualTo(LiveStageType.SLIDE);
+                .isEqualTo(LiveStageType.TIMER);
+    }
+
+    @Test
+    void bossBattleUsesTheSharedStageAdapter() {
+        Scenario scenario = scenario(null);
+
+        mechanicsService.startBoss(scenario.sessionId(), "Null Pointer", 100);
+
+        assertThat(liveStageService.state(scenario.sessionId()).primary().type())
+                .isEqualTo(LiveStageType.BOSS_BATTLE);
+        assertThat(liveStageService.projectorState(scenario.sessionId()).primary().type())
+                .isEqualTo(LiveStageType.BOSS_BATTLE);
+        assertThat(liveStageService.participantState(scenario.sessionId()).primary().type())
+                .isEqualTo(LiveStageType.BOSS_BATTLE);
     }
 
     private Scenario scenario(String nickname) {

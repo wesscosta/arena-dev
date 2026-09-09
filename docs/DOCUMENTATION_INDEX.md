@@ -6,10 +6,12 @@
 2. [`STATUS_ATUAL.md`](STATUS_ATUAL.md)
 3. [`ROADMAP_0_4.md`](ROADMAP_0_4.md)
 4. [`INCREMENT_12_4D_0.md`](INCREMENT_12_4D_0.md)
-5. [`CHECKPOINT_PRE_12_4D.md`](CHECKPOINT_PRE_12_4D.md) — histórico/supersedido
-6. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md)
-7. [`ACCESSIBILITY.md`](ACCESSIBILITY.md)
-8. [`adr/README.md`](adr/README.md)
+5. [`INCREMENT_12_4D_1.md`](INCREMENT_12_4D_1.md)
+6. [`INCREMENT_12_4E.md`](INCREMENT_12_4E.md)
+7. [`CHECKPOINT_PRE_12_4D.md`](CHECKPOINT_PRE_12_4D.md) — histórico/supersedido
+8. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md)
+9. [`ACCESSIBILITY.md`](ACCESSIBILITY.md)
+10. [`adr/README.md`](adr/README.md)
 
 ## Release estável
 
@@ -29,6 +31,4 @@ Ao concluir um incremento:
 4. manter checkpoint de fase;
 5. não reescrever evidência histórica para fazê-la parecer mais completa.
 
-Atualizado em 08/09/2026 após a introdução de `12.4D.0 — Live Stage, Dinâmicas e identidade`.
-
-- [`INCREMENT_12_4D_1.md`](INCREMENT_12_4D_1.md) — Poll/Votação em runtime: persistência normalizada, voto por `/join`, projeção pública agregada e Live Stage.
+Atualizado em 08/09/2026 após a implementação local de `12.4E — Orquestração Live Flow ↔ Live Stage`.

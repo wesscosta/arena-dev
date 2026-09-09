@@ -782,3 +782,137 @@
     justify-items: start;
   }
 }
+
+.preparedStage {
+  width: min(1120px, 100%);
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 3rem);
+}
+
+.preparedHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.preparedHeading > div:first-child {
+  min-width: 0;
+}
+
+.preparedHeading h1 {
+  margin: 0.45rem 0 0;
+  font-size: clamp(2.2rem, 5vw, 4.9rem);
+  line-height: 1.03;
+  letter-spacing: -0.045em;
+}
+
+.preparedHeading p {
+  margin: 1rem 0 0;
+  max-width: 70ch;
+  font-size: clamp(1rem, 1.8vw, 1.35rem);
+  color: var(--text-muted);
+}
+
+.slideContent {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1.5rem, 3vw, 3rem);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1.5rem;
+  background: color-mix(in srgb, var(--surface-raised) 88%, transparent);
+}
+
+.slideContent h2,
+.slideContent h3,
+.slideContent p {
+  margin: 0;
+}
+
+.slideContent h2 {
+  font-size: clamp(1.9rem, 4vw, 3.6rem);
+  line-height: 1.08;
+}
+
+.slideContent h3 {
+  font-size: clamp(1.45rem, 2.8vw, 2.4rem);
+}
+
+.slideContent p {
+  font-size: clamp(1.15rem, 2.2vw, 1.75rem);
+  line-height: 1.5;
+}
+
+.slideBullet {
+  padding-left: 0.35rem;
+}
+
+.questionCode {
+  margin: 0;
+  overflow-x: auto;
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+  border-radius: 1.25rem;
+  background: #0b1020;
+  color: #f8fafc;
+  font-size: clamp(1rem, 1.8vw, 1.35rem);
+  line-height: 1.55;
+}
+
+.questionOptions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.questionOptions > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  background: var(--surface-raised);
+  font-size: clamp(1rem, 1.8vw, 1.35rem);
+}
+
+.questionOptions b {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.bossStage {
+  width: min(900px, 100%);
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.bossStage h1 {
+  margin: 0;
+  font-size: clamp(3rem, 7vw, 6.5rem);
+  letter-spacing: -0.05em;
+}
+
+.bossStage p {
+  margin: 0;
+  max-width: 58ch;
+  color: var(--text-muted);
+  font-size: clamp(1rem, 2vw, 1.45rem);
+}
+
+@media (max-width: 48rem) {
+  .preparedHeading {
+    display: grid;
+  }
+
+  .questionOptions {
+    grid-template-columns: 1fr;
+  }
+}

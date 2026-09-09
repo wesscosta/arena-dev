@@ -146,8 +146,8 @@ public class ActivityStepService {
         }
 
         List<PollOptionInput> options = config.options() == null ? List.of() : config.options();
-        if (options.size() < 2 || options.size() > 8) {
-            throw new IllegalArgumentException("Bloco " + position + ": Votação deve possuir entre 2 e 8 opções.");
+        if (options.size() < 2 || options.size() > 6) {
+            throw new IllegalArgumentException("Bloco " + position + ": Votação deve possuir entre 2 e 6 opções.");
         }
 
         Set<String> ids = new HashSet<>();

@@ -1,5 +1,9 @@
 package br.com.arenadev.stage;
 
+import br.com.arenadev.activity.ActivityStep;
+import br.com.arenadev.activity.ActivityStepRepository;
+import br.com.arenadev.activity.ActivityStepType;
+import br.com.arenadev.activity.QuestionType;
 import br.com.arenadev.dynamic.DynamicType;
 import br.com.arenadev.dynamic.SessionDynamic;
 import br.com.arenadev.dynamic.SessionDynamicRepository;
@@ -14,9 +18,11 @@ import br.com.arenadev.session.SessionStatus;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -26,6 +32,7 @@ public class LiveStageService {
     private final SessionDynamicRepository dynamicRepository;
     private final SessionRealtimeGateway realtimeGateway;
     private final DisplayNameService displayNameService;
+    private final ActivityStepRepository activityStepRepository;
     private final JsonMapper json = JsonMapper.builder().build();
 
     public LiveStageService(
@@ -33,13 +40,15 @@ public class LiveStageService {
             SessionParticipantRepository participantRepository,
             SessionDynamicRepository dynamicRepository,
             SessionRealtimeGateway realtimeGateway,
-            DisplayNameService displayNameService
+            DisplayNameService displayNameService,
+            ActivityStepRepository activityStepRepository
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
         this.dynamicRepository = dynamicRepository;
         this.realtimeGateway = realtimeGateway;
         this.displayNameService = displayNameService;
+        this.activityStepRepository = activityStepRepository;
     }
 
     @Transactional(readOnly = true)
@@ -76,6 +85,15 @@ public class LiveStageService {
         if (type == LiveStageType.DRAW) {
             requireParticipantStudent(sessionId, sourceId);
         }
+        if ((type == LiveStageType.SLIDE || type == LiveStageType.QUESTION) && sourceId == null) {
+            throw new IllegalArgumentException("Informe o bloco do Roteiro ao Vivo para este palco.");
+        }
+        if (type == LiveStageType.SLIDE) {
+            requirePreparedStep(session, sourceId, ActivityStepType.SLIDE);
+        }
+        if (type == LiveStageType.QUESTION) {
+            requirePreparedStep(session, sourceId, ActivityStepType.QUESTION);
+        }
 
         StoredState stored = new StoredState(
                 type.name(),
@@ -96,6 +114,32 @@ public class LiveStageService {
                 new ActivateCommand(
                         LiveStageType.DRAW,
                         studentId,
+                        LiveStageAudience.BOTH,
+                        true
+                )
+        );
+    }
+
+    @Transactional
+    public StateView showSlide(UUID sessionId, UUID stepId) {
+        return activate(
+                sessionId,
+                new ActivateCommand(
+                        LiveStageType.SLIDE,
+                        stepId,
+                        LiveStageAudience.PROJECTOR,
+                        true
+                )
+        );
+    }
+
+    @Transactional
+    public StateView showQuestion(UUID sessionId, UUID stepId) {
+        return activate(
+                sessionId,
+                new ActivateCommand(
+                        LiveStageType.QUESTION,
+                        stepId,
                         LiveStageAudience.BOTH,
                         true
                 )
@@ -135,6 +179,19 @@ public class LiveStageService {
                 new ActivateCommand(
                         LiveStageType.POLL,
                         roundId,
+                        LiveStageAudience.BOTH,
+                        true
+                )
+        );
+    }
+
+    @Transactional
+    public StateView showBossBattle(UUID sessionId) {
+        return activate(
+                sessionId,
+                new ActivateCommand(
+                        LiveStageType.BOSS_BATTLE,
+                        null,
                         LiveStageAudience.BOTH,
                         true
                 )
@@ -184,7 +241,7 @@ public class LiveStageService {
         if (!visible) {
             return new StateView(
                     sessionId,
-                    new PrimaryView(LiveStageType.IDLE, null, null, null),
+                    new PrimaryView(LiveStageType.IDLE, null, null, null, null),
                     new OverlayView(stored.timerOverlay()),
                     audience,
                     parseInstant(stored.activatedAt())
@@ -194,6 +251,10 @@ public class LiveStageService {
         UUID sourceId = parseUuid(stored.sourceId());
         String displayName = type == LiveStageType.DRAW && sourceId != null
                 ? displayNameForStudent(sessionId, sourceId)
+                : null;
+        PreparedStepView preparedStep = (type == LiveStageType.SLIDE || type == LiveStageType.QUESTION)
+                && sourceId != null
+                ? preparedStep(sessionId, sourceId, type)
                 : null;
 
         UUID projectedSourceId = projection != Projection.TEACHER && type == LiveStageType.DRAW
@@ -206,12 +267,75 @@ public class LiveStageService {
                         type,
                         projectedSourceId,
                         displayName,
+                        preparedStep,
                         parseInstant(stored.activatedAt())
                 ),
                 new OverlayView(stored.timerOverlay()),
                 audience,
                 parseInstant(stored.activatedAt())
         );
+    }
+
+    private PreparedStepView preparedStep(UUID sessionId, UUID stepId, LiveStageType type) {
+        ClassSession session = requireSession(sessionId);
+        ActivityStepType expected = type == LiveStageType.SLIDE
+                ? ActivityStepType.SLIDE
+                : ActivityStepType.QUESTION;
+        ActivityStep step = requirePreparedStep(session, stepId, expected);
+
+        PublicQuestionView question = null;
+        if (step.getType() == ActivityStepType.QUESTION && step.getQuestion() != null) {
+            var source = step.getQuestion();
+            question = new PublicQuestionView(
+                    source.getId(),
+                    source.getType(),
+                    source.getStatement(),
+                    source.getPoints(),
+                    readOptions(source.getOptionsJson()),
+                    source.getCode(),
+                    source.getLanguage()
+            );
+        }
+
+        return new PreparedStepView(
+                step.getId(),
+                step.getTitle(),
+                step.getInstructions(),
+                step.getType() == ActivityStepType.SLIDE ? step.getSlideContent() : null,
+                question
+        );
+    }
+
+    private ActivityStep requirePreparedStep(
+            ClassSession session,
+            UUID stepId,
+            ActivityStepType expectedType
+    ) {
+        ActivityStep step = activityStepRepository.findById(stepId)
+                .orElseThrow(() -> new ResourceNotFoundException("Bloco do Roteiro ao Vivo não encontrado."));
+        if (!step.getActivity().getClassroom().getId().equals(session.getClassroom().getId())) {
+            throw new IllegalArgumentException("O bloco do Roteiro ao Vivo não pertence à turma da sessão.");
+        }
+        if (step.getType() != expectedType) {
+            throw new IllegalArgumentException("O bloco informado não corresponde ao tipo de palco solicitado.");
+        }
+        if (expectedType == ActivityStepType.QUESTION && step.getQuestion() == null) {
+            throw new IllegalArgumentException("O bloco de Questão não possui questão vinculada.");
+        }
+        return step;
+    }
+
+    private List<QuestionOptionView> readOptions(String value) {
+        if (value == null || value.isBlank()) return List.of();
+        try {
+            List<QuestionOptionView> options = json.readValue(
+                    value,
+                    new TypeReference<List<QuestionOptionView>>() {}
+            );
+            return options == null ? List.of() : options;
+        } catch (RuntimeException ignored) {
+            return List.of();
+        }
     }
 
     private String displayNameForStudent(UUID sessionId, UUID studentId) {
@@ -357,8 +481,32 @@ public class LiveStageService {
             LiveStageType type,
             UUID sourceId,
             String displayName,
+            PreparedStepView step,
             Instant activatedAt
     ) {
+    }
+
+    public record PreparedStepView(
+            UUID id,
+            String title,
+            String instructions,
+            String slideContent,
+            PublicQuestionView question
+    ) {
+    }
+
+    public record PublicQuestionView(
+            UUID id,
+            QuestionType type,
+            String statement,
+            int points,
+            List<QuestionOptionView> options,
+            String code,
+            String language
+    ) {
+    }
+
+    public record QuestionOptionView(String id, String text) {
     }
 
     public record OverlayView(boolean timer) {

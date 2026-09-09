@@ -89,6 +89,28 @@ public class WordCloudService {
         return state;
     }
 
+    @Transactional
+    public StateView activatePrepared(UUID sessionId, UUID roundId, CreateCommand command) {
+        if (roundId == null) {
+            return create(sessionId, command);
+        }
+
+        ClassSession session = sessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+        ensureActive(session);
+
+        WordCloudRound round = roundRepository.findByIdForUpdate(roundId)
+                .orElseThrow(() -> new ResourceNotFoundException("Rodada de Nuvem de Palavras não encontrada."));
+        if (!round.getSession().getId().equals(sessionId)) {
+            throw new IllegalArgumentException("A rodada de Nuvem de Palavras não pertence a esta sessão.");
+        }
+
+        StateView state = stateOf(round);
+        liveStageService.showWordCloud(sessionId, round.getId());
+        broadcastStateAfterCommit(sessionId, state);
+        return state;
+    }
+
     @Transactional(readOnly = true)
     public StateView state(UUID sessionId) {
         getSession(sessionId);

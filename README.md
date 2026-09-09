@@ -6,7 +6,7 @@
 >
 > **Current development line:** `v0.4 — Live Classroom`, branch `feat/v0.4-live-classroom`.
 >
-> **Current checkpoint:** Timer, Projector, Word Cloud, ActivityStep/live-flow runtime, contextual navigation, Design System, accessibility and responsive Arena polish are consolidated. `12.4D.0 — Live Stage + identity foundation` is implemented locally, including per-enrollment `preferredName` and opaque remembered-device claims. `12.4D.1 — Poll/Voting runtime` is also implemented locally across teacher, `/join` and Projector. **Next: 12.4E progressive Live Flow ↔ Live Stage orchestration and remaining stage adapters.**
+> **Current checkpoint:** Timer, Projector, Word Cloud, ActivityStep/live-flow runtime, contextual navigation, Design System, accessibility and responsive Arena polish are consolidated. `12.4D — Live Stage, identity and Poll` is implemented locally. `12.4E — Live Flow ↔ Live Stage orchestration` is also implemented locally: Slide/Question project through the shared stage, prepared Word Cloud/Poll steps reuse the same bound runtime round, and Boss Battle now activates the shared stage. **Next: 12.4F public `/join` + Projector consolidation and reconnect hardening.**
 
 ## Product model
 
@@ -89,12 +89,12 @@ Current foundation and runtime:
 - **12.4D.0B** adapters: Draw, Word Cloud, Buzzer and Poll under `Dinâmicas`;
 - **12.4D.0C** `Enrollment.preferredName` + backend-resolved `displayName`;
 - **12.4D.0D** opaque device recognition separated from the temporary participant token;
-- **12.4D.1** Poll/Voting runtime with anonymous aggregate public projection.
+- **12.4D.1** Poll/Voting runtime with anonymous aggregate public projection;
+- **12.4E** Live Flow ↔ Live Stage orchestration with prepared Slide/Question projection, runtime reuse for Word Cloud/Poll and Boss stage adapter.
 
 Next:
 
-- **12.4E** progressive Live Flow ↔ Live Stage orchestration;
-- **12.4F** public `/join` + Projector consolidation;
+- **12.4F** public `/join` + Projector consolidation and reconnect hardening;
 - **12.5** chronological `SessionEvent`, after concrete semantics stabilize;
 - **12.6** hardening and `v0.4.0` gate.
 
@@ -111,7 +111,7 @@ Teacher ──controls──► LiveStageState
 
 Projector and participant UI are different projections of the same authoritative session state. Public clients receive only the data needed for their audience; for example, a projected draw receives `displayName` rather than the student UUID. Specialized events such as `WORD_CLOUD_STATE`, `BUZZER_STATE` and `TIMER_STATE` still own detailed module runtime.
 
-See [`docs/INCREMENT_12_4D_0.md`](docs/INCREMENT_12_4D_0.md), [`docs/INCREMENT_12_4D_1.md`](docs/INCREMENT_12_4D_1.md), ADR-0027 and ADR-0028.
+See [`docs/INCREMENT_12_4D_0.md`](docs/INCREMENT_12_4D_0.md), [`docs/INCREMENT_12_4D_1.md`](docs/INCREMENT_12_4D_1.md), [`docs/INCREMENT_12_4E.md`](docs/INCREMENT_12_4E.md), ADR-0027, ADR-0028 and ADR-0029.
 
 ## Poll semantics
 

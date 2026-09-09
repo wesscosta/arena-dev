@@ -42,6 +42,13 @@ function errorMessage(error: unknown) {
     : "Não foi possível abrir o modo projetor.";
 }
 
+function slideLines(content: string) {
+  return content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 export default function ProjectorView() {
   const [code, setCode] = useState("");
   const [draftCode, setDraftCode] = useState("");
@@ -218,6 +225,10 @@ export default function ProjectorView() {
   const showWordCloud = primaryType === "WORD_CLOUD" && Boolean(wordCloudRound);
   const pollRound = pollState.round;
   const showPoll = primaryType === "POLL" && Boolean(pollRound);
+  const preparedStep = liveStage.primary.step;
+  const showSlide = primaryType === "SLIDE" && Boolean(preparedStep?.slideContent);
+  const showQuestion = primaryType === "QUESTION" && Boolean(preparedStep?.question);
+  const showBoss = primaryType === "BOSS_BATTLE";
   const showBuzzer = primaryType === "BUZZER";
   const showDraw = primaryType === "DRAW" && Boolean(liveStage.primary.displayName);
   const showTimerPrimary = primaryType === "TIMER" || (primaryType === "IDLE" && timerCanTakeFocus);
@@ -337,6 +348,72 @@ export default function ProjectorView() {
             <span className={styles.eyebrow}>SORTEIO</span>
             <p>Aluno sorteado</p>
             <h1>{liveStage.primary.displayName}</h1>
+            {showTimerOverlay && timer && status && (
+              <div className={styles.miniTimer}>
+                <span>{timer.title}</span>
+                <strong>{formatTimer(remaining)}</strong>
+              </div>
+            )}
+          </div>
+        ) : showSlide && preparedStep?.slideContent ? (
+          <div className={styles.preparedStage}>
+            <div className={styles.preparedHeading}>
+              <div>
+                <span className={styles.eyebrow}>ROTEIRO AO VIVO · SLIDE</span>
+                <h1>{preparedStep.title || "Conteúdo da aula"}</h1>
+                {preparedStep.instructions && <p>{preparedStep.instructions}</p>}
+              </div>
+              {showTimerOverlay && timer && status && (
+                <div className={styles.miniTimer}>
+                  <span>{timer.title}</span>
+                  <strong>{formatTimer(remaining)}</strong>
+                </div>
+              )}
+            </div>
+            <div className={styles.slideContent}>
+              {slideLines(preparedStep.slideContent).map((line, index) => {
+                if (line.startsWith("### ")) return <h3 key={`${index}-${line}`}>{line.slice(4)}</h3>;
+                if (line.startsWith("## ")) return <h2 key={`${index}-${line}`}>{line.slice(3)}</h2>;
+                if (line.startsWith("# ")) return <h2 key={`${index}-${line}`}>{line.slice(2)}</h2>;
+                if (line.startsWith("- ")) return <p className={styles.slideBullet} key={`${index}-${line}`}>• {line.slice(2)}</p>;
+                return <p key={`${index}-${line}`}>{line}</p>;
+              })}
+            </div>
+          </div>
+        ) : showQuestion && preparedStep?.question ? (
+          <div className={styles.preparedStage}>
+            <div className={styles.preparedHeading}>
+              <div>
+                <span className={styles.eyebrow}>ROTEIRO AO VIVO · QUESTÃO</span>
+                <h1>{preparedStep.question.statement}</h1>
+                {preparedStep.instructions && <p>{preparedStep.instructions}</p>}
+              </div>
+              {showTimerOverlay && timer && status && (
+                <div className={styles.miniTimer}>
+                  <span>{timer.title}</span>
+                  <strong>{formatTimer(remaining)}</strong>
+                </div>
+              )}
+            </div>
+            {preparedStep.question.code && (
+              <pre className={styles.questionCode}><code>{preparedStep.question.code}</code></pre>
+            )}
+            {preparedStep.question.options.length > 0 && (
+              <div className={styles.questionOptions}>
+                {preparedStep.question.options.map((option, index) => (
+                  <div key={option.id}>
+                    <b>{String.fromCharCode(65 + index)}</b>
+                    <span>{option.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : showBoss ? (
+          <div className={styles.bossStage}>
+            <span className={styles.eyebrow}>BOSS BATTLE</span>
+            <h1>Desafio em andamento</h1>
+            <p>O Boss está ativo na Arena. O professor controla o progresso e a pontuação.</p>
             {showTimerOverlay && timer && status && (
               <div className={styles.miniTimer}>
                 <span>{timer.title}</span>
@@ -466,7 +543,7 @@ export default function ProjectorView() {
           <div className={styles.waiting}>
             <span className={styles.eyebrow}>AULA AO VIVO</span>
             <h1>Aguardando próxima dinâmica</h1>
-            <p>Sorteio, Nuvem, Buzzer, Timer e outras dinâmicas aparecerão aqui quando o professor as colocar no palco.</p>
+            <p>Slides, questões, Sorteio, Nuvem, Poll, Buzzer e outras dinâmicas aparecerão aqui quando o professor as colocar no palco.</p>
           </div>
         )}
       </section>
