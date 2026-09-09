@@ -6,6 +6,7 @@ import br.com.arenadev.activity.ActivityRepository;
 import br.com.arenadev.activity.ActivityStep;
 import br.com.arenadev.activity.ActivityStepType;
 import br.com.arenadev.poll.PollService;
+import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.session.*;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import br.com.arenadev.stage.LiveStageService;
@@ -28,6 +29,7 @@ public class MechanicsService {
     private final LiveStageService liveStageService;
     private final WordCloudService wordCloudService;
     private final PollService pollService;
+    private final SessionRealtimeGateway realtimeGateway;
     private final JsonMapper objectMapper = JsonMapper.builder().build();
 
     public MechanicsService(
@@ -38,7 +40,8 @@ public class MechanicsService {
             ActivityRepository activityRepository,
             LiveStageService liveStageService,
             WordCloudService wordCloudService,
-            PollService pollService
+            PollService pollService,
+            SessionRealtimeGateway realtimeGateway
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -48,6 +51,7 @@ public class MechanicsService {
         this.liveStageService = liveStageService;
         this.wordCloudService = wordCloudService;
         this.pollService = pollService;
+        this.realtimeGateway = realtimeGateway;
     }
 
     @Transactional(readOnly = true)
@@ -111,8 +115,10 @@ public class MechanicsService {
         ClassSession session = requireActiveSession(sessionId);
         if (maxHp < 10) throw new IllegalArgumentException("O Boss precisa ter ao menos 10 HP.");
         String normalizedName = name == null || name.isBlank() ? "Boss" : name.trim();
-        saveState(session, DynamicType.BOSS_BATTLE, new BossState(normalizedName, maxHp, maxHp));
+        BossState boss = new BossState(normalizedName, maxHp, maxHp);
+        saveState(session, DynamicType.BOSS_BATTLE, boss);
         liveStageService.showBossBattle(sessionId);
+        broadcastBossAfterCommit(sessionId, boss);
         return runtime(sessionId);
     }
 
@@ -122,7 +128,13 @@ public class MechanicsService {
         if (amount <= 0) throw new IllegalArgumentException("O dano precisa ser maior que zero.");
         BossState boss = readState(sessionId, DynamicType.BOSS_BATTLE, BossState.class, null);
         if (boss == null) throw new IllegalArgumentException("Nenhum Boss está ativo nesta sessão.");
-        saveState(session, DynamicType.BOSS_BATTLE, new BossState(boss.name(), boss.maxHp(), Math.max(0, boss.currentHp() - amount)));
+        BossState next = new BossState(
+                boss.name(),
+                boss.maxHp(),
+                Math.max(0, boss.currentHp() - amount)
+        );
+        saveState(session, DynamicType.BOSS_BATTLE, next);
+        broadcastBossAfterCommit(sessionId, next);
         return runtime(sessionId);
     }
 
@@ -306,6 +318,12 @@ public class MechanicsService {
         }
 
         return activateLiveStep(session, state, activity, current - 1);
+    }
+
+    private void broadcastBossAfterCommit(UUID sessionId, BossState boss) {
+        realtimeGateway.broadcastTeachersAfterCommit(sessionId, "BOSS_STATE", boss);
+        realtimeGateway.broadcastParticipantsAfterCommit(sessionId, "BOSS_STATE", boss);
+        realtimeGateway.broadcastProjectorsAfterCommit(sessionId, "BOSS_STATE", boss);
     }
 
     private RuntimeView runtime(UUID sessionId) {

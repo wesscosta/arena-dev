@@ -109,6 +109,17 @@ public class BuzzerService {
 
 
     @Transactional(readOnly = true)
+    public ParticipantBuzzerStateView participantState(UUID sessionId, UUID participantId) {
+        ensureSessionExists(sessionId);
+        BuzzerRound round = roundRepository.findFirstBySessionIdOrderByOpenedAtDesc(sessionId).orElse(null);
+        if (round == null) return ParticipantBuzzerStateView.empty();
+        Integer position = pressRepository.findByRoundIdAndParticipantId(round.getId(), participantId)
+                .map(BuzzerPress::getPosition)
+                .orElse(null);
+        return new ParticipantBuzzerStateView(round.getId(), position);
+    }
+
+    @Transactional(readOnly = true)
     public PublicBuzzerStateView projectorState(UUID sessionId) {
         ensureSessionExists(sessionId);
         return publicState(stateInternal(sessionId));
@@ -135,12 +146,10 @@ public class BuzzerService {
 
 
     private void broadcastStateAfterCommit(UUID sessionId, BuzzerStateView state) {
-        realtimeGateway.broadcastAfterCommit(sessionId, "BUZZER_STATE", state);
-        realtimeGateway.broadcastProjectorsAfterCommit(
-                sessionId,
-                "BUZZER_STATE",
-                publicState(state)
-        );
+        PublicBuzzerStateView publicState = publicState(state);
+        realtimeGateway.broadcastTeachersAfterCommit(sessionId, "BUZZER_STATE", state);
+        realtimeGateway.broadcastParticipantsAfterCommit(sessionId, "BUZZER_STATE", publicState);
+        realtimeGateway.broadcastProjectorsAfterCommit(sessionId, "BUZZER_STATE", publicState);
     }
 
     private BuzzerPressView toPressView(ClassSession session, BuzzerPress press) {
@@ -208,6 +217,12 @@ public class BuzzerService {
             String displayName,
             String receivedAt
     ) {
+    }
+
+    public record ParticipantBuzzerStateView(UUID roundId, Integer position) {
+        public static ParticipantBuzzerStateView empty() {
+            return new ParticipantBuzzerStateView(null, null);
+        }
     }
 
     public record BuzzerPressView(

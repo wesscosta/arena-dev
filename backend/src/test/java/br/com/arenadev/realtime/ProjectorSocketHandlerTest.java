@@ -36,6 +36,7 @@ class ProjectorSocketHandlerTest {
         WordCloudService wordCloudService = mock(WordCloudService.class);
         PollService pollService = mock(PollService.class);
         LiveStageService liveStageService = mock(LiveStageService.class);
+        SessionRuntimeSnapshotService runtimeSnapshotService = mock(SessionRuntimeSnapshotService.class);
         WebSocketSession socket = mock(WebSocketSession.class);
 
         var access = new SessionJoinService.PublicSessionView(
@@ -46,20 +47,12 @@ class ProjectorSocketHandlerTest {
                 code,
                 Instant.parse("2026-09-06T03:00:00Z")
         );
-        var timerState = new SessionTimerService.TimerStateView(null);
-        var wordCloudState = WordCloudService.StateView.empty();
-        var pollState = PollService.StateView.empty();
-        var stageState = mock(LiveStageService.StateView.class);
-        var buzzerProjectorState = new BuzzerService.PublicBuzzerStateView("IDLE", null, null, null, java.util.List.of());
+        var runtimeSnapshot = mock(SessionRuntimeSnapshotService.PublicRuntimeSnapshot.class);
 
         when(socket.getUri()).thenReturn(URI.create("ws://localhost/ws/projector/" + sessionId));
         when(socket.getAttributes()).thenReturn(new HashMap<>());
         when(joinService.validateProjectorAccess(sessionId, code)).thenReturn(access);
-        when(timerService.state(sessionId)).thenReturn(timerState);
-        when(wordCloudService.state(sessionId)).thenReturn(wordCloudState);
-        when(pollService.publicState(sessionId)).thenReturn(pollState);
-        when(liveStageService.projectorState(sessionId)).thenReturn(stageState);
-        when(buzzerService.projectorState(sessionId)).thenReturn(buzzerProjectorState);
+        when(runtimeSnapshotService.projector(sessionId)).thenReturn(runtimeSnapshot);
 
         SessionSocketHandler handler = new SessionSocketHandler(
                 gateway,
@@ -68,7 +61,8 @@ class ProjectorSocketHandlerTest {
                 timerService,
                 wordCloudService,
                 pollService,
-                liveStageService
+                liveStageService,
+                runtimeSnapshotService
         );
 
         handler.afterConnectionEstablished(socket);
@@ -95,10 +89,6 @@ class ProjectorSocketHandlerTest {
                 eq(sessionId),
                 any()
         );
-        ordered.verify(gateway).send(socket, "LIVE_STAGE_STATE", sessionId, stageState);
-        ordered.verify(gateway).send(socket, "BUZZER_STATE", sessionId, buzzerProjectorState);
-        ordered.verify(gateway).send(socket, "TIMER_STATE", sessionId, timerState);
-        ordered.verify(gateway).send(socket, "WORD_CLOUD_STATE", sessionId, wordCloudState);
-        ordered.verify(gateway).send(socket, "POLL_STATE", sessionId, pollState);
+        ordered.verify(gateway).send(socket, "RUNTIME_SNAPSHOT", sessionId, runtimeSnapshot);
     }
 }

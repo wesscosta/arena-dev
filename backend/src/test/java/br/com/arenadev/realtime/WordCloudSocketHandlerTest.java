@@ -36,6 +36,7 @@ class WordCloudSocketHandlerTest {
         WordCloudService wordCloudService = mock(WordCloudService.class);
         PollService pollService = mock(PollService.class);
         LiveStageService liveStageService = mock(LiveStageService.class);
+        SessionRuntimeSnapshotService runtimeSnapshotService = mock(SessionRuntimeSnapshotService.class);
         SessionParticipant participant = mock(SessionParticipant.class);
 
         var connection = new SessionJoinService.ParticipantConnectionView(
@@ -52,25 +53,15 @@ class WordCloudSocketHandlerTest {
                 List.of("Java", "API")
         );
 
+        var runtimeSnapshot = mock(SessionRuntimeSnapshotService.ParticipantRuntimeSnapshot.class);
+
         when(participant.getId()).thenReturn(participantId);
         when(joinService.validateParticipantToken(sessionId, token))
                 .thenReturn(participant);
         when(gateway.registerParticipant(eq(sessionId), eq(participantId), any()))
                 .thenReturn(1);
         when(joinService.markConnected(sessionId, token)).thenReturn(connection);
-        when(buzzerService.state(sessionId))
-                .thenReturn(new BuzzerService.BuzzerStateView(
-                        "IDLE", null, null, null, List.of()
-                ));
-        when(timerService.state(sessionId))
-                .thenReturn(new SessionTimerService.TimerStateView(null));
-        when(wordCloudService.state(sessionId))
-                .thenReturn(WordCloudService.StateView.empty());
-        when(pollService.publicState(sessionId)).thenReturn(PollService.StateView.empty());
-        when(pollService.participantState(sessionId, participantId)).thenReturn(PollService.ParticipantStateView.empty());
-        when(liveStageService.participantState(sessionId)).thenReturn(mock(LiveStageService.StateView.class));
-        when(wordCloudService.participantState(sessionId, participantId))
-                .thenReturn(WordCloudService.ParticipantStateView.empty());
+        when(runtimeSnapshotService.participant(sessionId, participantId)).thenReturn(runtimeSnapshot);
         when(wordCloudService.submit(
                 sessionId,
                 participantId,
@@ -84,7 +75,8 @@ class WordCloudSocketHandlerTest {
                 timerService,
                 wordCloudService,
                 pollService,
-                liveStageService
+                liveStageService,
+                runtimeSnapshotService
         );
 
         WebSocketSession socket = mock(WebSocketSession.class);

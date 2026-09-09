@@ -7,6 +7,7 @@ import br.com.arenadev.session.SessionParticipant;
 import br.com.arenadev.timer.SessionTimerService;
 import br.com.arenadev.wordcloud.WordCloudService;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -21,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,6 +38,7 @@ class SessionSocketHandlerTimerTest {
         WordCloudService wordCloudService = mock(WordCloudService.class);
         PollService pollService = mock(PollService.class);
         LiveStageService liveStageService = mock(LiveStageService.class);
+        SessionRuntimeSnapshotService runtimeSnapshotService = mock(SessionRuntimeSnapshotService.class);
 
         var buzzerState = new BuzzerService.BuzzerStateView(
                 "IDLE",
@@ -62,7 +65,8 @@ class SessionSocketHandlerTimerTest {
                 timerService,
                 wordCloudService,
                 pollService,
-                liveStageService
+                liveStageService,
+                runtimeSnapshotService
         );
 
         WebSocketSession socket = socket(sessionId, () -> "teacher");
@@ -90,6 +94,7 @@ class SessionSocketHandlerTimerTest {
         WordCloudService wordCloudService = mock(WordCloudService.class);
         PollService pollService = mock(PollService.class);
         LiveStageService liveStageService = mock(LiveStageService.class);
+        SessionRuntimeSnapshotService runtimeSnapshotService = mock(SessionRuntimeSnapshotService.class);
         SessionParticipant participant = mock(SessionParticipant.class);
 
         var connection = new SessionJoinService.ParticipantConnectionView(
@@ -98,16 +103,7 @@ class SessionSocketHandlerTimerTest {
                 "Aluno",
                 true
         );
-        var buzzerState = new BuzzerService.BuzzerStateView(
-                "IDLE",
-                null,
-                null,
-                null,
-                List.of()
-        );
-        var timerState = new SessionTimerService.TimerStateView(null);
-        var wordCloudState = WordCloudService.StateView.empty();
-        var participantWordCloudState = WordCloudService.ParticipantStateView.empty();
+        var participantRuntimeSnapshot = mock(SessionRuntimeSnapshotService.ParticipantRuntimeSnapshot.class);
 
         when(participant.getId()).thenReturn(participantId);
         when(joinService.validateParticipantToken(sessionId, token)).thenReturn(participant);
@@ -118,16 +114,7 @@ class SessionSocketHandlerTimerTest {
         ))
                 .thenReturn(1);
         when(joinService.markConnected(sessionId, token)).thenReturn(connection);
-        when(buzzerService.state(sessionId)).thenReturn(buzzerState);
-        when(timerService.state(sessionId)).thenReturn(timerState);
-        var publicPollState = PollService.StateView.empty();
-        var participantStageState = mock(LiveStageService.StateView.class);
-        when(wordCloudService.state(sessionId)).thenReturn(wordCloudState);
-        when(pollService.publicState(sessionId)).thenReturn(publicPollState);
-        when(liveStageService.participantState(sessionId)).thenReturn(participantStageState);
-        when(wordCloudService.participantState(sessionId, participantId)).thenReturn(participantWordCloudState);
-        when(pollService.participantState(sessionId, participantId)).thenReturn(PollService.ParticipantStateView.empty());
-
+        when(runtimeSnapshotService.participant(sessionId, participantId)).thenReturn(participantRuntimeSnapshot);
         SessionSocketHandler handler = new SessionSocketHandler(
                 gateway,
                 joinService,
@@ -135,7 +122,8 @@ class SessionSocketHandlerTimerTest {
                 timerService,
                 wordCloudService,
                 pollService,
-                liveStageService
+                liveStageService,
+                runtimeSnapshotService
         );
 
         WebSocketSession socket = socket(sessionId, null);
@@ -154,12 +142,55 @@ class SessionSocketHandlerTimerTest {
                 Map.of("message", "Autentique o participante neste canal.")
         );
         verify(gateway).send(socket, "AUTH_OK", sessionId, connection);
-        verify(gateway).send(socket, "LIVE_STAGE_STATE", sessionId, participantStageState);
-        verify(gateway).send(socket, "BUZZER_STATE", sessionId, buzzerState);
-        verify(gateway).send(socket, "TIMER_STATE", sessionId, timerState);
-        verify(gateway).send(socket, "WORD_CLOUD_STATE", sessionId, wordCloudState);
-        verify(gateway).send(socket, "WORD_CLOUD_PARTICIPANT_STATE", sessionId, participantWordCloudState);
-        verify(gateway).send(socket, "POLL_STATE", sessionId, publicPollState);
+        verify(gateway).send(socket, "RUNTIME_SNAPSHOT", sessionId, participantRuntimeSnapshot);
+    }
+
+    @Test
+    void rejectsExpiredParticipantAuthenticationWithoutReconnectLoop() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        String token = "expired-token";
+
+        SessionRealtimeGateway gateway = mock(SessionRealtimeGateway.class);
+        SessionJoinService joinService = mock(SessionJoinService.class);
+        BuzzerService buzzerService = mock(BuzzerService.class);
+        SessionTimerService timerService = mock(SessionTimerService.class);
+        WordCloudService wordCloudService = mock(WordCloudService.class);
+        PollService pollService = mock(PollService.class);
+        LiveStageService liveStageService = mock(LiveStageService.class);
+        SessionRuntimeSnapshotService runtimeSnapshotService = mock(SessionRuntimeSnapshotService.class);
+
+        when(joinService.validateParticipantToken(sessionId, token))
+                .thenThrow(new IllegalArgumentException("Identificação temporária expirada."));
+
+        SessionSocketHandler handler = new SessionSocketHandler(
+                gateway,
+                joinService,
+                buzzerService,
+                timerService,
+                wordCloudService,
+                pollService,
+                liveStageService,
+                runtimeSnapshotService
+        );
+
+        WebSocketSession socket = socket(sessionId, null);
+        when(socket.isOpen()).thenReturn(true);
+        handler.afterConnectionEstablished(socket);
+        handler.handleTextMessage(
+                socket,
+                new TextMessage(
+                        "{\"type\":\"AUTH_PARTICIPANT\",\"token\":\"" + token + "\"}"
+                )
+        );
+
+        verify(gateway).send(
+                socket,
+                "AUTH_FAILED",
+                sessionId,
+                Map.of("message", "Identificação temporária expirada.")
+        );
+        verify(socket).close(CloseStatus.POLICY_VIOLATION.withReason("Identificação temporária expirada."));
+        verify(gateway, never()).registerParticipant(eq(sessionId), any(), any());
     }
 
     private WebSocketSession socket(UUID sessionId, Principal principal) {

@@ -1,6 +1,7 @@
 package br.com.arenadev;
 
 import br.com.arenadev.classroom.ClassroomService;
+import br.com.arenadev.dynamic.MechanicsService;
 import br.com.arenadev.session.SessionJoinService;
 import br.com.arenadev.session.SessionService;
 import br.com.arenadev.timer.SessionTimerService;
@@ -54,6 +55,9 @@ class ProjectorAccessIT {
     @Autowired
     private SessionTimerService timerService;
 
+    @Autowired
+    private MechanicsService mechanicsService;
+
     @Test
     void exposesOnlySafeReadOnlyProjectionStateToAnonymousClients() throws Exception {
         String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -68,6 +72,8 @@ class ProjectorAccessIT {
                         600
                 )
         );
+        mechanicsService.startBoss(session.id(), "Spaghetti Code", 100);
+        mechanicsService.damageBoss(session.id(), 30);
 
         HttpClient client = HttpClient.newHttpClient();
         HttpResponse<String> projector = client.send(
@@ -90,6 +96,7 @@ class ProjectorAccessIT {
                 .contains("\"code\":\"" + code.code() + "\"")
                 .contains("\"id\":\"" + timer.id() + "\"")
                 .contains("\"status\":\"READY\"")
+                .contains("\"boss\":{\"name\":\"Spaghetti Code\",\"maxHp\":100,\"currentHp\":70}")
                 .doesNotContain("participantId")
                 .doesNotContain("studentId")
                 .doesNotContain("registration");
