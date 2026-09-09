@@ -8,9 +8,9 @@
 
 **Branch:** `feat/v0.4-live-classroom`.
 
-**Checkpoint local:** **12.4D, 12.4E e 12.4F concluídos localmente. `/join` e Projetor restauram o runtime público por snapshot atômico, o Buzzer usa projeção pública segura e o Boss possui HP sincronizado.**
+**Checkpoint local:** **12.4D, 12.4E, 12.4F e 12.5 concluídos localmente. `SessionEvent` registra a linha do tempo operacional em V14 e o Histórico separa fatos da aula de `ScoreEvent`/XP.**
 
-**Próximo incremento recomendado:** **12.5 — SessionEvent / linha do tempo operacional da aula, seguido por 12.6 — hardening e gate da v0.4.0.**
+**Próximo incremento recomendado:** **12.6 — hardening, E2E, segurança/observabilidade e gate da v0.4.0.**
 
 Este arquivo é a referência técnica versionada do estado corrente. Documentos de incremento preservam histórico e podem conter estados superados.
 
@@ -255,12 +255,24 @@ Baseline:
 - LiveRegion controlado;
 - Timer sem anúncio por segundo.
 
-## Validação do checkpoint local — 08/09/2026
+## 12.5 — SessionEvent / linha do tempo operacional
+
+- migration `V14__session_events.sql`;
+- sequência monotônica para ordenação determinística;
+- tipos semânticos e ator `TEACHER`/`SYSTEM`;
+- eventos de sessão, condução, Sorteio, grupos, Buzzer, Timer, Nuvem, Poll e Boss;
+- sem heartbeat, reconnect, tick, voto, palavra ou press individual;
+- expiração natural do Timer registrada uma única vez como evento de sistema;
+- API administrativa por turma e por sessão;
+- `Histórico → Linha do tempo` separado de `Histórico de XP`;
+- timeline somente leitura; reversão continua exclusiva de `ScoreEvent`.
+
+## Validação do checkpoint local — 09/09/2026
 
 Frontend:
 
 ```text
-npm test          81/81 OK
+npm test          85/85 OK
 npm run typecheck OK
 npm run build     OK
 ```
@@ -271,9 +283,9 @@ Backend:
 compilação Java 21 de todos os fontes main: OK
 ```
 
-`LiveStageIT`, `DeviceClaimIT` e `PollIT` foram adicionados para o gate normal com PostgreSQL/Testcontainers. A compilação Java 21 dos fontes `main` após Poll está verde.
+`SessionEventIT` foi adicionado ao conjunto de integração com PostgreSQL/Testcontainers e cobre ordem, ausência de ruído por resposta individual, expiração natural do Timer e reabertura do Buzzer. A compilação Java 21 de todos os fontes `main` está verde.
 
-**Limitação deste ambiente:** Maven e Docker não estão disponíveis, portanto `mvn -B -ntp verify` e `docker compose up -d --build` não foram executados neste checkpoint. O último gate completo anterior permanece como referência histórica, mas as mudanças 12.4D.0 ainda precisam passar pelo gate backend/Compose no ambiente normal ou CI.
+**Limitação deste ambiente:** Maven e Docker não estão disponíveis, portanto `mvn -B -ntp verify` e `docker compose up -d --build` não foram executados neste checkpoint. 12.5 precisa passar pelo gate backend/Compose no ambiente normal ou CI antes do commit/release.
 
 ## Próxima sequência
 
@@ -284,9 +296,9 @@ compilação Java 21 de todos os fontes main: OK
 ↓
 12.4F /join + Projector + reconnect        concluído
 ↓
-12.5 SessionEvent / linha do tempo         próximo
+12.5 SessionEvent / linha do tempo         concluído
 ↓
-12.6 hardening e gate v0.4
+12.6 hardening e gate v0.4                 próximo
 ```
 
 ## Gate normal

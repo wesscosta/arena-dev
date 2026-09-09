@@ -5,12 +5,16 @@ import br.com.arenadev.session.ClassSession;
 import br.com.arenadev.session.ClassSessionRepository;
 import br.com.arenadev.session.SessionStatus;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import br.com.arenadev.sessionevent.SessionEventActor;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -27,15 +31,18 @@ public class SessionTimerService {
     private final SessionTimerRepository timerRepository;
     private final ClassSessionRepository sessionRepository;
     private final SessionRealtimeGateway realtimeGateway;
+    private final SessionEventService sessionEventService;
 
     public SessionTimerService(
             SessionTimerRepository timerRepository,
             ClassSessionRepository sessionRepository,
-            SessionRealtimeGateway realtimeGateway
+            SessionRealtimeGateway realtimeGateway,
+            SessionEventService sessionEventService
     ) {
         this.timerRepository = timerRepository;
         this.sessionRepository = sessionRepository;
         this.realtimeGateway = realtimeGateway;
+        this.sessionEventService = sessionEventService;
     }
 
     @Transactional
@@ -49,7 +56,7 @@ public class SessionTimerService {
                 sessionId,
                 OPEN_STATUSES
         );
-        openTimers.forEach(timer -> timer.refreshExpired(now));
+        openTimers.forEach(timer -> refreshExpiredAndRecord(timer, now));
         timerRepository.flush();
 
         if (openTimers.stream().anyMatch(SessionTimer::isOpen)) {
@@ -74,7 +81,7 @@ public class SessionTimerService {
 
         return timerRepository.findBySessionIdOrderByCreatedAtDesc(sessionId)
                 .stream()
-                .peek(timer -> timer.refreshExpired(now))
+                .peek(timer -> refreshExpiredAndRecord(timer, now))
                 .map(timer -> TimerView.from(timer, now))
                 .toList();
     }
@@ -85,7 +92,7 @@ public class SessionTimerService {
         Instant now = Instant.now();
         SessionTimer timer = getTimer(timerId);
         ensureBelongsToSession(timer, sessionId);
-        timer.refreshExpired(now);
+        refreshExpiredAndRecord(timer, now);
         return TimerView.from(timer, now);
     }
 
@@ -99,6 +106,17 @@ public class SessionTimerService {
         timer.start(now);
         TimerView view = TimerView.from(timer, now);
         broadcastStateAfterCommit(sessionId, view);
+        sessionEventService.record(
+                timer.getSession(),
+                SessionEventType.TIMER_STARTED,
+                SessionEventActor.TEACHER,
+                "Timer iniciado: " + timer.getTitle(),
+                Map.of(
+                        "timerId", timer.getId().toString(),
+                        "title", timer.getTitle(),
+                        "durationSeconds", timer.getDurationSeconds()
+                )
+        );
         return view;
     }
 
@@ -111,6 +129,17 @@ public class SessionTimerService {
         timer.pause(now);
         TimerView view = TimerView.from(timer, now);
         broadcastStateAfterCommit(sessionId, view);
+        sessionEventService.record(
+                timer.getSession(),
+                SessionEventType.TIMER_PAUSED,
+                SessionEventActor.TEACHER,
+                "Timer pausado: " + timer.getTitle(),
+                Map.of(
+                        "timerId", timer.getId().toString(),
+                        "title", timer.getTitle(),
+                        "remainingSeconds", view.remainingSeconds()
+                )
+        );
         return view;
     }
 
@@ -124,6 +153,17 @@ public class SessionTimerService {
         timer.resume(now);
         TimerView view = TimerView.from(timer, now);
         broadcastStateAfterCommit(sessionId, view);
+        sessionEventService.record(
+                timer.getSession(),
+                SessionEventType.TIMER_RESUMED,
+                SessionEventActor.TEACHER,
+                "Timer retomado: " + timer.getTitle(),
+                Map.of(
+                        "timerId", timer.getId().toString(),
+                        "title", timer.getTitle(),
+                        "remainingSeconds", view.remainingSeconds()
+                )
+        );
         return view;
     }
 
@@ -143,6 +183,18 @@ public class SessionTimerService {
         timer.extend(seconds, now);
         TimerView view = TimerView.from(timer, now);
         broadcastStateAfterCommit(sessionId, view);
+        sessionEventService.record(
+                timer.getSession(),
+                SessionEventType.TIMER_EXTENDED,
+                SessionEventActor.TEACHER,
+                "Timer estendido em " + seconds + "s: " + timer.getTitle(),
+                Map.of(
+                        "timerId", timer.getId().toString(),
+                        "title", timer.getTitle(),
+                        "addedSeconds", seconds,
+                        "durationSeconds", view.durationSeconds()
+                )
+        );
         return view;
     }
 
@@ -155,6 +207,17 @@ public class SessionTimerService {
         timer.finish(now);
         TimerView view = TimerView.from(timer, now);
         broadcastStateAfterCommit(sessionId, view);
+        sessionEventService.record(
+                timer.getSession(),
+                SessionEventType.TIMER_FINISHED,
+                SessionEventActor.TEACHER,
+                "Timer finalizado: " + timer.getTitle(),
+                Map.of(
+                        "timerId", timer.getId().toString(),
+                        "title", timer.getTitle(),
+                        "durationSeconds", view.durationSeconds()
+                )
+        );
         return view;
     }
 
@@ -164,9 +227,23 @@ public class SessionTimerService {
 
         Instant now = Instant.now();
         SessionTimer timer = lockTimer(sessionId, timerId);
+        TimerStatus before = timer.getStatus();
         timer.cancel(now);
         TimerView view = TimerView.from(timer, now);
         broadcastStateAfterCommit(sessionId, view);
+        if (before != TimerStatus.CANCELLED && before != TimerStatus.FINISHED) {
+            sessionEventService.record(
+                    timer.getSession(),
+                    SessionEventType.TIMER_CANCELLED,
+                    SessionEventActor.TEACHER,
+                    "Timer cancelado: " + timer.getTitle(),
+                    Map.of(
+                            "timerId", timer.getId().toString(),
+                            "title", timer.getTitle(),
+                            "remainingSeconds", view.remainingSeconds()
+                    )
+            );
+        }
         return view;
     }
 
@@ -177,7 +254,7 @@ public class SessionTimerService {
 
         return timerRepository.findFirstBySessionIdOrderByCreatedAtDesc(sessionId)
                 .map(timer -> {
-                    timer.refreshExpired(now);
+                    refreshExpiredAndRecord(timer, now);
                     return TimerStateView.from(timer, now);
                 })
                 .orElseGet(TimerStateView::empty);
@@ -196,6 +273,25 @@ public class SessionTimerService {
             broadcastStateAfterCommit(
                     sessionId,
                     TimerView.from(openTimers.getFirst(), now)
+            );
+        }
+    }
+
+    private void refreshExpiredAndRecord(SessionTimer timer, Instant now) {
+        TimerStatus before = timer.getStatus();
+        timer.refreshExpired(now);
+        if (before == TimerStatus.RUNNING && timer.getStatus() == TimerStatus.FINISHED) {
+            sessionEventService.record(
+                    timer.getSession(),
+                    SessionEventType.TIMER_FINISHED,
+                    SessionEventActor.SYSTEM,
+                    "Timer encerrado pelo tempo: " + timer.getTitle(),
+                    Map.of(
+                            "timerId", timer.getId().toString(),
+                            "title", timer.getTitle(),
+                            "durationSeconds", timer.getDurationSeconds(),
+                            "reason", "ELAPSED"
+                    )
             );
         }
     }

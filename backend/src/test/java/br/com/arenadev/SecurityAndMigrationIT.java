@@ -99,12 +99,13 @@ class SecurityAndMigrationIT {
                     'enrollment_device_claims',
                     'poll_rounds',
                     'poll_options',
-                    'poll_votes'
+                    'poll_votes',
+                    'session_events'
                   )
                 """, Integer.class);
 
-        assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13");
-        assertThat(expectedTables).isEqualTo(23);
+        assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14");
+        assertThat(expectedTables).isEqualTo(24);
     }
 
     @Test

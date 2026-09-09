@@ -7,6 +7,9 @@ import br.com.arenadev.session.SessionParticipant;
 import br.com.arenadev.session.SessionParticipantRepository;
 import br.com.arenadev.session.SessionStatus;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import br.com.arenadev.sessionevent.SessionEventActor;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
 import br.com.arenadev.stage.LiveStageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +42,7 @@ public class PollService {
     private final SessionParticipantRepository participantRepository;
     private final SessionRealtimeGateway realtimeGateway;
     private final LiveStageService liveStageService;
+    private final SessionEventService sessionEventService;
 
     public PollService(
             PollRoundRepository roundRepository,
@@ -46,7 +50,8 @@ public class PollService {
             ClassSessionRepository sessionRepository,
             SessionParticipantRepository participantRepository,
             SessionRealtimeGateway realtimeGateway,
-            LiveStageService liveStageService
+            LiveStageService liveStageService,
+            SessionEventService sessionEventService
     ) {
         this.roundRepository = roundRepository;
         this.voteRepository = voteRepository;
@@ -54,6 +59,7 @@ public class PollService {
         this.participantRepository = participantRepository;
         this.realtimeGateway = realtimeGateway;
         this.liveStageService = liveStageService;
+        this.sessionEventService = sessionEventService;
     }
 
     @Transactional
@@ -78,6 +84,18 @@ public class PollService {
         StateView teacher = stateOf(round, Projection.TEACHER);
         liveStageService.showPoll(sessionId, round.getId());
         broadcastStateAfterCommit(sessionId, round);
+        sessionEventService.record(
+                session,
+                SessionEventType.POLL_OPENED,
+                SessionEventActor.TEACHER,
+                "Votação aberta: " + prompt,
+                Map.of(
+                        "roundId", round.getId().toString(),
+                        "prompt", prompt,
+                        "optionCount", options.size(),
+                        "liveResults", command.liveResults()
+                )
+        );
         return teacher;
     }
 
@@ -121,20 +139,52 @@ public class PollService {
 
     @Transactional
     public StateView reveal(UUID sessionId, UUID roundId) {
-        ensureActive(getSession(sessionId));
+        ClassSession session = getSession(sessionId);
+        ensureActive(session);
         PollRound round = lockRound(sessionId, roundId);
+        boolean changed = round.getStatus() == PollStatus.OPEN;
         round.reveal(Instant.now());
+        StateView state = stateOf(round, Projection.TEACHER);
         broadcastStateAfterCommit(sessionId, round);
-        return stateOf(round, Projection.TEACHER);
+        if (changed) {
+            sessionEventService.record(
+                    session,
+                    SessionEventType.POLL_REVEALED,
+                    SessionEventActor.TEACHER,
+                    "Resultados da votação revelados: " + round.getPrompt(),
+                    Map.of(
+                            "roundId", round.getId().toString(),
+                            "prompt", round.getPrompt(),
+                            "totalVotes", state.round().totalVotes()
+                    )
+            );
+        }
+        return state;
     }
 
     @Transactional
     public StateView close(UUID sessionId, UUID roundId) {
-        ensureActive(getSession(sessionId));
+        ClassSession session = getSession(sessionId);
+        ensureActive(session);
         PollRound round = lockRound(sessionId, roundId);
+        boolean changed = round.getStatus() != PollStatus.CLOSED;
         round.close(Instant.now());
+        StateView state = stateOf(round, Projection.TEACHER);
         broadcastStateAfterCommit(sessionId, round);
-        return stateOf(round, Projection.TEACHER);
+        if (changed) {
+            sessionEventService.record(
+                    session,
+                    SessionEventType.POLL_CLOSED,
+                    SessionEventActor.TEACHER,
+                    "Votação encerrada com " + state.round().totalVotes() + " voto(s).",
+                    Map.of(
+                            "roundId", round.getId().toString(),
+                            "prompt", round.getPrompt(),
+                            "totalVotes", state.round().totalVotes()
+                    )
+            );
+        }
+        return state;
     }
 
     @Transactional

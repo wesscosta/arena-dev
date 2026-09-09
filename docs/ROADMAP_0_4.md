@@ -4,7 +4,7 @@
 > consolidados Timer, Projector, Word Cloud, ActivityStep/editor/runtime,
 > navegação contextual e 12.3D.7A–D. **12.4D.0A — Live Stage / Presentation
 > State está implementado localmente** e Sorteio, Nuvem e Buzzer já usam o
-> palco compartilhado. **12.4D, 12.4E e 12.4F estão implementados localmente. Próximo: 12.5 — SessionEvent / linha do tempo operacional; depois 12.6 — hardening e gate da v0.4.0.**
+> palco compartilhado. **12.4D, 12.4E, 12.4F e 12.5 estão implementados localmente. Próximo: 12.6 — hardening, E2E e gate da v0.4.0.**
 
 A `v0.4.0` evolui o Arena Dev Community a partir da baseline estável `v0.3.0`,
 mantendo a sessão de aula como contexto central e evitando ampliar o produto
@@ -365,8 +365,17 @@ A abstração de sequência passa a ser justificada por quatro blocos concretos:
 
 ### 12.5 — SessionEvent
 
-Generalizar a linha do tempo histórica somente depois de Timer, Nuvem,
-Votação e Roteiro ao Vivo produzirem eventos concretos.
+- [x] migration `V14__session_events.sql`;
+- [x] `SessionEvent` separado de `ScoreEvent` e dos runtimes especializados;
+- [x] sequência monotônica para ordenação estável;
+- [x] tipos semânticos e ator `TEACHER`/`SYSTEM`;
+- [x] instrumentar sessão, Live Flow/Arena, Sorteio, grupos, Buzzer, Timer, Nuvem, Poll e Boss;
+- [x] não registrar heartbeat/reconnect/tick nem cada voto, palavra, press ou dano intermediário;
+- [x] expiração natural do Timer gera `TIMER_FINISHED` de sistema uma única vez;
+- [x] API por turma (recente/limitada) e por sessão (cronológica);
+- [x] separar `Linha do tempo` e `Histórico de XP` na UI;
+- [x] manter Timeline somente leitura e reversão exclusiva em `ScoreEvent`;
+- [x] testes de integração e contratos frontend adicionados.
 
 ### 12.6 — Hardening
 

@@ -7,6 +7,9 @@ import br.com.arenadev.session.SessionParticipant;
 import br.com.arenadev.session.SessionParticipantRepository;
 import br.com.arenadev.session.SessionStatus;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import br.com.arenadev.sessionevent.SessionEventActor;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
 import br.com.arenadev.stage.LiveStageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +43,7 @@ public class WordCloudService {
     private final SessionParticipantRepository participantRepository;
     private final SessionRealtimeGateway realtimeGateway;
     private final LiveStageService liveStageService;
+    private final SessionEventService sessionEventService;
 
     public WordCloudService(
             WordCloudRoundRepository roundRepository,
@@ -47,7 +51,8 @@ public class WordCloudService {
             ClassSessionRepository sessionRepository,
             SessionParticipantRepository participantRepository,
             SessionRealtimeGateway realtimeGateway,
-            LiveStageService liveStageService
+            LiveStageService liveStageService,
+            SessionEventService sessionEventService
     ) {
         this.roundRepository = roundRepository;
         this.submissionRepository = submissionRepository;
@@ -55,6 +60,7 @@ public class WordCloudService {
         this.participantRepository = participantRepository;
         this.realtimeGateway = realtimeGateway;
         this.liveStageService = liveStageService;
+        this.sessionEventService = sessionEventService;
     }
 
     @Transactional
@@ -86,6 +92,18 @@ public class WordCloudService {
         StateView state = stateOf(round);
         liveStageService.showWordCloud(sessionId, round.getId());
         broadcastStateAfterCommit(sessionId, state);
+        sessionEventService.record(
+                session,
+                SessionEventType.WORD_CLOUD_OPENED,
+                SessionEventActor.TEACHER,
+                "Nuvem de Palavras aberta: " + prompt,
+                Map.of(
+                        "roundId", round.getId().toString(),
+                        "prompt", prompt,
+                        "liveReveal", command.liveReveal(),
+                        "maxWordsPerParticipant", command.maxWordsPerParticipant()
+                )
+        );
         return state;
     }
 
@@ -121,23 +139,52 @@ public class WordCloudService {
 
     @Transactional
     public StateView reveal(UUID sessionId, UUID roundId) {
-        ensureActive(getSession(sessionId));
+        ClassSession session = getSession(sessionId);
+        ensureActive(session);
         WordCloudRound round = lockRound(sessionId, roundId);
         round.reveal(Instant.now());
 
         StateView state = stateOf(round);
         broadcastStateAfterCommit(sessionId, state);
+        sessionEventService.record(
+                session,
+                SessionEventType.WORD_CLOUD_REVEALED,
+                SessionEventActor.TEACHER,
+                "Nuvem de Palavras revelada: " + round.getPrompt(),
+                Map.of(
+                        "roundId", round.getId().toString(),
+                        "prompt", round.getPrompt(),
+                        "participantCount", state.round().participantCount(),
+                        "submissionCount", state.round().submissionCount()
+                )
+        );
         return state;
     }
 
     @Transactional
     public StateView close(UUID sessionId, UUID roundId) {
-        ensureActive(getSession(sessionId));
+        ClassSession session = getSession(sessionId);
+        ensureActive(session);
         WordCloudRound round = lockRound(sessionId, roundId);
+        boolean wasOpen = round.getStatus() != WordCloudStatus.CLOSED;
         round.close(Instant.now());
 
         StateView state = stateOf(round);
         broadcastStateAfterCommit(sessionId, state);
+        if (wasOpen) {
+            sessionEventService.record(
+                    session,
+                    SessionEventType.WORD_CLOUD_CLOSED,
+                    SessionEventActor.TEACHER,
+                    "Nuvem de Palavras encerrada com " + state.round().participantCount() + " participante(s).",
+                    Map.of(
+                            "roundId", round.getId().toString(),
+                            "prompt", round.getPrompt(),
+                            "participantCount", state.round().participantCount(),
+                            "submissionCount", state.round().submissionCount()
+                    )
+            );
+        }
         return state;
     }
 

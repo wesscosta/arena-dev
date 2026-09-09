@@ -47,6 +47,7 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0028](ADR-0028-preferred-name-e-identidade-de-dispositivo.md) | Preferred name por matrícula e identidade opaca de dispositivo | Aceito |
 | [ADR-0029](ADR-0029-orquestracao-live-flow-live-stage.md) | Live Flow orquestra Live Stage sem duplicar runtimes especializados | Aceito |
 | [ADR-0030](ADR-0030-runtime-snapshot-publico-e-reconnect.md) | Snapshot público de runtime e política de reconnect | Aceito |
+| [ADR-0031](ADR-0031-session-event-linha-do-tempo-operacional.md) | SessionEvent como linha do tempo operacional, não como runtime | Aceito |
 
 ## Template
 

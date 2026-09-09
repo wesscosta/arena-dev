@@ -9,11 +9,15 @@ import br.com.arenadev.session.SessionJoinService;
 import br.com.arenadev.session.SessionParticipant;
 import br.com.arenadev.session.SessionStatus;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import br.com.arenadev.sessionevent.SessionEventActor;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
 import br.com.arenadev.stage.LiveStageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -25,6 +29,7 @@ public class BuzzerService {
     private final SessionRealtimeGateway realtimeGateway;
     private final LiveStageService liveStageService;
     private final DisplayNameService displayNameService;
+    private final SessionEventService sessionEventService;
 
     public BuzzerService(
             BuzzerRoundRepository roundRepository,
@@ -33,7 +38,8 @@ public class BuzzerService {
             SessionJoinService joinService,
             SessionRealtimeGateway realtimeGateway,
             LiveStageService liveStageService,
-            DisplayNameService displayNameService
+            DisplayNameService displayNameService,
+            SessionEventService sessionEventService
     ) {
         this.roundRepository = roundRepository;
         this.pressRepository = pressRepository;
@@ -42,6 +48,7 @@ public class BuzzerService {
         this.realtimeGateway = realtimeGateway;
         this.liveStageService = liveStageService;
         this.displayNameService = displayNameService;
+        this.sessionEventService = sessionEventService;
     }
 
     @Transactional(readOnly = true)
@@ -53,26 +60,61 @@ public class BuzzerService {
     @Transactional
     public BuzzerStateView open(UUID sessionId) {
         ClassSession session = getActiveSession(sessionId);
-        roundRepository.findFirstBySessionIdAndStatusOrderByOpenedAtDesc(sessionId, BuzzerRoundStatus.OPEN)
-                .ifPresent(round -> {
-                    round.close();
-                    roundRepository.save(round);
-                    roundRepository.flush();
-                });
+        BuzzerRound previousOpen = roundRepository
+                .findFirstBySessionIdAndStatusOrderByOpenedAtDesc(sessionId, BuzzerRoundStatus.OPEN)
+                .orElse(null);
+        if (previousOpen != null) {
+            long pressCount = pressRepository.countByRoundId(previousOpen.getId());
+            previousOpen.close();
+            roundRepository.save(previousOpen);
+            roundRepository.flush();
+            sessionEventService.record(
+                    session,
+                    SessionEventType.BUZZER_CLOSED,
+                    SessionEventActor.TEACHER,
+                    "Buzzer anterior encerrado ao abrir uma nova rodada.",
+                    Map.of(
+                            "roundId", previousOpen.getId().toString(),
+                            "pressCount", pressCount,
+                            "reason", "REOPENED"
+                    )
+            );
+        }
         BuzzerRound round = roundRepository.save(new BuzzerRound(session));
         BuzzerStateView state = stateInternal(sessionId);
         liveStageService.showBuzzer(sessionId, round.getId());
         broadcastStateAfterCommit(sessionId, state);
+        sessionEventService.record(
+                session,
+                SessionEventType.BUZZER_OPENED,
+                SessionEventActor.TEACHER,
+                "Buzzer aberto para a turma.",
+                Map.of("roundId", round.getId().toString())
+        );
         return state;
     }
 
     @Transactional
     public BuzzerStateView close(UUID sessionId) {
-        getActiveSession(sessionId);
-        roundRepository.findFirstBySessionIdAndStatusOrderByOpenedAtDesc(sessionId, BuzzerRoundStatus.OPEN)
-                .ifPresent(BuzzerRound::close);
+        ClassSession session = getActiveSession(sessionId);
+        boolean closed = roundRepository
+                .findFirstBySessionIdAndStatusOrderByOpenedAtDesc(sessionId, BuzzerRoundStatus.OPEN)
+                .map(round -> {
+                    round.close();
+                    return true;
+                })
+                .orElse(false);
         BuzzerStateView state = stateInternal(sessionId);
         broadcastStateAfterCommit(sessionId, state);
+        if (closed) {
+            sessionEventService.record(
+                    session,
+                    SessionEventType.BUZZER_CLOSED,
+                    SessionEventActor.TEACHER,
+                    "Buzzer encerrado com " + state.presses().size() + " acionamento(s).",
+                    Map.of("pressCount", state.presses().size())
+            );
+        }
         return state;
     }
 

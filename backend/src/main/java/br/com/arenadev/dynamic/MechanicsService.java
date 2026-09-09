@@ -8,6 +8,9 @@ import br.com.arenadev.activity.ActivityStepType;
 import br.com.arenadev.poll.PollService;
 import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.session.*;
+import br.com.arenadev.sessionevent.SessionEventActor;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import br.com.arenadev.stage.LiveStageService;
 import br.com.arenadev.wordcloud.WordCloudService;
@@ -30,6 +33,7 @@ public class MechanicsService {
     private final WordCloudService wordCloudService;
     private final PollService pollService;
     private final SessionRealtimeGateway realtimeGateway;
+    private final SessionEventService sessionEventService;
     private final JsonMapper objectMapper = JsonMapper.builder().build();
 
     public MechanicsService(
@@ -41,7 +45,8 @@ public class MechanicsService {
             LiveStageService liveStageService,
             WordCloudService wordCloudService,
             PollService pollService,
-            SessionRealtimeGateway realtimeGateway
+            SessionRealtimeGateway realtimeGateway,
+            SessionEventService sessionEventService
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -52,6 +57,7 @@ public class MechanicsService {
         this.wordCloudService = wordCloudService;
         this.pollService = pollService;
         this.realtimeGateway = realtimeGateway;
+        this.sessionEventService = sessionEventService;
     }
 
     @Transactional(readOnly = true)
@@ -86,10 +92,23 @@ public class MechanicsService {
             if (cursor <= 0) { winner = candidate.studentId(); break; }
         }
 
-        counts.put(winner.toString(), counts.getOrDefault(winner.toString(), 0) + 1);
-        saveState(session, DynamicType.QUICK_DRAW, new DrawState(counts, winner.toString()));
-        liveStageService.showDraw(sessionId, winner);
-        return new DrawResult(winner, runtime(sessionId));
+        UUID drawnWinner = winner;
+        counts.put(drawnWinner.toString(), counts.getOrDefault(drawnWinner.toString(), 0) + 1);
+        saveState(session, DynamicType.QUICK_DRAW, new DrawState(counts, drawnWinner.toString()));
+        liveStageService.showDraw(sessionId, drawnWinner);
+        String winnerName = participantRepository.findBySessionIdOrderByStudentNameAsc(sessionId).stream()
+                .filter(participant -> participant.getStudent().getId().equals(drawnWinner))
+                .map(participant -> participant.getStudent().getName())
+                .findFirst()
+                .orElse("Aluno");
+        sessionEventService.record(
+                session,
+                SessionEventType.DRAW_COMPLETED,
+                SessionEventActor.TEACHER,
+                "Sorteio concluído: " + winnerName,
+                Map.of("studentId", drawnWinner.toString(), "studentName", winnerName)
+        );
+        return new DrawResult(drawnWinner, runtime(sessionId));
     }
 
     @Transactional
@@ -107,6 +126,13 @@ public class MechanicsService {
         if (groupSize > 1) {
             groupHistoryRepository.save(new GroupHistory(session.getClassroom(), session, writeJson(groups)));
         }
+        sessionEventService.record(
+                session,
+                SessionEventType.GROUPS_ORGANIZED,
+                SessionEventActor.TEACHER,
+                "Turma organizada em " + groups.size() + " grupo(s).",
+                Map.of("groupSize", groupSize, "groupCount", groups.size())
+        );
         return new GroupsResult(groups, runtime(sessionId));
     }
 
@@ -119,6 +145,13 @@ public class MechanicsService {
         saveState(session, DynamicType.BOSS_BATTLE, boss);
         liveStageService.showBossBattle(sessionId);
         broadcastBossAfterCommit(sessionId, boss);
+        sessionEventService.record(
+                session,
+                SessionEventType.BOSS_STARTED,
+                SessionEventActor.TEACHER,
+                "Boss Battle iniciado: " + normalizedName,
+                Map.of("name", normalizedName, "maxHp", maxHp)
+        );
         return runtime(sessionId);
     }
 
@@ -135,6 +168,15 @@ public class MechanicsService {
         );
         saveState(session, DynamicType.BOSS_BATTLE, next);
         broadcastBossAfterCommit(sessionId, next);
+        if (boss.currentHp() > 0 && next.currentHp() == 0) {
+            sessionEventService.record(
+                    session,
+                    SessionEventType.BOSS_DEFEATED,
+                    SessionEventActor.TEACHER,
+                    "Boss derrotado: " + boss.name(),
+                    Map.of("name", boss.name(), "maxHp", boss.maxHp())
+            );
+        }
         return runtime(sessionId);
     }
 
@@ -146,6 +188,13 @@ public class MechanicsService {
                     session,
                     DynamicType.ARENA,
                     new ArenaState(null, null, List.of(), null, null, Map.of())
+            );
+            sessionEventService.record(
+                    session,
+                    SessionEventType.ARENA_SOURCE_CLEARED,
+                    SessionEventActor.TEACHER,
+                    "Fonte da Arena alterada para modo livre.",
+                    Map.of()
             );
             return runtime(sessionId);
         }
@@ -167,6 +216,16 @@ public class MechanicsService {
                         null,
                         null,
                         Map.of()
+                )
+        );
+        sessionEventService.record(
+                session,
+                SessionEventType.ARENA_SOURCE_SELECTED,
+                SessionEventActor.TEACHER,
+                "Atividade selecionada na Arena: " + activity.getTitle(),
+                Map.of(
+                        "activityId", activity.getId().toString(),
+                        "activityTitle", activity.getTitle()
                 )
         );
         return runtime(sessionId);
@@ -222,6 +281,17 @@ public class MechanicsService {
                         runtimeBindings(state)
                 )
         );
+        sessionEventService.record(
+                session,
+                SessionEventType.ARENA_QUESTION_PRESENTED,
+                SessionEventActor.TEACHER,
+                "Questão apresentada na Arena.",
+                Map.of(
+                        "activityId", activity.getId().toString(),
+                        "activityTitle", activity.getTitle(),
+                        "questionId", next.getId().toString()
+                )
+        );
         return new ArenaQuestionResult(next.getId(), false, runtime(sessionId));
     }
 
@@ -240,6 +310,13 @@ public class MechanicsService {
                 session,
                 DynamicType.ARENA,
                 new ArenaState(state.activityId(), null, List.of(), null, null, runtimeBindings(state))
+        );
+        sessionEventService.record(
+                session,
+                SessionEventType.ARENA_QUESTIONS_RESTARTED,
+                SessionEventActor.TEACHER,
+                "Sequência de questões da Arena reiniciada.",
+                Map.of()
         );
         return runtime(sessionId);
     }
@@ -271,7 +348,7 @@ public class MechanicsService {
             );
         }
 
-        return activateLiveStep(session, state, activity, 0);
+        return activateLiveStep(session, state, activity, 0, FlowMovement.START);
     }
 
     @Transactional
@@ -288,7 +365,7 @@ public class MechanicsService {
 
         Integer current = resolveCurrentStepIndex(activity, state);
         if (current == null) {
-            return activateLiveStep(session, state, activity, 0);
+            return activateLiveStep(session, state, activity, 0, FlowMovement.START);
         }
 
         if (current >= activity.getSteps().size() - 1) {
@@ -299,7 +376,7 @@ public class MechanicsService {
             );
         }
 
-        return activateLiveStep(session, state, activity, current + 1);
+        return activateLiveStep(session, state, activity, current + 1, FlowMovement.NEXT);
     }
 
     @Transactional
@@ -317,7 +394,7 @@ public class MechanicsService {
             );
         }
 
-        return activateLiveStep(session, state, activity, current - 1);
+        return activateLiveStep(session, state, activity, current - 1, FlowMovement.PREVIOUS);
     }
 
     private void broadcastBossAfterCommit(UUID sessionId, BossState boss) {
@@ -419,7 +496,8 @@ public class MechanicsService {
             ClassSession session,
             ArenaState previous,
             Activity activity,
-            int index
+            int index,
+            FlowMovement movement
     ) {
         List<ActivityStep> steps = activity.getSteps();
         if (index < 0 || index >= steps.size()) {
@@ -463,11 +541,49 @@ public class MechanicsService {
         );
 
         saveState(session, DynamicType.ARENA, next);
+        recordFlowMovement(session, activity, step, index, movement);
 
         return new LiveFlowResult(
                 liveFlowView(session, next),
                 runtime(session.getId()),
                 stage
+        );
+    }
+
+    private void recordFlowMovement(
+            ClassSession session,
+            Activity activity,
+            ActivityStep step,
+            int index,
+            FlowMovement movement
+    ) {
+        String stepLabel = step.getTitle() == null || step.getTitle().isBlank()
+                ? step.getType().name()
+                : step.getTitle();
+        SessionEventType type = movement == FlowMovement.START
+                ? SessionEventType.FLOW_STARTED
+                : SessionEventType.FLOW_STEP_CHANGED;
+        String summary = switch (movement) {
+            case START -> "Roteiro iniciado em: " + stepLabel;
+            case NEXT -> "Roteiro avançou para: " + stepLabel;
+            case PREVIOUS -> "Roteiro voltou para: " + stepLabel;
+        };
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("activityId", activity.getId().toString());
+        payload.put("activityTitle", activity.getTitle());
+        payload.put("stepId", step.getId().toString());
+        payload.put("stepType", step.getType().name());
+        payload.put("stepPosition", index + 1);
+        if (step.getTitle() != null && !step.getTitle().isBlank()) {
+            payload.put("stepTitle", step.getTitle());
+        }
+        payload.put("direction", movement.name());
+        sessionEventService.record(
+                session,
+                type,
+                SessionEventActor.TEACHER,
+                summary,
+                payload
         );
     }
 
@@ -720,6 +836,12 @@ public class MechanicsService {
             Map<String, Integer> drawCounts,
             String lastDrawnStudentId
     ) {}
+    private enum FlowMovement {
+        START,
+        NEXT,
+        PREVIOUS
+    }
+
     public record BossState(String name, int maxHp, int currentHp) {}
     private record ArenaState(
             String activityId,

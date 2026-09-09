@@ -11,6 +11,9 @@ import br.com.arenadev.poll.PollService;
 import br.com.arenadev.realtime.BuzzerService;
 import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import br.com.arenadev.sessionevent.SessionEventActor;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
 import br.com.arenadev.timer.SessionTimerService;
 import br.com.arenadev.wordcloud.WordCloudService;
 import org.springframework.stereotype.Service;
@@ -19,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -35,6 +39,7 @@ public class SessionService {
     private final WordCloudService wordCloudService;
     private final PollService pollService;
     private final DisplayNameService displayNameService;
+    private final SessionEventService sessionEventService;
 
     public SessionService(
             ClassSessionRepository sessionRepository,
@@ -47,7 +52,8 @@ public class SessionService {
             SessionRealtimeGateway realtimeGateway,
             WordCloudService wordCloudService,
             PollService pollService,
-            DisplayNameService displayNameService
+            DisplayNameService displayNameService,
+            SessionEventService sessionEventService
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -60,6 +66,7 @@ public class SessionService {
         this.wordCloudService = wordCloudService;
         this.pollService = pollService;
         this.displayNameService = displayNameService;
+        this.sessionEventService = sessionEventService;
     }
 
     @Transactional
@@ -99,6 +106,17 @@ public class SessionService {
         }
 
         joinService.ensureCode(session);
+        sessionEventService.record(
+                session,
+                SessionEventType.SESSION_STARTED,
+                SessionEventActor.TEACHER,
+                "Sessão iniciada: " + normalizedTitle,
+                Map.of(
+                        "classroomName", classroom.getName(),
+                        "presentCount", requestedPresent.size(),
+                        "enrolledCount", enrollments.size()
+                )
+        );
         return SessionView.from(session);
     }
 
@@ -158,6 +176,16 @@ public class SessionService {
         timerService.cancelOpenForFinishedSession(sessionId);
         wordCloudService.closeOpenForFinishedSession(sessionId);
         pollService.closeOpenForFinishedSession(sessionId);
+        sessionEventService.record(
+                session,
+                SessionEventType.SESSION_FINISHED,
+                SessionEventActor.TEACHER,
+                "Sessão encerrada: " + session.getTitle(),
+                Map.of(
+                        "startedAt", session.getStartedAt().toString(),
+                        "endedAt", session.getEndedAt().toString()
+                )
+        );
 
         SessionView view = SessionView.from(session);
         realtimeGateway.broadcastAfterCommit(sessionId, "SESSION_FINISHED", view);

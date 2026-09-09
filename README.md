@@ -6,7 +6,7 @@
 >
 > **Current development line:** `v0.4 — Live Classroom`, branch `feat/v0.4-live-classroom`.
 >
-> **Current checkpoint:** Timer, Projector, Word Cloud, ActivityStep/live-flow runtime, contextual navigation, Design System, accessibility and responsive Arena polish are consolidated. `12.4D — Live Stage, identity and Poll`, `12.4E — Live Flow ↔ Live Stage orchestration` and `12.4F — public /join + Projector consolidation` are implemented locally. Public reconnect now restores one audience-specific runtime snapshot, Buzzer public projection no longer exposes administrative identity, and Boss HP is synchronized end to end. **Next: 12.5 SessionEvent / operational timeline, followed by 12.6 hardening and the v0.4.0 gate.**
+> **Current checkpoint:** Timer, Projector, Word Cloud, ActivityStep/live-flow runtime, contextual navigation, Design System, accessibility and responsive Arena polish are consolidated. `12.4D — Live Stage, identity and Poll`, `12.4E — Live Flow ↔ Live Stage orchestration`, `12.4F — public /join + Projector consolidation` and `12.5 — SessionEvent / operational timeline` are implemented locally. The classroom History now separates the operational timeline from reversible XP history. **Next: 12.6 hardening, E2E and the v0.4.0 gate.**
 
 ## Product model
 
@@ -24,6 +24,7 @@ Arena Dev centralizes attendance, activities, smart draws, XP, rankings, groups,
 - Activities and questions.
 - Smart student draw.
 - XP through auditable `ScoreEvent`.
+- Operational classroom timeline through `SessionEvent`.
 - Ranking derived from score events.
 - Individual/pairs/trios/groups.
 - Boss Battle.
@@ -90,13 +91,13 @@ Current foundation and runtime:
 - **12.4D.0C** `Enrollment.preferredName` + backend-resolved `displayName`;
 - **12.4D.0D** opaque device recognition separated from the temporary participant token;
 - **12.4D.1** Poll/Voting runtime with anonymous aggregate public projection;
-- **12.4E** Live Flow ↔ Live Stage orchestration with prepared Slide/Question projection, runtime reuse for Word Cloud/Poll and Boss stage adapter.
+- **12.4E** Live Flow ↔ Live Stage orchestration with prepared Slide/Question projection, runtime reuse for Word Cloud/Poll and Boss stage adapter;
+- **12.4F** public `/join` + Projector consolidation and reconnect hardening;
+- **12.5** chronological `SessionEvent` / operational timeline, separated from reversible `ScoreEvent` history.
 
 Next:
 
-- **12.4F** public `/join` + Projector consolidation and reconnect hardening;
-- **12.5** chronological `SessionEvent` / operational timeline;
-- **12.6** hardening and `v0.4.0` gate.
+- **12.6** hardening, E2E, security/observability review and `v0.4.0` gate.
 
 ## Live Stage
 
@@ -112,6 +113,19 @@ Teacher ──controls──► LiveStageState
 Projector and participant UI are different projections of the same authoritative session state. Public clients receive only the data needed for their audience; for example, a projected draw receives `displayName` rather than the student UUID. Specialized events such as `WORD_CLOUD_STATE`, `BUZZER_STATE` and `TIMER_STATE` still own detailed module runtime.
 
 See [`docs/INCREMENT_12_4D_0.md`](docs/INCREMENT_12_4D_0.md), [`docs/INCREMENT_12_4D_1.md`](docs/INCREMENT_12_4D_1.md), [`docs/INCREMENT_12_4E.md`](docs/INCREMENT_12_4E.md), [`docs/INCREMENT_12_4F.md`](docs/INCREMENT_12_4F.md), ADR-0027, ADR-0028, ADR-0029 and ADR-0030.
+
+## Operational timeline
+
+`SessionEvent` records high-level classroom facts without replacing their authoritative domains:
+
+```text
+ScoreEvent        → XP truth
+Poll/WordCloud    → response truth
+Buzzer/Timer/Boss → runtime truth
+SessionEvent      → chronological operational projection
+```
+
+The History view separates `Linha do tempo` from `Histórico de XP`. Individual votes, words, Buzzer presses, reconnects and timer ticks are deliberately excluded from the operational timeline. See [`docs/INCREMENT_12_5.md`](docs/INCREMENT_12_5.md) and ADR-0031.
 
 ## Poll semantics
 
