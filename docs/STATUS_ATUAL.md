@@ -8,9 +8,9 @@
 
 **Branch:** `feat/v0.4-live-classroom`.
 
-**Checkpoint local:** **12.4D concluído localmente e 12.4E — orquestração Live Flow ↔ Live Stage implementada para Slide, Question, Word Cloud, Poll e adapter de Boss.**
+**Checkpoint local:** **12.4D, 12.4E e 12.4F concluídos localmente. `/join` e Projetor restauram o runtime público por snapshot atômico, o Buzzer usa projeção pública segura e o Boss possui HP sincronizado.**
 
-**Próximo incremento recomendado:** **12.4F — consolidação pública `/join` + Projetor, reconexão integral do palco e acabamento dos adapters públicos.**
+**Próximo incremento recomendado:** **12.5 — SessionEvent / linha do tempo operacional da aula, seguido por 12.6 — hardening e gate da v0.4.0.**
 
 Este arquivo é a referência técnica versionada do estado corrente. Documentos de incremento preservam histórico e podem conter estados superados.
 
@@ -260,7 +260,7 @@ Baseline:
 Frontend:
 
 ```text
-npm test          73/73 OK
+npm test          81/81 OK
 npm run typecheck OK
 npm run build     OK
 ```
@@ -278,13 +278,13 @@ compilação Java 21 de todos os fontes main: OK
 ## Próxima sequência
 
 ```text
-12.4F consolidação pública `/join` + Projetor e reconexão integral do palco
+12.4D Live Stage + identidade + Poll       concluído
 ↓
-adapters de Slide / Question / Boss / Quiz
+12.4E Live Flow ↔ Live Stage              concluído
 ↓
-12.4F consolidação pública /join + Projector
+12.4F /join + Projector + reconnect        concluído
 ↓
-12.5 SessionEvent
+12.5 SessionEvent / linha do tempo         próximo
 ↓
 12.6 hardening e gate v0.4
 ```

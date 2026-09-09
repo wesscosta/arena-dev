@@ -8,10 +8,11 @@
 4. [`INCREMENT_12_4D_0.md`](INCREMENT_12_4D_0.md)
 5. [`INCREMENT_12_4D_1.md`](INCREMENT_12_4D_1.md)
 6. [`INCREMENT_12_4E.md`](INCREMENT_12_4E.md)
-7. [`CHECKPOINT_PRE_12_4D.md`](CHECKPOINT_PRE_12_4D.md) — histórico/supersedido
-8. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md)
-9. [`ACCESSIBILITY.md`](ACCESSIBILITY.md)
-10. [`adr/README.md`](adr/README.md)
+7. [`INCREMENT_12_4F.md`](INCREMENT_12_4F.md)
+8. [`CHECKPOINT_PRE_12_4D.md`](CHECKPOINT_PRE_12_4D.md) — histórico/supersedido
+9. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md)
+10. [`ACCESSIBILITY.md`](ACCESSIBILITY.md)
+11. [`adr/README.md`](adr/README.md)
 
 ## Release estável
 
@@ -31,4 +32,4 @@ Ao concluir um incremento:
 4. manter checkpoint de fase;
 5. não reescrever evidência histórica para fazê-la parecer mais completa.
 
-Atualizado em 08/09/2026 após a implementação local de `12.4E — Orquestração Live Flow ↔ Live Stage`.
+Atualizado em 08/09/2026 após a implementação local de `12.4F — Consolidação pública /join + Projetor e reconnect`.

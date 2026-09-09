@@ -4,7 +4,7 @@
 > consolidados Timer, Projector, Word Cloud, ActivityStep/editor/runtime,
 > navegação contextual e 12.3D.7A–D. **12.4D.0A — Live Stage / Presentation
 > State está implementado localmente** e Sorteio, Nuvem e Buzzer já usam o
-> palco compartilhado. **12.4D e 12.4E estão implementados localmente. Próximo: 12.4F — consolidação pública `/join` + Projetor e hardening de reconexão.**
+> palco compartilhado. **12.4D, 12.4E e 12.4F estão implementados localmente. Próximo: 12.5 — SessionEvent / linha do tempo operacional; depois 12.6 — hardening e gate da v0.4.0.**
 
 A `v0.4.0` evolui o Arena Dev Community a partir da baseline estável `v0.3.0`,
 mantendo a sessão de aula como contexto central e evitando ampliar o produto
@@ -355,8 +355,13 @@ A abstração de sequência passa a ser justificada por quatro blocos concretos:
 - [x] Projetor já seleciona Sorteio/Nuvem/Buzzer/Poll/Slide/Question/Boss pelo palco;
 - [x] aplicar `displayName`/device claim finais;
 - [ ] concluir `QUIZ` somente quando existir runtime próprio;
-- [ ] reconexão restaurar integralmente palco + estado especializado;
-- [ ] revisar acabamento visual público e estados de fallback/reentrada.
+- [x] reconexão restaurar integralmente palco + estado especializado por `RUNTIME_SNAPSHOT`;
+- [x] Buzzer público separado da identidade administrativa e posição própria enviada em estado privado;
+- [x] `AUTH_FAILED` encerra credencial inválida sem loop de reconnect;
+- [x] `/join` pode recuperar novo participant token usando device claim válido;
+- [x] Projetor REST recebe snapshot público completo antes do WebSocket;
+- [x] Boss sincroniza nome/HP no Projetor e `/join`;
+- [x] revisar acabamento visual público e estados de fallback/reentrada.
 
 ### 12.5 — SessionEvent
 

@@ -2,6 +2,7 @@
 @import "../styles/base.css";
 @import "../styles/accessibility.css";
 @import "../styles/arena-polish.css";
+@import "../styles/public-live.css";
 
 :root {
   --bg: #08100e;

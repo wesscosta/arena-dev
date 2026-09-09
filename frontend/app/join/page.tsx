@@ -8,7 +8,6 @@ import {
   joinSession,
   recognizeRememberedDevice,
   revokeRememberedDevice,
-  type BuzzerState,
   type DeviceRecognition,
   type PublicSession,
   type SessionRealtimeEvent,
@@ -26,6 +25,7 @@ import wordStyles from "./word-cloud.module.css";
 import pollStyles from "./poll.module.css";
 import stepStyles from "./prepared-step.module.css";
 import { emptyPollParticipantState, sendPollVote, type PollParticipantState, type PollState } from "@/lib/poll-api";
+import { reconnectDelayMs, type BuzzerParticipantState, type ParticipantRuntimeSnapshot, type PublicBossState, type PublicBuzzerState } from "@/lib/runtime-snapshot";
 
 function messageOf(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a operação.";
@@ -39,7 +39,9 @@ export default function JoinPage() {
   const [recognizedDevice, setRecognizedDevice] = useState<DeviceRecognition | null>(null);
   const [deviceToken, setDeviceToken] = useState<string | null>(null);
   const [rememberDevice, setRememberDevice] = useState(true);
-  const [buzzer, setBuzzer] = useState<BuzzerState>({ status: "IDLE", presses: [] });
+  const [buzzer, setBuzzer] = useState<PublicBuzzerState>({ status: "IDLE", presses: [] });
+  const [buzzerParticipant, setBuzzerParticipant] = useState<BuzzerParticipantState>({ roundId: null, position: null });
+  const [boss, setBoss] = useState<PublicBossState | null>(null);
   const [wordCloud, setWordCloud] = useState<WordCloudState>({ round: null });
   const [poll, setPoll] = useState<PollState>({ round: null });
   const [liveStage, setLiveStage] = useState<LiveStageState>(() => emptyLiveStageState());
@@ -48,10 +50,11 @@ export default function JoinPage() {
   const [wordDraft, setWordDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [socketState, setSocketState] = useState<"offline" | "connecting" | "online">("offline");
+  const [socketState, setSocketState] = useState<"offline" | "connecting" | "reconnecting" | "online">("offline");
   const [sessionFinished, setSessionFinished] = useState(false);
   const [reconnectVersion, setReconnectVersion] = useState(0);
   const socketRef = useRef<WebSocket | null>(null);
+  const reconnectAttemptRef = useRef(0);
 
   async function resolveCode(nextCode: string) {
     const normalized = normalizeJoinCode(nextCode);
@@ -92,6 +95,34 @@ export default function JoinPage() {
     }
   }
 
+  async function recoverParticipantAccess(message: string) {
+    if (!session) {
+      setAccess(null);
+      setError(message);
+      return;
+    }
+    window.sessionStorage.removeItem(studentAccessStorageKey(session.code));
+    const rememberedToken = window.localStorage.getItem(deviceClaimStorageKey(session.classroomId));
+    if (!rememberedToken) {
+      setAccess(null);
+      setError(`${message} Identifique-se novamente para continuar.`);
+      return;
+    }
+    setSocketState("connecting");
+    try {
+      const nextAccess = await joinRememberedDevice(session.code, rememberedToken);
+      window.sessionStorage.setItem(studentAccessStorageKey(session.code), JSON.stringify(nextAccess));
+      setDeviceToken(rememberedToken);
+      setAccess(nextAccess);
+      setError("");
+    } catch {
+      window.localStorage.removeItem(deviceClaimStorageKey(session.classroomId));
+      setDeviceToken(null);
+      setAccess(null);
+      setError(`${message} Identifique-se novamente para continuar.`);
+    }
+  }
+
   useEffect(() => {
     const queryCode = new URLSearchParams(window.location.search).get("code");
     if (queryCode) void resolveCode(queryCode);
@@ -100,12 +131,31 @@ export default function JoinPage() {
   useEffect(() => {
     if (!access || sessionFinished) return;
     let active = true;
+    let authFailed = false;
     let reconnectTimer: number | undefined;
     setSocketState("connecting");
     const socket = connectSessionSocket(access.sessionId, (event: SessionRealtimeEvent) => {
       if (!active) return;
+      if (event.type === "AUTH_OK") {
+        reconnectAttemptRef.current = 0;
+        setSocketState("online");
+        setError("");
+      }
+      if (event.type === "RUNTIME_SNAPSHOT") {
+        const runtime = event.payload as ParticipantRuntimeSnapshot;
+        setLiveStage(runtime.stage);
+        setBuzzer(runtime.buzzer);
+        setBuzzerParticipant(runtime.buzzerParticipant);
+        setWordCloud(runtime.wordCloud);
+        setWordCloudParticipant(runtime.wordCloudParticipant);
+        setPoll(runtime.poll);
+        setPollParticipant(runtime.pollParticipant);
+        setBoss(runtime.boss ?? null);
+      }
       if (event.type === "LIVE_STAGE_STATE") setLiveStage(event.payload as LiveStageState);
-      if (event.type === "BUZZER_STATE") setBuzzer(event.payload as BuzzerState);
+      if (event.type === "BUZZER_STATE") setBuzzer(event.payload as PublicBuzzerState);
+      if (event.type === "BUZZER_PARTICIPANT_STATE") setBuzzerParticipant(event.payload as BuzzerParticipantState);
+      if (event.type === "BOSS_STATE") setBoss(event.payload as PublicBossState);
       if (event.type === "WORD_CLOUD_STATE") {
         const state = event.payload as WordCloudState;
         setWordCloud(state);
@@ -140,24 +190,32 @@ export default function JoinPage() {
         setBuzzer({ status: "CLOSED", presses: [] });
         setPollParticipant(emptyPollParticipantState());
       }
+      if (event.type === "AUTH_FAILED") {
+        authFailed = true;
+        setSocketState("offline");
+        const payload = event.payload as { message?: string };
+        void recoverParticipantAccess(payload?.message || "Sua identificação temporária expirou.");
+      }
       if (event.type === "ERROR") {
         const payload = event.payload as { message?: string };
         setError(payload?.message || "Erro na conexão em tempo real.");
       }
     }, access.token);
     socketRef.current = socket;
-    socket.onopen = () => { if (active) setSocketState("online"); };
-    socket.onerror = () => { if (active) setSocketState("offline"); };
+    socket.onopen = () => { if (active) setSocketState("connecting"); };
+    socket.onerror = () => { if (active && !authFailed) setSocketState("reconnecting"); };
     socket.onclose = (event) => {
-      if (!active) return;
-      setSocketState("offline");
+      if (!active || authFailed) return;
       if (event.code === 1008) {
-        window.sessionStorage.removeItem(studentAccessStorageKey(access.code));
-        setAccess(null);
-        setError(event.reason || "Sua identificação expirou. Entre novamente.");
+        authFailed = true;
+        setSocketState("offline");
+        void recoverParticipantAccess(event.reason || "Sua identificação temporária expirou.");
         return;
       }
-      reconnectTimer = window.setTimeout(() => setReconnectVersion((value) => value + 1), 1500);
+      setSocketState("reconnecting");
+      const delay = reconnectDelayMs(reconnectAttemptRef.current);
+      reconnectAttemptRef.current += 1;
+      reconnectTimer = window.setTimeout(() => setReconnectVersion((value) => value + 1), delay);
     };
     return () => {
       active = false;
@@ -248,8 +306,10 @@ export default function JoinPage() {
   }
 
   const myPress = useMemo(
-    () => access ? buzzer.presses.find((press) => press.studentId === access.studentId) : undefined,
-    [buzzer.presses, access?.studentId],
+    () => buzzerParticipant.roundId && buzzerParticipant.roundId === buzzer.roundId && buzzerParticipant.position
+      ? { position: buzzerParticipant.position }
+      : undefined,
+    [buzzer.roundId, buzzerParticipant.roundId, buzzerParticipant.position],
   );
   const winner = buzzer.presses[0];
 
@@ -291,8 +351,14 @@ export default function JoinPage() {
           <div className="student-live-view">
             <div className="student-live-top">
               <div><span className="student-live-kicker">{access.classroomName}</span><h1>{access.displayName}</h1><p>{access.sessionTitle}</p></div>
-              <span className={`student-connection ${socketState}`}><i />{socketState === "online" ? "Conectado" : socketState === "connecting" ? "Conectando" : "Offline"}</span>
+              <span className={`student-connection ${socketState}`}><i />{socketState === "online" ? "Conectado" : socketState === "connecting" ? "Conectando" : socketState === "reconnecting" ? "Reconectando" : "Offline"}</span>
             </div>
+
+            {socketState === "reconnecting" && (
+              <div className="public-live-reconnect" role="status">
+                Conexão interrompida. Mantendo o último estado enquanto reconectamos.
+              </div>
+            )}
 
             {!sessionFinished && liveStage.primary.type === "QUESTION" && liveStage.primary.step?.question && (
               <section className={stepStyles.card}>
@@ -425,8 +491,21 @@ export default function JoinPage() {
             ) : liveStage.primary.type === "BOSS_BATTLE" ? (
               <div className="student-buzzer-state open">
                 <span className="student-buzzer-label">BOSS BATTLE</span>
-                <h2>Desafio em andamento</h2>
-                <p>O professor está conduzindo o progresso do Boss na Arena.</p>
+                <h2>{boss?.name || "Desafio em andamento"}</h2>
+                {boss ? (
+                  <div className="public-live-boss">
+                    <div className="public-live-boss__meta">
+                      <strong>{boss.currentHp} HP</strong>
+                      <span>de {boss.maxHp} HP</span>
+                    </div>
+                    <div className="public-live-boss__track" aria-label={`${boss.currentHp} de ${boss.maxHp} pontos de vida`}>
+                      <span style={{ "--boss-progress": `${Math.max(0, Math.min(100, (boss.currentHp / boss.maxHp) * 100))}%` } as React.CSSProperties} />
+                    </div>
+                    {boss.currentHp === 0 && <div className="public-live-boss__defeated">BOSS DERROTADO · objetivo coletivo concluído</div>}
+                  </div>
+                ) : (
+                  <p>O professor está conduzindo o progresso do Boss na Arena.</p>
+                )}
               </div>
             ) : liveStage.primary.type !== "WORD_CLOUD" && liveStage.primary.type !== "POLL" && liveStage.primary.type !== "QUESTION" ? (
               <div className={wordStyles.waiting}>

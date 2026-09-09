@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { normalizeJoinCode } from "@/lib/app-state";
 import {
   connectProjectorSocket,
@@ -12,6 +12,7 @@ import { emptyLiveStageState, type LiveStageState } from "@/lib/live-stage-api";
 import type { TimerState } from "@/lib/timer-api";
 import type { WordCloudState } from "@/lib/word-cloud-api";
 import type { PollState } from "@/lib/poll-api";
+import { reconnectDelayMs, type PublicBossState, type PublicBuzzerState, type PublicRuntimeSnapshot } from "@/lib/runtime-snapshot";
 import {
   wordCloudFontSize,
   wordCloudStatusLabel,
@@ -23,18 +24,6 @@ import {
   timerStatusLabel,
 } from "@/lib/timer-clock";
 import styles from "@/app/projector/projector.module.css";
-
-type ProjectorBuzzerState = {
-  status: "IDLE" | "OPEN" | "CLOSED";
-  roundId?: string | null;
-  openedAt?: string | null;
-  closedAt?: string | null;
-  presses: Array<{
-    position: number;
-    displayName: string;
-    receivedAt: string;
-  }>;
-};
 
 function errorMessage(error: unknown) {
   return error instanceof Error
@@ -57,12 +46,14 @@ export default function ProjectorView() {
   const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
   const [pollState, setPollState] = useState<PollState>({ round: null });
   const [liveStage, setLiveStage] = useState<LiveStageState>(() => emptyLiveStageState());
-  const [buzzerState, setBuzzerState] = useState<ProjectorBuzzerState>({ status: "IDLE", presses: [] });
+  const [buzzerState, setBuzzerState] = useState<PublicBuzzerState>({ status: "IDLE", presses: [] });
+  const [bossState, setBossState] = useState<PublicBossState | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [connection, setConnection] = useState<"offline" | "connecting" | "online">("offline");
+  const [connection, setConnection] = useState<"offline" | "connecting" | "reconnecting" | "online">("offline");
   const [realtimeVersion, setRealtimeVersion] = useState(0);
   const [error, setError] = useState("");
   const [sessionFinished, setSessionFinished] = useState(false);
+  const reconnectAttemptRef = useRef(0);
 
   useEffect(() => {
     const initial = normalizeJoinCode(
@@ -80,6 +71,7 @@ export default function ProjectorView() {
       setPollState({ round: null });
       setLiveStage(emptyLiveStageState());
       setBuzzerState({ status: "IDLE", presses: [] });
+      setBossState(null);
       setConnection("offline");
       return;
     }
@@ -94,12 +86,15 @@ export default function ProjectorView() {
         if (!active) return;
         setSnapshot(next);
         setTimerState({
-          timer: next.timer,
+          ...next.runtime.timer,
           serverOccurredAt: next.serverTime,
           receivedAtMs: Date.now(),
         });
-        setLiveStage(next.stage ?? emptyLiveStageState(next.sessionId));
-        setPollState(next.poll ?? { round: null });
+        setLiveStage(next.runtime.stage ?? emptyLiveStageState(next.sessionId));
+        setBuzzerState(next.runtime.buzzer ?? { status: "IDLE", presses: [] });
+        setWordCloudState(next.runtime.wordCloud ?? { round: null });
+        setPollState(next.runtime.poll ?? { round: null });
+        setBossState(next.runtime.boss ?? null);
       })
       .catch((failure) => {
         if (!active) return;
@@ -118,6 +113,7 @@ export default function ProjectorView() {
 
     let active = true;
     let finished = false;
+    let authFailed = false;
     let reconnectTimer: number | undefined;
 
     const socket = connectProjectorSocket(
@@ -127,8 +123,24 @@ export default function ProjectorView() {
         if (!active) return;
 
         if (event.type === "AUTH_OK") {
+          reconnectAttemptRef.current = 0;
           setConnection("online");
           setError("");
+          return;
+        }
+
+        if (event.type === "RUNTIME_SNAPSHOT") {
+          const runtime = event.payload as PublicRuntimeSnapshot;
+          setLiveStage(runtime.stage);
+          setBuzzerState(runtime.buzzer);
+          setTimerState({
+            ...runtime.timer,
+            serverOccurredAt: event.occurredAt,
+            receivedAtMs: Date.now(),
+          });
+          setWordCloudState(runtime.wordCloud);
+          setPollState(runtime.poll);
+          setBossState(runtime.boss ?? null);
           return;
         }
 
@@ -138,7 +150,7 @@ export default function ProjectorView() {
         }
 
         if (event.type === "BUZZER_STATE") {
-          setBuzzerState(event.payload as ProjectorBuzzerState);
+          setBuzzerState(event.payload as PublicBuzzerState);
           return;
         }
 
@@ -158,6 +170,19 @@ export default function ProjectorView() {
 
         if (event.type === "POLL_STATE") {
           setPollState(event.payload as PollState);
+          return;
+        }
+
+        if (event.type === "BOSS_STATE") {
+          setBossState(event.payload as PublicBossState);
+          return;
+        }
+
+        if (event.type === "AUTH_FAILED") {
+          authFailed = true;
+          setConnection("offline");
+          const payload = event.payload as { message?: string };
+          setError(payload.message || "O código do projetor não é mais válido.");
           return;
         }
 
@@ -182,11 +207,13 @@ export default function ProjectorView() {
     };
 
     socket.onclose = () => {
-      if (!active || finished) return;
-      setConnection("offline");
+      if (!active || finished || authFailed) return;
+      setConnection("reconnecting");
+      const delay = reconnectDelayMs(reconnectAttemptRef.current);
+      reconnectAttemptRef.current += 1;
       reconnectTimer = window.setTimeout(
         () => setRealtimeVersion((value) => value + 1),
-        1500,
+        delay,
       );
     };
 
@@ -328,13 +355,21 @@ export default function ProjectorView() {
               ? "Sincronizado"
               : connection === "connecting"
                 ? "Conectando"
-                : "Offline"}
+                : connection === "reconnecting"
+                  ? "Reconectando"
+                  : "Offline"}
           </span>
           <button onClick={() => void requestFullscreen()} title="Alternar tela cheia">
             ⛶
           </button>
         </div>
       </header>
+
+      {connection === "reconnecting" && (
+        <div className="public-live-reconnect" role="status">
+          Conexão interrompida. Mantendo o último palco enquanto reconectamos.
+        </div>
+      )}
 
       <section className={`${styles.stage} ${showWordCloud ? styles.wordCloudFocus : ""} ${showPoll ? styles.pollFocus : ""}`}>
         {sessionFinished ? (
@@ -412,8 +447,21 @@ export default function ProjectorView() {
         ) : showBoss ? (
           <div className={styles.bossStage}>
             <span className={styles.eyebrow}>BOSS BATTLE</span>
-            <h1>Desafio em andamento</h1>
-            <p>O Boss está ativo na Arena. O professor controla o progresso e a pontuação.</p>
+            <h1>{bossState?.name || "Desafio em andamento"}</h1>
+            {bossState ? (
+              <div className="public-live-boss">
+                <div className="public-live-boss__meta">
+                  <strong>{bossState.currentHp} HP</strong>
+                  <span>de {bossState.maxHp} HP</span>
+                </div>
+                <div className="public-live-boss__track" aria-label={`${bossState.currentHp} de ${bossState.maxHp} pontos de vida`}>
+                  <span style={{ "--boss-progress": `${Math.max(0, Math.min(100, (bossState.currentHp / bossState.maxHp) * 100))}%` } as React.CSSProperties} />
+                </div>
+                {bossState.currentHp === 0 && <div className="public-live-boss__defeated">BOSS DERROTADO · objetivo coletivo concluído</div>}
+              </div>
+            ) : (
+              <p>O Boss está ativo na Arena. O professor controla o progresso e a pontuação.</p>
+            )}
             {showTimerOverlay && timer && status && (
               <div className={styles.miniTimer}>
                 <span>{timer.title}</span>

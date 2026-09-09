@@ -23,7 +23,20 @@ test("projector snapshot normalizes code and remains anonymous", async () => {
       code: "AB12CD",
       expiresAt: "2026-09-06T03:00:00Z",
       serverTime: "2026-09-05T18:00:00Z",
-      timer: null,
+      runtime: {
+        stage: {
+          sessionId: "session-a",
+          primary: { type: "IDLE", sourceId: null, displayName: null, step: null },
+          overlays: { timer: true },
+          audience: "BOTH",
+          activatedAt: null,
+        },
+        buzzer: { status: "IDLE", presses: [] },
+        timer: { timer: null },
+        wordCloud: { round: null },
+        poll: { round: null },
+        boss: null,
+      },
     }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -33,6 +46,8 @@ test("projector snapshot normalizes code and remains anonymous", async () => {
   const snapshot = await fetchProjectorSnapshot(" ab12cd ");
   assert.equal(snapshot.sessionId, "session-a");
   assert.equal(snapshot.code, "AB12CD");
+  assert.equal(snapshot.runtime.stage.primary.type, "IDLE");
+  assert.equal(snapshot.runtime.buzzer.status, "IDLE");
 });
 
 test("projector websocket uses the dedicated public audience path", () => {

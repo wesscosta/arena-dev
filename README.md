@@ -6,7 +6,7 @@
 >
 > **Current development line:** `v0.4 — Live Classroom`, branch `feat/v0.4-live-classroom`.
 >
-> **Current checkpoint:** Timer, Projector, Word Cloud, ActivityStep/live-flow runtime, contextual navigation, Design System, accessibility and responsive Arena polish are consolidated. `12.4D — Live Stage, identity and Poll` is implemented locally. `12.4E — Live Flow ↔ Live Stage orchestration` is also implemented locally: Slide/Question project through the shared stage, prepared Word Cloud/Poll steps reuse the same bound runtime round, and Boss Battle now activates the shared stage. **Next: 12.4F public `/join` + Projector consolidation and reconnect hardening.**
+> **Current checkpoint:** Timer, Projector, Word Cloud, ActivityStep/live-flow runtime, contextual navigation, Design System, accessibility and responsive Arena polish are consolidated. `12.4D — Live Stage, identity and Poll`, `12.4E — Live Flow ↔ Live Stage orchestration` and `12.4F — public /join + Projector consolidation` are implemented locally. Public reconnect now restores one audience-specific runtime snapshot, Buzzer public projection no longer exposes administrative identity, and Boss HP is synchronized end to end. **Next: 12.5 SessionEvent / operational timeline, followed by 12.6 hardening and the v0.4.0 gate.**
 
 ## Product model
 
@@ -95,7 +95,7 @@ Current foundation and runtime:
 Next:
 
 - **12.4F** public `/join` + Projector consolidation and reconnect hardening;
-- **12.5** chronological `SessionEvent`, after concrete semantics stabilize;
+- **12.5** chronological `SessionEvent` / operational timeline;
 - **12.6** hardening and `v0.4.0` gate.
 
 ## Live Stage
@@ -111,7 +111,7 @@ Teacher ──controls──► LiveStageState
 
 Projector and participant UI are different projections of the same authoritative session state. Public clients receive only the data needed for their audience; for example, a projected draw receives `displayName` rather than the student UUID. Specialized events such as `WORD_CLOUD_STATE`, `BUZZER_STATE` and `TIMER_STATE` still own detailed module runtime.
 
-See [`docs/INCREMENT_12_4D_0.md`](docs/INCREMENT_12_4D_0.md), [`docs/INCREMENT_12_4D_1.md`](docs/INCREMENT_12_4D_1.md), [`docs/INCREMENT_12_4E.md`](docs/INCREMENT_12_4E.md), ADR-0027, ADR-0028 and ADR-0029.
+See [`docs/INCREMENT_12_4D_0.md`](docs/INCREMENT_12_4D_0.md), [`docs/INCREMENT_12_4D_1.md`](docs/INCREMENT_12_4D_1.md), [`docs/INCREMENT_12_4E.md`](docs/INCREMENT_12_4E.md), [`docs/INCREMENT_12_4F.md`](docs/INCREMENT_12_4F.md), ADR-0027, ADR-0028, ADR-0029 and ADR-0030.
 
 ## Poll semantics
 
