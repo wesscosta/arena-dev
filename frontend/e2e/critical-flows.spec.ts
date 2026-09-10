@@ -122,10 +122,13 @@ test("professor entra na Arena e participante reconecta à sessão", async ({ br
     ]);
     expect(browserLogin.status(), await browserLogin.text()).toBe(200);
 
-    await expect(page.getByRole("heading", { name: "Visão geral" })).toBeVisible();
-    await page.locator("article.overview-class-card").filter({ hasText: fixture.classroomName }).click();
+    const classroomCard = page
+      .locator("article.overview-class-card")
+      .filter({ hasText: fixture.classroomName });
+    await expect(classroomCard).toBeVisible();
+    await classroomCard.click();
     await expect(page.getByRole("heading", { name: fixture.classroomName })).toBeVisible();
-    await expect(page.getByLabel("Selecionar turma atual")).toHaveValue(fixture.classroom.id);
+    await expect(page.getByTitle("Trocar turma")).toContainText(fixture.classroomName);
     await page.getByRole("button", { name: "Continuar Arena" }).click();
     await expect(page.getByText("Arena", { exact: true }).first()).toBeVisible();
     await expect(page.getByText(fixture.sessionTitle, { exact: true })).toBeVisible();
@@ -276,7 +279,9 @@ test("roteiro preparado sincroniza slide, questão, nuvem, votação e timeline"
 
     const start = await api.post(`/api/sessions/${fixture.session.id}/mechanics/arena/flow/start`, { headers: csrfHeaders });
     await expectOk(start, "Início do Live Flow E2E");
-    await expect(projector.page.getByText(slideTitle, { exact: true })).toBeVisible();
+    await expect(
+      projector.page.getByRole("heading", { level: 1, name: slideTitle, exact: true }),
+    ).toBeVisible();
 
     const question = await api.post(`/api/sessions/${fixture.session.id}/mechanics/arena/flow/next`, { headers: csrfHeaders });
     await expectOk(question, "Avanço para questão E2E");
@@ -312,11 +317,14 @@ test("roteiro preparado sincroniza slide, questão, nuvem, votação e timeline"
     expect(pollState.round?.id).toBeTruthy();
     const revealPoll = await api.post(`/api/sessions/${fixture.session.id}/poll/${pollState.round!.id}/reveal`, { headers: csrfHeaders });
     await expectOk(revealPoll, "Reveal da Poll E2E");
-    await expect(projector.page.getByText("100%", { exact: true })).toBeVisible();
+    const winningPollOption = projector.page
+      .getByText(`A. ${pollYes}`, { exact: true })
+      .locator("..");
+    await expect(winningPollOption).toContainText("100%");
 
     await projector.page.reload();
     await expect(projector.page.getByText(pollPrompt, { exact: true })).toBeVisible();
-    await expect(projector.page.getByText("100%", { exact: true })).toBeVisible();
+    await expect(winningPollOption).toContainText("100%");
 
     const eventsResponse = await api.get(`/api/sessions/${fixture.session.id}/events`);
     await expectOk(eventsResponse, "Timeline E2E");
