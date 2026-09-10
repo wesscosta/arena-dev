@@ -1,7 +1,8 @@
-# Release candidate `v0.4.0` — Live Classroom
+# Release `v0.4.0` — Live Classroom
 
-**Data de preparação:** 09/09/2026  
-**Estado:** candidate preparada; **não publicada**.
+**Preparação:** 09/09/2026  
+**Publicação:** 10/09/2026  
+**Estado:** **publicada e congelada**.
 
 ## Escopo
 
@@ -13,74 +14,69 @@ Principais entregas:
 - Projetor público;
 - Word Cloud;
 - autoria e runtime de `ActivityStep`;
-- navegação contextual e Design System/acessibilidade;
+- navegação contextual, Design System e acessibilidade;
 - Live Stage por audiência;
 - `preferredName` por matrícula e device claim opaco;
 - Poll/Votação;
 - orquestração Live Flow ↔ Live Stage;
 - reconnect público com `RUNTIME_SNAPSHOT`;
-- SessionEvent / linha do tempo operacional;
-- hardening de login, request ID, liveness/readiness e E2E ampliado.
+- `SessionEvent` / linha do tempo operacional;
+- hardening de login, `X-Request-Id`, liveness/readiness;
+- Chromium E2E dos três fluxos críticos;
+- refinamento final do header contextual e CTA da Arena.
 
-## Schema
-
-Flyway esperado:
-
-```text
-V1 ... V14
-```
-
-Não existe migration nova em 12.6.
-
-## Versões
+## Schema e versões
 
 ```text
-backend/pom.xml          0.4.0
-frontend/package.json    0.4.0
-frontend/package-lock    0.4.0
-release tooling          0.4.0
+Flyway                    V1 ... V14
+backend/pom.xml           0.4.0
+frontend/package.json     0.4.0
+frontend/package-lock     0.4.0
+release tooling           0.4.0
 ```
 
-## Gate obrigatório
+O fechamento da `v0.4.0` não adicionou migration após `V14`.
 
-A release só pode ser publicada quando todos os itens abaixo estiverem comprovados no **mesmo SHA**:
-
-- [ ] `mvn -B -ntp verify` verde;
-- [ ] `npm ci` + audit + tests + typecheck + build verdes;
-- [ ] Compose saudável;
-- [ ] três cenários Playwright críticos verdes;
-- [ ] containers backend/frontend executando como usuário não-root `arena`;
-- [ ] health live/ready verdes;
-- [ ] GitHub Actions verde;
-- [ ] backup real com SHA-256;
-- [ ] restore-check PostgreSQL 17 com V1–V14 verde;
-- [ ] rollback/restore ensaiado;
-- [ ] `scripts/release/release-gate.sh final` verde;
-- [ ] `main` limpa e sincronizada.
-
-## Publicação
-
-Somente depois do gate final:
-
-```bash
-git tag -a v0.4.0 -m "Arena Dev Community v0.4.0"
-git push origin v0.4.0
-```
-
-A GitHub Release deve ser criada manualmente a partir dessa tag. A tag `v0.3.0` permanece congelada e nunca deve ser movida.
-
-## Evidência
-
-Registrar aqui, no momento da publicação:
+## Evidência verificável da publicação
 
 ```text
-Commit final:
-CI run:
-Backup:
-Restore-check:
-Rollback simulado:
-Release gate final:
-GitHub Release:
+PR final:        #9
+Head final PR:   23526d9fdd37e72311272a5c4c29876552e98ccc
+Merge em main:   ccfb7f937e7ac7db330cfa5e54c3e3816b69962f
+CI final:        34428450704
+Tag:             v0.4.0
+GitHub Release:  https://github.com/wesscosta/arena-dev/releases/tag/v0.4.0
 ```
 
-Não preencher campos sem evidência real.
+No CI final do PR:
+
+- [x] `mvn -B -ntp verify`;
+- [x] `npm ci`;
+- [x] audit de dependências de produção;
+- [x] testes frontend;
+- [x] TypeScript;
+- [x] build de produção Next.js;
+- [x] validação do Compose;
+- [x] build das imagens backend/frontend;
+- [x] stack Compose saudável;
+- [x] backend/frontend executando como usuário não-root `arena`;
+- [x] três cenários Playwright Chromium críticos.
+
+Antes do push final, os três cenários E2E também foram executados localmente com sucesso.
+
+## Evidência operacional não registrada no repositório
+
+O histórico versionado disponível não contém evidência suficiente para marcar retroativamente como executados:
+
+- backup real com SHA-256;
+- restore-check PostgreSQL 17 V1–V14;
+- ensaio explícito de rollback/restore;
+- `scripts/release/release-gate.sh final`.
+
+Isso não altera o fato de que a tag e a GitHub Release foram publicadas, mas preserva a regra do projeto de não inventar evidência histórica.
+
+## Imutabilidade
+
+A tag `v0.4.0` representa a baseline pública da linha Live Classroom e **não deve ser movida ou recriada**.
+
+Qualquer evolução funcional ocorre a partir da linha `v0.5`.

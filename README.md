@@ -2,11 +2,11 @@
 
 **Arena Dev Community** is an open-source, self-hosted platform for running and gamifying live classroom dynamics with low friction for the teacher.
 
-> **Stable release:** `v0.3.0`, published on **September 5, 2026**.
+> **Stable release:** `v0.4.0 — Live Classroom`, published from merge commit `ccfb7f9`.
 >
-> **Current development line:** `v0.4.0 — Live Classroom` release candidate, branch `feat/v0.4-live-classroom`.
+> **Current development line:** `v0.5.0 — Live Quiz & Structured Responses`, branch `feat/v0.5-live-quiz`.
 >
-> **Current checkpoint:** `12.1–12.6` are implemented locally. The candidate now includes Live Stage, Live Flow orchestration, public reconnect, SessionEvent, login rate limiting, request correlation, liveness/readiness and expanded Chromium E2E. **Publication remains blocked until the final Maven/Compose/CI/backup/restore gate is green on the same SHA.**
+> **Current checkpoint:** `13.0` bootstrap documental. The `v0.4.0` baseline is frozen; no new runtime, migration or version bump is introduced by this bootstrap. The next implementation increment is **13.1 — Quiz Runtime**.
 
 ## Product model
 
@@ -70,7 +70,7 @@ Principles:
 - `localStorage` is not a domain source of truth;
 - no Redis, Kafka, Kubernetes or microservices without demonstrated need.
 
-## Current v0.4 status
+## Stable v0.4 baseline
 
 Completed:
 
@@ -95,9 +95,32 @@ Current foundation and runtime:
 - **12.4F** public `/join` + Projector consolidation and reconnect hardening;
 - **12.5** chronological `SessionEvent` / operational timeline, separated from reversible `ScoreEvent` history.
 
-Release candidate closure:
+Release closure:
 
-- **12.6** hardening, E2E, security/observability and `v0.4.0` release gate — implemented locally; external final evidence pending.
+- **12.6** hardening, E2E, security/observability and `v0.4.0` release gate — completed;
+- PR #9 merged into `main`;
+- CI run `34428450704` completed successfully;
+- annotated tag `v0.4.0` points to merge commit `ccfb7f9`;
+- GitHub Release `Arena Dev Community v0.4.0` published.
+
+## Current v0.5 direction
+
+`v0.5.0` closes the remaining structured-response gap without turning Arena Dev into a generic quiz platform:
+
+```text
+ActivityQuestion (authoring)
+        ↓
+QuizRound (live runtime)
+        ↓
+ParticipantAnswer (answer truth)
+        ↓
+evaluation
+        ↓
+ScoreEvent (XP truth)
+```
+
+The first supported response types will be `MULTIPLE_CHOICE` and `TRUE_FALSE`.
+Open/practical answers, advanced analytics, badges/streaks and AI correction are intentionally outside the initial Quiz Runtime.
 
 ## Live Stage
 
