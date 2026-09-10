@@ -253,3 +253,97 @@
   font-size: var(--font-size-xs);
   line-height: var(--line-normal);
 }
+
+/* v0.4.0 final polish — header context reads as breadcrumb, not a card. */
+.trigger {
+  max-width: min(42rem, 48vw);
+  min-height: var(--target-min);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  transition:
+    background var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
+}
+
+.monogram {
+  display: none;
+}
+
+.trigger:hover,
+.open {
+  border-color: transparent;
+  background: rgba(88, 243, 167, .04);
+  color: var(--accent-2);
+}
+
+.triggerCopy {
+  min-width: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.triggerCopy strong,
+.triggerCopy small {
+  display: inline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: var(--line-snug);
+}
+
+.triggerCopy strong {
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-semibold);
+}
+
+.triggerCopy small {
+  margin-top: 0;
+  color: var(--muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-medium);
+}
+
+.triggerCopy small::before {
+  content: "·";
+  margin-inline: 0 var(--space-2);
+  color: #52655c;
+}
+
+.chevron {
+  flex: 0 0 auto;
+  color: #72877d;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
+}
+
+.trigger:hover .chevron,
+.open .chevron {
+  color: var(--accent);
+}
+
+.open .chevron {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 720px) {
+  .trigger {
+    max-width: 62vw;
+  }
+
+  .triggerCopy small {
+    display: none;
+  }
+}
+
