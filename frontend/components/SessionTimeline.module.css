@@ -1,0 +1,115 @@
+.shell {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.toolbar {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.search {
+  flex: 1 1 18rem;
+  min-height: var(--control-md);
+  padding: 0 var(--space-3);
+  border: var(--border-width) solid var(--ds-border);
+  border-radius: var(--radius-md);
+  background: var(--ds-surface-raised);
+  color: var(--ds-text-primary);
+  font: inherit;
+}
+
+.search::placeholder {
+  color: var(--ds-text-secondary);
+}
+
+.timeline {
+  position: relative;
+  display: grid;
+  gap: 0;
+}
+
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-4) 0;
+  border-top: var(--border-width) solid var(--ds-border);
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+.marker {
+  width: .625rem;
+  height: .625rem;
+  margin-top: .35rem;
+  border-radius: var(--radius-pill);
+  background: var(--ds-accent);
+  box-shadow: 0 0 0 .25rem rgba(88, 243, 167, .07);
+}
+
+.content {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.content strong {
+  color: var(--ds-text-primary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-snug);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-normal);
+}
+
+.tag {
+  align-self: start;
+  padding: .3rem .55rem;
+  border: var(--border-width) solid var(--ds-border);
+  border-radius: var(--radius-pill);
+  color: var(--ds-text-secondary);
+  background: rgba(255, 255, 255, .025);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-bold);
+  white-space: nowrap;
+}
+
+.empty,
+.error {
+  padding: var(--space-6);
+  border: var(--border-width) dashed var(--ds-border);
+  border-radius: var(--radius-md);
+  color: var(--ds-text-secondary);
+  text-align: center;
+  line-height: var(--line-normal);
+}
+
+.error {
+  border-style: solid;
+  color: #ff9da3;
+}
+
+@media (max-width: 42rem) {
+  .row {
+    grid-template-columns: 1rem minmax(0, 1fr);
+  }
+
+  .tag {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

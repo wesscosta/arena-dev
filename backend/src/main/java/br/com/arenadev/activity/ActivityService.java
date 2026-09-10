@@ -68,11 +68,23 @@ public class ActivityService {
                 source.getResourceKind(), source.getResourcePlatform(), source.getResourceUrl()
         );
         copy.markCopiedFrom(source);
+
+        Map<UUID, ActivityQuestion> copiedQuestions = new HashMap<>();
         int position = 0;
         for (ActivityQuestion sourceQuestion : source.getQuestions()) {
             ActivityQuestion question = cloneQuestion(sourceQuestion, position++);
             copy.addQuestion(question);
+            copiedQuestions.put(sourceQuestion.getId(), question);
         }
+
+        int stepPosition = 0;
+        for (ActivityStep sourceStep : source.getSteps()) {
+            ActivityQuestion copiedQuestion = sourceStep.getQuestion() == null
+                    ? null
+                    : copiedQuestions.get(sourceStep.getQuestion().getId());
+            copy.addStep(cloneStep(sourceStep, stepPosition++, copiedQuestion));
+        }
+
         return toView(activityRepository.save(copy));
     }
 
@@ -128,6 +140,25 @@ public class ActivityService {
                 source.getType(), source.getStatement(), source.getDifficulty(), source.getPoints(), position,
                 source.getOptionsJson(), source.getAnswerJson(), source.getExpectedAnswer(), source.getExplanation(),
                 source.getCode(), source.getLanguage(), source.getExpectedOutcome(), source.getEvaluationCriteriaJson()
+        );
+        return copy;
+    }
+
+    private ActivityStep cloneStep(ActivityStep source, int position, ActivityQuestion copiedQuestion) {
+        ActivityStep copy = new ActivityStep(source.getType(), position);
+        copy.update(
+                source.getType(),
+                position,
+                source.getTitle(),
+                source.getInstructions(),
+                copiedQuestion,
+                source.getSlideContent(),
+                source.getWordCloudPrompt(),
+                source.getWordCloudMaxWords(),
+                source.getWordCloudLiveReveal(),
+                source.getPollPrompt(),
+                source.getPollOptionsJson(),
+                source.getPollLiveResults()
         );
         return copy;
     }

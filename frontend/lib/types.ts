@@ -48,6 +48,33 @@ export interface ActivityResource {
   url?: string;
 }
 
+export type ActivityStepType = "SLIDE" | "QUESTION" | "WORD_CLOUD" | "POLL";
+
+export interface PollOption {
+  id: string;
+  text: string;
+}
+
+export interface ActivityStep {
+  id?: string;
+  position: number;
+  type: ActivityStepType;
+  title?: string;
+  instructions?: string;
+  questionId?: string;
+  slideContent?: string;
+  wordCloud?: {
+    prompt: string;
+    maxWordsPerParticipant: number;
+    liveReveal: boolean;
+  };
+  poll?: {
+    prompt: string;
+    options: PollOption[];
+    liveResults: boolean;
+  };
+}
+
 export interface QuestionPackage {
   version: "1.0";
   activity?: {
@@ -79,6 +106,7 @@ export interface Enrollment {
   id: string;
   classroomId: string;
   studentId: string;
+  preferredName: string;
   active: boolean;
   joinedAt: string;
 }
@@ -97,6 +125,8 @@ export interface SessionRuntimeState {
   activityId?: string;
   currentQuestionId?: string;
   answeredQuestionIds?: string[];
+  currentStepId?: string;
+  currentStepPosition?: number;
   groups?: string[][];
   groupSize?: number;
 }
@@ -108,6 +138,8 @@ export interface SessionParticipant {
   registration?: string;
   name: string;
   nickname: string;
+  preferredName: string;
+  displayName: string;
   present: boolean;
   connected: boolean;
 }
@@ -126,6 +158,8 @@ export interface GameSession {
   activityId?: string;
   currentQuestionId?: string;
   answeredQuestionIds?: string[];
+  currentStepId?: string;
+  currentStepPosition?: number;
   groups?: string[][];
   groupSize?: number;
 }

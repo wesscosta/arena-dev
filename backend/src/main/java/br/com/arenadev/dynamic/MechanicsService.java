@@ -3,8 +3,17 @@ package br.com.arenadev.dynamic;
 import br.com.arenadev.activity.Activity;
 import br.com.arenadev.activity.ActivityQuestion;
 import br.com.arenadev.activity.ActivityRepository;
+import br.com.arenadev.activity.ActivityStep;
+import br.com.arenadev.activity.ActivityStepType;
+import br.com.arenadev.poll.PollService;
+import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.session.*;
+import br.com.arenadev.sessionevent.SessionEventActor;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import br.com.arenadev.stage.LiveStageService;
+import br.com.arenadev.wordcloud.WordCloudService;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 import org.springframework.stereotype.Service;
@@ -20,6 +29,11 @@ public class MechanicsService {
     private final SessionDynamicRepository dynamicRepository;
     private final GroupHistoryRepository groupHistoryRepository;
     private final ActivityRepository activityRepository;
+    private final LiveStageService liveStageService;
+    private final WordCloudService wordCloudService;
+    private final PollService pollService;
+    private final SessionRealtimeGateway realtimeGateway;
+    private final SessionEventService sessionEventService;
     private final JsonMapper objectMapper = JsonMapper.builder().build();
 
     public MechanicsService(
@@ -27,13 +41,23 @@ public class MechanicsService {
             SessionParticipantRepository participantRepository,
             SessionDynamicRepository dynamicRepository,
             GroupHistoryRepository groupHistoryRepository,
-            ActivityRepository activityRepository
+            ActivityRepository activityRepository,
+            LiveStageService liveStageService,
+            WordCloudService wordCloudService,
+            PollService pollService,
+            SessionRealtimeGateway realtimeGateway,
+            SessionEventService sessionEventService
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
         this.dynamicRepository = dynamicRepository;
         this.groupHistoryRepository = groupHistoryRepository;
         this.activityRepository = activityRepository;
+        this.liveStageService = liveStageService;
+        this.wordCloudService = wordCloudService;
+        this.pollService = pollService;
+        this.realtimeGateway = realtimeGateway;
+        this.sessionEventService = sessionEventService;
     }
 
     @Transactional(readOnly = true)
@@ -68,9 +92,23 @@ public class MechanicsService {
             if (cursor <= 0) { winner = candidate.studentId(); break; }
         }
 
-        counts.put(winner.toString(), counts.getOrDefault(winner.toString(), 0) + 1);
-        saveState(session, DynamicType.QUICK_DRAW, new DrawState(counts, winner.toString()));
-        return new DrawResult(winner, runtime(sessionId));
+        UUID drawnWinner = winner;
+        counts.put(drawnWinner.toString(), counts.getOrDefault(drawnWinner.toString(), 0) + 1);
+        saveState(session, DynamicType.QUICK_DRAW, new DrawState(counts, drawnWinner.toString()));
+        liveStageService.showDraw(sessionId, drawnWinner);
+        String winnerName = participantRepository.findBySessionIdOrderByStudentNameAsc(sessionId).stream()
+                .filter(participant -> participant.getStudent().getId().equals(drawnWinner))
+                .map(participant -> participant.getStudent().getName())
+                .findFirst()
+                .orElse("Aluno");
+        sessionEventService.record(
+                session,
+                SessionEventType.DRAW_COMPLETED,
+                SessionEventActor.TEACHER,
+                "Sorteio concluído: " + winnerName,
+                Map.of("studentId", drawnWinner.toString(), "studentName", winnerName)
+        );
+        return new DrawResult(drawnWinner, runtime(sessionId));
     }
 
     @Transactional
@@ -88,6 +126,13 @@ public class MechanicsService {
         if (groupSize > 1) {
             groupHistoryRepository.save(new GroupHistory(session.getClassroom(), session, writeJson(groups)));
         }
+        sessionEventService.record(
+                session,
+                SessionEventType.GROUPS_ORGANIZED,
+                SessionEventActor.TEACHER,
+                "Turma organizada em " + groups.size() + " grupo(s).",
+                Map.of("groupSize", groupSize, "groupCount", groups.size())
+        );
         return new GroupsResult(groups, runtime(sessionId));
     }
 
@@ -96,7 +141,17 @@ public class MechanicsService {
         ClassSession session = requireActiveSession(sessionId);
         if (maxHp < 10) throw new IllegalArgumentException("O Boss precisa ter ao menos 10 HP.");
         String normalizedName = name == null || name.isBlank() ? "Boss" : name.trim();
-        saveState(session, DynamicType.BOSS_BATTLE, new BossState(normalizedName, maxHp, maxHp));
+        BossState boss = new BossState(normalizedName, maxHp, maxHp);
+        saveState(session, DynamicType.BOSS_BATTLE, boss);
+        liveStageService.showBossBattle(sessionId);
+        broadcastBossAfterCommit(sessionId, boss);
+        sessionEventService.record(
+                session,
+                SessionEventType.BOSS_STARTED,
+                SessionEventActor.TEACHER,
+                "Boss Battle iniciado: " + normalizedName,
+                Map.of("name", normalizedName, "maxHp", maxHp)
+        );
         return runtime(sessionId);
     }
 
@@ -106,7 +161,22 @@ public class MechanicsService {
         if (amount <= 0) throw new IllegalArgumentException("O dano precisa ser maior que zero.");
         BossState boss = readState(sessionId, DynamicType.BOSS_BATTLE, BossState.class, null);
         if (boss == null) throw new IllegalArgumentException("Nenhum Boss está ativo nesta sessão.");
-        saveState(session, DynamicType.BOSS_BATTLE, new BossState(boss.name(), boss.maxHp(), Math.max(0, boss.currentHp() - amount)));
+        BossState next = new BossState(
+                boss.name(),
+                boss.maxHp(),
+                Math.max(0, boss.currentHp() - amount)
+        );
+        saveState(session, DynamicType.BOSS_BATTLE, next);
+        broadcastBossAfterCommit(sessionId, next);
+        if (boss.currentHp() > 0 && next.currentHp() == 0) {
+            sessionEventService.record(
+                    session,
+                    SessionEventType.BOSS_DEFEATED,
+                    SessionEventActor.TEACHER,
+                    "Boss derrotado: " + boss.name(),
+                    Map.of("name", boss.name(), "maxHp", boss.maxHp())
+            );
+        }
         return runtime(sessionId);
     }
 
@@ -114,48 +184,559 @@ public class MechanicsService {
     public RuntimeView setArenaSource(UUID sessionId, UUID activityId) {
         ClassSession session = requireActiveSession(sessionId);
         if (activityId == null) {
-            saveState(session, DynamicType.ARENA, new ArenaState(null, null, List.of()));
+            saveState(
+                    session,
+                    DynamicType.ARENA,
+                    new ArenaState(null, null, List.of(), null, null, Map.of())
+            );
+            sessionEventService.record(
+                    session,
+                    SessionEventType.ARENA_SOURCE_CLEARED,
+                    SessionEventActor.TEACHER,
+                    "Fonte da Arena alterada para modo livre.",
+                    Map.of()
+            );
             return runtime(sessionId);
         }
+
         Activity activity = requireActivityForSession(session, activityId);
-        if (activity.getQuestions().isEmpty()) throw new IllegalArgumentException("A atividade selecionada não possui questões.");
-        saveState(session, DynamicType.ARENA, new ArenaState(activity.getId().toString(), null, List.of()));
+        if (activity.getQuestions().isEmpty() && activity.getSteps().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "A atividade selecionada não possui questões nem Roteiro ao Vivo."
+            );
+        }
+
+        saveState(
+                session,
+                DynamicType.ARENA,
+                new ArenaState(
+                        activity.getId().toString(),
+                        null,
+                        List.of(),
+                        null,
+                        null,
+                        Map.of()
+                )
+        );
+        sessionEventService.record(
+                session,
+                SessionEventType.ARENA_SOURCE_SELECTED,
+                SessionEventActor.TEACHER,
+                "Atividade selecionada na Arena: " + activity.getTitle(),
+                Map.of(
+                        "activityId", activity.getId().toString(),
+                        "activityTitle", activity.getTitle()
+                )
+        );
         return runtime(sessionId);
     }
 
     @Transactional
     public ArenaQuestionResult nextArenaQuestion(UUID sessionId) {
         ClassSession session = requireActiveSession(sessionId);
-        ArenaState state = readState(sessionId, DynamicType.ARENA, ArenaState.class, new ArenaState(null, null, List.of()));
-        if (state.activityId() == null) throw new IllegalArgumentException("Selecione uma atividade com questões ou use o modo livre.");
-        Activity activity = requireActivityForSession(session, UUID.fromString(state.activityId()));
-        Set<String> answered = new LinkedHashSet<>(state.answeredQuestionIds() == null ? List.of() : state.answeredQuestionIds());
-        ActivityQuestion next = activity.getQuestions().stream().filter(question -> !answered.contains(question.getId().toString())).findFirst().orElse(null);
-        if (next == null) return new ArenaQuestionResult(null, true, runtime(sessionId));
+        ArenaState state = readArenaState(sessionId);
+
+        if (state.currentStepId() != null) {
+            throw new IllegalArgumentException(
+                    "O Roteiro ao Vivo está ativo. Use Anterior/Próximo na Condução."
+            );
+        }
+
+        if (state.activityId() == null) {
+            throw new IllegalArgumentException(
+                    "Selecione uma atividade com questões ou use o modo livre."
+            );
+        }
+
+        Activity activity = requireActivityForSession(
+                session,
+                UUID.fromString(state.activityId())
+        );
+
+        Set<String> answered = new LinkedHashSet<>(
+                state.answeredQuestionIds() == null
+                        ? List.of()
+                        : state.answeredQuestionIds()
+        );
+
+        ActivityQuestion next = activity.getQuestions().stream()
+                .filter(question -> !answered.contains(question.getId().toString()))
+                .findFirst()
+                .orElse(null);
+
+        if (next == null) {
+            return new ArenaQuestionResult(null, true, runtime(sessionId));
+        }
+
         answered.add(next.getId().toString());
-        saveState(session, DynamicType.ARENA, new ArenaState(activity.getId().toString(), next.getId().toString(), new ArrayList<>(answered)));
+        saveState(
+                session,
+                DynamicType.ARENA,
+                new ArenaState(
+                        activity.getId().toString(),
+                        next.getId().toString(),
+                        new ArrayList<>(answered),
+                        null,
+                        null,
+                        runtimeBindings(state)
+                )
+        );
+        sessionEventService.record(
+                session,
+                SessionEventType.ARENA_QUESTION_PRESENTED,
+                SessionEventActor.TEACHER,
+                "Questão apresentada na Arena.",
+                Map.of(
+                        "activityId", activity.getId().toString(),
+                        "activityTitle", activity.getTitle(),
+                        "questionId", next.getId().toString()
+                )
+        );
         return new ArenaQuestionResult(next.getId(), false, runtime(sessionId));
     }
 
     @Transactional
     public RuntimeView restartArenaQuestions(UUID sessionId) {
         ClassSession session = requireActiveSession(sessionId);
-        ArenaState state = readState(sessionId, DynamicType.ARENA, ArenaState.class, new ArenaState(null, null, List.of()));
-        saveState(session, DynamicType.ARENA, new ArenaState(state.activityId(), null, List.of()));
+        ArenaState state = readArenaState(sessionId);
+
+        if (state.currentStepId() != null) {
+            throw new IllegalArgumentException(
+                    "O Roteiro ao Vivo está ativo. Navegue pelo roteiro em vez de reiniciar a sequência legada."
+            );
+        }
+
+        saveState(
+                session,
+                DynamicType.ARENA,
+                new ArenaState(state.activityId(), null, List.of(), null, null, runtimeBindings(state))
+        );
+        sessionEventService.record(
+                session,
+                SessionEventType.ARENA_QUESTIONS_RESTARTED,
+                SessionEventActor.TEACHER,
+                "Sequência de questões da Arena reiniciada.",
+                Map.of()
+        );
         return runtime(sessionId);
     }
 
+    @Transactional(readOnly = true)
+    public LiveFlowView getLiveFlow(UUID sessionId) {
+        ClassSession session = requireSession(sessionId);
+        return liveFlowView(session, readArenaState(sessionId));
+    }
+
+    @Transactional
+    public LiveFlowResult startLiveFlow(UUID sessionId) {
+        ClassSession session = requireActiveSession(sessionId);
+        ArenaState state = readArenaState(sessionId);
+        Activity activity = requireFlowActivity(session, state);
+
+        if (activity.getSteps().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "A atividade selecionada não possui Roteiro ao Vivo."
+            );
+        }
+
+        Integer current = resolveCurrentStepIndex(activity, state);
+        if (current != null) {
+            return new LiveFlowResult(
+                    liveFlowView(session, state),
+                    runtime(sessionId),
+                    liveStageService.state(sessionId)
+            );
+        }
+
+        return activateLiveStep(session, state, activity, 0, FlowMovement.START);
+    }
+
+    @Transactional
+    public LiveFlowResult nextLiveFlow(UUID sessionId) {
+        ClassSession session = requireActiveSession(sessionId);
+        ArenaState state = readArenaState(sessionId);
+        Activity activity = requireFlowActivity(session, state);
+
+        if (activity.getSteps().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "A atividade selecionada não possui Roteiro ao Vivo."
+            );
+        }
+
+        Integer current = resolveCurrentStepIndex(activity, state);
+        if (current == null) {
+            return activateLiveStep(session, state, activity, 0, FlowMovement.START);
+        }
+
+        if (current >= activity.getSteps().size() - 1) {
+            return new LiveFlowResult(
+                    liveFlowView(session, state),
+                    runtime(sessionId),
+                    liveStageService.state(sessionId)
+            );
+        }
+
+        return activateLiveStep(session, state, activity, current + 1, FlowMovement.NEXT);
+    }
+
+    @Transactional
+    public LiveFlowResult previousLiveFlow(UUID sessionId) {
+        ClassSession session = requireActiveSession(sessionId);
+        ArenaState state = readArenaState(sessionId);
+        Activity activity = requireFlowActivity(session, state);
+
+        Integer current = resolveCurrentStepIndex(activity, state);
+        if (current == null || current <= 0) {
+            return new LiveFlowResult(
+                    liveFlowView(session, state),
+                    runtime(sessionId),
+                    liveStageService.state(sessionId)
+            );
+        }
+
+        return activateLiveStep(session, state, activity, current - 1, FlowMovement.PREVIOUS);
+    }
+
+    private void broadcastBossAfterCommit(UUID sessionId, BossState boss) {
+        realtimeGateway.broadcastTeachersAfterCommit(sessionId, "BOSS_STATE", boss);
+        realtimeGateway.broadcastParticipantsAfterCommit(sessionId, "BOSS_STATE", boss);
+        realtimeGateway.broadcastProjectorsAfterCommit(sessionId, "BOSS_STATE", boss);
+    }
+
     private RuntimeView runtime(UUID sessionId) {
-        DrawState draw = readState(sessionId, DynamicType.QUICK_DRAW, DrawState.class, new DrawState(Map.of(), null));
-        BossState boss = readState(sessionId, DynamicType.BOSS_BATTLE, BossState.class, null);
-        ArenaState arena = readState(sessionId, DynamicType.ARENA, ArenaState.class, new ArenaState(null, null, List.of()));
-        GroupsState groups = readState(sessionId, DynamicType.GROUPS, GroupsState.class, new GroupsState(List.of(), 2));
+        DrawState draw = readState(
+                sessionId,
+                DynamicType.QUICK_DRAW,
+                DrawState.class,
+                new DrawState(Map.of(), null)
+        );
+        BossState boss = readState(
+                sessionId,
+                DynamicType.BOSS_BATTLE,
+                BossState.class,
+                null
+        );
+        ArenaState arena = readArenaState(sessionId);
+        GroupsState groups = readState(
+                sessionId,
+                DynamicType.GROUPS,
+                GroupsState.class,
+                new GroupsState(List.of(), 2)
+        );
+
         return new RuntimeView(
                 sessionId,
                 draw.drawCounts() == null ? Map.of() : draw.drawCounts(),
-                draw.lastDrawnStudentId(), boss,
-                arena.activityId(), arena.currentQuestionId(), arena.answeredQuestionIds() == null ? List.of() : arena.answeredQuestionIds(),
-                groups.groups() == null ? List.of() : groups.groups(), groups.groupSize()
+                draw.lastDrawnStudentId(),
+                boss,
+                arena.activityId(),
+                arena.currentQuestionId(),
+                arena.answeredQuestionIds() == null
+                        ? List.of()
+                        : arena.answeredQuestionIds(),
+                arena.currentStepId(),
+                arena.currentStepPosition(),
+                groups.groups() == null ? List.of() : groups.groups(),
+                groups.groupSize()
+        );
+    }
+
+    private ArenaState readArenaState(UUID sessionId) {
+        return readState(
+                sessionId,
+                DynamicType.ARENA,
+                ArenaState.class,
+                new ArenaState(null, null, List.of(), null, null, Map.of())
+        );
+    }
+
+    private Activity requireFlowActivity(
+            ClassSession session,
+            ArenaState state
+    ) {
+        if (state.activityId() == null) {
+            throw new IllegalArgumentException(
+                    "Selecione uma atividade com Roteiro ao Vivo."
+            );
+        }
+        return requireActivityForSession(
+                session,
+                UUID.fromString(state.activityId())
+        );
+    }
+
+    private Integer resolveCurrentStepIndex(
+            Activity activity,
+            ArenaState state
+    ) {
+        List<ActivityStep> steps = activity.getSteps();
+
+        if (state.currentStepId() != null) {
+            for (int index = 0; index < steps.size(); index++) {
+                if (steps.get(index).getId().toString()
+                        .equals(state.currentStepId())) {
+                    return index;
+                }
+            }
+        }
+
+        Integer storedPosition = state.currentStepPosition();
+        if (
+                storedPosition != null
+                && storedPosition >= 0
+                && storedPosition < steps.size()
+        ) {
+            return storedPosition;
+        }
+
+        return null;
+    }
+
+    private LiveFlowResult activateLiveStep(
+            ClassSession session,
+            ArenaState previous,
+            Activity activity,
+            int index,
+            FlowMovement movement
+    ) {
+        List<ActivityStep> steps = activity.getSteps();
+        if (index < 0 || index >= steps.size()) {
+            throw new IllegalArgumentException(
+                    "Posição inválida no Roteiro ao Vivo."
+            );
+        }
+
+        ActivityStep step = steps.get(index);
+        Set<String> answered = new LinkedHashSet<>(
+                previous.answeredQuestionIds() == null
+                        ? List.of()
+                        : previous.answeredQuestionIds()
+        );
+
+        String currentQuestionId = null;
+        if (step.getType() == ActivityStepType.QUESTION) {
+            if (step.getQuestion() == null) {
+                throw new IllegalArgumentException(
+                        "O bloco de Questão não possui questão vinculada."
+                );
+            }
+            currentQuestionId = step.getQuestion().getId().toString();
+            answered.add(currentQuestionId);
+        }
+
+        Map<String, String> bindings = new LinkedHashMap<>(runtimeBindings(previous));
+        LiveStageService.StateView stage = orchestratePreparedStep(
+                session,
+                step,
+                bindings
+        );
+
+        ArenaState next = new ArenaState(
+                activity.getId().toString(),
+                currentQuestionId,
+                new ArrayList<>(answered),
+                step.getId().toString(),
+                index,
+                Map.copyOf(bindings)
+        );
+
+        saveState(session, DynamicType.ARENA, next);
+        recordFlowMovement(session, activity, step, index, movement);
+
+        return new LiveFlowResult(
+                liveFlowView(session, next),
+                runtime(session.getId()),
+                stage
+        );
+    }
+
+    private void recordFlowMovement(
+            ClassSession session,
+            Activity activity,
+            ActivityStep step,
+            int index,
+            FlowMovement movement
+    ) {
+        String stepLabel = step.getTitle() == null || step.getTitle().isBlank()
+                ? step.getType().name()
+                : step.getTitle();
+        SessionEventType type = movement == FlowMovement.START
+                ? SessionEventType.FLOW_STARTED
+                : SessionEventType.FLOW_STEP_CHANGED;
+        String summary = switch (movement) {
+            case START -> "Roteiro iniciado em: " + stepLabel;
+            case NEXT -> "Roteiro avançou para: " + stepLabel;
+            case PREVIOUS -> "Roteiro voltou para: " + stepLabel;
+        };
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("activityId", activity.getId().toString());
+        payload.put("activityTitle", activity.getTitle());
+        payload.put("stepId", step.getId().toString());
+        payload.put("stepType", step.getType().name());
+        payload.put("stepPosition", index + 1);
+        if (step.getTitle() != null && !step.getTitle().isBlank()) {
+            payload.put("stepTitle", step.getTitle());
+        }
+        payload.put("direction", movement.name());
+        sessionEventService.record(
+                session,
+                type,
+                SessionEventActor.TEACHER,
+                summary,
+                payload
+        );
+    }
+
+    private LiveStageService.StateView orchestratePreparedStep(
+            ClassSession session,
+            ActivityStep step,
+            Map<String, String> bindings
+    ) {
+        UUID sessionId = session.getId();
+        String stepKey = step.getId().toString();
+
+        return switch (step.getType()) {
+            case SLIDE -> liveStageService.showSlide(sessionId, step.getId());
+            case QUESTION -> liveStageService.showQuestion(sessionId, step.getId());
+            case WORD_CLOUD -> {
+                UUID existingRoundId = parseBoundRuntimeId(bindings.get(stepKey));
+                WordCloudService.StateView state = wordCloudService.activatePrepared(
+                        sessionId,
+                        existingRoundId,
+                        new WordCloudService.CreateCommand(
+                                step.getWordCloudPrompt(),
+                                Boolean.TRUE.equals(step.getWordCloudLiveReveal()),
+                                step.getWordCloudMaxWords() == null
+                                        ? 1
+                                        : step.getWordCloudMaxWords()
+                        )
+                );
+                if (state.round() != null) {
+                    bindings.put(stepKey, state.round().id().toString());
+                }
+                yield liveStageService.state(sessionId);
+            }
+            case POLL -> {
+                UUID existingRoundId = parseBoundRuntimeId(bindings.get(stepKey));
+                List<String> options = readJson(
+                        step.getPollOptionsJson(),
+                        new TypeReference<List<PollOptionView>>() {},
+                        List.of()
+                ).stream().map(PollOptionView::text).toList();
+                PollService.StateView state = pollService.activatePrepared(
+                        sessionId,
+                        existingRoundId,
+                        new PollService.CreateCommand(
+                                step.getPollPrompt(),
+                                options,
+                                Boolean.TRUE.equals(step.getPollLiveResults())
+                        )
+                );
+                if (state.round() != null) {
+                    bindings.put(stepKey, state.round().id().toString());
+                }
+                yield liveStageService.state(sessionId);
+            }
+        };
+    }
+
+    private static Map<String, String> runtimeBindings(ArenaState state) {
+        return state.stepRuntimeIds() == null
+                ? Map.of()
+                : state.stepRuntimeIds();
+    }
+
+    private static UUID parseBoundRuntimeId(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private LiveFlowView liveFlowView(
+            ClassSession session,
+            ArenaState state
+    ) {
+        if (state.activityId() == null) {
+            return new LiveFlowView(
+                    session.getId(),
+                    null,
+                    null,
+                    List.of(),
+                    null,
+                    false,
+                    false,
+                    false
+            );
+        }
+
+        Activity activity = requireActivityForSession(
+                session,
+                UUID.fromString(state.activityId())
+        );
+
+        List<LiveStepView> steps = activity.getSteps().stream()
+                .map(this::toLiveStepView)
+                .toList();
+
+        Integer currentIndex = resolveCurrentStepIndex(activity, state);
+        boolean started = currentIndex != null;
+
+        return new LiveFlowView(
+                session.getId(),
+                activity.getId().toString(),
+                activity.getTitle(),
+                steps,
+                currentIndex,
+                started,
+                started && currentIndex > 0,
+                !steps.isEmpty()
+                        && (
+                            currentIndex == null
+                            || currentIndex < steps.size() - 1
+                        )
+        );
+    }
+
+    private LiveStepView toLiveStepView(ActivityStep step) {
+        WordCloudStepView wordCloud =
+                step.getType() == ActivityStepType.WORD_CLOUD
+                        ? new WordCloudStepView(
+                            step.getWordCloudPrompt(),
+                            step.getWordCloudMaxWords(),
+                            Boolean.TRUE.equals(
+                                    step.getWordCloudLiveReveal()
+                            )
+                        )
+                        : null;
+
+        PollStepView poll =
+                step.getType() == ActivityStepType.POLL
+                        ? new PollStepView(
+                            step.getPollPrompt(),
+                            readJson(
+                                    step.getPollOptionsJson(),
+                                    new TypeReference<List<PollOptionView>>() {},
+                                    List.of()
+                            ),
+                            Boolean.TRUE.equals(step.getPollLiveResults())
+                        )
+                        : null;
+
+        return new LiveStepView(
+                step.getId(),
+                step.getPosition(),
+                step.getType(),
+                step.getTitle(),
+                step.getInstructions(),
+                step.getQuestion() == null
+                        ? null
+                        : step.getQuestion().getId(),
+                step.getSlideContent(),
+                wordCloud,
+                poll
         );
     }
 
@@ -251,17 +832,89 @@ public class MechanicsService {
     private static String pairKey(String a, String b) { return a.compareTo(b) <= 0 ? a + "|" + b : b + "|" + a; }
 
     private record WeightedCandidate(UUID studentId, double weight) {}
-    private record DrawState(Map<String, Integer> drawCounts, String lastDrawnStudentId) {}
+    private record DrawState(
+            Map<String, Integer> drawCounts,
+            String lastDrawnStudentId
+    ) {}
+    private enum FlowMovement {
+        START,
+        NEXT,
+        PREVIOUS
+    }
+
     public record BossState(String name, int maxHp, int currentHp) {}
-    private record ArenaState(String activityId, String currentQuestionId, List<String> answeredQuestionIds) {}
+    private record ArenaState(
+            String activityId,
+            String currentQuestionId,
+            List<String> answeredQuestionIds,
+            String currentStepId,
+            Integer currentStepPosition,
+            Map<String, String> stepRuntimeIds
+    ) {}
     private record GroupsState(List<List<String>> groups, int groupSize) {}
 
     public record RuntimeView(
-            UUID sessionId, Map<String, Integer> drawCounts, String lastDrawnStudentId, BossState boss,
-            String activityId, String currentQuestionId, List<String> answeredQuestionIds,
-            List<List<String>> groups, int groupSize
+            UUID sessionId,
+            Map<String, Integer> drawCounts,
+            String lastDrawnStudentId,
+            BossState boss,
+            String activityId,
+            String currentQuestionId,
+            List<String> answeredQuestionIds,
+            String currentStepId,
+            Integer currentStepPosition,
+            List<List<String>> groups,
+            int groupSize
     ) {}
+
+    public record LiveFlowView(
+            UUID sessionId,
+            String activityId,
+            String activityTitle,
+            List<LiveStepView> steps,
+            Integer currentIndex,
+            boolean started,
+            boolean hasPrevious,
+            boolean hasNext
+    ) {}
+
+    public record LiveStepView(
+            UUID id,
+            int position,
+            ActivityStepType type,
+            String title,
+            String instructions,
+            UUID questionId,
+            String slideContent,
+            WordCloudStepView wordCloud,
+            PollStepView poll
+    ) {}
+
+    public record WordCloudStepView(
+            String prompt,
+            Integer maxWordsPerParticipant,
+            boolean liveReveal
+    ) {}
+
+    public record PollStepView(
+            String prompt,
+            List<PollOptionView> options,
+            boolean liveResults
+    ) {}
+
+    public record PollOptionView(String id, String text) {}
+
+    public record LiveFlowResult(
+            LiveFlowView liveFlow,
+            RuntimeView runtime,
+            LiveStageService.StateView stage
+    ) {}
+
     public record DrawResult(UUID studentId, RuntimeView runtime) {}
     public record GroupsResult(List<List<String>> groups, RuntimeView runtime) {}
-    public record ArenaQuestionResult(UUID questionId, boolean completed, RuntimeView runtime) {}
+    public record ArenaQuestionResult(
+            UUID questionId,
+            boolean completed,
+            RuntimeView runtime
+    ) {}
 }

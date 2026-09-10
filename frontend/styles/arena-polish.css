@@ -1,0 +1,615 @@
+/*
+ * Arena Dev — Arena Responsive & Visual Polish
+ * 12.3D.7D
+ *
+ * Este arquivo trata somente da experiência visual/operacional da Arena.
+ * Não cria nova escala; consome os tokens do Design System.
+ */
+
+/* ---------------------------------------------------------
+ * Workspace / session header
+ * --------------------------------------------------------- */
+
+.arena-session-workspace {
+  --arena-gap: var(--space-5);
+  gap: var(--arena-gap);
+}
+
+.arena-header.compact {
+  min-height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: 0 0 var(--space-5);
+  border-bottom: var(--border-width) solid var(--ds-border);
+}
+
+.arena-header.compact > div:first-child {
+  min-width: 0;
+}
+
+.arena-header.compact h1,
+.arena-header.compact h2 {
+  margin: var(--space-2) 0 var(--space-1);
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  line-height: var(--line-tight);
+  letter-spacing: -0.035em;
+}
+
+.arena-header.compact p {
+  margin: 0;
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-normal);
+}
+
+.arena-session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* ---------------------------------------------------------
+ * Tabs
+ * --------------------------------------------------------- */
+
+.arena-tabs-six {
+  position: sticky;
+  top: 4.5rem;
+  z-index: calc(var(--z-sticky) - 1);
+  margin-inline: calc(var(--space-1) * -1);
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(8, 16, 14, .97),
+      rgba(8, 16, 14, .92)
+    );
+  backdrop-filter: blur(12px);
+}
+
+.arena-tab-content {
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------
+ * Arena source = toolbar, not another card
+ * --------------------------------------------------------- */
+
+.arena-activity-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 22rem);
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-2) 0 var(--space-4);
+  border: 0;
+  border-bottom: var(--border-width) solid var(--ds-border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.arena-activity-strip > div {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.arena-activity-strip .eyebrow {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-snug);
+}
+
+.arena-activity-strip strong {
+  overflow: hidden;
+  color: var(--ds-text-primary);
+  font-size: var(--font-size-md);
+  line-height: var(--line-snug);
+  font-weight: var(--font-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arena-activity-strip small {
+  overflow: hidden;
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-normal);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arena-activity-strip .select {
+  width: 100%;
+  min-height: var(--control-md);
+  font-size: var(--font-size-sm);
+}
+
+/* ---------------------------------------------------------
+ * Primary Arena grid
+ * --------------------------------------------------------- */
+
+.arena-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(20rem, .75fr);
+  align-items: stretch;
+  gap: var(--space-5);
+}
+
+.arena-main-card,
+.score-card {
+  min-width: 0;
+  border: var(--border-width) solid var(--ds-border);
+  border-radius: var(--radius-lg);
+  background: var(--ds-surface);
+  box-shadow: none;
+}
+
+.arena-main-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(13rem, 1fr) auto auto;
+  align-items: center;
+  padding: var(--space-6);
+  overflow: hidden;
+  text-align: center;
+  background:
+    radial-gradient(
+      circle at 50% 48%,
+      rgba(88, 243, 167, .07),
+      transparent 34%
+    ),
+    var(--ds-surface);
+}
+
+.arena-main-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(88, 243, 167, .035),
+      transparent 40%
+    );
+}
+
+.arena-main-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.arena-main-card > .eyebrow {
+  justify-self: start;
+}
+
+.draw-stage {
+  min-height: 13rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-block: var(--space-5);
+}
+
+.draw-stage h3 {
+  margin: var(--space-3) 0 var(--space-1);
+  font-size: clamp(1.4rem, 2vw, 1.9rem);
+  line-height: var(--line-tight);
+}
+
+.draw-stage p {
+  max-width: 32rem;
+  margin: 0 0 var(--space-3);
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-normal);
+}
+
+.target-mark {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: var(--radius-pill);
+}
+
+.arena-main-card .button.huge,
+.arena-main-card button[class*="primary"] {
+  justify-self: center;
+  min-width: min(100%, 15rem);
+  min-height: var(--control-lg);
+}
+
+.draw-count {
+  margin-top: var(--space-3);
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-normal);
+}
+
+/* ---------------------------------------------------------
+ * Quick scoring
+ * --------------------------------------------------------- */
+
+.score-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.score-card .panel-heading {
+  margin: 0;
+}
+
+.score-card .panel-heading h3 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  line-height: var(--line-snug);
+}
+
+.score-card .panel-heading p {
+  margin: var(--space-1) 0 0;
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-normal);
+}
+
+.score-presets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.score-presets > button {
+  min-height: 4.25rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--ds-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, .018);
+  color: var(--ds-text-primary);
+  text-align: left;
+  transition:
+    background var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
+}
+
+.score-presets > button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(88, 243, 167, .28);
+  background: rgba(88, 243, 167, .055);
+}
+
+.score-presets > button:disabled {
+  opacity: .5;
+}
+
+.score-presets b {
+  min-width: 2.75rem;
+  color: var(--ds-accent-strong);
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.score-presets span {
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-normal);
+}
+
+.custom-score {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, .35fr) minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.custom-score .input,
+.custom-score .button {
+  min-height: var(--control-md);
+}
+
+.custom-score .input.compact {
+  width: 100%;
+}
+
+.student-select-list {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: var(--border-width) solid var(--ds-border);
+}
+
+.student-select-list .field-label {
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-normal);
+  font-weight: var(--font-semibold);
+}
+
+/* ---------------------------------------------------------
+ * Question / prepared flow hierarchy
+ * --------------------------------------------------------- */
+
+.arena-question-card {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.arena-question-card h3 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  line-height: var(--line-snug);
+}
+
+.question-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.question-meta span {
+  min-height: 1.875rem;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--space-3);
+  border: var(--border-width) solid var(--ds-border);
+  border-radius: var(--radius-pill);
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+/* ---------------------------------------------------------
+ * Other Arena panels
+ * --------------------------------------------------------- */
+
+.realtime-grid {
+  gap: var(--space-5);
+}
+
+.teacher-buzzer-state,
+.group-controls,
+.boss-create {
+  border-radius: var(--radius-lg);
+}
+
+.inline-actions.solid-actions {
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* ---------------------------------------------------------
+ * Responsive — laptop / tablet
+ * --------------------------------------------------------- */
+
+@media (max-width: 72rem) {
+  .arena-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .arena-main-card {
+    min-height: 25rem;
+  }
+
+  .score-card {
+    max-width: none;
+  }
+}
+
+@media (max-width: 60rem) {
+  .arena-header.compact {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .arena-session-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .arena-activity-strip {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .arena-activity-strip .select {
+    max-width: none;
+  }
+
+  .realtime-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------
+ * Responsive — mobile / high zoom reflow
+ * --------------------------------------------------------- */
+
+@media (max-width: 42rem) {
+  .arena-session-workspace {
+    --arena-gap: var(--space-4);
+  }
+
+  .arena-header.compact {
+    gap: var(--space-4);
+    padding-bottom: var(--space-4);
+  }
+
+  .arena-header.compact h1,
+  .arena-header.compact h2 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .arena-session-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .arena-session-actions > * {
+    width: 100%;
+  }
+
+  .arena-tabs-six {
+    top: 0;
+    margin-inline: calc(var(--space-2) * -1);
+  }
+
+  .arena-activity-strip strong,
+  .arena-activity-strip small {
+    white-space: normal;
+  }
+
+  .arena-main-card,
+  .score-card {
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+  }
+
+  .arena-main-card {
+    min-height: 22rem;
+    grid-template-rows: auto minmax(11rem, 1fr) auto auto;
+  }
+
+  .draw-stage {
+    min-height: 11rem;
+    padding-block: var(--space-4);
+  }
+
+  .score-presets {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .score-presets > button {
+    min-height: var(--target-comfortable);
+  }
+
+  .custom-score {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .custom-score > * {
+    width: 100%;
+  }
+
+  .inline-actions,
+  .inline-actions.solid-actions {
+    align-items: stretch;
+  }
+
+  .inline-actions.solid-actions > .button,
+  .inline-actions.solid-actions > button {
+    flex: 1 1 10rem;
+    min-height: var(--target-comfortable);
+  }
+}
+
+/* ---------------------------------------------------------
+ * Very narrow reflow
+ * --------------------------------------------------------- */
+
+@media (max-width: 30rem) {
+  .arena-main-card,
+  .score-card {
+    padding-inline: var(--space-3);
+  }
+
+  .arena-header.compact p {
+    font-size: var(--font-size-xs);
+  }
+
+  .target-mark {
+    width: 4rem;
+    height: 4rem;
+  }
+}
+
+/* ---------------------------------------------------------
+ * v0.4.0 final polish — Classroom home hierarchy
+ * --------------------------------------------------------- */
+
+.classroom-home-hero-v2 {
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-8);
+}
+
+.classroom-home-hero-main {
+  gap: var(--space-6);
+}
+
+.classroom-manage-button {
+  flex: 0 0 auto;
+  opacity: .72;
+  border-color: rgba(255, 255, 255, .075);
+  color: var(--ds-text-secondary);
+  transition:
+    opacity var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    background var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
+}
+
+.classroom-manage-button:hover:not(:disabled),
+.classroom-manage-button:focus-visible {
+  opacity: 1;
+  color: var(--ds-text-primary);
+  border-color: rgba(88, 243, 167, .18);
+  background: rgba(88, 243, 167, .04);
+}
+
+.classroom-home-hero-cta {
+  width: 100%;
+  padding-top: var(--space-1);
+}
+
+.arena-launch-button-centered {
+  width: clamp(32rem, 62%, 58rem);
+  min-width: 0;
+  border-color: rgba(88, 243, 167, .46);
+  background: rgba(88, 243, 167, .66);
+  box-shadow:
+    0 10px 28px rgba(49, 225, 137, .08),
+    0 0 0 1px rgba(88, 243, 167, .025);
+  transition:
+    background var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
+}
+
+.arena-launch-button-centered.live {
+  border-color: rgba(88, 243, 167, .5);
+  background: rgba(88, 243, 167, .70);
+  box-shadow:
+    0 11px 30px rgba(49, 225, 137, .09),
+    0 0 0 1px rgba(88, 243, 167, .03);
+}
+
+.arena-launch-button-centered:hover:not(:disabled),
+.arena-launch-button-centered:focus-visible,
+.arena-launch-button-centered.live:hover:not(:disabled),
+.arena-launch-button-centered.live:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow:
+    0 18px 42px rgba(49, 225, 137, .18),
+    0 0 0 1px rgba(88, 243, 167, .08);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 900px) {
+  .classroom-home-hero-v2 {
+    padding: var(--space-5);
+  }
+
+  .arena-launch-button-centered {
+    width: 100%;
+  }
+}
+

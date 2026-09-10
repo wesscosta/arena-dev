@@ -27,7 +27,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(sessionSocketHandler, "/ws/sessions/{sessionId}")
+        registry.addHandler(sessionSocketHandler, "/ws/sessions/{sessionId}", "/ws/projector/{sessionId}")
                 .setAllowedOriginPatterns(allowedOriginPatterns);
     }
 }

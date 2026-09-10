@@ -18,13 +18,24 @@ public class HealthController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @GetMapping
-    public Map<String, Object> health() {
+    @GetMapping({"", "/ready"})
+    public Map<String, Object> readiness() {
         Integer database = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
         return Map.of(
                 "status", "UP",
                 "application", "arena-dev-api",
+                "check", "readiness",
                 "database", database != null && database == 1 ? "UP" : "DOWN",
+                "timestamp", OffsetDateTime.now().toString()
+        );
+    }
+
+    @GetMapping("/live")
+    public Map<String, Object> liveness() {
+        return Map.of(
+                "status", "UP",
+                "application", "arena-dev-api",
+                "check", "liveness",
                 "timestamp", OffsetDateTime.now().toString()
         );
     }

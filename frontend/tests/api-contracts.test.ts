@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import test, { afterEach } from "node:test";
 import { fetchTeacherSession, loginTeacher } from "../lib/auth-api";
 import { fetchClassroomDomain } from "../lib/classroom-api";
-import { fetchPublicSession, joinSession } from "../lib/realtime-api";
+import {
+  fetchPublicSession,
+  joinRememberedDevice,
+  joinSession,
+  recognizeRememberedDevice,
+  revokeRememberedDevice,
+} from "../lib/realtime-api";
 
 const originalFetch = globalThis.fetch;
 
@@ -65,12 +71,13 @@ test("carregamento da turma combina turmas, alunos e matrículas", async () => {
     id: "enrollment-a",
     classroomId: "class-a",
     studentId: "student-a",
+    preferredName: "",
     active: true,
     joinedAt: "2026-01-01T00:00:00Z",
   });
 });
 
-test("join normaliza o código e envia a identidade do participante", async () => {
+test("join normaliza o código e separa participant token do device claim", async () => {
   const access = {
     token: "token",
     code: "AB12CD",
@@ -80,23 +87,47 @@ test("join normaliza o código e envia a identidade do participante", async () =
     participantId: "participant-a",
     studentId: "student-a",
     name: "Ana",
+    displayName: "Ana",
     present: true,
     expiresAt: "2026-09-01T00:00:00Z",
   };
+  const joined = { access, deviceToken: "opaque-device-token", deviceExpiresAt: "2027-03-01T00:00:00Z" };
   let calls = 0;
   globalThis.fetch = async (input, init) => {
     calls += 1;
     const url = String(input);
-    assert.equal(url, "http://localhost:8080/api/join/AB12CD");
     if (calls === 1) {
+      assert.equal(url, "http://localhost:8080/api/join/AB12CD");
       assert.equal(init?.method, undefined);
-      return jsonResponse({ sessionId: "session-a", classroomName: "Turma A", sessionTitle: "Aula", code: "AB12CD", expiresAt: access.expiresAt });
+      return jsonResponse({ sessionId: "session-a", classroomId: "class-a", classroomName: "Turma A", sessionTitle: "Aula", code: "AB12CD", expiresAt: access.expiresAt });
     }
-    assert.equal(init?.method, "POST");
-    assert.deepEqual(JSON.parse(String(init?.body)), { identity: "2026001" });
-    return jsonResponse(access);
+    if (calls === 2) {
+      assert.equal(url, "http://localhost:8080/api/join/AB12CD");
+      assert.equal(init?.method, "POST");
+      assert.equal(init?.credentials, "omit");
+      assert.deepEqual(JSON.parse(String(init?.body)), { identity: "2026001", rememberDevice: true });
+      return jsonResponse(joined);
+    }
+    if (calls === 3) {
+      assert.equal(url, "http://localhost:8080/api/join/AB12CD/device/recognize");
+      assert.deepEqual(JSON.parse(String(init?.body)), { deviceToken: "opaque-device-token" });
+      return jsonResponse({ displayName: "Ana", expiresAt: joined.deviceExpiresAt });
+    }
+    if (calls === 4) {
+      assert.equal(url, "http://localhost:8080/api/join/AB12CD/device");
+      assert.deepEqual(JSON.parse(String(init?.body)), { deviceToken: "opaque-device-token" });
+      return jsonResponse({ ...access, token: "replacement-token" });
+    }
+    assert.equal(url, "http://localhost:8080/api/join/device/revoke");
+    assert.deepEqual(JSON.parse(String(init?.body)), { deviceToken: "opaque-device-token" });
+    return new Response(null, { status: 204 });
   };
 
-  assert.equal((await fetchPublicSession(" ab12cd ")).sessionId, "session-a");
-  assert.deepEqual(await joinSession(" ab12cd ", "2026001"), access);
+  const session = await fetchPublicSession(" ab12cd ");
+  assert.equal(session.sessionId, "session-a");
+  assert.equal(session.classroomId, "class-a");
+  assert.deepEqual(await joinSession(" ab12cd ", "2026001"), joined);
+  assert.equal((await recognizeRememberedDevice("AB12CD", "opaque-device-token")).displayName, "Ana");
+  assert.equal((await joinRememberedDevice("AB12CD", "opaque-device-token")).token, "replacement-token");
+  assert.equal(await revokeRememberedDevice("opaque-device-token"), undefined);
 });

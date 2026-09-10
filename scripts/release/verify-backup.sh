@@ -18,7 +18,7 @@ usage() {
 Uso: scripts/release/verify-backup.sh CAMINHO_DO_DUMP
 
 Restaura o dump em um PostgreSQL 17 temporário e isolado, confirma o histórico
-Flyway V1-V6 e as tabelas centrais, e remove o container ao terminar.
+Flyway V1-V14 e as tabelas centrais da v0.4, e remove o container ao terminar.
 EOF
 }
 
@@ -82,11 +82,11 @@ docker exec -i "$CONTAINER_NAME" \
 migration_count="$(docker exec "$CONTAINER_NAME" \
   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
   --command "select count(*) from flyway_schema_history where success")"
-[[ "$migration_count" -eq 6 ]] || fail "histórico Flyway restaurado possui $migration_count migrations; esperado 6"
+[[ "$migration_count" -eq 14 ]] || fail "histórico Flyway restaurado possui $migration_count migrations; esperado 14"
 
 core_table_count="$(docker exec "$CONTAINER_NAME" \
   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
-  --command "select count(*) from (values ('classrooms'), ('students'), ('class_sessions'), ('score_events'), ('activities'), ('buzzer_rounds')) as expected(name) where to_regclass('public.' || name) is not null")"
-[[ "$core_table_count" -eq 6 ]] || fail "nem todas as tabelas centrais foram restauradas"
+  --command "select count(*) from (values ('classrooms'), ('students'), ('enrollments'), ('class_sessions'), ('score_events'), ('activities'), ('activity_steps'), ('session_events'), ('session_timers'), ('buzzer_rounds'), ('word_cloud_rounds'), ('poll_rounds'), ('enrollment_device_claims')) as expected(name) where to_regclass('public.' || name) is not null")"
+[[ "$core_table_count" -eq 13 ]] || fail "nem todas as 13 tabelas centrais da v0.4 foram restauradas"
 
 printf 'Backup restaurado e validado em PostgreSQL 17: %s\n' "$backup_file"

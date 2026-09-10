@@ -30,13 +30,16 @@ services:
       APP_ALLOWED_ORIGIN_PATTERNS: ${APP_ALLOWED_ORIGIN_PATTERNS:-http://*:[3000]}
       APP_TEACHER_USERNAME: ${APP_TEACHER_USERNAME:-professor}
       APP_TEACHER_PASSWORD: ${APP_TEACHER_PASSWORD:-arena-dev-change-me}
+      APP_LOGIN_RATE_LIMIT_MAX_FAILURES: ${APP_LOGIN_RATE_LIMIT_MAX_FAILURES:-5}
+      APP_LOGIN_RATE_LIMIT_WINDOW_SECONDS: ${APP_LOGIN_RATE_LIMIT_WINDOW_SECONDS:-60}
+      APP_LOGIN_RATE_LIMIT_BLOCK_SECONDS: ${APP_LOGIN_RATE_LIMIT_BLOCK_SECONDS:-300}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/api/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/api/health/ready || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 20

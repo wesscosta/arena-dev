@@ -1,6 +1,12 @@
 package br.com.arenadev.session;
 
+import br.com.arenadev.classroom.Enrollment;
+import br.com.arenadev.classroom.EnrollmentRepository;
 import br.com.arenadev.classroom.Student;
+import br.com.arenadev.identity.DeviceClaimService;
+import br.com.arenadev.identity.DisplayNamePolicy;
+import br.com.arenadev.identity.EnrollmentDeviceClaim;
+import br.com.arenadev.identity.DisplayNameService;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,16 +32,25 @@ public class SessionJoinService {
     private final SessionJoinCodeRepository joinCodeRepository;
     private final ClassSessionRepository sessionRepository;
     private final SessionParticipantRepository participantRepository;
+    private final DisplayNameService displayNameService;
+    private final EnrollmentRepository enrollmentRepository;
+    private final DeviceClaimService deviceClaimService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public SessionJoinService(
             SessionJoinCodeRepository joinCodeRepository,
             ClassSessionRepository sessionRepository,
-            SessionParticipantRepository participantRepository
+            SessionParticipantRepository participantRepository,
+            DisplayNameService displayNameService,
+            EnrollmentRepository enrollmentRepository,
+            DeviceClaimService deviceClaimService
     ) {
         this.joinCodeRepository = joinCodeRepository;
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
+        this.displayNameService = displayNameService;
+        this.enrollmentRepository = enrollmentRepository;
+        this.deviceClaimService = deviceClaimService;
     }
 
     @Transactional
@@ -79,6 +94,7 @@ public class SessionJoinService {
         ClassSession session = joinCode.getSession();
         return new PublicSessionView(
                 session.getId(),
+                session.getClassroom().getId(),
                 session.getClassroom().getName(),
                 session.getTitle(),
                 joinCode.getCode(),
@@ -86,8 +102,22 @@ public class SessionJoinService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public PublicSessionView validateProjectorAccess(UUID sessionId, String rawCode) {
+        PublicSessionView access = lookup(rawCode);
+        if (!access.sessionId().equals(sessionId)) {
+            throw new IllegalArgumentException("Código não pertence à sessão informada.");
+        }
+        return access;
+    }
+
     @Transactional
     public JoinAccessView join(String rawCode, String identity) {
+        return join(rawCode, identity, false).access();
+    }
+
+    @Transactional
+    public JoinResultView join(String rawCode, String identity, boolean rememberDevice) {
         SessionJoinCode joinCode = getUsableCode(rawCode);
         ClassSession session = joinCode.getSession();
         if (identity == null || identity.isBlank()) {
@@ -95,7 +125,7 @@ public class SessionJoinService {
         }
 
         List<SessionParticipant> participants = participantRepository.findBySessionIdForUpdate(session.getId());
-        List<SessionParticipant> matches = findMatches(participants, identity.trim());
+        List<SessionParticipant> matches = findMatches(session, participants, identity.trim());
         if (matches.isEmpty()) {
             throw new ResourceNotFoundException("Aluno não encontrado nesta sessão. Confira a matrícula ou o nome completo.");
         }
@@ -107,24 +137,55 @@ public class SessionJoinService {
         if (participant.isConnected() || participant.getAccessTokenHash() != null) {
             throw new IllegalArgumentException("Este aluno já possui um dispositivo conectado. Peça ao professor para liberar o dispositivo antes de entrar novamente.");
         }
-        String token = generateToken();
-        participant.issueAccessToken(hashToken(token));
+        JoinAccessView access = issueParticipantAccess(joinCode, participant);
+        String deviceToken = null;
+        Instant deviceExpiresAt = null;
+        if (rememberDevice) {
+            Enrollment enrollment = getActiveEnrollment(session, participant.getStudent());
+            DeviceClaimService.IssuedDeviceClaim claim = deviceClaimService.issue(enrollment);
+            deviceToken = claim.token();
+            deviceExpiresAt = claim.expiresAt();
+        }
+        return new JoinResultView(access, deviceToken, deviceExpiresAt);
+    }
 
-        Student student = participant.getStudent();
-        return new JoinAccessView(
-                token,
-                joinCode.getCode(),
-                session.getId(),
-                session.getClassroom().getName(),
-                session.getTitle(),
-                participant.getId(),
-                student.getId(),
-                student.getRegistration(),
-                student.getName(),
-                student.getNickname(),
-                participant.isPresent(),
-                joinCode.getExpiresAt()
+    @Transactional
+    public DeviceRecognitionView recognizeDevice(String rawCode, String deviceToken) {
+        SessionJoinCode joinCode = getUsableCode(rawCode);
+        ClassSession session = joinCode.getSession();
+        EnrollmentDeviceClaim claim = deviceClaimService.requireUsable(deviceToken);
+        Enrollment enrollment = requireClaimForSession(session, claim);
+        deviceClaimService.markUsed(claim);
+        SessionParticipant participant = participantRepository.findBySessionIdForUpdate(session.getId()).stream()
+                .filter(item -> item.getStudent().getId().equals(enrollment.getStudent().getId()))
+                .findFirst()
+                .orElseThrow(SessionJoinService::invalidDeviceClaim);
+        return new DeviceRecognitionView(
+                displayNameService.resolve(session.getClassroom().getId(), participant.getStudent(), DisplayNamePolicy.PREFERRED_NAME),
+                claim.getExpiresAt()
         );
+    }
+
+    @Transactional
+    public JoinAccessView joinRememberedDevice(String rawCode, String deviceToken) {
+        SessionJoinCode joinCode = getUsableCode(rawCode);
+        ClassSession session = joinCode.getSession();
+        EnrollmentDeviceClaim claim = deviceClaimService.requireUsable(deviceToken);
+        Enrollment enrollment = requireClaimForSession(session, claim);
+        deviceClaimService.markUsed(claim);
+        SessionParticipant participant = participantRepository.findBySessionIdForUpdate(session.getId()).stream()
+                .filter(item -> item.getStudent().getId().equals(enrollment.getStudent().getId()))
+                .findFirst()
+                .orElseThrow(SessionJoinService::invalidDeviceClaim);
+        if (participant.isConnected()) {
+            throw new IllegalArgumentException("Este aluno já está conectado nesta sessão.");
+        }
+        return issueParticipantAccess(joinCode, participant);
+    }
+
+    @Transactional
+    public void revokeDevice(String deviceToken) {
+        deviceClaimService.revoke(deviceToken);
     }
 
     @Transactional
@@ -196,7 +257,7 @@ public class SessionJoinService {
         return joinCode;
     }
 
-    private List<SessionParticipant> findMatches(List<SessionParticipant> participants, String identity) {
+    private List<SessionParticipant> findMatches(ClassSession session, List<SessionParticipant> participants, String identity) {
         List<SessionParticipant> registrationMatches = participants.stream()
                 .filter(item -> item.getStudent().getRegistration() != null)
                 .filter(item -> item.getStudent().getRegistration().trim().equalsIgnoreCase(identity))
@@ -207,12 +268,54 @@ public class SessionJoinService {
         List<SessionParticipant> matches = new ArrayList<>();
         for (SessionParticipant item : participants) {
             Student student = item.getStudent();
+            String preferredName = displayNameService.preferredName(session.getClassroom().getId(), student);
             if (normalize(student.getName()).equals(wanted)
-                    || (student.getNickname() != null && normalize(student.getNickname()).equals(wanted))) {
+                    || (preferredName != null && normalize(preferredName).equals(wanted))) {
                 matches.add(item);
             }
         }
         return matches;
+    }
+
+
+    private JoinAccessView issueParticipantAccess(SessionJoinCode joinCode, SessionParticipant participant) {
+        String token = generateToken();
+        participant.issueAccessToken(hashToken(token));
+        ClassSession session = joinCode.getSession();
+        Student student = participant.getStudent();
+        return new JoinAccessView(
+                token,
+                joinCode.getCode(),
+                session.getId(),
+                session.getClassroom().getName(),
+                session.getTitle(),
+                participant.getId(),
+                student.getId(),
+                student.getRegistration(),
+                student.getName(),
+                student.getNickname(),
+                displayNameService.resolve(session.getClassroom().getId(), student, DisplayNamePolicy.PREFERRED_NAME),
+                participant.isPresent(),
+                joinCode.getExpiresAt()
+        );
+    }
+
+    private Enrollment getActiveEnrollment(ClassSession session, Student student) {
+        return enrollmentRepository.findByClassroomIdAndStudentId(session.getClassroom().getId(), student.getId())
+                .filter(Enrollment::isActive)
+                .orElseThrow(SessionJoinService::invalidDeviceClaim);
+    }
+
+    private Enrollment requireClaimForSession(ClassSession session, EnrollmentDeviceClaim claim) {
+        Enrollment enrollment = claim.getEnrollment();
+        if (!enrollment.isActive() || !enrollment.getClassroom().getId().equals(session.getClassroom().getId())) {
+            throw invalidDeviceClaim();
+        }
+        return enrollment;
+    }
+
+    private static IllegalArgumentException invalidDeviceClaim() {
+        return new IllegalArgumentException("Dispositivo não reconhecido para esta turma.");
     }
 
     private String generateUniqueCode() {
@@ -275,10 +378,24 @@ public class SessionJoinService {
 
     public record PublicSessionView(
             UUID sessionId,
+            UUID classroomId,
             String classroomName,
             String sessionTitle,
             String code,
             Instant expiresAt
+    ) {
+    }
+
+    public record DeviceRecognitionView(
+            String displayName,
+            Instant expiresAt
+    ) {
+    }
+
+    public record JoinResultView(
+            JoinAccessView access,
+            String deviceToken,
+            Instant deviceExpiresAt
     ) {
     }
 
@@ -293,6 +410,7 @@ public class SessionJoinService {
             String registration,
             String name,
             String nickname,
+            String displayName,
             boolean present,
             Instant expiresAt
     ) {

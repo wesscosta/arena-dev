@@ -1,0 +1,387 @@
+.shell {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(88, 243, 167, .18);
+  border-radius: 15px;
+  background:
+    linear-gradient(135deg, rgba(88, 243, 167, .055), transparent 44%),
+    var(--surface);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.eyebrow {
+  display: block;
+  color: var(--accent);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.header h3 {
+  margin: 5px 0 4px;
+  font-size: 19px;
+  letter-spacing: -.025em;
+}
+
+.header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.progress {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 88px;
+  justify-content: flex-end;
+  color: var(--muted);
+}
+
+.progress strong {
+  color: var(--accent-2);
+  font-size: 25px;
+}
+
+.progress span {
+  font-size: 11px;
+}
+
+.timeline {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 2px 1px 7px;
+  scrollbar-width: thin;
+}
+
+.timelineItem {
+  min-width: 145px;
+  display: grid;
+  grid-template-columns: 29px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, .08);
+}
+
+.timelineItem > span {
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .035);
+  color: #71877d;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.timelineItem strong,
+.timelineItem small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timelineItem strong {
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.timelineItem small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 7px;
+}
+
+.timelineItem.current {
+  border-color: rgba(88, 243, 167, .42);
+  background: rgba(88, 243, 167, .08);
+}
+
+.timelineItem.current > span {
+  background: rgba(88, 243, 167, .13);
+  color: var(--accent);
+}
+
+.timelineItem.past {
+  opacity: .68;
+}
+
+.timelineItem.past > span {
+  color: #8ec7aa;
+}
+
+.ready {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  padding: 28px;
+  border: 1px dashed rgba(88, 243, 167, .18);
+  border-radius: 13px;
+  text-align: center;
+}
+
+.ready > span {
+  color: var(--accent);
+  font-size: 28px;
+}
+
+.ready > strong {
+  font-size: 16px;
+}
+
+.ready p {
+  max-width: 550px;
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.currentCard {
+  display: grid;
+  gap: 14px;
+  padding: 17px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(4, 11, 8, .28);
+}
+
+.currentHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.currentHead > div > span {
+  color: var(--accent);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.currentHead h3 {
+  margin: 4px 0 0;
+  font-size: 22px;
+  letter-spacing: -.035em;
+}
+
+.currentHead > strong {
+  color: var(--accent-2);
+  font-size: 23px;
+}
+
+.currentHead > strong small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.teacherNote {
+  padding: 10px 12px;
+  border-left: 2px solid rgba(88, 243, 167, .35);
+  background: rgba(88, 243, 167, .035);
+}
+
+.teacherNote strong {
+  font-size: 8px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.teacherNote p {
+  margin: 4px 0 0;
+  color: #a7bbb2;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.slideContent {
+  min-height: 150px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #09120f;
+  white-space: pre-wrap;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.question h4,
+.interactionPreview h4 {
+  margin: 10px 0;
+  font-size: 20px;
+  letter-spacing: -.025em;
+}
+
+.meta,
+.previewMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.meta span,
+.previewMeta span {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.question pre {
+  overflow-x: auto;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #07100d;
+  font-size: 10px;
+}
+
+.options,
+.pollOptions {
+  display: grid;
+  gap: 7px;
+}
+
+.options > div,
+.pollOptions > div {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+.options b,
+.pollOptions b {
+  color: var(--accent);
+}
+
+.interactionPreview {
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+}
+
+.interactionPreview > span {
+  color: var(--accent);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+
+.interactionPreview .button {
+  margin-top: 13px;
+}
+
+.notice {
+  padding: 13px;
+  border: 1px solid rgba(255, 188, 88, .2);
+  border-radius: 9px;
+  color: #d9b976;
+  font-size: 9px;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.controls > div {
+  text-align: center;
+}
+
+.controls > div span {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+@media (max-width: 680px) {
+  .header,
+  .currentHead {
+    flex-direction: column;
+  }
+
+  .progress {
+    justify-content: flex-start;
+  }
+
+  .controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .controls > div {
+    display: none;
+  }
+
+  .controls .button {
+    width: 100%;
+  }
+}
+
+/* 12.3D.7A — hierarquia do Roteiro ao Vivo */
+.eyebrow { font-size: var(--font-size-xs); }
+
+.header h3 {
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-tight);
+}
+
+.header p { font-size: var(--font-size-sm); }
+
+.timelineItem {
+  min-width: 10.5rem;
+  min-height: var(--target-comfortable);
+}
+
+.timelineItem strong,
+.timelineItem small { font-size: var(--font-size-xs); }
+
+.currentHead > div > span,
+.teacherNote strong,
+.interactionPreview > span { font-size: var(--font-size-xs); }
+
+.currentHead h3 {
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-tight);
+}
+
+.teacherNote p,
+.notice,
+.controls > div span {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-normal);
+}
+
+.meta span,
+.previewMeta span {
+  min-height: 1.875rem;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--space-3);
+  font-size: var(--font-size-xs);
+}

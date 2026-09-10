@@ -57,6 +57,10 @@ public class Activity {
     @OrderBy("position ASC")
     private List<ActivityQuestion> questions = new ArrayList<>();
 
+    @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("position ASC")
+    private List<ActivityStep> steps = new ArrayList<>();
+
     protected Activity() {}
 
     public Activity(Classroom classroom, String title) {
@@ -99,7 +103,17 @@ public class Activity {
     }
 
     public void removeQuestion(ActivityQuestion question) {
+        this.steps.removeIf(step -> step.referencesQuestion(question));
         this.questions.remove(question);
+    }
+
+    public void addStep(ActivityStep step) {
+        step.attachTo(this);
+        this.steps.add(step);
+    }
+
+    public void removeStep(ActivityStep step) {
+        this.steps.remove(step);
     }
 
     public UUID getId() { return id; }
@@ -116,4 +130,5 @@ public class Activity {
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public List<ActivityQuestion> getQuestions() { return questions; }
+    public List<ActivityStep> getSteps() { return steps; }
 }

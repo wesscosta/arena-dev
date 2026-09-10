@@ -17,10 +17,22 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SessionRealtimeGateway {
     private final Map<UUID, Set<WebSocketSession>> sessions = new ConcurrentHashMap<>();
     private final Map<UUID, Map<UUID, Set<WebSocketSession>>> participantSockets = new ConcurrentHashMap<>();
+    private final Map<UUID, Set<WebSocketSession>> projectorSockets = new ConcurrentHashMap<>();
+    private final Map<UUID, Set<WebSocketSession>> teacherSockets = new ConcurrentHashMap<>();
     private final JsonMapper json = JsonMapper.builder().build();
 
     public void register(UUID sessionId, WebSocketSession socket) {
         sessions.computeIfAbsent(sessionId, ignored -> ConcurrentHashMap.newKeySet()).add(socket);
+    }
+
+
+    public void registerTeacher(UUID sessionId, WebSocketSession socket) {
+        register(sessionId, socket);
+        teacherSockets.computeIfAbsent(sessionId, ignored -> ConcurrentHashMap.newKeySet()).add(socket);
+    }
+
+    public void registerProjector(UUID sessionId, WebSocketSession socket) {
+        projectorSockets.computeIfAbsent(sessionId, ignored -> ConcurrentHashMap.newKeySet()).add(socket);
     }
 
     public int registerParticipant(UUID sessionId, UUID participantId, WebSocketSession socket) {
@@ -50,6 +62,21 @@ public class SessionRealtimeGateway {
         if (sockets.isEmpty()) sessions.remove(sessionId);
     }
 
+
+    public void unregisterTeacher(UUID sessionId, WebSocketSession socket) {
+        Set<WebSocketSession> sockets = teacherSockets.get(sessionId);
+        if (sockets == null) return;
+        sockets.remove(socket);
+        if (sockets.isEmpty()) teacherSockets.remove(sessionId);
+    }
+
+    public void unregisterProjector(UUID sessionId, WebSocketSession socket) {
+        Set<WebSocketSession> sockets = projectorSockets.get(sessionId);
+        if (sockets == null) return;
+        sockets.remove(socket);
+        if (sockets.isEmpty()) projectorSockets.remove(sessionId);
+    }
+
     public void broadcast(UUID sessionId, String type, Object payload) {
         RealtimeEvent event = new RealtimeEvent(type, sessionId, java.time.Instant.now().toString(), payload);
         String body;
@@ -64,14 +91,57 @@ public class SessionRealtimeGateway {
     }
 
     public void broadcastAfterCommit(UUID sessionId, String type, Object payload) {
+        afterCommit(() -> broadcast(sessionId, type, payload));
+    }
+
+    public void broadcastTeachers(UUID sessionId, String type, Object payload) {
+        broadcastTo(teacherSockets.getOrDefault(sessionId, Set.of()), sessionId, type, payload);
+    }
+
+    public void broadcastTeachersAfterCommit(UUID sessionId, String type, Object payload) {
+        afterCommit(() -> broadcastTeachers(sessionId, type, payload));
+    }
+
+    public void broadcastParticipants(UUID sessionId, String type, Object payload) {
+        Map<UUID, Set<WebSocketSession>> byParticipant = participantSockets.get(sessionId);
+        if (byParticipant == null) return;
+        for (Set<WebSocketSession> sockets : byParticipant.values()) {
+            broadcastTo(sockets, sessionId, type, payload);
+        }
+    }
+
+    public void broadcastParticipantsAfterCommit(UUID sessionId, String type, Object payload) {
+        afterCommit(() -> broadcastParticipants(sessionId, type, payload));
+    }
+
+    public void broadcastProjectors(UUID sessionId, String type, Object payload) {
+        broadcastTo(projectorSockets.getOrDefault(sessionId, Set.of()), sessionId, type, payload);
+    }
+
+    public void broadcastProjectorsAfterCommit(UUID sessionId, String type, Object payload) {
+        afterCommit(() -> broadcastProjectors(sessionId, type, payload));
+    }
+
+    private void broadcastTo(Set<WebSocketSession> sockets, UUID sessionId, String type, Object payload) {
+        RealtimeEvent event = new RealtimeEvent(type, sessionId, java.time.Instant.now().toString(), payload);
+        String body;
+        try {
+            body = json.writeValueAsString(event);
+        } catch (Exception error) {
+            throw new IllegalStateException("Falha ao serializar evento em tempo real.", error);
+        }
+        for (WebSocketSession socket : sockets) send(socket, body);
+    }
+
+    private void afterCommit(Runnable action) {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
-            broadcast(sessionId, type, payload);
+            action.run();
             return;
         }
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                broadcast(sessionId, type, payload);
+                action.run();
             }
         });
     }

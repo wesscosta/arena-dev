@@ -43,6 +43,12 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0024](ADR-0024-fronteira-de-seguranca-e-hardening-realtime.md) | Fronteira de segurança do professor e hardening realtime | Aceito |
 | [ADR-0025](ADR-0025-release-readiness-e-versionamento.md) | Release readiness, versionamento `0.3.x` e fronteira de rollback | Aceito |
 | [ADR-0026](ADR-0026-community-mit-e-produto-comercial-verit.md) | Arena Dev Community sob MIT e produto comercial Verit em repositório privado separado | Aceito |
+| [ADR-0027](ADR-0027-live-stage-e-projecoes-por-audiencia.md) | Live Stage autoritativo e projeções por audiência | Aceito |
+| [ADR-0028](ADR-0028-preferred-name-e-identidade-de-dispositivo.md) | Preferred name por matrícula e identidade opaca de dispositivo | Aceito |
+| [ADR-0029](ADR-0029-orquestracao-live-flow-live-stage.md) | Live Flow orquestra Live Stage sem duplicar runtimes especializados | Aceito |
+| [ADR-0030](ADR-0030-runtime-snapshot-publico-e-reconnect.md) | Snapshot público de runtime e política de reconnect | Aceito |
+| [ADR-0031](ADR-0031-session-event-linha-do-tempo-operacional.md) | SessionEvent como linha do tempo operacional, não como runtime | Aceito |
+| [ADR-0032](ADR-0032-hardening-e-release-gate-v0-4.md) | Hardening, E2E e fronteira de evidência para a release v0.4.0 | Aceito |
 
 ## Template
 

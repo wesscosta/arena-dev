@@ -23,6 +23,10 @@ export function studentAccessStorageKey(code: string) {
   return `arena-dev-student:${normalizeJoinCode(code)}`;
 }
 
+export function deviceClaimStorageKey(classroomId: string) {
+  return `arena-dev-device:${classroomId}`;
+}
+
 export function restoreStudentAccess(
   raw: string | null,
   sessionId: string,

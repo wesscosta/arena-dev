@@ -8,9 +8,15 @@ export type JoinCode = {
 
 export type PublicSession = {
   sessionId: string;
+  classroomId: string;
   classroomName: string;
   sessionTitle: string;
   code: string;
+  expiresAt: string;
+};
+
+export type DeviceRecognition = {
+  displayName: string;
   expiresAt: string;
 };
 
@@ -25,8 +31,15 @@ export type StudentJoinAccess = {
   registration?: string | null;
   name: string;
   nickname?: string | null;
+  displayName: string;
   present: boolean;
   expiresAt: string;
+};
+
+export type StudentJoinResult = {
+  access: StudentJoinAccess;
+  deviceToken?: string | null;
+  deviceExpiresAt?: string | null;
 };
 
 export type BuzzerPress = {
@@ -35,6 +48,7 @@ export type BuzzerPress = {
   studentId: string;
   name: string;
   nickname?: string | null;
+  displayName: string;
   position: number;
   receivedAt: string;
 };
@@ -48,7 +62,7 @@ export type BuzzerState = {
 };
 
 export type SessionRealtimeEvent = {
-  type: "BUZZER_STATE" | "PARTICIPANT_CONNECTED" | "PARTICIPANT_DISCONNECTED" | "SESSION_FINISHED" | "ERROR" | string;
+  type: "RUNTIME_SNAPSHOT" | "LIVE_STAGE_STATE" | "BUZZER_STATE" | "BUZZER_PARTICIPANT_STATE" | "BOSS_STATE" | "TIMER_STATE" | "WORD_CLOUD_STATE" | "WORD_CLOUD_PARTICIPANT_STATE" | "POLL_STATE" | "POLL_PARTICIPANT_STATE" | "PARTICIPANT_CONNECTED" | "PARTICIPANT_DISCONNECTED" | "SESSION_FINISHED" | "AUTH_OK" | "AUTH_REQUIRED" | "AUTH_FAILED" | "ERROR" | string;
   sessionId: string;
   occurredAt: string;
   payload: unknown;
@@ -86,10 +100,31 @@ export function fetchPublicSession(code: string) {
   return request<PublicSession>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}`, undefined, "omit");
 }
 
-export function joinSession(code: string, identity: string) {
-  return request<StudentJoinAccess>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}`, {
+export function joinSession(code: string, identity: string, rememberDevice = true) {
+  return request<StudentJoinResult>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}`, {
     method: "POST",
-    body: JSON.stringify({ identity }),
+    body: JSON.stringify({ identity, rememberDevice }),
+  }, "omit");
+}
+
+export function recognizeRememberedDevice(code: string, deviceToken: string) {
+  return request<DeviceRecognition>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}/device/recognize`, {
+    method: "POST",
+    body: JSON.stringify({ deviceToken }),
+  }, "omit");
+}
+
+export function joinRememberedDevice(code: string, deviceToken: string) {
+  return request<StudentJoinAccess>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}/device`, {
+    method: "POST",
+    body: JSON.stringify({ deviceToken }),
+  }, "omit");
+}
+
+export function revokeRememberedDevice(deviceToken: string) {
+  return request<void>("/api/join/device/revoke", {
+    method: "POST",
+    body: JSON.stringify({ deviceToken }),
   }, "omit");
 }
 

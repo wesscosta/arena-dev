@@ -91,22 +91,38 @@ class SecurityAndMigrationIT {
                     'external_result_rows',
                     'session_join_codes',
                     'buzzer_rounds',
-                    'buzzer_presses'
+                    'buzzer_presses',
+                    'session_timers',
+                    'word_cloud_rounds',
+                    'word_cloud_submissions',
+                    'activity_steps',
+                    'enrollment_device_claims',
+                    'poll_rounds',
+                    'poll_options',
+                    'poll_votes',
+                    'session_events'
                   )
                 """, Integer.class);
 
-        assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6");
-        assertThat(expectedTables).isEqualTo(15);
+        assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14");
+        assertThat(expectedTables).isEqualTo(24);
     }
 
     @Test
     void keepsHealthPublicAndAdministrativeApisProtected() throws Exception {
-        HttpResponse<String> health = send(anonymousClient, "GET", "/api/health", null);
+        HttpResponse<String> live = send(anonymousClient, "GET", "/api/health/live", null);
+        HttpResponse<String> ready = send(anonymousClient, "GET", "/api/health/ready", null);
         HttpResponse<String> classrooms = send(anonymousClient, "GET", "/api/classrooms", null);
 
-        assertThat(health.statusCode()).isEqualTo(200);
-        assertThat(health.body()).contains("\"status\":\"UP\"");
-        assertThat(health.body()).contains("\"database\":\"UP\"");
+        assertThat(live.statusCode()).isEqualTo(200);
+        assertThat(live.body()).contains("\"status\":\"UP\"");
+        assertThat(live.body()).contains("\"check\":\"liveness\"");
+        assertThat(live.headers().firstValue("X-Request-Id")).isPresent();
+        assertThat(live.headers().firstValue("X-Frame-Options")).contains("DENY");
+        assertThat(live.headers().firstValue("Referrer-Policy")).contains("no-referrer");
+        assertThat(ready.statusCode()).isEqualTo(200);
+        assertThat(ready.body()).contains("\"check\":\"readiness\"");
+        assertThat(ready.body()).contains("\"database\":\"UP\"");
         assertThat(classrooms.statusCode()).isEqualTo(401);
     }
 
@@ -154,6 +170,34 @@ class SecurityAndMigrationIT {
 
         assertThat(response.statusCode()).isEqualTo(401);
         assertThat(response.body()).contains("\"message\":\"Usuário ou senha inválidos.\"");
+    }
+
+    @Test
+    void rateLimitsRepeatedInvalidLoginAttemptsWithoutChangingCredentialError() throws Exception {
+        String csrfToken = csrfToken(sessionClient);
+        for (int attempt = 0; attempt < 5; attempt++) {
+            HttpResponse<String> response = send(
+                    sessionClient,
+                    "POST",
+                    "/api/auth/login",
+                    "{\"username\":\"rate-limited-user\",\"password\":\"wrong-password\"}",
+                    csrfToken
+            );
+            assertThat(response.statusCode()).isEqualTo(401);
+            assertThat(response.body()).contains("\"message\":\"Usuário ou senha inválidos.\"");
+        }
+
+        HttpResponse<String> blocked = send(
+                sessionClient,
+                "POST",
+                "/api/auth/login",
+                "{\"username\":\"rate-limited-user\",\"password\":\"wrong-password\"}",
+                csrfToken
+        );
+
+        assertThat(blocked.statusCode()).isEqualTo(429);
+        assertThat(blocked.headers().firstValue("Retry-After")).isPresent();
+        assertThat(blocked.body()).contains("Muitas tentativas de login");
     }
 
     @Test

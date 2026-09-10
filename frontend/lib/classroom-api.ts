@@ -64,6 +64,7 @@ type EnrollmentView = {
   registration: string | null;
   name: string;
   nickname: string | null;
+  preferredName: string | null;
   studentActive: boolean;
   enrollmentActive: boolean;
   joinedAt: string;
@@ -95,6 +96,7 @@ function mapEnrollment(classroomId: string, item: EnrollmentView): Enrollment {
     id: item.enrollmentId,
     classroomId,
     studentId: item.studentId,
+    preferredName: item.preferredName ?? "",
     active: item.enrollmentActive,
     joinedAt: item.joinedAt,
   };
@@ -180,6 +182,15 @@ export async function setEnrollmentActive(classroomId: string, studentId: string
   return mapEnrollment(classroomId, result);
 }
 
+
+export async function updateEnrollmentPreferredName(classroomId: string, studentId: string, preferredName: string): Promise<Enrollment> {
+  const result = await request<EnrollmentView>(`/api/classrooms/${classroomId}/students/${studentId}/preferred-name`, {
+    method: "PATCH",
+    body: JSON.stringify({ preferredName: preferredName.trim() || null }),
+  });
+  return mapEnrollment(classroomId, result);
+}
+
 export async function removeEnrollment(classroomId: string, studentId: string): Promise<void> {
   await request<void>(`/api/classrooms/${classroomId}/students/${studentId}`, {
     method: "DELETE",
@@ -188,11 +199,14 @@ export async function removeEnrollment(classroomId: string, studentId: string): 
 
 export async function createAndEnrollStudent(
   classroomId: string,
-  input: { name: string; nickname?: string; registration?: string },
+  input: { name: string; nickname?: string; preferredName?: string; registration?: string },
 ): Promise<{ student: Student; enrollment: Enrollment }> {
   const student = await createStudent(input);
   try {
-    const enrollment = await enrollStudent(classroomId, student.id);
+    let enrollment = await enrollStudent(classroomId, student.id);
+    if (input.preferredName !== undefined) {
+      enrollment = await updateEnrollmentPreferredName(classroomId, student.id, input.preferredName);
+    }
     return { student, enrollment };
   } catch (error) {
     // The student remains globally registered if enrollment fails. This is intentional:

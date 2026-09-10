@@ -1,6 +1,8 @@
 package br.com.arenadev.shared;
 
+import br.com.arenadev.auth.LoginRateLimitExceededException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -14,6 +16,13 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(LoginRateLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> tooManyLoginAttempts(LoginRateLimitExceededException exception) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(exception.retryAfterSeconds()))
+                .body(baseBody(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage()));
+    }
+
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<Map<String, Object>> unauthorized(AuthenticationException exception) {
         return response(HttpStatus.UNAUTHORIZED, "Usuário ou senha inválidos.");

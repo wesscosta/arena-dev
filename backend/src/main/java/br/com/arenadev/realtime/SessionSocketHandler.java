@@ -2,6 +2,10 @@ package br.com.arenadev.realtime;
 
 import br.com.arenadev.session.SessionJoinService;
 import br.com.arenadev.session.SessionParticipant;
+import br.com.arenadev.stage.LiveStageService;
+import br.com.arenadev.timer.SessionTimerService;
+import br.com.arenadev.wordcloud.WordCloudService;
+import br.com.arenadev.poll.PollService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -11,6 +15,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -19,6 +24,7 @@ public class SessionSocketHandler extends TextWebSocketHandler {
     private static final String ATTR_SESSION_ID = "arena.sessionId";
     private static final String ATTR_PARTICIPANT_ID = "arena.participantId";
     private static final String ATTR_TOKEN = "arena.participantToken";
+    private static final String ATTR_PROJECTOR = "arena.projector";
     private static final String ATTR_RATE_WINDOW = "arena.rateWindow";
     private static final String ATTR_RATE_COUNT = "arena.rateCount";
     private static final int MAX_MESSAGES_PER_SECOND = 8;
@@ -26,12 +32,31 @@ public class SessionSocketHandler extends TextWebSocketHandler {
     private final SessionRealtimeGateway gateway;
     private final SessionJoinService joinService;
     private final BuzzerService buzzerService;
+    private final SessionTimerService timerService;
+    private final WordCloudService wordCloudService;
+    private final PollService pollService;
+    private final LiveStageService liveStageService;
+    private final SessionRuntimeSnapshotService runtimeSnapshotService;
     private final JsonMapper json = JsonMapper.builder().build();
 
-    public SessionSocketHandler(SessionRealtimeGateway gateway, SessionJoinService joinService, BuzzerService buzzerService) {
+    public SessionSocketHandler(
+            SessionRealtimeGateway gateway,
+            SessionJoinService joinService,
+            BuzzerService buzzerService,
+            SessionTimerService timerService,
+            WordCloudService wordCloudService,
+            PollService pollService,
+            LiveStageService liveStageService,
+            SessionRuntimeSnapshotService runtimeSnapshotService
+    ) {
         this.gateway = gateway;
         this.joinService = joinService;
         this.buzzerService = buzzerService;
+        this.timerService = timerService;
+        this.wordCloudService = wordCloudService;
+        this.pollService = pollService;
+        this.liveStageService = liveStageService;
+        this.runtimeSnapshotService = runtimeSnapshotService;
     }
 
     @Override
@@ -39,10 +64,18 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         UUID sessionId = resolveSessionId(socket.getUri());
         socket.getAttributes().put(ATTR_SESSION_ID, sessionId);
 
+        if (isProjectorSocket(socket.getUri())) {
+            gateway.send(socket, "AUTH_REQUIRED", sessionId, Map.of(
+                    "message",
+                    "Informe o código da sessão para abrir o modo projetor."
+            ));
+            return;
+        }
+
         // O professor chega autenticado pela sessão HTTP; o aluno autentica no primeiro frame.
         if (socket.getPrincipal() != null) {
-            gateway.register(sessionId, socket);
-            gateway.send(socket, "BUZZER_STATE", sessionId, buzzerService.state(sessionId));
+            gateway.registerTeacher(sessionId, socket);
+            sendTeacherState(socket, sessionId);
         } else {
             gateway.send(socket, "AUTH_REQUIRED", sessionId, Map.of("message", "Autentique o participante neste canal."));
         }
@@ -58,8 +91,20 @@ public class SessionSocketHandler extends TextWebSocketHandler {
             Map<String, Object> payload = json.readValue(message.getPayload(), Map.class);
             String type = String.valueOf(payload.getOrDefault("type", ""));
 
+            if ("AUTH_PROJECTOR".equals(type)) {
+                try {
+                    authenticateProjector(socket, sessionId, String.valueOf(payload.getOrDefault("code", "")));
+                } catch (RuntimeException error) {
+                    rejectAuthentication(socket, sessionId, error);
+                }
+                return;
+            }
             if ("AUTH_PARTICIPANT".equals(type)) {
-                authenticateParticipant(socket, sessionId, String.valueOf(payload.getOrDefault("token", "")));
+                try {
+                    authenticateParticipant(socket, sessionId, String.valueOf(payload.getOrDefault("token", "")));
+                } catch (RuntimeException error) {
+                    rejectAuthentication(socket, sessionId, error);
+                }
                 return;
             }
             if ("PING".equals(type)) {
@@ -70,12 +115,51 @@ public class SessionSocketHandler extends TextWebSocketHandler {
                 String token = (String) socket.getAttributes().get(ATTR_TOKEN);
                 if (token == null) throw new IllegalArgumentException("Somente participantes identificados podem acionar o Buzzer.");
                 buzzerService.press(sessionId, token);
+                UUID participantId = (UUID) socket.getAttributes().get(ATTR_PARTICIPANT_ID);
+                if (participantId != null) {
+                    gateway.send(
+                            socket,
+                            "BUZZER_PARTICIPANT_STATE",
+                            sessionId,
+                            buzzerService.participantState(sessionId, participantId)
+                    );
+                }
+                return;
+            }
+            if ("WORD_CLOUD_SUBMIT".equals(type)) {
+                submitWordCloud(socket, sessionId, payload.get("words"));
+                return;
+            }
+            if ("POLL_VOTE".equals(type)) {
+                submitPollVote(socket, sessionId, payload.get("optionId"));
             }
         } catch (RuntimeException error) {
             gateway.send(socket, "ERROR", sessionId, Map.of("message", error.getMessage() == null ? "Evento inválido." : error.getMessage()));
         } catch (Exception error) {
             gateway.send(socket, "ERROR", sessionId, Map.of("message", "Mensagem em tempo real inválida."));
         }
+    }
+
+    private void authenticateProjector(WebSocketSession socket, UUID sessionId, String code) {
+        if (!isProjectorSocket(socket.getUri())) {
+            throw new IllegalArgumentException("Autenticação de projetor disponível apenas no canal público.");
+        }
+        if (Boolean.TRUE.equals(socket.getAttributes().get(ATTR_PROJECTOR))) return;
+
+        SessionJoinService.PublicSessionView access = joinService.validateProjectorAccess(sessionId, code);
+        gateway.registerProjector(sessionId, socket);
+        socket.getAttributes().put(ATTR_PROJECTOR, true);
+        gateway.send(socket, "AUTH_OK", sessionId, Map.of(
+                "role", "PROJECTOR",
+                "code", access.code(),
+                "expiresAt", access.expiresAt().toString()
+        ));
+        gateway.send(
+                socket,
+                "RUNTIME_SNAPSHOT",
+                sessionId,
+                runtimeSnapshotService.projector(sessionId)
+        );
     }
 
     private void authenticateParticipant(WebSocketSession socket, UUID sessionId, String token) {
@@ -89,16 +173,109 @@ public class SessionSocketHandler extends TextWebSocketHandler {
                 : SessionJoinService.ParticipantConnectionView.from(participant);
         gateway.broadcast(sessionId, "PARTICIPANT_CONNECTED", view);
         gateway.send(socket, "AUTH_OK", sessionId, view);
+        gateway.send(
+                socket,
+                "RUNTIME_SNAPSHOT",
+                sessionId,
+                runtimeSnapshotService.participant(sessionId, participant.getId())
+        );
+    }
+
+    private void rejectAuthentication(
+            WebSocketSession socket,
+            UUID sessionId,
+            RuntimeException error
+    ) {
+        String message = error.getMessage() == null
+                ? "Não foi possível autenticar este canal."
+                : error.getMessage();
+        gateway.send(socket, "AUTH_FAILED", sessionId, Map.of("message", message));
+        try {
+            if (socket.isOpen()) {
+                socket.close(CloseStatus.POLICY_VIOLATION.withReason(message));
+            }
+        } catch (Exception ignored) {
+            // O transporte já pode ter sido fechado pelo cliente.
+        }
+    }
+
+    private void submitWordCloud(
+            WebSocketSession socket,
+            UUID sessionId,
+            Object rawWords
+    ) {
+        UUID participantId = (UUID) socket.getAttributes().get(ATTR_PARTICIPANT_ID);
+        if (participantId == null) {
+            throw new IllegalArgumentException(
+                    "Somente participantes identificados podem enviar palavras."
+            );
+        }
+        if (!(rawWords instanceof List<?> values)) {
+            throw new IllegalArgumentException("Envie a resposta no formato de lista.");
+        }
+
+        List<String> words = values.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .toList();
+
+        WordCloudService.ParticipantStateView participantState =
+                wordCloudService.submit(sessionId, participantId, words);
+
+        gateway.send(
+                socket,
+                "WORD_CLOUD_PARTICIPANT_STATE",
+                sessionId,
+                participantState
+        );
+    }
+
+    private void submitPollVote(
+            WebSocketSession socket,
+            UUID sessionId,
+            Object rawOptionId
+    ) {
+        UUID participantId = (UUID) socket.getAttributes().get(ATTR_PARTICIPANT_ID);
+        if (participantId == null) {
+            throw new IllegalArgumentException("Somente participantes identificados podem votar.");
+        }
+        UUID optionId;
+        try {
+            optionId = UUID.fromString(String.valueOf(rawOptionId));
+        } catch (IllegalArgumentException error) {
+            throw new IllegalArgumentException("Opção de votação inválida.");
+        }
+        PollService.ParticipantStateView participantState = pollService.vote(
+                sessionId,
+                participantId,
+                optionId
+        );
+        gateway.send(socket, "POLL_PARTICIPANT_STATE", sessionId, participantState);
+    }
+
+    private void sendTeacherState(WebSocketSession socket, UUID sessionId) {
+        gateway.send(socket, "LIVE_STAGE_STATE", sessionId, liveStageService.state(sessionId));
         gateway.send(socket, "BUZZER_STATE", sessionId, buzzerService.state(sessionId));
+        gateway.send(socket, "TIMER_STATE", sessionId, timerService.state(sessionId));
+        gateway.send(socket, "WORD_CLOUD_STATE", sessionId, wordCloudService.state(sessionId));
+        gateway.send(socket, "POLL_STATE", sessionId, pollService.state(sessionId));
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession socket, CloseStatus status) {
         UUID sessionId = (UUID) socket.getAttributes().get(ATTR_SESSION_ID);
         if (sessionId == null) return;
-        gateway.unregister(sessionId, socket);
 
+        if (Boolean.TRUE.equals(socket.getAttributes().get(ATTR_PROJECTOR))) {
+            gateway.unregisterProjector(sessionId, socket);
+            return;
+        }
+
+        gateway.unregister(sessionId, socket);
         UUID participantId = (UUID) socket.getAttributes().get(ATTR_PARTICIPANT_ID);
+        if (participantId == null && socket.getPrincipal() != null) {
+            gateway.unregisterTeacher(sessionId, socket);
+        }
         String token = (String) socket.getAttributes().get(ATTR_TOKEN);
         if (participantId != null && token != null) {
             int remaining = gateway.unregisterParticipant(sessionId, participantId, socket);
@@ -132,10 +309,14 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         if (next > MAX_MESSAGES_PER_SECOND) throw new IllegalArgumentException("Muitas mensagens em sequência. Aguarde um instante.");
     }
 
+    private static boolean isProjectorSocket(URI uri) {
+        return uri != null && uri.getPath().contains("/ws/projector/");
+    }
+
     private static UUID resolveSessionId(URI uri) {
         if (uri == null) throw new IllegalArgumentException("Sessão WebSocket inválida.");
         String path = uri.getPath();
-        String prefix = "/ws/sessions/";
+        String prefix = isProjectorSocket(uri) ? "/ws/projector/" : "/ws/sessions/";
         int index = path.indexOf(prefix);
         if (index < 0) throw new IllegalArgumentException("Sessão WebSocket inválida.");
         String rawId = path.substring(index + prefix.length()).split("/")[0];

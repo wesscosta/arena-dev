@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EXTERNAL_PLATFORM_LABEL, parseExternalResultFile, type ExternalResultPlatform, type ParsedExternalReport } from "@/lib/external-results";
 import { applyStudentOverrides, fetchExternalResultImports, importExternalResults, mapImportedScoreEvents, previewExternalResults, type ExternalResultImportSummary, type ExternalResultPreview } from "@/lib/external-results-api";
 import type { Activity, ScoreEvent, Student } from "@/lib/types";
@@ -32,6 +32,7 @@ export default function ExternalResultImportModal({ open, activity, students, on
   const [preview, setPreview] = useState<ExternalResultPreview>();
   const [history, setHistory] = useState<ExternalResultImportSummary[]>([]);
   const [busy, setBusy] = useState(false);
+  const dialogRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!open || !activity) return;
@@ -46,13 +47,69 @@ export default function ExternalResultImportModal({ open, activity, students, on
 
   useEffect(() => {
     if (!open) return;
+
     const previousOverflow = document.body.style.overflow;
+    const previousActive =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
     document.body.style.overflow = "hidden";
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+
+    const focusableSelector = [
+      "button:not(:disabled)",
+      "a[href]",
+      "input:not(:disabled)",
+      "select:not(:disabled)",
+      "textarea:not(:disabled)",
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(",");
+
+    const focusFirst = () => {
+      const first =
+        dialogRef.current?.querySelector<HTMLElement>(focusableSelector);
+      (first ?? dialogRef.current)?.focus();
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialogRef.current) return;
+
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(focusableSelector)
+      ).filter((element) => !element.hasAttribute("disabled"));
+
+      if (!focusable.length) {
+        event.preventDefault();
+        dialogRef.current.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    const frame = window.requestAnimationFrame(focusFirst);
     window.addEventListener("keydown", onKeyDown);
+
     return () => {
+      window.cancelAnimationFrame(frame);
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
+      previousActive?.focus({ preventScroll: true });
     };
   }, [open, onClose]);
 
@@ -135,7 +192,7 @@ export default function ExternalResultImportModal({ open, activity, students, on
 
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
-      <section className="modal-card large" role="dialog" aria-modal="true" aria-labelledby="external-results-title">
+      <section ref={dialogRef} tabIndex={-1} className="modal-card large" role="dialog" aria-modal="true" aria-labelledby="external-results-title">
         <header className="modal-header">
           <div><h2 id="external-results-title">Importar resultados externos</h2><p>{activity.title} · XP proporcional ao desempenho</p></div>
           <button className="modal-close" type="button" aria-label="Fechar" onClick={onClose}>×</button>

@@ -3,29 +3,74 @@
 import { useEffect, useMemo, useState } from "react";
 import TeacherLogin from "@/components/TeacherLogin";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
+import ActivityStepEditor from "@/components/ActivityStepEditor";
+import LiveFlowConductor from "@/components/LiveFlowConductor";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
+import TimerPanel from "@/components/TimerPanel";
+import WordCloudPanel from "@/components/WordCloudPanel";
+import PollPanel from "@/components/PollPanel";
+import SessionAccessCard from "@/components/SessionAccessCard";
+import SessionTimeline from "@/components/SessionTimeline";
+import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
+import {
+  Badge,
+  Breadcrumb,
+  Button,
+  Menu,
+  MenuItem,
+  LiveRegion,
+  Tabs,
+  type BreadcrumbItem,
+  type TabItem,
+} from "@/components/ui";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
-import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi } from "@/lib/classroom-api";
+import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName } from "@/lib/classroom-api";
 import { createSession as createSessionApi, fetchSessionDomain, fetchSessionParticipants, finishSession as finishSessionApi, releaseParticipantDevice, setParticipantPresence } from "@/lib/session-api";
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, fetchActivityDomain, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
-import { damageBoss as damageBossApi, drawStudent as drawStudentApi, mergeSessionMechanics, nextArenaQuestion as nextArenaQuestionApi, organizeGroups as organizeGroupsApi, restartArenaQuestions as restartArenaQuestionsApi, setArenaActivity as setArenaActivityApi, startBoss as startBossApi } from "@/lib/mechanics-api";
+import { fetchActivitySteps, replaceActivitySteps } from "@/lib/activity-step-api";
+import { validateActivitySteps } from "@/lib/activity-steps";
+import {
+  damageBoss as damageBossApi,
+  drawStudent as drawStudentApi,
+  fetchLiveFlow,
+  mergeSessionMechanics,
+  nextArenaQuestion as nextArenaQuestionApi,
+  nextLiveFlow,
+  organizeGroups as organizeGroupsApi,
+  previousLiveFlow,
+  restartArenaQuestions as restartArenaQuestionsApi,
+  setArenaActivity as setArenaActivityApi,
+  startBoss as startBossApi,
+  startLiveFlow,
+  type LiveFlowState,
+} from "@/lib/mechanics-api";
 import { createScoreEvent as createScoreEventApi, createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
-import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
+import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
+import type { TimerState } from "@/lib/timer-api";
+import { fetchWordCloudState, type WordCloudState } from "@/lib/word-cloud-api";
+import { fetchPollState, type PollState } from "@/lib/poll-api";
 import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
 import { activeSessionId, selectPreferredClassroomId } from "@/lib/app-state";
-import type { Activity, ActivityQuestion, ArenaData, Classroom, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
+import {
+  loadRecentClassroomIds,
+  orderOverviewClassrooms,
+  rememberClassroomAccess,
+  type ClassroomSortMode,
+} from "@/lib/classroom-overview";
+import type { Activity, ActivityQuestion, ActivityStep, ArenaData, Classroom, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
+import { classroomArenaCtaState } from "@/lib/classroom-arena-cta";
 
-type View = "dashboard" | "classroom" | "arena" | "backup";
+type View = "dashboard" | "classroom" | "arena" | "settings";
 type ClassroomTab = "home" | "students" | "activities" | "ranking" | "history";
 
-const NAV: { id: View; label: string; icon: string }[] = [
-  { id: "dashboard", label: "Visão geral", icon: "◫" },
-  { id: "classroom", label: "Turma", icon: "◎" },
-  { id: "arena", label: "Arena", icon: "◆" },
-  { id: "backup", label: "Backup", icon: "⇅" },
-];
+const VIEW_LABEL: Record<View, string> = {
+  dashboard: "Visão geral",
+  classroom: "Turma",
+  arena: "Arena",
+  settings: "Configurações",
+};
 
 const CLASSROOM_TABS: { id: ClassroomTab; label: string; icon: string }[] = [
   { id: "home", label: "Home", icon: "⌂" },
@@ -197,6 +242,7 @@ export default function ArenaApp() {
 
   function setActiveClassroom(id: string) {
     setArenaActivityId(undefined);
+    rememberClassroomAccess(id);
     patch((current) => {
       return { ...current, activeClassroomId: id, currentSessionId: activeSessionId(current.sessions, id) };
     });
@@ -220,62 +266,132 @@ export default function ArenaApp() {
   }
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark">A</div>
-          <div>
-            <strong>ARENA DEV</strong>
-            <small>Classroom Edition · V1</small>
-          </div>
-        </div>
+    <div className="app-shell app-shell-no-sidebar">
+      <a className="skip-link" href="#main-content">
+        Pular para o conteúdo principal
+      </a>
+      <LiveRegion>{toast}</LiveRegion>
+      <main id="main-content" className="main-area" tabIndex={-1}>
+        <header className="topbar app-topbar contextual-topbar">
+          <button
+            type="button"
+            className="topbar-brand"
+            onClick={() => {
+              setView("dashboard");
+            }}
+            title="Voltar para a Visão geral"
+          >
+            <span className="topbar-brand-mark">A</span>
+            <span>
+              <strong>ARENA DEV</strong>
+              <small>Classroom Edition · V1</small>
+            </span>
+          </button>
 
-        <nav className="nav-list">
-          {NAV.map((item) => (
-            <button key={item.id} className={view === item.id ? "nav-item active" : "nav-item"} onClick={() => { if (item.id === "classroom") setClassroomTab("home"); setView(item.id); }}>
-              <span>{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </nav>
+          <Breadcrumb
+            className="context-trail"
+            items={[
+              {
+                id: "dashboard",
+                label: "Visão geral",
+                current: view === "dashboard",
+                onClick: view === "dashboard"
+                  ? undefined
+                  : () => {
+                      setView("dashboard");
+                    },
+              },
+              ...((view === "classroom" || view === "arena") && activeClassroom
+                ? [{
+                    id: "classroom",
+                    label: (
+                      <ClassroomContextSwitcher
+                        classrooms={data.classrooms}
+                        activeClassroomId={activeClassroom.id}
+                        liveClassroomIds={data.sessions
+                          .filter((session) =>
+                            session.status === "ACTIVE" && !session.endedAt
+                          )
+                          .map((session) => session.classroomId)}
+                        onSelect={(classroomId) => {
+                          const changed = classroomId !== activeClassroom.id;
+                          setActiveClassroom(classroomId);
+                          if (view === "arena" && changed) {
+                            setClassroomTab("home");
+                            setView("classroom");
+                          }
+                        }}
+                      />
+                    ),
+                    current: view === "classroom",
+                  } satisfies BreadcrumbItem]
+                : []),
+              ...(view === "arena"
+                ? [{
+                    id: "arena",
+                    label: "Arena",
+                    current: true,
+                  } satisfies BreadcrumbItem]
+                : []),
+              ...(view === "settings"
+                ? [{
+                    id: "settings",
+                    label: "Configurações",
+                    current: true,
+                  } satisfies BreadcrumbItem]
+                : []),
+            ]}
+          />
 
-        <div className="sidebar-foot">
-          <div className={apiError ? "status-dot error" : "status-dot"} />
-          <div>
-            <strong>{apiError ? "Backend indisponível" : "Persistência no backend"}</strong>
-            <small>{apiError ? "Verifique Spring Boot/PostgreSQL" : "Turmas, sessões, XP, atividades e mecânicas no PostgreSQL"}</small>
-          </div>
-        </div>
-      </aside>
-
-      <main className="main-area">
-        <header className="topbar">
-          <div>
-            <span className="eyebrow">PAINEL DO PROFESSOR</span>
-            <h1>{NAV.find((item) => item.id === view)?.label}</h1>
-          </div>
-          <div className="topbar-actions">
-            <select
-              className="select topbar-classroom-select"
-              value={activeClassroom?.id ?? ""}
-              onChange={(event) => setActiveClassroom(event.target.value)}
-              disabled={!data.classrooms.length}
-              aria-label="Selecionar turma atual"
+          <div className="topbar-actions app-topbar-actions">
+            <Menu
+              trigger={(triggerProps) => (
+                <button
+                  {...triggerProps}
+                  type="button"
+                  className="topbar-profile"
+                  aria-label="Abrir menu do professor"
+                >
+                  <span className="topbar-profile-avatar">
+                    {teacherSession.username.trim().charAt(0).toUpperCase() || "P"}
+                  </span>
+                  <span className="topbar-profile-copy">
+                    <strong>{teacherSession.username}</strong>
+                    <small>Professor</small>
+                  </span>
+                  <span className="topbar-profile-chevron">⌄</span>
+                </button>
+              )}
             >
-              {!data.classrooms.length && <option value="">Nenhuma turma</option>}
-              {data.classrooms.map((classroom) => (
-                <option key={classroom.id} value={classroom.id}>
-                  {classroom.name}{!classroom.active ? " · inativa" : ""}
-                </option>
-              ))}
-            </select>
-            {currentSession && <span className="live-pill"><span /> Sessão ativa</span>}
-            <button className="button ghost topbar-logout" onClick={() => { void logoutTeacher().finally(() => { setTeacherSession(null); setData(EMPTY_DATA); setHydrated(false); }); }}>Sair</button>
+              <MenuItem
+                icon="⚙"
+                description="Perfil, sistema e backup"
+                onSelect={() => {
+                  setView("settings");
+                }}
+              >
+                Configurações
+              </MenuItem>
+              <MenuItem
+                icon="↪"
+                danger
+                description="Encerrar sessão do professor"
+                onSelect={() => {
+                  void logoutTeacher().finally(() => {
+                    setTeacherSession(null);
+                    setData(EMPTY_DATA);
+                    setHydrated(false);
+                  });
+                }}
+              >
+                Sair
+              </MenuItem>
+            </Menu>
           </div>
         </header>
 
         <section className="content">
-          {apiError && <div className="api-alert"><strong>API indisponível.</strong><span>{apiError}</span><button className="text-button" onClick={() => { void refreshClassroomDomain(); }}>Tentar novamente</button></div>}
+          {apiError && <div className="api-alert" role="alert" aria-live="assertive"><strong>API indisponível.</strong><span>{apiError}</span><button className="text-button" onClick={() => { void refreshClassroomDomain(); }}>Tentar novamente</button></div>}
 
           {view === "dashboard" && (
             <OverviewView
@@ -305,9 +421,6 @@ export default function ArenaApp() {
                     events={data.scoreEvents.filter((event) => event.classroomId === activeClassroom.id)}
                     currentSession={currentSession}
                     onOpenArena={() => setView("arena")}
-                    onOpenStudents={() => setClassroomTab("students")}
-                    onOpenActivities={() => setClassroomTab("activities")}
-                    onOpenRanking={() => setClassroomTab("ranking")}
                     notify={notify}
                     refreshClassroomDomain={refreshClassroomDomain}
                   />
@@ -336,6 +449,7 @@ export default function ArenaApp() {
                 )}
                 {classroomTab === "history" && (
                   <HistoryView
+                    classroomId={activeClassroom.id}
                     events={data.scoreEvents.filter((event) => event.classroomId === activeClassroom.id)}
                     students={data.students}
                     onReverse={(eventId) => {
@@ -391,7 +505,71 @@ export default function ArenaApp() {
             )
           )}
 
-          {view === "backup" && <BackupView data={data} setData={setData} notify={notify} refreshClassroomDomain={refreshClassroomDomain} />}
+          {view === "settings" && (
+            <div className="settings-page stack-lg">
+              <div className="settings-heading">
+                <div>
+                  <span className="eyebrow accent">CONFIGURAÇÕES</span>
+                  <h2>Professor e sistema</h2>
+                  <p>Preferências administrativas do Arena Dev, informações do ambiente e rotinas de segurança.</p>
+                </div>
+                <button className="button ghost" onClick={() => setView("dashboard")}>
+                  ← Visão geral
+                </button>
+              </div>
+
+              <div className="settings-summary-grid">
+                <Panel title="Perfil do professor" subtitle="Sessão administrativa atual">
+                  <div className="teacher-profile-card">
+                    <span className="teacher-profile-avatar">
+                      {teacherSession.username.trim().charAt(0).toUpperCase() || "P"}
+                    </span>
+                    <div>
+                      <strong>{teacherSession.username}</strong>
+                      <span>Professor</span>
+                      <small>Acesso autenticado ao painel administrativo.</small>
+                    </div>
+                  </div>
+                </Panel>
+
+                <Panel title="Sistema" subtitle="Estado da persistência">
+                  <div className="settings-system-status">
+                    <span className={apiError ? "status-dot error" : "status-dot"} />
+                    <div>
+                      <strong>{apiError ? "Backend indisponível" : "Persistência operacional"}</strong>
+                      <small>
+                        {apiError
+                          ? "Verifique Spring Boot e PostgreSQL."
+                          : "Turmas, sessões, XP, atividades e mecânicas persistidas no backend."}
+                      </small>
+                    </div>
+                  </div>
+                  {apiError && (
+                    <button
+                      className="button ghost small settings-retry"
+                      onClick={() => { void refreshClassroomDomain(); }}
+                    >
+                      Tentar novamente
+                    </button>
+                  )}
+                </Panel>
+              </div>
+
+              <section className="settings-backup-section">
+                <div className="settings-section-heading">
+                  <span className="eyebrow accent">SEGURANÇA E DADOS</span>
+                  <h3>Backup e restauração</h3>
+                  <p>As operações de backup ficam dentro das configurações administrativas e deixam de ocupar a navegação principal.</p>
+                </div>
+                <BackupView
+                  data={data}
+                  setData={setData}
+                  notify={notify}
+                  refreshClassroomDomain={refreshClassroomDomain}
+                />
+              </section>
+            </div>
+          )}
         </section>
       </main>
 
@@ -407,18 +585,56 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
   const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [query, setQuery] = useState("");
+  const [sortMode, setSortMode] = useState<ClassroomSortMode>("RECENT");
+  const [recentClassroomIds] = useState<string[]>(() => loadRecentClassroomIds());
   const [createOpen, setCreateOpen] = useState(false);
   const [editingClassroom, setEditingClassroom] = useState<Classroom | undefined>();
   const [editIntent, setEditIntent] = useState<"edit" | "delete">("edit");
+  const [openCardMenuId, setOpenCardMenuId] = useState<string | null>(null);
 
-  const visibleClassrooms = data.classrooms.filter((classroom) => {
+  const activeSessions = data.sessions.filter((session) => session.status === "ACTIVE" && !session.endedAt);
+  const filteredClassrooms = data.classrooms.filter((classroom) => {
     if (filter === "ACTIVE") return classroom.active;
     if (filter === "INACTIVE") return !classroom.active;
     return true;
   });
-  const activeSessions = data.sessions.filter((session) => session.status === "ACTIVE" && !session.endedAt);
+  const visibleClassrooms = orderOverviewClassrooms(filteredClassrooms, {
+    query,
+    sortMode,
+    selectedClassroomId: data.activeClassroomId,
+    activeSessionClassroomIds: activeSessions.map((session) => session.classroomId),
+    recentClassroomIds,
+  });
   const activeClassroomIds = new Set(data.classrooms.filter((classroom) => classroom.active).map((classroom) => classroom.id));
   const activeEnrollments = data.enrollments.filter((enrollment) => enrollment.active && activeClassroomIds.has(enrollment.classroomId));
+
+  async function toggleClassroomActive(classroom: Classroom) {
+    const hasActiveSession = activeSessions.some(
+      (session) => session.classroomId === classroom.id,
+    );
+
+    if (classroom.active && hasActiveSession) {
+      notify("Encerre a sessão ativa antes de desativar esta turma.");
+      setOpenCardMenuId(null);
+      return;
+    }
+
+    try {
+      await updateClassroomApi({
+        id: classroom.id,
+        name: classroom.name,
+        code: classroom.code,
+        active: !classroom.active,
+      });
+      await refreshClassroomDomain(classroom.id);
+      notify(classroom.active ? "Turma desativada." : "Turma reativada.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setOpenCardMenuId(null);
+    }
+  }
 
   return (
     <div className="stack-lg overview-page">
@@ -430,11 +646,47 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
       </div>
 
       <div className="overview-toolbar">
-        <div className="segmented-control" aria-label="Filtrar turmas">
-          <button className={filter === "ALL" ? "active" : ""} onClick={() => setFilter("ALL")}>Todas <span>{data.classrooms.length}</span></button>
-          <button className={filter === "ACTIVE" ? "active" : ""} onClick={() => setFilter("ACTIVE")}>Ativas <span>{data.classrooms.filter((item) => item.active).length}</span></button>
-          <button className={filter === "INACTIVE" ? "active" : ""} onClick={() => setFilter("INACTIVE")}>Inativas <span>{data.classrooms.filter((item) => !item.active).length}</span></button>
+        <div className="overview-toolbar-main">
+          <div className="segmented-control" aria-label="Filtrar turmas">
+            <button className={filter === "ALL" ? "active" : ""} onClick={() => setFilter("ALL")}>Todas <span>{data.classrooms.length}</span></button>
+            <button className={filter === "ACTIVE" ? "active" : ""} onClick={() => setFilter("ACTIVE")}>Ativas <span>{data.classrooms.filter((item) => item.active).length}</span></button>
+            <button className={filter === "INACTIVE" ? "active" : ""} onClick={() => setFilter("INACTIVE")}>Inativas <span>{data.classrooms.filter((item) => !item.active).length}</span></button>
+          </div>
+
+          <label className="overview-search">
+            <span aria-hidden="true">⌕</span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar por nome ou código"
+              aria-label="Buscar turma por nome ou código"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Limpar busca"
+                title="Limpar busca"
+              >
+                ×
+              </button>
+            )}
+          </label>
+
+          <select
+            className="select overview-sort"
+            value={sortMode}
+            onChange={(event) => setSortMode(event.target.value as ClassroomSortMode)}
+            aria-label="Ordenar cards das turmas"
+          >
+            <option value="RECENT">Recentes primeiro</option>
+            <option value="NAME_ASC">Nome A–Z</option>
+            <option value="NAME_DESC">Nome Z–A</option>
+            <option value="CODE_ASC">Código A–Z</option>
+            <option value="CODE_DESC">Código Z–A</option>
+          </select>
         </div>
+
         <button className="button primary overview-new-classroom" onClick={() => setCreateOpen(true)}>+ Nova turma</button>
       </div>
 
@@ -446,7 +698,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
           onAction={() => setCreateOpen(true)}
         />
       ) : !visibleClassrooms.length ? (
-        <MiniEmpty text="Nenhuma turma corresponde a este filtro." />
+        <MiniEmpty text={query ? "Nenhuma turma encontrada para esta busca." : "Nenhuma turma corresponde a este filtro."} />
       ) : (
         <div className="classroom-card-grid">
           {visibleClassrooms.map((classroom) => {
@@ -472,28 +724,83 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
                   <div className="overview-class-identity">
                     <div className="classroom-monogram">{classroom.name.trim().charAt(0).toUpperCase()}</div>
                     <div>
-                      <div className="status-line">
-                        <span className={classroom.active ? "status active" : "status"}>{classroom.active ? "Ativa" : "Inativa"}</span>
-                        {data.activeClassroomId === classroom.id && <span className="selected-context-pill">Selecionada</span>}
-                        {session && <span className="live-pill compact"><span /> Sessão ativa</span>}
-                      </div>
+                      {(session || !classroom.active) && (
+                        <div className="status-line">
+                          {session ? (
+                            <span className="live-pill compact"><span /> AO VIVO</span>
+                          ) : (
+                            <span className="status">Inativa</span>
+                          )}
+                        </div>
+                      )}
                       <h3>{classroom.name}</h3>
                       <p>{classroom.code || "Sem código"}</p>
                     </div>
                   </div>
                   <div className="overview-card-actions">
-                    <button
-                      className="icon-action"
-                      title="Editar turma"
-                      aria-label={`Editar ${classroom.name}`}
-                      onClick={(event) => { event.stopPropagation(); setEditIntent("edit"); setEditingClassroom(classroom); }}
-                    >✎</button>
-                    <button
-                      className="icon-action danger"
-                      title="Excluir ou inativar turma"
-                      aria-label={`Excluir ou inativar ${classroom.name}`}
-                      onClick={(event) => { event.stopPropagation(); setEditIntent("delete"); setEditingClassroom(classroom); }}
-                    >⌫</button>
+                    <div
+                      className="classroom-card-menu-wrap"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        className="icon-action classroom-card-menu-trigger"
+                        title="Ações da turma"
+                        aria-label={`Ações de ${classroom.name}`}
+                        aria-expanded={openCardMenuId === classroom.id}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setOpenCardMenuId((current) =>
+                            current === classroom.id ? null : classroom.id
+                          );
+                        }}
+                      >
+                        ⋯
+                      </button>
+
+                      {openCardMenuId === classroom.id && (
+                        <div className="classroom-card-menu">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenCardMenuId(null);
+                              setEditIntent("edit");
+                              setEditingClassroom(classroom);
+                            }}
+                          >
+                            <span>✎</span>
+                            Editar turma
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={classroom.active && Boolean(session)}
+                            title={
+                              classroom.active && session
+                                ? "Encerre a sessão antes de desativar."
+                                : undefined
+                            }
+                            onClick={() => { void toggleClassroomActive(classroom); }}
+                          >
+                            <span>{classroom.active ? "○" : "●"}</span>
+                            {classroom.active ? "Desativar turma" : "Reativar turma"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="danger"
+                            onClick={() => {
+                              setOpenCardMenuId(null);
+                              setEditIntent("delete");
+                              setEditingClassroom(classroom);
+                            }}
+                          >
+                            <span>⌫</span>
+                            Excluir turma
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="overview-class-stats">
@@ -573,7 +880,7 @@ function ClassroomWorkspaceTabs({ tab, onTabChange, studentCount, activityCount,
   );
 }
 
-function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, onOpenStudents, onOpenActivities, onOpenRanking, notify, refreshClassroomDomain }: {
+function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, notify, refreshClassroomDomain }: {
   classroom: Classroom;
   data: ArenaData;
   students: Student[];
@@ -581,9 +888,6 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
   events: ArenaData["scoreEvents"];
   currentSession?: ArenaData["sessions"][number];
   onOpenArena: () => void;
-  onOpenStudents: () => void;
-  onOpenActivities: () => void;
-  onOpenRanking: () => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
@@ -592,6 +896,10 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
   const today = new Date().toDateString();
   const todayEvents = events.filter((event) => new Date(event.createdAt).toDateString() === today);
   const activityCount = data.activities.filter((activity) => activity.classroomId === classroom.id).length;
+  const arenaCta = classroomArenaCtaState(
+    classroom.active !== false,
+    currentSession?.title,
+  );
 
   return (
     <div className="stack-lg">
@@ -601,48 +909,43 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
           <button className="button small" onClick={() => setEditOpen(true)}>Gerenciar turma</button>
         </div>
       )}
-      <div className="hero-card classroom-home-hero">
-        <div>
-          <span className="eyebrow accent">HOME DA TURMA</span>
-          <h2>{classroom.name}</h2>
-          <p>Contexto pedagógico para alunos, atividades, ranking, histórico e preparação da aula.</p>
+      <section className="classroom-home-hero-v2">
+        <div className="classroom-home-hero-main">
+          <div>
+            <span className="eyebrow accent">HOME DA TURMA</span>
+            <h2>{classroom.name}</h2>
+            <p>Contexto pedagógico para alunos, atividades, ranking, histórico e preparação da aula.</p>
+          </div>
+
+          <button
+            className="button ghost classroom-manage-button"
+            onClick={() => setEditOpen(true)}
+          >
+            Gerenciar turma
+          </button>
         </div>
-        <div className="hero-actions">
-          <button className="button" onClick={() => setEditOpen(true)}>Gerenciar turma</button>
-          <button className="button primary large" onClick={onOpenArena} disabled={!classroom.active}>{currentSession ? "Continuar arena" : "Iniciar arena"}</button>
+
+        <div className="classroom-home-hero-cta">
+          <button
+            className={`arena-launch-button arena-launch-button-centered ${arenaCta.live ? "live" : ""}`}
+            onClick={onOpenArena}
+            disabled={arenaCta.disabled}
+          >
+            <span className="arena-launch-icon">{arenaCta.live ? "↗" : "▶"}</span>
+            <strong>{arenaCta.buttonLabel}</strong>
+          </button>
         </div>
-      </div>
+      </section>
 
       <div className="metrics-grid">
         <Metric label="Alunos ativos" value={students.length.toString()} hint="matriculados nesta turma" />
         <Metric label="Atividades" value={activityCount.toString()} hint="conteúdo da turma" />
         <Metric label="XP distribuído" value={totalXp.toString()} hint="acumulado da turma" />
-        <Metric label="Sessão" value={currentSession ? "ATIVA" : "—"} hint={currentSession ? currentSession.title : `${todayEvents.length} evento(s) hoje`} />
-      </div>
-
-      <div className="two-col">
-        <Panel title="Top da turma" subtitle="Ranking por XP acumulado">
-          {leaderboard.length ? (
-            <div className="ranking-compact">
-              {leaderboard.slice(0, 5).map((row, index) => (
-                <div key={row.student.id} className="ranking-row">
-                  <span className="rank-number">{String(index + 1).padStart(2, "0")}</span>
-                  <Avatar student={row.student} />
-                  <div className="grow"><strong>{row.student.nickname || row.student.name}</strong><small>{getLevel(row.xp).name}</small></div>
-                  <b>{row.xp} XP</b>
-                </div>
-              ))}
-            </div>
-          ) : <MiniEmpty text="Ainda não há alunos ou pontuação." />}
-        </Panel>
-        <Panel title="Ações da turma" subtitle="Navegue pelo contexto selecionado">
-          <div className="quick-actions">
-            <button className="quick-button" onClick={onOpenStudents}><span>01</span><div><strong>Alunos</strong><small>Cadastro, importação e status</small></div></button>
-            <button className="quick-button" onClick={onOpenActivities}><span>02</span><div><strong>Atividades</strong><small>Questões, entregas e resultados</small></div></button>
-            <button className="quick-button" onClick={onOpenRanking}><span>03</span><div><strong>Ranking</strong><small>XP e progressão acumulada</small></div></button>
-            <button className="quick-button" onClick={onOpenArena} disabled={!classroom.active}><span>04</span><div><strong>Arena</strong><small>Condução ao vivo da sessão</small></div></button>
-          </div>
-        </Panel>
+        <Metric
+          label="Sessão"
+          value={currentSession ? "AO VIVO" : "—"}
+          hint={currentSession ? currentSession.title : `${todayEvents.length} evento(s) hoje`}
+        />
       </div>
 
       {editOpen && (
@@ -682,7 +985,8 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
   showSummary?: boolean;
 }) {
   const [name, setName] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [preferredName, setPreferredName] = useState("");
+  const [preferredDrafts, setPreferredDrafts] = useState<Record<string, string>>({});
   const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -693,11 +997,11 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
     .sort((a, b) => a.student.name.localeCompare(b.student.name));
   const activeCount = allRows.filter((row) => row.enrollment.active).length;
 
-  async function addStudent(studentName: string, studentNickname = "", silent = false) {
+  async function addStudent(studentName: string, studentPreferredName = "", silent = false) {
     if (!studentName.trim() || (!silent && busy)) return false;
     if (!silent) setBusy(true);
     try {
-      await createAndEnrollStudent(classroomId, { name: studentName.trim(), nickname: studentNickname.trim() });
+      await createAndEnrollStudent(classroomId, { name: studentName.trim(), preferredName: studentPreferredName.trim() });
       if (!silent) {
         await refreshClassroomDomain(classroomId);
         notify("Aluno cadastrado e vinculado à turma.");
@@ -742,6 +1046,20 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
     }
   }
 
+  async function savePreferredName(studentId: string, currentValue: string) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await updateEnrollmentPreferredName(classroomId, studentId, currentValue);
+      await refreshClassroomDomain(classroomId);
+      notify("Nome de exibição atualizado para esta turma.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function toggleStudent(studentId: string, active: boolean) {
     if (busy) return;
     setBusy(true);
@@ -762,8 +1080,8 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
         <Panel title="Adicionar aluno" subtitle="Cadastro individual">
           <div className="form-grid">
             <input className="input" placeholder="Nome completo" value={name} onChange={(event) => setName(event.target.value)} disabled={busy} />
-            <input className="input" placeholder="Apelido (opcional)" value={nickname} onChange={(event) => setNickname(event.target.value)} disabled={busy} />
-            <button className="button primary" disabled={busy || !name.trim()} onClick={() => { void addStudent(name, nickname).then((created) => { if (created) { setName(""); setNickname(""); } }); }}>Adicionar aluno</button>
+            <input className="input" placeholder="Nome de exibição na turma (opcional)" value={preferredName} onChange={(event) => setPreferredName(event.target.value)} disabled={busy} />
+            <button className="button primary" disabled={busy || !name.trim()} onClick={() => { void addStudent(name, preferredName).then((created) => { if (created) { setName(""); setPreferredName(""); } }); }}>Adicionar aluno</button>
           </div>
         </Panel>
         <Panel title="Importar lista" subtitle="Um aluno por linha">
@@ -781,7 +1099,7 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
                 const xp = xpForStudent(data.scoreEvents, classroomId, student.id);
                 return (
                   <div className="table-row" key={enrollment.id}>
-                    <div className="student-cell"><Avatar student={student} /><div><strong>{student.name}</strong><small>{student.nickname || "Sem apelido"}</small></div></div>
+                    <div className="student-cell"><Avatar student={student} /><div><strong>{student.name}</strong><small>Exibição: {enrollment.preferredName || student.nickname || student.name}</small><div className="row-actions"><input className="input" aria-label={`Nome de exibição de ${student.name}`} value={preferredDrafts[student.id] ?? enrollment.preferredName} onChange={(event) => setPreferredDrafts((current) => ({ ...current, [student.id]: event.target.value }))} placeholder="Nome público" disabled={busy} /><button className="text-button" disabled={busy} onClick={() => { void savePreferredName(student.id, preferredDrafts[student.id] ?? enrollment.preferredName); }}>Salvar nome</button></div></div></div>
                     <span className={enrollment.active ? "status active" : "status"}>{enrollment.active ? "Ativo" : "Inativo"}</span>
                     <b>{xp} XP</b>
                     <div className="row-actions">
@@ -957,7 +1275,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   notify: (message: string) => void;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
-  const [arenaTab, setArenaTab] = useState<"live" | "realtime" | "presence" | "groups" | "boss">("live");
+  const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "presence" | "groups" | "boss">("live");
+  const [interactionTool, setInteractionTool] = useState<"draw" | "wordcloud" | "poll" | "buzzer">("draw");
+  const [accessOpen, setAccessOpen] = useState(false);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
   const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
@@ -972,12 +1292,17 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [mechanicsBusy, setMechanicsBusy] = useState(false);
   const [joinCode, setJoinCode] = useState<JoinCode | null>(null);
   const [buzzerState, setBuzzerState] = useState<BuzzerState>({ status: "IDLE", presses: [] });
+  const [timerState, setTimerState] = useState<TimerState>({ timer: null });
+  const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
+  const [pollState, setPollState] = useState<PollState>({ round: null });
   const [realtimeStatus, setRealtimeStatus] = useState<"offline" | "connecting" | "online">("offline");
   const [realtimeVersion, setRealtimeVersion] = useState(0);
   const [publicBaseUrl, setPublicBaseUrl] = useState("");
   const [realtimeBusy, setRealtimeBusy] = useState(false);
+  const [liveFlowState, setLiveFlowState] = useState<LiveFlowState | null>(null);
+  const [liveFlowBusy, setLiveFlowBusy] = useState(false);
   const classActivities = useMemo(
-    () => data.activities.filter((activity) => activity.classroomId === classroomId && (activity.questions?.length ?? 0) > 0),
+    () => data.activities.filter((activity) => activity.classroomId === classroomId),
     [data.activities, classroomId],
   );
   const [activityId, setActivityId] = useState<string>(currentSession?.activityId ?? preferredActivityId ?? "");
@@ -985,6 +1310,26 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   useEffect(() => {
     if (typeof window !== "undefined") setPublicBaseUrl(window.location.origin);
   }, []);
+
+  useEffect(() => {
+    if (!currentSession) {
+      setLiveFlowState(null);
+      return;
+    }
+
+    let active = true;
+    void fetchLiveFlow(currentSession.id)
+      .then((flow) => {
+        if (active) setLiveFlowState(flow);
+      })
+      .catch((error) => {
+        if (active) notify(errorMessage(error));
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [currentSession?.id, currentSession?.activityId]);
 
   async function refreshRealtimeParticipants(sessionId: string) {
     try {
@@ -1009,6 +1354,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     if (!currentSession) {
       setJoinCode(null);
       setBuzzerState({ status: "IDLE", presses: [] });
+      setTimerState({ timer: null });
+      setWordCloudState({ round: null });
+      setPollState({ round: null });
       setRealtimeStatus("offline");
       return;
     }
@@ -1017,11 +1365,18 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     let reconnectTimer: number | undefined;
     setRealtimeStatus("connecting");
 
-    void Promise.all([fetchJoinCode(currentSession.id), fetchBuzzerState(currentSession.id)])
-      .then(([code, buzzer]) => {
+    void Promise.all([
+      fetchJoinCode(currentSession.id),
+      fetchBuzzerState(currentSession.id),
+      fetchWordCloudState(currentSession.id),
+      fetchPollState(currentSession.id),
+    ])
+      .then(([code, buzzer, wordCloud, poll]) => {
         if (!active) return;
         setJoinCode(code);
         setBuzzerState(buzzer);
+        setWordCloudState(wordCloud);
+        setPollState(poll);
         if (buzzer.presses[0]) setSelectedId(buzzer.presses[0].studentId);
       })
       .catch((error) => { if (active) notify(errorMessage(error)); });
@@ -1032,6 +1387,19 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         const state = event.payload as BuzzerState;
         setBuzzerState(state);
         if (state.presses[0]) setSelectedId(state.presses[0].studentId);
+      }
+      if (event.type === "TIMER_STATE") {
+        setTimerState({
+          ...(event.payload as TimerState),
+          serverOccurredAt: event.occurredAt,
+          receivedAtMs: Date.now(),
+        });
+      }
+      if (event.type === "WORD_CLOUD_STATE") {
+        setWordCloudState(event.payload as WordCloudState);
+      }
+      if (event.type === "POLL_STATE") {
+        setPollState(event.payload as PollState);
       }
       if (event.type === "PARTICIPANT_CONNECTED" || event.type === "PARTICIPANT_DISCONNECTED") {
         void refreshRealtimeParticipants(currentSession.id);
@@ -1125,6 +1493,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       setSelectedId(undefined);
       setGroups([]);
       setArenaTab("live");
+      setLiveFlowState(null);
       onPreferredActivityChange(undefined);
       notify("Sessão encerrada e persistida.");
     } catch (error) {
@@ -1165,7 +1534,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         ...current,
         sessionParticipants: current.sessionParticipants.map((item) => item.id === updated.id ? updated : item),
       }));
-      notify(`Dispositivo de ${participant.nickname || participant.name} liberado.`);
+      notify(`Dispositivo de ${participant.displayName || participant.preferredName || participant.nickname || participant.name} liberado.`);
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1224,19 +1593,90 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     if (!currentSession || mechanicsBusy) return;
     setMechanicsBusy(true);
     try {
-      const runtime = await setArenaActivityApi(currentSession.id, nextActivityId || undefined);
+      const runtime = await setArenaActivityApi(
+        currentSession.id,
+        nextActivityId || undefined,
+      );
       patch((current) => ({
         ...current,
-        sessions: current.sessions.map((session) => session.id === currentSession.id
-          ? mergeSessionMechanics(session, runtime)
-          : session),
+        sessions: current.sessions.map((session) =>
+          session.id === currentSession.id
+            ? mergeSessionMechanics(session, runtime)
+            : session
+        ),
       }));
-      notify(nextActivityId ? "Atividade conectada à Arena e persistida." : "Arena em modo livre.");
+
+      const flow = await fetchLiveFlow(currentSession.id);
+      setLiveFlowState(flow);
+
+      notify(
+        nextActivityId
+          ? "Atividade conectada à Arena e persistida."
+          : "Arena em modo livre.",
+      );
     } catch (error) {
       setActivityId(currentSession.activityId ?? "");
       notify(errorMessage(error));
     } finally {
       setMechanicsBusy(false);
+    }
+  }
+
+  function applyLiveFlowResult(result: {
+    liveFlow: LiveFlowState;
+    runtime: import("@/lib/types").SessionRuntimeState;
+  }) {
+    setLiveFlowState(result.liveFlow);
+    if (!currentSession) return;
+
+    patch((current) => ({
+      ...current,
+      sessions: current.sessions.map((session) =>
+        session.id === currentSession.id
+          ? mergeSessionMechanics(session, result.runtime)
+          : session
+      ),
+    }));
+  }
+
+  async function startPreparedFlow() {
+    if (!currentSession || liveFlowBusy) return;
+    setLiveFlowBusy(true);
+    try {
+      applyLiveFlowResult(await startLiveFlow(currentSession.id));
+      notify("Roteiro ao Vivo iniciado.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setLiveFlowBusy(false);
+    }
+  }
+
+  async function movePreparedFlow(direction: "previous" | "next") {
+    if (!currentSession || liveFlowBusy) return;
+    setLiveFlowBusy(true);
+    try {
+      const result = direction === "next"
+        ? await nextLiveFlow(currentSession.id)
+        : await previousLiveFlow(currentSession.id);
+      applyLiveFlowResult(result);
+
+      const currentIndex = result.liveFlow.currentIndex;
+      const currentStep =
+        currentIndex === undefined
+          ? undefined
+          : result.liveFlow.steps[currentIndex];
+
+      if (currentStep) {
+        notify(
+          `Bloco ${currentIndex! + 1} de ${result.liveFlow.steps.length}: `
+          + `${currentStep.title || currentStep.type}.`
+        );
+      }
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setLiveFlowBusy(false);
     }
   }
 
@@ -1385,14 +1825,13 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     }
   }
 
-  async function copyJoinLink() {
-    if (!joinCode || !publicBaseUrl) return;
-    try {
-      await navigator.clipboard.writeText(`${publicBaseUrl}/join?code=${joinCode.code}`);
-      notify("Link de entrada copiado.");
-    } catch {
-      notify("Não foi possível copiar o link automaticamente.");
+  function openProjector() {
+    if (!joinCode) {
+      notify("Aguarde a geração do código da sessão.");
+      return;
     }
+    const projectorUrl = `/projector?code=${encodeURIComponent(joinCode.code)}`;
+    window.open(projectorUrl, "_blank", "noopener,noreferrer");
   }
 
   const selected = students.find((student) => student.id === selectedId);
@@ -1412,7 +1851,18 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <option value="">Modo livre — pergunta oral ou conteúdo externo</option>
               {classActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title} · {activity.questions?.length ?? 0} questões</option>)}
             </select>
-            {activeActivity && <div className="arena-source-note"><strong>{activeActivity.title}</strong><span>{activeActivity.topic || "Sem tópico"} · {activeActivity.questions?.length ?? 0} questão(ões)</span></div>}
+            {activeActivity && (
+              <div className="arena-source-note">
+                <strong>{activeActivity.title}</strong>
+                <span>
+                  {activeActivity.topic || "Sem tópico"} ·{" "}
+                  {liveFlowState?.activityId === activeActivity.id
+                    && liveFlowState.steps.length > 0
+                    ? `${liveFlowState.steps.length} bloco(s) no roteiro`
+                    : `${activeActivity.questions?.length ?? 0} questão(ões)`}
+                </span>
+              </div>
+            )}
           </div>
           <div className="attendance-head"><strong>Presença</strong><span>{presentIds.length}/{students.length} presentes</span></div>
           <div className="attendance-list">
@@ -1443,35 +1893,111 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     <div className="stack-lg arena-session-workspace">
       <div className="arena-header compact">
         <div>
-          <span className="live-pill"><span /> AO VIVO</span>
+          <Badge variant="live" dot>AO VIVO</Badge>
           <h2>{currentSession.title}</h2>
           <p>{currentSession.presentStudentIds.length} presentes · iniciada {dateTime(currentSession.startedAt)}</p>
         </div>
-        <button className="button danger-outline" onClick={() => { void endSession(); }} disabled={sessionBusy}>{sessionBusy ? "Encerrando..." : "Encerrar sessão"}</button>
+        <div className="topbar-actions arena-session-actions">
+          <Button
+            variant={accessOpen ? "primary" : "secondary"}
+            onClick={() => setAccessOpen((open) => !open)}
+            disabled={!joinCode}
+          >
+            {accessOpen ? "Fechar acesso" : "Acesso dos alunos"}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={openProjector}
+            disabled={!joinCode}
+          >
+            Modo Projetor ↗
+          </Button>
+          <Button
+            variant="danger"
+            loading={sessionBusy}
+            loadingLabel="Encerrando..."
+            onClick={() => { void endSession(); }}
+          >
+            Encerrar sessão
+          </Button>
+        </div>
       </div>
 
-      <div className="arena-tabs" role="tablist" aria-label="Ferramentas da sessão">
-        <button type="button" role="tab" aria-selected={arenaTab === "live"} className={arenaTab === "live" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("live")}>
-          <span>Condução</span>
-          <small>{activeActivity?.title ?? "Modo livre"}</small>
-        </button>
-        <button type="button" role="tab" aria-selected={arenaTab === "realtime"} className={arenaTab === "realtime" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("realtime")}>
-          <span>Ao vivo</span>
-          <small>{joinCode ? `${joinCode.code} · ${buzzerState.status === "OPEN" ? "Buzzer aberto" : "QR + Buzzer"}` : "QR + Buzzer"}</small>
-        </button>
-        <button type="button" role="tab" aria-selected={arenaTab === "presence"} className={arenaTab === "presence" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("presence")}>
-          <span>Presença</span>
-          <small>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</small>
-        </button>
-        <button type="button" role="tab" aria-selected={arenaTab === "groups"} className={arenaTab === "groups" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("groups")}>
-          <span>Organização</span>
-          <small>{groupSize === 1 ? "Individual" : groupSize === 2 ? "Duplas" : groupSize === 3 ? "Trios" : `Grupos de ${groupSize}`}</small>
-        </button>
-        <button type="button" role="tab" aria-selected={arenaTab === "boss"} className={arenaTab === "boss" ? "arena-tab active" : "arena-tab"} onClick={() => setArenaTab("boss")}>
-          <span>Boss Battle</span>
-          <small>{currentSession.boss ? `${currentSession.boss.currentHp}/${currentSession.boss.maxHp} HP` : "Não iniciado"}</small>
-        </button>
-      </div>
+      {accessOpen && (
+        <div className="arena-session-access-wrap">
+          <SessionAccessCard
+            sessionId={currentSession.id}
+            joinCode={joinCode}
+            publicBaseUrl={publicBaseUrl}
+            notify={notify}
+            realtimeStatus={realtimeStatus}
+            connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+            onRotate={rotateSessionCode}
+            rotateBusy={realtimeBusy}
+            title="Entrada dos alunos"
+            subtitle="Este é o acesso único da sessão para todas as dinâmicas."
+          />
+        </div>
+      )}
+
+      <Tabs
+        className="arena-tabs-six"
+        label="Ferramentas da sessão"
+        activeId={arenaTab}
+        onChange={(id) => {
+          setArenaTab(
+            id as "live" | "interactions" | "timer" | "presence" | "groups" | "boss"
+          );
+        }}
+        items={[
+          {
+            id: "live",
+            label: "Condução",
+            description: activeActivity?.title ?? "Modo livre",
+          },
+          {
+            id: "interactions",
+            label: "Dinâmicas",
+            description:
+              buzzerState.status === "OPEN"
+                ? "Buzzer aberto"
+                : wordCloudState.round?.status === "COLLECTING"
+                  ? "Nuvem coletando"
+                  : selected
+                    ? `Sorteio · ${selected.nickname || selected.name}`
+                    : "Sorteio · Nuvem · Buzzer",
+          },
+          {
+            id: "timer",
+            label: "Tempo",
+            description: timerState.timer?.title ?? "Controle de tempo",
+          },
+          {
+            id: "presence",
+            label: "Presença",
+            description: `${currentSession.presentStudentIds.length}/${sessionParticipants.length} presentes`,
+          },
+          {
+            id: "groups",
+            label: "Organização",
+            description:
+              groupSize === 1
+                ? "Individual"
+                : groupSize === 2
+                  ? "Duplas"
+                  : groupSize === 3
+                    ? "Trios"
+                    : `Grupos de ${groupSize}`,
+          },
+          {
+            id: "boss",
+            label: "Boss Battle",
+            description: currentSession.boss
+              ? `${currentSession.boss.currentHp}/${currentSession.boss.maxHp} HP`
+              : "Não iniciado",
+          },
+        ] satisfies TabItem[]}
+      />
 
       {arenaTab === "live" && (
         <div className="stack-lg arena-tab-content">
@@ -1479,7 +2005,14 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             <div>
               <span className="eyebrow accent">FONTE DA ARENA</span>
               <strong>{activeActivity?.title ?? "Modo livre"}</strong>
-              <small>{activeActivity ? `${activeActivity.questions?.length ?? 0} questões disponíveis` : "Pergunte oralmente ou utilize qualquer recurso da aula"}</small>
+              <small>
+                {activeActivity
+                  ? liveFlowState?.activityId === activeActivity.id
+                    && liveFlowState.steps.length > 0
+                    ? `${liveFlowState.steps.length} blocos no Roteiro ao Vivo`
+                    : `${activeActivity.questions?.length ?? 0} questões disponíveis`
+                  : "Pergunte oralmente ou utilize qualquer recurso da aula"}
+              </small>
             </div>
             <select className="select" value={currentSession.activityId ?? ""} onChange={(e) => { void changeArenaActivity(e.target.value); }}>
               <option value="">Modo livre</option>
@@ -1487,23 +2020,165 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             </select>
           </div>
 
-          {activeActivity && (
-            <Panel title="Questão da Arena" subtitle={`${activeActivity.title} · ${(currentSession.answeredQuestionIds ?? []).length}/${activeActivity.questions?.length ?? 0} apresentadas`}>
-              {currentQuestion ? (
-                <div className="arena-question-card">
-                  <div className="question-meta"><span>{QUESTION_TYPE_LABEL[currentQuestion.type]}</span><span>{QUESTION_DIFFICULTY_LABEL[currentQuestion.difficulty]}</span><span>{currentQuestion.points} XP sugeridos</span></div>
-                  <h3>{currentQuestion.statement}</h3>
-                  {currentQuestion.code && <pre>{currentQuestion.code}</pre>}
-                  {currentQuestion.options && <div className="arena-question-options">{currentQuestion.options.map((option) => <div key={option.id}><b>{option.id}</b><span>{option.text}</span></div>)}</div>}
+          {activeActivity
+            && liveFlowState?.activityId === activeActivity.id
+            && liveFlowState.steps.length > 0 ? (
+              <LiveFlowConductor
+                flow={liveFlowState}
+                currentQuestion={currentQuestion}
+                busy={liveFlowBusy}
+                onStart={() => { void startPreparedFlow(); }}
+                onPrevious={() => { void movePreparedFlow("previous"); }}
+                onNext={() => { void movePreparedFlow("next"); }}
+                onOpenWordCloud={() => {
+                  setArenaTab("interactions");
+                  setInteractionTool("wordcloud");
+                }}
+              />
+            ) : activeActivity ? (
+              <Panel
+                title="Questão da Arena"
+                subtitle={`${activeActivity.title} · ${(currentSession.answeredQuestionIds ?? []).length}/${activeActivity.questions?.length ?? 0} apresentadas`}
+              >
+                {currentQuestion ? (
+                  <div className="arena-question-card">
+                    <div className="question-meta">
+                      <span>{QUESTION_TYPE_LABEL[currentQuestion.type]}</span>
+                      <span>{QUESTION_DIFFICULTY_LABEL[currentQuestion.difficulty]}</span>
+                      <span>{currentQuestion.points} XP sugeridos</span>
+                    </div>
+                    <h3>{currentQuestion.statement}</h3>
+                    {currentQuestion.code && <pre>{currentQuestion.code}</pre>}
+                    {currentQuestion.options && (
+                      <div className="arena-question-options">
+                        {currentQuestion.options.map((option) => (
+                          <div key={option.id}>
+                            <b>{option.id}</b>
+                            <span>{option.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <MiniEmpty text="Clique em próxima questão quando quiser usar o conteúdo da atividade na Arena." />
+                )}
+                <div className="inline-actions solid-actions">
+                  {(currentSession.answeredQuestionIds?.length ?? 0)
+                    >= (activeActivity.questions?.length ?? 0)
+                    && (
+                      <button
+                        className="button ghost"
+                        onClick={() => { void restartActivityQuestions(); }}
+                      >
+                        Reiniciar questões
+                      </button>
+                    )}
+                  <button
+                    className="button primary"
+                    onClick={() => { void nextActivityQuestion(); }}
+                  >
+                    Próxima questão
+                  </button>
                 </div>
-              ) : <MiniEmpty text="Clique em próxima questão quando quiser usar o conteúdo da atividade na Arena." />}
-              <div className="inline-actions solid-actions">
-                {(currentSession.answeredQuestionIds?.length ?? 0) >= (activeActivity.questions?.length ?? 0) && <button className="button ghost" onClick={() => { void restartActivityQuestions(); }}>Reiniciar questões</button>}
-                <button className="button primary" onClick={() => { void nextActivityQuestion(); }}>Próxima questão</button>
-              </div>
-            </Panel>
-          )}
+              </Panel>
+            ) : null}
 
+        </div>
+      )}
+
+      {arenaTab === "timer" && (
+        <TimerPanel
+          sessionId={currentSession.id}
+          state={timerState}
+          onStateChange={setTimerState}
+          notify={notify}
+        />
+      )}
+
+      {arenaTab === "interactions" && (
+        <div className="stack-lg arena-tab-content">
+          <div className="arena-interaction-switch" role="tablist" aria-label="Tipo de dinâmica">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={interactionTool === "draw"}
+              className={interactionTool === "draw" ? "active" : ""}
+              onClick={() => setInteractionTool("draw")}
+            >
+              <span>◎</span>
+              <div>
+                <strong>Sorteio</strong>
+                <small>{selected ? `Último: ${selected.nickname || selected.name}` : "Sorteio inteligente da turma"}</small>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={interactionTool === "wordcloud"}
+              className={interactionTool === "wordcloud" ? "active" : ""}
+              onClick={() => setInteractionTool("wordcloud")}
+            >
+              <span>☁</span>
+              <div>
+                <strong>Nuvem de Palavras</strong>
+                <small>
+                  {wordCloudState.round
+                    ? wordCloudState.round.status === "COLLECTING"
+                      ? "Coletando respostas"
+                      : wordCloudState.round.status === "REVEALED"
+                        ? "Respostas reveladas"
+                        : "Rodada encerrada"
+                    : "Criar dinâmica aberta"}
+                </small>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={interactionTool === "poll"}
+              className={interactionTool === "poll" ? "active" : ""}
+              onClick={() => setInteractionTool("poll")}
+            >
+              <span>◉</span>
+              <div>
+                <strong>Votação</strong>
+                <small>
+                  {pollState.round
+                    ? pollState.round.status === "OPEN"
+                      ? `${pollState.round.totalVotes} voto(s)`
+                      : pollState.round.status === "REVEALED"
+                        ? "Resultados revelados"
+                        : "Rodada encerrada"
+                    : "Criar votação rápida"}
+                </small>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={interactionTool === "buzzer"}
+              className={interactionTool === "buzzer" ? "active" : ""}
+              onClick={() => setInteractionTool("buzzer")}
+            >
+              <span>⚡</span>
+              <div>
+                <strong>Buzzer</strong>
+                <small>
+                  {buzzerState.status === "OPEN"
+                    ? "Rodada valendo"
+                    : buzzerState.status === "CLOSED"
+                      ? "Rodada encerrada"
+                      : "Abrir rodada rápida"}
+                </small>
+              </div>
+            </button>
+          </div>
+
+          {interactionTool === "draw" ? (
           <div className="arena-grid">
             <div className="arena-main-card">
               <span className="eyebrow accent">SORTEIO INTELIGENTE</span>
@@ -1549,55 +2224,77 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {arenaTab === "realtime" && (
-        <div className="realtime-grid">
-          <Panel title="Entrada dos alunos" subtitle="Código temporário da sessão + QR Code">
-            <div className="join-access-layout">
-              <div className="join-code-block">
-                <span className="eyebrow accent">CÓDIGO DA SESSÃO</span>
-                <strong>{joinCode?.code ?? "------"}</strong>
-                <small>{joinCode ? `Válido até ${dateTime(joinCode.expiresAt)}` : "Gerando código..."}</small>
+          ) : interactionTool === "wordcloud" ? (
+            <WordCloudPanel
+              sessionId={currentSession.id}
+              state={wordCloudState}
+              onStateChange={setWordCloudState}
+              notify={notify}
+              joinCode={joinCode}
+              publicBaseUrl={publicBaseUrl}
+              realtimeStatus={realtimeStatus}
+              connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+              presentCount={sessionParticipants.filter((participant) => participant.present).length}
+              showAccessCard={false}
+            />
+          ) : interactionTool === "poll" ? (
+            <PollPanel
+              sessionId={currentSession.id}
+              state={pollState}
+              onStateChange={setPollState}
+              notify={notify}
+              joinCode={joinCode}
+              publicBaseUrl={publicBaseUrl}
+              realtimeStatus={realtimeStatus}
+              connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+              presentCount={sessionParticipants.filter((participant) => participant.present).length}
+              showAccessCard={false}
+            />
+          ) : (
+            <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">
+              <div className={`teacher-buzzer-state ${buzzerState.status.toLowerCase()}`}>
+                <div className="teacher-buzzer-head">
+                  <div>
+                    <span className="eyebrow accent">RODADA</span>
+                    <h3>{buzzerState.status === "OPEN" ? "Buzzer aberto" : buzzerState.status === "CLOSED" ? "Rodada encerrada" : "Pronto para abrir"}</h3>
+                  </div>
+                  <span className={`buzzer-status-pill ${buzzerState.status.toLowerCase()}`}>
+                    {buzzerState.status === "OPEN" ? "VALENDO" : buzzerState.status === "CLOSED" ? "FECHADO" : "AGUARDANDO"}
+                  </span>
+                </div>
                 <div className="inline-actions solid-actions">
-                  <button className="button" onClick={() => { void copyJoinLink(); }} disabled={!joinCode}>Copiar link</button>
-                  <button className="button ghost" onClick={() => { void rotateSessionCode(); }} disabled={realtimeBusy}>Gerar novo código</button>
+                  <button className="button primary" onClick={() => { void toggleBuzzer(true); }} disabled={realtimeBusy}>
+                    {buzzerState.status === "OPEN" ? "Nova rodada" : "Abrir Buzzer"}
+                  </button>
+                  <button className="button danger-outline" onClick={() => { void toggleBuzzer(false); }} disabled={realtimeBusy || buzzerState.status !== "OPEN"}>
+                    Fechar
+                  </button>
                 </div>
               </div>
-              <div className="join-qr-block">
-                {joinCode && publicBaseUrl ? <img src={joinQrImageUrl(currentSession.id, publicBaseUrl, joinCode.code)} alt={`QR Code da sessão ${joinCode.code}`} /> : <div className="qr-placeholder">QR</div>}
-                <span>Escaneie para abrir <b>/join</b></span>
-              </div>
-            </div>
-            {publicBaseUrl.includes("localhost") && <div className="network-warning"><strong>Uso em celulares</strong><span>Abra o Arena Dev pelo IP da máquina na rede local (ex.: http://192.168.x.x:3000) antes de exibir o QR. “localhost” aponta para o próprio celular.</span></div>}
-            <div className="realtime-connection-row"><span className={`realtime-dot ${realtimeStatus}`} /><strong>{realtimeStatus === "online" ? "Tempo real conectado" : realtimeStatus === "connecting" ? "Conectando WebSocket..." : "WebSocket offline"}</strong><span>{sessionParticipants.filter((participant) => participant.connected).length} aluno(s) conectado(s)</span></div>
-          </Panel>
 
-          <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">
-            <div className={`teacher-buzzer-state ${buzzerState.status.toLowerCase()}`}>
-              <div className="teacher-buzzer-head">
-                <div><span className="eyebrow accent">RODADA</span><h3>{buzzerState.status === "OPEN" ? "Buzzer aberto" : buzzerState.status === "CLOSED" ? "Rodada encerrada" : "Pronto para abrir"}</h3></div>
-                <span className={`buzzer-status-pill ${buzzerState.status.toLowerCase()}`}>{buzzerState.status === "OPEN" ? "VALENDO" : buzzerState.status === "CLOSED" ? "FECHADO" : "AGUARDANDO"}</span>
-              </div>
-              <div className="inline-actions solid-actions">
-                <button className="button primary" onClick={() => { void toggleBuzzer(true); }} disabled={realtimeBusy}>{buzzerState.status === "OPEN" ? "Nova rodada" : "Abrir Buzzer"}</button>
-                <button className="button danger-outline" onClick={() => { void toggleBuzzer(false); }} disabled={realtimeBusy || buzzerState.status !== "OPEN"}>Fechar</button>
-              </div>
-            </div>
-
-            {buzzerState.presses.length > 0 ? (
-              <div className="buzzer-order-list">
-                {buzzerState.presses.map((press) => (
-                  <div className={press.position === 1 ? "buzzer-order-row winner" : "buzzer-order-row"} key={press.id}>
-                    <b>#{press.position}</b>
-                    <div><strong>{press.nickname || press.name}</strong><small>{press.position === 1 ? "Primeiro clique confirmado pelo servidor" : dateTime(press.receivedAt)}</small></div>
-                    {press.position === 1 && <div className="buzzer-score-actions"><button onClick={() => { void addBuzzerScore(press.studentId, 5); }}>+5</button><button onClick={() => { void addBuzzerScore(press.studentId, 10); }}>+10</button></div>}
-                  </div>
-                ))}
-              </div>
-            ) : <MiniEmpty text={buzzerState.status === "OPEN" ? "Aguardando o primeiro clique dos alunos conectados." : "Abra uma rodada quando quiser usar o Buzzer."} />}
-          </Panel>
+              {buzzerState.presses.length > 0 ? (
+                <div className="buzzer-order-list">
+                  {buzzerState.presses.map((press) => (
+                    <div className={press.position === 1 ? "buzzer-order-row winner" : "buzzer-order-row"} key={press.id}>
+                      <b>#{press.position}</b>
+                      <div>
+                        <strong>{press.displayName || press.nickname || press.name}</strong>
+                        <small>{press.position === 1 ? "Primeiro clique confirmado pelo servidor" : dateTime(press.receivedAt)}</small>
+                      </div>
+                      {press.position === 1 && (
+                        <div className="buzzer-score-actions">
+                          <button onClick={() => { void addBuzzerScore(press.studentId, 5); }}>+5</button>
+                          <button onClick={() => { void addBuzzerScore(press.studentId, 10); }}>+10</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <MiniEmpty text={buzzerState.status === "OPEN" ? "Aguardando o primeiro clique dos alunos conectados." : "Abra uma rodada quando quiser usar o Buzzer."} />
+              )}
+            </Panel>
+          )}
         </div>
       )}
 
@@ -1669,7 +2366,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   notify: (message: string) => void;
 }) {
   type ActivityModal = "editor" | "delivery" | "import" | "external-results" | null;
-  type EditorTab = "general" | "questions";
+  type EditorTab = "general" | "questions" | "flow";
 
   const [modal, setModal] = useState<ActivityModal>(null);
   const [editorTab, setEditorTab] = useState<EditorTab>("general");
@@ -1682,6 +2379,10 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   const [platform, setPlatform] = useState("");
   const [resourceUrl, setResourceUrl] = useState("");
   const [questions, setQuestions] = useState<ActivityQuestion[]>([]);
+  const [activitySteps, setActivitySteps] = useState<ActivityStep[]>([]);
+  const [stepsActivityId, setStepsActivityId] = useState<string | undefined>();
+  const [stepsLoading, setStepsLoading] = useState(false);
+  const [stepsDirty, setStepsDirty] = useState(false);
   const [deliveryActivityId, setDeliveryActivityId] = useState<string | undefined>();
   const [externalResultActivityId, setExternalResultActivityId] = useState<string | undefined>();
   const [delivered, setDelivered] = useState<string[]>([]);
@@ -1728,6 +2429,10 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
     setPlatform("");
     setResourceUrl("");
     setQuestions([]);
+    setActivitySteps([]);
+    setStepsActivityId(undefined);
+    setStepsLoading(false);
+    setStepsDirty(false);
     setEditorTab("general");
   }
 
@@ -1746,6 +2451,10 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
     setPlatform(activity.resource?.platform ?? "");
     setResourceUrl(activity.resource?.url ?? "");
     setQuestions(activity.questions ?? []);
+    setActivitySteps([]);
+    setStepsActivityId(undefined);
+    setStepsLoading(false);
+    setStepsDirty(false);
     setEditorTab(tab);
     setModal("editor");
   }
@@ -1766,8 +2475,8 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
     return true;
   }
 
-  async function saveActivity(closeAfter = true) {
-    if (!validateDraft() || activityBusy) return;
+  async function saveActivity(closeAfter = true): Promise<Activity | undefined> {
+    if (!validateDraft() || activityBusy) return undefined;
     setActivityBusy(true);
     try {
       const existing = activityId ? data.activities.find((activity) => activity.id === activityId) : undefined;
@@ -1784,6 +2493,58 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
       setQuestions(saved.questions ?? []);
       notify(existing ? "Atividade atualizada no PostgreSQL." : "Atividade criada no PostgreSQL.");
       if (closeAfter) setModal(null);
+      return saved;
+    } catch (error) {
+      notify(errorMessage(error));
+      return undefined;
+    } finally {
+      setActivityBusy(false);
+    }
+  }
+
+  async function loadFlow(activityIdToLoad: string) {
+    setStepsLoading(true);
+    try {
+      const steps = await fetchActivitySteps(activityIdToLoad);
+      setActivitySteps(steps);
+      setStepsActivityId(activityIdToLoad);
+      setStepsDirty(false);
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setStepsLoading(false);
+    }
+  }
+
+  async function openFlowTab() {
+    if (activityBusy || stepsLoading) return;
+
+    const saved = await saveActivity(false);
+    if (!saved) return;
+
+    if (stepsActivityId !== saved.id) {
+      await loadFlow(saved.id);
+    }
+
+    setEditorTab("flow");
+  }
+
+  async function saveFlow() {
+    if (!activityId || activityBusy || stepsLoading) return;
+
+    const errors = validateActivitySteps(activitySteps, questions);
+    if (errors.length) {
+      notify(errors[0]);
+      return;
+    }
+
+    setActivityBusy(true);
+    try {
+      const saved = await replaceActivitySteps(activityId, activitySteps);
+      setActivitySteps(saved);
+      setStepsActivityId(activityId);
+      setStepsDirty(false);
+      notify("Roteiro ao Vivo salvo no PostgreSQL.");
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1943,6 +2704,14 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
         <div className="modal-tabs">
           <button className={editorTab === "general" ? "active" : ""} onClick={() => setEditorTab("general")}>Geral e XP</button>
           <button className={editorTab === "questions" ? "active" : ""} onClick={() => setEditorTab("questions")}>Questões <span>{questions.length}</span></button>
+          <button
+            className={editorTab === "flow" ? "active" : ""}
+            disabled={activityBusy || stepsLoading}
+            onClick={() => { void openFlowTab(); }}
+          >
+            Roteiro
+            {stepsActivityId === activityId && <span>{activitySteps.length}</span>}
+          </button>
         </div>
         {editorTab === "general" ? (
           <div className="modal-section-stack">
@@ -1959,10 +2728,43 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
             </div>
             <div className="activity-summary-line"><span>{questions.length} questão(ões) vinculadas</span><button className="text-button" onClick={() => setEditorTab("questions")}>Gerenciar questões →</button></div>
           </div>
-        ) : (
+        ) : editorTab === "questions" ? (
           <ActivityQuestionBuilder questions={questions} setQuestions={setQuestions} defaultTheme={topic || title} notify={notify} />
+        ) : stepsLoading ? (
+          <div className="loading-screen compact">Carregando roteiro...</div>
+        ) : (
+          <ActivityStepEditor
+            steps={activitySteps}
+            questions={questions}
+            disabled={activityBusy}
+            onChange={(steps) => {
+              setActivitySteps(steps);
+              setStepsDirty(true);
+            }}
+          />
         )}
-        <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!title.trim() || activityBusy} onClick={() => { void saveActivity(true); }}>Salvar atividade</button></div>
+        <div className="modal-footer">
+          <button className="button ghost" onClick={() => setModal(null)}>
+            {editorTab === "flow" && stepsDirty ? "Fechar sem salvar" : "Cancelar"}
+          </button>
+          {editorTab === "flow" ? (
+            <button
+              className="button primary"
+              disabled={!activityId || activityBusy || stepsLoading || !stepsDirty}
+              onClick={() => { void saveFlow(); }}
+            >
+              {activityBusy ? "Salvando..." : stepsDirty ? "Salvar roteiro" : "Roteiro salvo"}
+            </button>
+          ) : (
+            <button
+              className="button primary"
+              disabled={!title.trim() || activityBusy}
+              onClick={() => { void saveActivity(true); }}
+            >
+              Salvar atividade
+            </button>
+          )}
+        </div>
       </Modal>
 
       <Modal open={modal === "delivery"} title="Registrar entrega / participação" subtitle={deliveryActivity?.title} size="medium" onClose={() => setModal(null)}>
@@ -1998,7 +2800,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
               <label className="field-label">Atividade</label>
               <select className="select full" value={sourceActivityId} onChange={(e) => setSourceActivityId(e.target.value)}><option value="">Selecione</option>{sourceActivities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title} · {activity.questions?.length ?? 0} questões</option>)}</select>
             </div>
-            <div className="copy-policy"><strong>Será criada uma cópia independente.</strong><p>Conteúdo, questões, XP e recurso externo são copiados. Entregas, alunos, resultados, ScoreEvents e histórico não são copiados.</p></div>
+            <div className="copy-policy"><strong>Será criada uma cópia independente.</strong><p>Conteúdo, questões, roteiro, XP e recurso externo são copiados. Entregas, alunos, resultados, ScoreEvents e histórico não são copiados.</p></div>
             <div className="modal-footer"><button className="button ghost" onClick={() => setModal(null)}>Cancelar</button><button className="button primary" disabled={!sourceActivityId || activityBusy} onClick={() => { void importActivityCopy(); }}>Importar cópia</button></div>
           </div>
         ) : <MiniEmpty text="Crie uma segunda turma para reutilizar atividades entre contextos. Em uma evolução futura, modelos também poderão vir de uma biblioteca." />}
@@ -2028,20 +2830,39 @@ function RankingView({ leaderboard, events, classroomId }: { leaderboard: { stud
   );
 }
 
-function HistoryView({ events, students, onReverse }: { events: ArenaData["scoreEvents"]; students: Student[]; onReverse: (id: string) => void }) {
+function HistoryView({ classroomId, events, students, onReverse }: { classroomId: string; events: ArenaData["scoreEvents"]; students: Student[]; onReverse: (id: string) => void }) {
+  const [mode, setMode] = useState<"timeline" | "xp">("timeline");
   const [query, setQuery] = useState("");
   const filtered = events.slice().reverse().filter((event) => {
     const student = students.find((s) => s.id === event.studentId);
     return `${student?.name ?? ""} ${event.description} ${event.category}`.toLowerCase().includes(query.toLowerCase());
   });
   return (
-    <Panel title="Histórico de XP" subtitle="Auditoria completa de respostas, entregas, bônus e ajustes">
-      <input className="input search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar aluno, motivo ou categoria..." />
-      <div className="history-list">
-        {filtered.map((event) => { const student = students.find((s) => s.id === event.studentId); return <div className="history-row" key={event.id}><Avatar student={student ?? { id: "x", name: "?", nickname: "", createdAt: "" }} /><div className="grow"><strong>{student?.name ?? "Aluno removido"}</strong><small>{event.description} · {dateTime(event.createdAt)}</small></div><span className="category-tag">{event.reversalOf ? "REVERSÃO" : event.reversed ? "REVERTIDO" : event.category}</span><b className={event.points >= 0 ? "positive" : "negative"}>{event.points >= 0 ? "+" : ""}{event.points} XP</b><button className="icon-button danger" disabled={Boolean(event.reversalOf || event.reversed)} title={event.reversalOf ? "Evento de reversão" : event.reversed ? "Lançamento já revertido" : "Reverter lançamento"} onClick={() => onReverse(event.id)}>↶</button></div>; })}
-        {!filtered.length && <MiniEmpty text="Nenhum lançamento encontrado." />}
-      </div>
-    </Panel>
+    <div className="stack-lg">
+      <Tabs
+        label="Tipos de histórico da turma"
+        activeId={mode}
+        onChange={(id) => setMode(id as "timeline" | "xp")}
+        items={[
+          { id: "timeline", label: "Linha do tempo", description: "Condução e dinâmicas da aula" },
+          { id: "xp", label: "Histórico de XP", description: `${events.length} lançamento(s)` },
+        ]}
+      />
+
+      {mode === "timeline" ? (
+        <Panel title="Linha do tempo da aula" subtitle="Trilha cronológica operacional das sessões, sem duplicar o histórico de XP">
+          <SessionTimeline classroomId={classroomId} />
+        </Panel>
+      ) : (
+        <Panel title="Histórico de XP" subtitle="Auditoria completa de respostas, entregas, bônus e ajustes">
+          <input className="input search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar aluno, motivo ou categoria..." />
+          <div className="history-list">
+            {filtered.map((event) => { const student = students.find((s) => s.id === event.studentId); return <div className="history-row" key={event.id}><Avatar student={student ?? { id: "x", name: "?", nickname: "", createdAt: "" }} /><div className="grow"><strong>{student?.name ?? "Aluno removido"}</strong><small>{event.description} · {dateTime(event.createdAt)}</small></div><span className="category-tag">{event.reversalOf ? "REVERSÃO" : event.reversed ? "REVERTIDO" : event.category}</span><b className={event.points >= 0 ? "positive" : "negative"}>{event.points >= 0 ? "+" : ""}{event.points} XP</b><button className="icon-button danger" disabled={Boolean(event.reversalOf || event.reversed)} title={event.reversalOf ? "Evento de reversão" : event.reversed ? "Lançamento já revertido" : "Reverter lançamento"} onClick={() => onReverse(event.id)}>↶</button></div>; })}
+            {!filtered.length && <MiniEmpty text="Nenhum lançamento encontrado." />}
+          </div>
+        </Panel>
+      )}
+    </div>
   );
 }
 
@@ -2086,7 +2907,7 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
       const names = ["Ana Luiza", "Carlos Henrique", "João Pedro", "Maria Francisca", "Pedro Augusto", "Rafael Lima"];
       const createdStudents: Student[] = [];
       for (const name of names) {
-        const result = await createAndEnrollStudent(classroom.id, { name, nickname: name.split(" ")[0] });
+        const result = await createAndEnrollStudent(classroom.id, { name, preferredName: name.split(" ")[0] });
         createdStudents.push(result.student);
       }
 

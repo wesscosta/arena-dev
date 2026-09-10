@@ -23,3 +23,8 @@ app:
   teacher:
     username: ${APP_TEACHER_USERNAME}
     password: ${APP_TEACHER_PASSWORD}
+  security:
+    login-rate-limit:
+      max-failures: ${APP_LOGIN_RATE_LIMIT_MAX_FAILURES:5}
+      window-seconds: ${APP_LOGIN_RATE_LIMIT_WINDOW_SECONDS:60}
+      block-seconds: ${APP_LOGIN_RATE_LIMIT_BLOCK_SECONDS:300}

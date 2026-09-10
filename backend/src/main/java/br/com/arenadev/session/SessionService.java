@@ -5,14 +5,24 @@ import br.com.arenadev.classroom.ClassroomRepository;
 import br.com.arenadev.classroom.Enrollment;
 import br.com.arenadev.classroom.EnrollmentRepository;
 import br.com.arenadev.classroom.Student;
+import br.com.arenadev.identity.DisplayNamePolicy;
+import br.com.arenadev.identity.DisplayNameService;
+import br.com.arenadev.poll.PollService;
 import br.com.arenadev.realtime.BuzzerService;
+import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import br.com.arenadev.sessionevent.SessionEventActor;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
+import br.com.arenadev.timer.SessionTimerService;
+import br.com.arenadev.wordcloud.WordCloudService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -24,6 +34,12 @@ public class SessionService {
     private final EnrollmentRepository enrollmentRepository;
     private final SessionJoinService joinService;
     private final BuzzerService buzzerService;
+    private final SessionTimerService timerService;
+    private final SessionRealtimeGateway realtimeGateway;
+    private final WordCloudService wordCloudService;
+    private final PollService pollService;
+    private final DisplayNameService displayNameService;
+    private final SessionEventService sessionEventService;
 
     public SessionService(
             ClassSessionRepository sessionRepository,
@@ -31,7 +47,13 @@ public class SessionService {
             ClassroomRepository classroomRepository,
             EnrollmentRepository enrollmentRepository,
             SessionJoinService joinService,
-            BuzzerService buzzerService
+            BuzzerService buzzerService,
+            SessionTimerService timerService,
+            SessionRealtimeGateway realtimeGateway,
+            WordCloudService wordCloudService,
+            PollService pollService,
+            DisplayNameService displayNameService,
+            SessionEventService sessionEventService
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -39,6 +61,12 @@ public class SessionService {
         this.enrollmentRepository = enrollmentRepository;
         this.joinService = joinService;
         this.buzzerService = buzzerService;
+        this.timerService = timerService;
+        this.realtimeGateway = realtimeGateway;
+        this.wordCloudService = wordCloudService;
+        this.pollService = pollService;
+        this.displayNameService = displayNameService;
+        this.sessionEventService = sessionEventService;
     }
 
     @Transactional
@@ -78,6 +106,17 @@ public class SessionService {
         }
 
         joinService.ensureCode(session);
+        sessionEventService.record(
+                session,
+                SessionEventType.SESSION_STARTED,
+                SessionEventActor.TEACHER,
+                "Sessão iniciada: " + normalizedTitle,
+                Map.of(
+                        "classroomName", classroom.getName(),
+                        "presentCount", requestedPresent.size(),
+                        "enrolledCount", enrollments.size()
+                )
+        );
         return SessionView.from(session);
     }
 
@@ -102,7 +141,7 @@ public class SessionService {
         getEntity(sessionId);
         return participantRepository.findBySessionIdOrderByStudentNameAsc(sessionId)
                 .stream()
-                .map(ParticipantView::from)
+                .map(this::participantView)
                 .toList();
     }
 
@@ -116,7 +155,7 @@ public class SessionService {
             throw new IllegalArgumentException("Participante não pertence à sessão informada.");
         }
         participant.setPresent(present);
-        return ParticipantView.from(participant);
+        return participantView(participant);
     }
 
 
@@ -124,21 +163,59 @@ public class SessionService {
     public ParticipantView releaseDevice(UUID sessionId, UUID participantId) {
         ClassSession session = getEntity(sessionId);
         ensureActive(session);
-        return ParticipantView.from(joinService.releaseDevice(sessionId, participantId));
+        return participantView(joinService.releaseDevice(sessionId, participantId));
     }
 
     @Transactional
     public SessionView finish(UUID sessionId) {
-        ClassSession session = getEntity(sessionId);
+        ClassSession session = getEntityForUpdate(sessionId);
         ensureActive(session);
         session.finish();
         joinService.deactivate(sessionId);
         buzzerService.closeForFinishedSession(sessionId);
-        return SessionView.from(session);
+        timerService.cancelOpenForFinishedSession(sessionId);
+        wordCloudService.closeOpenForFinishedSession(sessionId);
+        pollService.closeOpenForFinishedSession(sessionId);
+        sessionEventService.record(
+                session,
+                SessionEventType.SESSION_FINISHED,
+                SessionEventActor.TEACHER,
+                "Sessão encerrada: " + session.getTitle(),
+                Map.of(
+                        "startedAt", session.getStartedAt().toString(),
+                        "endedAt", session.getEndedAt().toString()
+                )
+        );
+
+        SessionView view = SessionView.from(session);
+        realtimeGateway.broadcastAfterCommit(sessionId, "SESSION_FINISHED", view);
+        realtimeGateway.broadcastProjectorsAfterCommit(sessionId, "SESSION_FINISHED", view);
+        return view;
+    }
+
+    private ParticipantView participantView(SessionParticipant participant) {
+        Student student = participant.getStudent();
+        UUID classroomId = participant.getSession().getClassroom().getId();
+        return new ParticipantView(
+                participant.getId(),
+                student.getId(),
+                student.getRegistration(),
+                student.getName(),
+                student.getNickname(),
+                displayNameService.preferredName(classroomId, student),
+                displayNameService.resolve(classroomId, student, DisplayNamePolicy.PREFERRED_NAME),
+                participant.isPresent(),
+                participant.isConnected()
+        );
     }
 
     private ClassSession getEntity(UUID id) {
         return sessionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+    }
+
+    private ClassSession getEntityForUpdate(UUID id) {
+        return sessionRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
     }
 
@@ -176,20 +253,10 @@ public class SessionService {
             String registration,
             String name,
             String nickname,
+            String preferredName,
+            String displayName,
             boolean present,
             boolean connected
     ) {
-        static ParticipantView from(SessionParticipant participant) {
-            Student student = participant.getStudent();
-            return new ParticipantView(
-                    participant.getId(),
-                    student.getId(),
-                    student.getRegistration(),
-                    student.getName(),
-                    student.getNickname(),
-                    participant.isPresent(),
-                    participant.isConnected()
-            );
-        }
     }
 }

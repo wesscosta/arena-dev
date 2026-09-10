@@ -1,159 +1,326 @@
 # Estado atual — Arena Dev
 
-**Última auditoria documental:** 5 de setembro de 2026
+**Última sincronização documental:** 9 de setembro de 2026
 
-**Repositório canônico:** <https://github.com/wesscosta/arena-dev>
+**Release estável:** `v0.3.0`, publicada em 05/09/2026.
 
-**Baseline de release:** candidata `0.3.0`. A baseline `958128db3ad2cee75e4fcebfd6bb0e828e968596` teve CI remoto verde na execução `33407968814` e backup/restore real validado. Um patch final de segurança atualiza o frontend de Next.js `16.3.0` para `16.3.3`; por alterar o SHA, a publicação exige nova CI verde no commit final da `main`, rollback ensaiado e gate final aprovado.
+**Linha ativa:** `v0.4.0 — Live Classroom` release candidate.
 
-Este documento registra o estado atual demonstrado pelo repositório. Os documentos `INCREMENT_*.md` e os ADRs preservam o histórico de evolução e não devem ser interpretados isoladamente como descrição do runtime atual.
+**Branch:** `feat/v0.4-live-classroom`.
 
-## Hierarquia de evidências
+**Checkpoint local:** **12.1–12.6 implementados localmente. A candidate `0.4.0` possui hardening de login, `X-Request-Id`, liveness/readiness, três cenários Playwright críticos e tooling de release alinhado a V1–V14.**
 
-Em caso de divergência:
+**Próximo passo:** **fechar evidências externas da release candidate: `mvn verify`, Compose/Playwright, CI remoto, backup/restore, rollback ensaiado e `release-gate.sh final` no mesmo SHA.**
 
-1. código, migrations e configuração versionada definem o que está implementado;
-2. este documento resume o estado corrente;
-3. ADRs aceitos definem decisões e restrições arquiteturais;
-4. documentos de incremento registram o estágio histórico em que foram escritos;
-5. roadmap e documentação narrativa não comprovam implementação ou validação.
+Este arquivo é a referência técnica versionada do estado corrente. Documentos de incremento preservam histórico e podem conter estados superados.
 
-## Stack confirmada
+## Evidência e precedência
 
-| Camada | Estado no repositório |
+1. código, migrations e configuração da árvore local validada;
+2. `STATUS_ATUAL.md`;
+3. `ROADMAP_0_4.md`;
+4. ADRs aceitos;
+5. documentos históricos.
+
+A branch remota pode ficar temporariamente atrás da árvore local durante validações. Em 08/09/2026, o ZIP de trabalho analisado estava 14 commits à frente da referência remota disponível no início deste incremento.
+
+## Baseline estável v0.3.0
+
+- commit: `6015d6d416edc26bfb8295c2aa6af141b9d6b9ad`;
+- CI final registrada: `33964844054`, sucesso no mesmo SHA;
+- release: <https://github.com/wesscosta/arena-dev/releases/tag/v0.3.0>;
+- Next.js `16.3.3`, React `19.2.0`;
+- MIT.
+
+A tag está congelada. Não mover ou recriar.
+
+Não há evidência registrada de que ensaio local de rollback ou `release-gate.sh final` tenham sido concluídos. Não marcar retroativamente esses passos como executados.
+
+## Stack
+
+| Camada | Estado |
 | --- | --- |
-| Frontend | Next.js 16.3.3, React 19.2 e TypeScript 5.9 |
-| Backend | Java 21 e Spring Boot 4.1 |
-| Persistência | PostgreSQL 17, JPA/Hibernate e Flyway |
-| Tempo real | Spring WebSocket |
-| Infraestrutura local | Docker Compose |
-| Arquitetura | Monólito modular, REST para estado durável e WebSocket para eventos ao vivo |
+| Frontend | Next.js 16.3.3, React 19.2, TypeScript 5.9 |
+| Backend | Java 21, Spring Boot 4.1 |
+| Persistência | PostgreSQL 17, JPA/Hibernate, Flyway |
+| Realtime | Spring WebSocket |
+| Infra local | Docker Compose |
+| Arquitetura | monólito modular |
 
-## Estado funcional demonstrado pelo código
-
-### Implementado
-
-- `Classroom`, `Student` e `Enrollment` no backend/PostgreSQL;
-- `ClassSession`, `SessionParticipant`, presença e uma sessão ativa por turma;
-- `ScoreEvent` como fonte de verdade do XP e reversões com `reversalOf`;
-- ranking como projeção da soma dos eventos;
-- `Activity`, `ActivityQuestion`, cópia entre turmas e Question Package JSON `1.0`;
-- importação CSV/TSV de resultados externos com preview, fingerprint e auditoria;
-- `SessionDynamic` para Sorteio, Grupos, Arena e Boss Battle;
-- sorteio inteligente e grupos decididos pelo backend;
-- código/QR de sessão, `/join`, token temporário com hash e Buzzer persistido;
-- autenticação do professor por sessão HTTP e proteção das APIs administrativas com `ROLE_TEACHER`;
-- token do participante autenticado no primeiro frame WebSocket;
-- heartbeat `PING/PONG`, limite lógico por socket, múltiplas conexões e broadcast após commit;
-- navegação `Visão geral → Turma → Arena` e workspace contextual da turma.
-
-### Persistência local
-
-O `localStorage` não é fonte de verdade do domínio operacional. Ele guarda:
-
-- preferência da turma selecionada no painel do professor;
-- acesso temporário do participante na rota `/join`, incluindo o token necessário à reconexão durante a sessão.
-
-### Migrations
-
-O repositório possui seis migrations:
+## Produto e arquitetura de informação
 
 ```text
-V1  fundação de turma e sessão
-V2  uma sessão ativa por turma
-V3  ScoreEvent
-V4  atividades e mecânicas
-V5  resultados externos
-V6  join e Buzzer
+Visão geral = nível sistema
+Turma       = contexto pedagógico
+Arena       = operação da aula ao vivo
+
+Arena
+├── Condução
+├── Dinâmicas
+│   ├── Sorteio
+│   ├── Nuvem de Palavras
+│   ├── Buzzer
+│   ├── Votação         implementada
+│   ├── Quiz            futuro
+│   └── Boss Battle     migração progressiva para palco
+├── Tempo
+├── Presença
+└── Organização
 ```
 
-Não existe migration `V7` na baseline auditada. O hardening dos Incrementos 11.1 e 11.2 foi implementado em código e reutiliza o schema existente, incluindo o índice parcial de uma rodada `OPEN` por sessão já presente na `V6`.
+Arena Dev não é LMS. Não reintroduzir sidebar global apenas para duplicar o contexto já resolvido por `Visão geral › Turma › Arena`.
 
-## Fronteira de segurança real
+## Consolidado
 
-### Implementado
+Domínio base:
 
-- login e logout explícitos do professor;
-- token CSRF obtido em `/api/auth/csrf` e exigido no login e nas mutações administrativas;
-- sessão HTTP enviada pelo frontend com `credentials: include`;
-- `/api/**` administrativo exige `ROLE_TEACHER`;
-- `/api/health`, `/api/auth/login`, `/api/join/**` e handshake `/ws/**` permanecem públicos;
-- CORS aceita credenciais para os padrões configurados;
-- token do aluno não trafega na URL do WebSocket;
-- claim de dispositivo pode ser liberado pelo professor;
-- limite de oito mensagens por segundo por socket.
+- Classroom, Student, Enrollment;
+- ClassSession, SessionParticipant e presença;
+- ScoreEvent e ranking derivado;
+- Activity e ActivityQuestion;
+- resultados externos;
+- sorteio, grupos, Boss Battle;
+- join temporário, QR e Buzzer.
 
-### Limites atuais
+v0.4:
 
-- existem credenciais default apenas no perfil e Compose de desenvolvimento;
-- o perfil `prod` exige banco, origem e credenciais explícitos e usa cookie `HttpOnly`, `Secure` e `SameSite=Strict`;
-- não existe rate limit específico para tentativas de login;
-- CSRF está ativo para login e mutações administrativas; rotas públicas com token próprio permanecem independentes da sessão do professor;
-- o limite realtime é local à instância e não substitui proteção distribuída futura;
-- o overlay de produção exige proxy TLS, DNS, secrets e operação externa ao repositório.
+- 12.1 Timer;
+- 12.2 Projector;
+- 12.3 Word Cloud;
+- ActivityStep autoral;
+- editor do Roteiro;
+- runtime autoritativo do step atual;
+- 12.3D.6 navegação contextual;
+- 12.3D.7A Design System;
+- 12.3D.7B Core UI Primitives;
+- 12.3D.7C Accessibility Pass;
+- 12.3D.7D Responsive & Visual Polish;
+- 12.4D.0A Live Stage / Presentation State;
+- 12.4D.0B: `Dinâmicas`, Sorteio/Nuvem/Buzzer/Poll no palco;
+- 12.4D.0C: `Enrollment.preferredName` e `DisplayNameService`;
+- 12.4D.0D: device claim opaco separado do participant token;
+- 12.4D.1: Poll single-choice, resultados agregados/anônimos, `/join` e Projetor;
+- 12.4E: Live Flow orquestra Live Stage; Slide/Question possuem projeção própria; Word Cloud/Poll reutilizam a rodada vinculada ao step; Boss ativa o palco compartilhado.
 
-## Qualidade e validação
+## Live Stage / Projection State
 
-| Item | Classificação |
-| --- | --- |
-| Build de produção do frontend | Validado novamente em 05/09/2026 após o patch para Next.js `16.3.3` |
-| TypeScript | Validado novamente em 05/09/2026; sem erros |
-| Auditoria npm de produção | Validada após o patch: `npm audit --omit=dev` reportou zero vulnerabilidades |
-| Backend e migrations | Validados na fatia 11.3A: compilação Java 21, empacotamento, Flyway `V1`–`V6`, validação JPA e PostgreSQL 17.11 |
-| Incremento 10 | Implementado; validação manual Docker/LAN registrada no handoff |
-| Incrementos 11.1 e 11.2 | Implementados e cobertos pelas suítes de segurança, regras transacionais e concorrência |
-| Testes backend | Validado nas fatias 11.3A–11.3C: um teste unitário e treze de integração; a suíte realtime também passou cinco vezes consecutivas |
-| Testes frontend | Validado no 11.3D: doze testes de contrato e estado, TypeScript e build de produção |
-| Testcontainers/PostgreSQL | Validado na fatia 11.3A com Testcontainers 2.0.5 e PostgreSQL 17.11 |
-| Concorrência do Buzzer | Validada em cinco cenários, repetidos cinco vezes consecutivas em Java 21/Docker |
-| Playwright | Validado localmente em Chromium com backend e PostgreSQL reais |
-| CI | Implementado; a baseline `958128db...` foi aprovada na execução `33407968814`. O patch Next.js `16.3.3` exige nova execução verde no SHA final da `main` antes da tag |
-| Hardening 11.4C | Validado localmente: Compose de produção, imagens, healthchecks, runtime não-root, CSRF e auditoria npm |
-| Release readiness 11.4D | Implementado: versões `0.3.0`, gate, checklist, backup/restore e rollback. Backup real, checksum e restauração isolada em PostgreSQL 17 já foram validados; faltam nova CI do SHA pós-patch, ensaio de rollback e gate final |
+A sessão possui **um único palco principal autoritativo**, em vez de flags concorrentes por feature.
 
-## Fronteira de produto e licenciamento
+```text
+Professor ──comanda──► LiveStageState
+                         │
+                         ├── primary.type
+                         ├── audience
+                         └── overlays.timer
+                           ↙             ↘
+                    /projector           /join
+                   visão pública      visão individual
+```
 
-- **Arena Dev Community:** este repositório público, self-hosted e licenciado sob MIT. A licença vale para o histórico público já distribuído e deve acompanhar qualquer cópia ou derivação desse código.
-- **Produto comercial Verit:** produto SaaS futuro, planejado para um repositório privado separado. Ainda não está implementado neste repositório.
-- **Separação técnica:** Estudos/Concursos mantém domínio, backend e banco próprios. Integrações futuras usam APIs ou contratos versionados; banco compartilhado e consultas cruzadas ficam rejeitados.
-- **Fronteira comercial planejada:** contas persistentes e papéis avançados, organizações, multi-tenancy, planos/billing, workspace de estudos, revisão adaptativa, analytics avançado, conteúdo premium, IA e operação SaaS.
-- **Governança pendente:** a titularidade do código proprietário futuro e a política para contribuições externas devem ser formalizadas por instrumento escrito antes da abertura do repositório comercial ou da aceitação ampla de contribuições.
+`DynamicType.LIVE_STAGE` reutiliza `session_dynamics`; não exige migration nova.
 
-A decisão completa está em [`adr/ADR-0026-community-mit-e-produto-comercial-verit.md`](adr/ADR-0026-community-mit-e-produto-comercial-verit.md).
+Tipos do contrato:
 
-## Documentado, mas ainda não implementado
+```text
+IDLE
+DRAW
+SLIDE
+QUESTION
+QUIZ
+WORD_CLOUD
+POLL
+BUZZER
+BOSS_BATTLE
+TIMER
+```
 
-- `SessionEvent` para auditoria cronológica completa da aula;
-- visão dedicada de projetor/tela pública;
-- controle para mostrar ou ocultar ranking na visão pública;
-- timer sincronizado;
-- respostas A/B/C/D pelo celular;
-- restauração server-side do snapshot de backup;
-- autenticação institucional e contas persistentes de professor/aluno.
+Audiências:
 
-## Classificação de continuidade
+```text
+PROJECTOR
+PARTICIPANTS
+BOTH
+```
 
-| Classificação | Estado em 31/08/2026 |
-| --- | --- |
-| **Validado** | Gate local 11.4D, backend, frontend, E2E, containers e licença MIT presente |
-| **Implementado** | Incrementos 1–11.4D e baseline operacional de release `0.3.0` |
-| **Parcial** | Publicação `v0.3.0`: patch Next.js `16.3.3` validado localmente; faltam commit/CI do novo SHA final, rollback e gate final |
-| **Documentado** | Divisão Arena Dev Community × produto comercial Verit e sequência de separação dos repositórios |
-| **Planejado** | Produto comercial privado, Estudos/Concursos e módulos SaaS diferenciados |
-| **Hipótese** | Estudos como principal oferta B2C e Arena Community como aquisição/validação; depende de piloto e sinal econômico |
-| **Rejeitado/adiado** | Mesmo backend ou banco para Arena e Estudos, retirada retroativa da licença MIT, `v1.0.0`, microserviços e IA antes do MVP |
-| **Desconhecido** | SHA final pós-patch e CI correspondente, evidências do ambiente-alvo, nome comercial, limites Free/Pro e instrumento de titularidade do código proprietário |
+Regras:
 
-## Próximo gate
+- apenas um `primary` por sessão;
+- Timer pode continuar transversal via overlay;
+- professor, Projetor e participante recebem projeções próprias do mesmo estado;
+- clientes públicos não devem decidir política de exposição de identidade;
+- `LIVE_STAGE_STATE` seleciona o palco, enquanto eventos especializados mantêm o detalhe do módulo;
+- Sorteio, Nuvem, Poll e Buzzer ativam o palco pelos runtimes especializados;
+- Slide e Question usam projeção preparada do `ActivityStep`;
+- Boss Battle já possui adapter de seleção do palco;
+- não ativar tipos sem adapter/renderização correspondente.
 
-O **11.4D — Release Readiness** permanece como gate corrente. O backup/restore real já foi validado e o patch Next.js `16.3.3` passou pelos gates frontend locais. A release ainda depende da consolidação final:
+Consulte [`INCREMENT_12_4D_0.md`](INCREMENT_12_4D_0.md), [`INCREMENT_12_4E.md`](INCREMENT_12_4E.md), ADR-0027 e ADR-0029.
 
-1. publicar o patch de segurança e a documentação corrigida em `main`;
-2. registrar o novo SHA final e confirmar GitHub Actions verde exatamente nesse commit;
-3. simular o rollback de aplicação preservando o PostgreSQL;
-4. executar `release-gate.sh final` com a nova execução de CI e o backup validado;
-5. somente então criar a tag anotada `v0.3.0` e a GitHub Release.
+## ActivityStep / Live Flow
 
-TLS, proxy reverso, DNS, secrets de produção, retenção externa de backups, observabilidade e digests de imagens permanecem responsabilidades do ambiente de implantação e devem ser validados antes da exposição pública, mas não bloqueiam a tag do código Community.
+```text
+Activity
+└── ActivityStep[]
+    ├── SLIDE
+    ├── QUESTION
+    ├── WORD_CLOUD
+    └── POLL
+```
 
-Consulte [`INCREMENT_11_4.md`](INCREMENT_11_4.md) para o histórico do incremento e [`RELEASE_0_3_0.md`](RELEASE_0_3_0.md) para o procedimento completo. Nenhuma tag foi criada por esta implementação.
+Runtime atual em `SessionDynamic.ARENA` mantém:
+
+```text
+activityId
+currentQuestionId
+answeredQuestionIds
+currentStepId
+currentStepPosition
+stepRuntimeIds      # vínculo stepId → roundId para runtimes preparados
+```
+
+Professor controla `start`, `previous` e `next`. O Live Flow e o Live Stage continuam abstrações distintas: **roteiro define sequência; palco define o que está sendo apresentado agora**. Desde o 12.4E, os steps autorados acionam o palco e, para Word Cloud/Poll, reutilizam o runtime especializado já vinculado ao step sem criar domínio paralelo.
+
+## Identidade — implementação local concluída
+
+```text
+Student           = identidade canônica
+Enrollment        = preferredName no contexto da turma
+Device claim      = identificador opaco persistente por matrícula
+Participant token = credencial temporária da sessão
+```
+
+- `V11` adiciona `Enrollment.preferredName` com backfill do nickname legado;
+- `DisplayNameService` resolve a política no backend antes da projeção pública;
+- `V12` adiciona claims opacos de dispositivo, expirados/revogáveis;
+- `localStorage` contém somente device claim por turma;
+- `sessionStorage` contém somente participant token da aula atual;
+- reconhecer o dispositivo apenas facilita a reentrada e **não** concede permissão direta de voto/Buzzer/WebSocket.
+
+## Flyway
+
+Maior migration detectada: **V14**.
+
+- `V1` — `classroom session foundation`.
+- `V2` — `one active session per classroom`.
+- `V3` — `score events`.
+- `V4` — `activities and session mechanics`.
+- `V5` — `external activity results`.
+- `V6` — `session join and buzzer`.
+- `V7` — `session timers`.
+- `V8` — `word cloud`.
+- `V9` — `word cloud max words integer`.
+- `V10` — `activity steps`.
+- `V11` — `enrollment preferred name`.
+- `V12` — `enrollment device claims`.
+- `V13` — `poll runtime` (`poll_rounds`, `poll_options`, `poll_votes`).
+- `V14` — `session events` / linha do tempo operacional.
+
+Live Stage e o hardening 12.6 **não adicionam migration**.
+
+## UI e acessibilidade
+
+Primitives:
+
+```text
+Button
+IconButton
+Badge
+Tabs
+Menu
+Breadcrumb
+Field
+Card
+EmptyState
+LiveRegion
+```
+
+Estilos:
+
+```text
+tokens.css
+base.css
+accessibility.css
+arena-polish.css
+```
+
+Baseline:
+
+- teclado;
+- foco visível;
+- skip link;
+- landmark principal;
+- focus management;
+- contraste;
+- reduced motion;
+- zoom/reflow;
+- LiveRegion controlado;
+- Timer sem anúncio por segundo.
+
+## 12.5 — SessionEvent / linha do tempo operacional
+
+- migration `V14__session_events.sql`;
+- sequência monotônica para ordenação determinística;
+- tipos semânticos e ator `TEACHER`/`SYSTEM`;
+- eventos de sessão, condução, Sorteio, grupos, Buzzer, Timer, Nuvem, Poll e Boss;
+- sem heartbeat, reconnect, tick, voto, palavra ou press individual;
+- expiração natural do Timer registrada uma única vez como evento de sistema;
+- API administrativa por turma e por sessão;
+- `Histórico → Linha do tempo` separado de `Histórico de XP`;
+- timeline somente leitura; reversão continua exclusiva de `ScoreEvent`.
+
+## Validação do checkpoint local — 09/09/2026
+
+Frontend:
+
+```text
+npm test          85/85 OK
+npm run typecheck OK
+npm run build     OK
+```
+
+Backend:
+
+```text
+compilação Java 21 de todos os fontes main: OK
+```
+
+`SessionEventIT` foi adicionado ao conjunto de integração com PostgreSQL/Testcontainers e cobre ordem, ausência de ruído por resposta individual, expiração natural do Timer e reabertura do Buzzer. A compilação Java 21 de todos os fontes `main` está verde.
+
+**Limitação deste ambiente:** Maven e Docker não estão disponíveis, portanto `mvn -B -ntp verify` e `docker compose up -d --build` não foram executados neste checkpoint. 12.5 precisa passar pelo gate backend/Compose no ambiente normal ou CI antes do commit/release.
+
+## Próxima sequência
+
+```text
+12.4D Live Stage + identidade + Poll       concluído
+↓
+12.4E Live Flow ↔ Live Stage              concluído
+↓
+12.4F /join + Projector + reconnect        concluído
+↓
+12.5 SessionEvent / linha do tempo         concluído
+↓
+12.6 hardening + E2E + gate v0.4.0         implementado localmente
+↓
+release evidence / main / tag v0.4.0       pendente
+```
+
+## Gate normal
+
+```bash
+cd frontend
+npm test
+npm run typecheck
+npm run build
+
+cd ../backend
+mvn -B -ntp verify
+
+cd ..
+docker compose up -d --build
+sleep 5
+docker compose ps
+```
+
+## Versionamento
+
+Os manifests e o tooling de release estão alinhados em `0.4.0` desde o 12.6. A tag `v0.4.0` ainda não existe e só pode ser criada após o gate final documentado em `RELEASE_0_4_0.md`.

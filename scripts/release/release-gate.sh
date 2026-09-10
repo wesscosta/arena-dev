@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-RELEASE_VERSION="${ARENA_RELEASE_VERSION:-0.3.0}"
+RELEASE_VERSION="${ARENA_RELEASE_VERSION:-0.4.0}"
 MODE="${1:-}"
 CI_RUN_URL=""
 BACKUP_FILE=""
@@ -201,6 +201,14 @@ docker compose --project-name "$compose_project" up --detach --wait
   fail "backend não está executando como usuário arena"
 [[ "$(docker compose --project-name "$compose_project" exec -T frontend id -un)" == "arena" ]] || \
   fail "frontend não está executando como usuário arena"
+
+printf 'Validando liveness/readiness do backend...\n'
+live_health="$(docker compose --project-name "$compose_project" exec -T backend wget -q -O - http://localhost:8080/api/health/live)"
+ready_health="$(docker compose --project-name "$compose_project" exec -T backend wget -q -O - http://localhost:8080/api/health/ready)"
+[[ "$live_health" == *'"status":"UP"'* && "$live_health" == *'"check":"liveness"'* ]] || \
+  fail "health de liveness inválido: $live_health"
+[[ "$ready_health" == *'"status":"UP"'* && "$ready_health" == *'"database":"UP"'* ]] || \
+  fail "health de readiness inválido: $ready_health"
 
 (
   cd frontend

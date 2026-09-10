@@ -4,5 +4,6 @@ public enum DynamicType {
     QUICK_DRAW,
     GROUPS,
     BOSS_BATTLE,
-    ARENA
+    ARENA,
+    LIVE_STAGE
 }
