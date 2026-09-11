@@ -8,7 +8,7 @@
 
 **Branch de desenvolvimento:** `feat/v0.5-live-quiz`.
 
-**Checkpoint:** `13.1 — Quiz Runtime implementado para validação`.
+**Checkpoint:** `13.2 — respostas estruturadas no /join implementadas para validação`.
 
 Este arquivo é a referência técnica versionada do estado corrente.
 
@@ -83,8 +83,9 @@ Não duplicar `ActivityQuestion` dentro do runtime.
 
 ```text
 13.0  Bootstrap documental                         concluído
-13.1  Quiz Runtime                                 implementado; gate pendente
-13.2  Respostas estruturadas no /join                  próximo
+13.1  Quiz Runtime                                 concluído localmente
+13.2  Respostas estruturadas no /join                implementado; gates pendentes
+13.3  Resultados + Projetor                           próximo
 13.3  Resultados + Projetor
 13.4  Avaliação + integração com ScoreEvent
 13.5  Feedback pedagógico
@@ -104,4 +105,4 @@ Os manifests permanecem em `0.4.0` durante o desenvolvimento inicial da v0.5. O 
 
 ## Próximo passo
 
-**Gate imediato:** executar `mvn -B -ntp verify`. Com o backend verde, fechar 13.1 e avançar para **13.2 — respostas estruturadas no `/join`**.
+**Gate imediato:** executar frontend (`npm test`, `typecheck`, `build`) e backend (`mvn -B -ntp verify`). Com os gates verdes, fechar 13.2 e avançar para **13.3 — Resultados + Projetor**.

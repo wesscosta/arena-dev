@@ -2,6 +2,7 @@ package br.com.arenadev.realtime;
 
 import br.com.arenadev.dynamic.MechanicsService;
 import br.com.arenadev.poll.PollService;
+import br.com.arenadev.quiz.QuizService;
 import br.com.arenadev.stage.LiveStageService;
 import br.com.arenadev.timer.SessionTimerService;
 import br.com.arenadev.wordcloud.WordCloudService;
@@ -27,6 +28,7 @@ class SessionRuntimeSnapshotServiceTest {
         SessionTimerService timerService = mock(SessionTimerService.class);
         WordCloudService wordCloudService = mock(WordCloudService.class);
         PollService pollService = mock(PollService.class);
+        QuizService quizService = mock(QuizService.class);
         LiveStageService liveStageService = mock(LiveStageService.class);
         MechanicsService mechanicsService = mock(MechanicsService.class);
 
@@ -44,6 +46,8 @@ class SessionRuntimeSnapshotServiceTest {
         var wordCloudParticipant = WordCloudService.ParticipantStateView.empty();
         var poll = PollService.StateView.empty();
         var pollParticipant = PollService.ParticipantStateView.empty();
+        var quiz = QuizService.StateView.empty();
+        var quizParticipant = QuizService.ParticipantStateView.empty();
         var boss = new MechanicsService.BossState("Spaghetti Code", 100, 70);
         var runtime = new MechanicsService.RuntimeView(
                 sessionId,
@@ -67,6 +71,8 @@ class SessionRuntimeSnapshotServiceTest {
         when(wordCloudService.participantState(sessionId, participantId)).thenReturn(wordCloudParticipant);
         when(pollService.publicState(sessionId)).thenReturn(poll);
         when(pollService.participantState(sessionId, participantId)).thenReturn(pollParticipant);
+        when(quizService.publicState(sessionId)).thenReturn(quiz);
+        when(quizService.participantState(sessionId, participantId)).thenReturn(quizParticipant);
         when(mechanicsService.getRuntime(sessionId)).thenReturn(runtime);
 
         SessionRuntimeSnapshotService service = new SessionRuntimeSnapshotService(
@@ -74,6 +80,7 @@ class SessionRuntimeSnapshotServiceTest {
                 timerService,
                 wordCloudService,
                 pollService,
+                quizService,
                 liveStageService,
                 mechanicsService
         );
@@ -85,6 +92,8 @@ class SessionRuntimeSnapshotServiceTest {
         assertThat(snapshot.buzzerParticipant()).isSameAs(privateBuzzer);
         assertThat(snapshot.wordCloudParticipant()).isSameAs(wordCloudParticipant);
         assertThat(snapshot.pollParticipant()).isSameAs(pollParticipant);
+        assertThat(snapshot.quiz()).isSameAs(quiz);
+        assertThat(snapshot.quizParticipant()).isSameAs(quizParticipant);
         assertThat(snapshot.boss()).isEqualTo(boss);
 
         verify(buzzerService).projectorState(sessionId);

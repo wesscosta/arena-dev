@@ -51,6 +51,7 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0032](ADR-0032-hardening-e-release-gate-v0-4.md) | Hardening, E2E e fronteira de evidência para a release v0.4.0 | Aceito |
 | [ADR-0033](ADR-0033-quiz-runtime-e-respostas-estruturadas.md) | Quiz Runtime reutiliza ActivityQuestion e preserva ScoreEvent como fonte de XP | Aceito |
 | [ADR-0034](ADR-0034-maquina-de-estados-do-quiz-e-resposta-mutavel.md) | Máquina de estados do Quiz e resposta mutável antes do lock | Aceito |
+| [ADR-0035](ADR-0035-resposta-quiz-rest-e-websocket-como-projecao.md) | Resposta de Quiz via REST; WebSocket permanece como projeção | Aceito |
 
 ## Template
 

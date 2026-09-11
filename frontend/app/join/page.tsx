@@ -23,8 +23,10 @@ import {
 } from "@/lib/word-cloud-api";
 import wordStyles from "./word-cloud.module.css";
 import pollStyles from "./poll.module.css";
+import quizStyles from "./quiz.module.css";
 import stepStyles from "./prepared-step.module.css";
 import { emptyPollParticipantState, sendPollVote, type PollParticipantState, type PollState } from "@/lib/poll-api";
+import { emptyQuizParticipantState, sendQuizAnswer, type QuizParticipantState, type QuizState } from "@/lib/quiz-api";
 import { reconnectDelayMs, type BuzzerParticipantState, type ParticipantRuntimeSnapshot, type PublicBossState, type PublicBuzzerState } from "@/lib/runtime-snapshot";
 
 function messageOf(error: unknown) {
@@ -44,9 +46,12 @@ export default function JoinPage() {
   const [boss, setBoss] = useState<PublicBossState | null>(null);
   const [wordCloud, setWordCloud] = useState<WordCloudState>({ round: null });
   const [poll, setPoll] = useState<PollState>({ round: null });
+  const [quiz, setQuiz] = useState<QuizState>({ round: null });
   const [liveStage, setLiveStage] = useState<LiveStageState>(() => emptyLiveStageState());
   const [wordCloudParticipant, setWordCloudParticipant] = useState<WordCloudParticipantState>(emptyWordCloudParticipantState());
   const [pollParticipant, setPollParticipant] = useState<PollParticipantState>(emptyPollParticipantState());
+  const [quizParticipant, setQuizParticipant] = useState<QuizParticipantState>(emptyQuizParticipantState());
+  const [quizSubmitting, setQuizSubmitting] = useState(false);
   const [wordDraft, setWordDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -150,6 +155,8 @@ export default function JoinPage() {
         setWordCloudParticipant(runtime.wordCloudParticipant);
         setPoll(runtime.poll);
         setPollParticipant(runtime.pollParticipant);
+        setQuiz(runtime.quiz);
+        setQuizParticipant(runtime.quizParticipant);
         setBoss(runtime.boss ?? null);
       }
       if (event.type === "LIVE_STAGE_STATE") setLiveStage(event.payload as LiveStageState);
@@ -184,11 +191,37 @@ export default function JoinPage() {
       if (event.type === "POLL_PARTICIPANT_STATE") {
         setPollParticipant(event.payload as PollParticipantState);
       }
+      if (event.type === "QUIZ_STATE") {
+        const state = event.payload as QuizState;
+        setQuiz(state);
+        setQuizParticipant((current) => {
+          const round = state.round;
+          if (!round) return emptyQuizParticipantState();
+          if (current.roundId !== round.id) {
+            return {
+              ...emptyQuizParticipantState(),
+              roundId: round.id,
+              status: round.status,
+              canAnswer: round.status === "OPEN",
+              resultsVisible: round.publicResultsVisible,
+              correctAnswer: round.publicResultsVisible ? round.correctAnswer : null,
+            };
+          }
+          return {
+            ...current,
+            status: round.status,
+            canAnswer: round.status === "OPEN",
+            resultsVisible: round.publicResultsVisible,
+            correctAnswer: round.publicResultsVisible ? round.correctAnswer : null,
+          };
+        });
+      }
       if (event.type === "SESSION_FINISHED") {
         setSessionFinished(true);
         window.sessionStorage.removeItem(studentAccessStorageKey(access.code));
         setBuzzer({ status: "CLOSED", presses: [] });
         setPollParticipant(emptyPollParticipantState());
+        setQuizParticipant(emptyQuizParticipantState());
       }
       if (event.type === "AUTH_FAILED") {
         authFailed = true;
@@ -305,6 +338,20 @@ export default function JoinPage() {
     }
   }
 
+  async function answerQuiz(answer: string | boolean) {
+    if (!access || !quiz.round || !quizParticipant.canAnswer || quizSubmitting) return;
+    setQuizSubmitting(true);
+    setError("");
+    try {
+      const participantState = await sendQuizAnswer(access.code, quiz.round.id, access.token, answer);
+      setQuizParticipant(participantState);
+    } catch (caught) {
+      setError(messageOf(caught));
+    } finally {
+      setQuizSubmitting(false);
+    }
+  }
+
   const myPress = useMemo(
     () => buzzerParticipant.roundId && buzzerParticipant.roundId === buzzer.roundId && buzzerParticipant.position
       ? { position: buzzerParticipant.position }
@@ -312,6 +359,8 @@ export default function JoinPage() {
     [buzzer.roundId, buzzerParticipant.roundId, buzzerParticipant.position],
   );
   const winner = buzzer.presses[0];
+  const activeQuizRound = quiz.round;
+  const activeQuizQuestion = activeQuizRound?.question ?? null;
 
   return (
     <main className="student-join-shell">
@@ -382,6 +431,86 @@ export default function JoinPage() {
                     ))}
                   </div>
                 )}
+              </section>
+            )}
+
+            {!sessionFinished && liveStage.primary.type === "QUIZ" && activeQuizRound && activeQuizQuestion && (
+              <section className={`${quizStyles.card} ${quizSubmitting ? quizStyles.submitting : ""}`}>
+                <div className={quizStyles.heading}>
+                  <div>
+                    <span>QUIZ AO VIVO</span>
+                    <h2>{activeQuizQuestion.statement}</h2>
+                  </div>
+                  <strong>
+                    {activeQuizRound.status === "OPEN"
+                      ? "RESPONDENDO"
+                      : activeQuizRound.status === "LOCKED"
+                        ? "BLOQUEADO"
+                        : activeQuizRound.status === "REVEALED"
+                          ? "REVELADO"
+                          : activeQuizRound.status === "CLOSED"
+                            ? "ENCERRADO"
+                            : "PREPARADO"}
+                  </strong>
+                </div>
+
+                {activeQuizQuestion.code && (
+                  <pre className={quizStyles.code}><code>{activeQuizQuestion.code}</code></pre>
+                )}
+
+                <p className={quizStyles.hint}>
+                  {activeQuizRound.status === "OPEN"
+                    ? "Selecione sua resposta. Enquanto a rodada estiver aberta, você pode alterar sua escolha."
+                    : quizParticipant.answered
+                      ? "Sua resposta foi registrada. Aguarde a condução do professor."
+                      : "As respostas desta rodada não estão mais abertas."}
+                </p>
+
+                {quizParticipant.answered && (
+                  <div className={quizStyles.done}>
+                    Resposta registrada
+                    {activeQuizRound.status === "OPEN"
+                      ? " · você ainda pode alterar sua escolha."
+                      : " · sua escolha está bloqueada."}
+                  </div>
+                )}
+
+                <div className={quizStyles.options}>
+                  {activeQuizQuestion.options.map((option, index) => {
+                    const answer: string | boolean = activeQuizQuestion.type === "TRUE_FALSE"
+                      ? option.id === "true"
+                      : option.id;
+                    const selected = quizParticipant.answer === answer;
+                    return (
+                      <button
+                        type="button"
+                        key={option.id}
+                        className={`${quizStyles.option} ${selected ? quizStyles.selected : ""}`}
+                        disabled={!quizParticipant.canAnswer || quizSubmitting}
+                        aria-pressed={selected}
+                        onClick={() => void answerQuiz(answer)}
+                      >
+                        <span className={quizStyles.letter}>
+                          {activeQuizQuestion.type === "TRUE_FALSE"
+                            ? (option.id === "true" ? "V" : "F")
+                            : String.fromCharCode(65 + index)}
+                        </span>
+                        <span>{option.text}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {!quizParticipant.resultsVisible && (
+                  <div className={quizStyles.protected}>
+                    A correção permanece protegida até o professor revelar o resultado.
+                  </div>
+                )}
+
+                <div className={quizStyles.meta}>
+                  <span>{activeQuizRound.totalAnswers} resposta(s) recebida(s)</span>
+                  <span>{activeQuizQuestion.points} XP previsto(s) na questão</span>
+                </div>
               </section>
             )}
 
@@ -507,7 +636,7 @@ export default function JoinPage() {
                   <p>O professor está conduzindo o progresso do Boss na Arena.</p>
                 )}
               </div>
-            ) : liveStage.primary.type !== "WORD_CLOUD" && liveStage.primary.type !== "POLL" && liveStage.primary.type !== "QUESTION" ? (
+            ) : liveStage.primary.type !== "WORD_CLOUD" && liveStage.primary.type !== "POLL" && liveStage.primary.type !== "QUESTION" && liveStage.primary.type !== "QUIZ" ? (
               <div className={wordStyles.waiting}>
                 <span>{liveStage.primary.type === "IDLE" ? "ARENA DEV" : liveStage.primary.type.replaceAll("_", " ")}</span>
                 <strong>Aguardando próxima dinâmica</strong>

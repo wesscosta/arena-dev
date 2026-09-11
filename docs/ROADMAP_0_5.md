@@ -62,7 +62,7 @@ ActivityQuestion
 - [x] projeção pública agregada e protegida antes do reveal;
 - [x] migration `V15__quiz_runtime.sql`;
 - [x] `QuizIT` adicionado com PostgreSQL/Testcontainers;
-- [ ] `mvn -B -ntp verify` e CI verdes para fechar o incremento.
+- [x] `mvn -B -ntp verify` verde no gate local do incremento; CI permanece como gate da linha/release.
 
 Tipos MVP:
 
@@ -73,12 +73,16 @@ TRUE_FALSE
 
 ### 13.2 — Respostas estruturadas no `/join`
 
-- [ ] renderizar questão ativa;
-- [ ] enviar resposta autenticada;
-- [ ] confirmar envio sem revelar correção antecipadamente;
-- [ ] bloquear submissão em estados terminais/protegidos;
-- [ ] restaurar resposta própria após reload/reconnect;
-- [ ] mobile-first e acessibilidade.
+- [x] ativar `LiveStageType.QUIZ` ao abrir a rodada;
+- [x] renderizar questão ativa no `/join`;
+- [x] enviar resposta durável por REST com token temporário;
+- [x] confirmar envio sem revelar correção antecipadamente;
+- [x] permitir alteração enquanto `OPEN` e bloquear após `LOCKED`;
+- [x] restaurar Quiz + resposta própria pelo `RUNTIME_SNAPSHOT`;
+- [x] manter `QUIZ_STATE` como projeção realtime;
+- [x] UI mobile-first com controles nativos acessíveis;
+- [x] testes de contrato frontend e `QuizJoinIT` adicionados;
+- [ ] `npm test`, `npm run typecheck`, `npm run build` e `mvn verify` verdes para fechar o incremento.
 
 ### 13.3 — Resultados + Projetor
 
