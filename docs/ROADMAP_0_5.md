@@ -51,17 +51,18 @@ ActivityQuestion
 
 ### 13.1 — Quiz Runtime
 
-- [ ] definir `QuizRound`;
-- [ ] definir `ParticipantAnswer`;
-- [ ] vincular rodada a `ClassSession` e `ActivityQuestion`;
-- [ ] estados `READY`, `OPEN`, `LOCKED`, `REVEALED`, `CLOSED`;
-- [ ] uma resposta efetiva por participante/rodada no MVP;
-- [ ] política explícita de alteração antes do lock;
-- [ ] comandos abrir, bloquear, revelar e encerrar;
-- [ ] estado privado do participante;
-- [ ] projeção pública agregada;
-- [ ] migration Flyway após revisão do contrato;
-- [ ] testes de integração PostgreSQL/Testcontainers.
+- [x] definir `QuizRound`;
+- [x] definir `ParticipantAnswer`;
+- [x] vincular rodada a `ClassSession` e `ActivityQuestion`;
+- [x] estados `READY`, `OPEN`, `LOCKED`, `REVEALED`, `CLOSED`;
+- [x] uma resposta efetiva por participante/rodada no MVP;
+- [x] permitir alteração da mesma resposta enquanto `OPEN`;
+- [x] comandos preparar, abrir, bloquear, revelar e encerrar;
+- [x] estado privado do participante;
+- [x] projeção pública agregada e protegida antes do reveal;
+- [x] migration `V15__quiz_runtime.sql`;
+- [x] `QuizIT` adicionado com PostgreSQL/Testcontainers;
+- [ ] `mvn -B -ntp verify` e CI verdes para fechar o incremento.
 
 Tipos MVP:
 

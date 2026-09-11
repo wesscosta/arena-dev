@@ -8,6 +8,7 @@ import br.com.arenadev.classroom.Student;
 import br.com.arenadev.identity.DisplayNamePolicy;
 import br.com.arenadev.identity.DisplayNameService;
 import br.com.arenadev.poll.PollService;
+import br.com.arenadev.quiz.QuizService;
 import br.com.arenadev.realtime.BuzzerService;
 import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.shared.ResourceNotFoundException;
@@ -38,6 +39,7 @@ public class SessionService {
     private final SessionRealtimeGateway realtimeGateway;
     private final WordCloudService wordCloudService;
     private final PollService pollService;
+    private final QuizService quizService;
     private final DisplayNameService displayNameService;
     private final SessionEventService sessionEventService;
 
@@ -52,6 +54,7 @@ public class SessionService {
             SessionRealtimeGateway realtimeGateway,
             WordCloudService wordCloudService,
             PollService pollService,
+            QuizService quizService,
             DisplayNameService displayNameService,
             SessionEventService sessionEventService
     ) {
@@ -65,6 +68,7 @@ public class SessionService {
         this.realtimeGateway = realtimeGateway;
         this.wordCloudService = wordCloudService;
         this.pollService = pollService;
+        this.quizService = quizService;
         this.displayNameService = displayNameService;
         this.sessionEventService = sessionEventService;
     }
@@ -176,6 +180,7 @@ public class SessionService {
         timerService.cancelOpenForFinishedSession(sessionId);
         wordCloudService.closeOpenForFinishedSession(sessionId);
         pollService.closeOpenForFinishedSession(sessionId);
+        quizService.closeOpenForFinishedSession(sessionId);
         sessionEventService.record(
                 session,
                 SessionEventType.SESSION_FINISHED,

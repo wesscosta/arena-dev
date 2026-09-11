@@ -6,7 +6,8 @@
 2. [`STATUS_ATUAL.md`](STATUS_ATUAL.md)
 3. [`ROADMAP_0_5.md`](ROADMAP_0_5.md)
 4. [`INCREMENT_13_0.md`](INCREMENT_13_0.md)
-5. [`RELEASE_0_4_0.md`](RELEASE_0_4_0.md) — baseline pública congelada
+5. [`INCREMENT_13_1.md`](INCREMENT_13_1.md)
+6. [`RELEASE_0_4_0.md`](RELEASE_0_4_0.md) — baseline pública congelada
 6. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md)
 7. [`ACCESSIBILITY.md`](ACCESSIBILITY.md)
 8. [`adr/README.md`](adr/README.md)

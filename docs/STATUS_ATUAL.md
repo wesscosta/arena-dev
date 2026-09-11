@@ -8,7 +8,7 @@
 
 **Branch de desenvolvimento:** `feat/v0.5-live-quiz`.
 
-**Checkpoint:** `13.0 — bootstrap documental`.
+**Checkpoint:** `13.1 — Quiz Runtime implementado para validação`.
 
 Este arquivo é a referência técnica versionada do estado corrente.
 
@@ -83,8 +83,8 @@ Não duplicar `ActivityQuestion` dentro do runtime.
 
 ```text
 13.0  Bootstrap documental                         concluído
-13.1  Quiz Runtime                                 próximo
-13.2  Respostas estruturadas no /join
+13.1  Quiz Runtime                                 implementado; gate pendente
+13.2  Respostas estruturadas no /join                  próximo
 13.3  Resultados + Projetor
 13.4  Avaliação + integração com ScoreEvent
 13.5  Feedback pedagógico
@@ -94,9 +94,9 @@ Não duplicar `ActivityQuestion` dentro do runtime.
 
 ## Schema
 
-Maior migration atual: **V14**.
+Maior migration atual: **V15**.
 
-O bootstrap `13.0` não cria migration.
+`V15__quiz_runtime.sql` adiciona `quiz_rounds` e `quiz_participant_answers`.
 
 ## Versionamento
 
@@ -104,4 +104,4 @@ Os manifests permanecem em `0.4.0` durante o desenvolvimento inicial da v0.5. O 
 
 ## Próximo passo
 
-**13.1 — Quiz Runtime**: modelar rodada, respostas e estados de execução reutilizando `ActivityQuestion`, preservando `ScoreEvent` como fonte de verdade do XP.
+**Gate imediato:** executar `mvn -B -ntp verify`. Com o backend verde, fechar 13.1 e avançar para **13.2 — respostas estruturadas no `/join`**.
