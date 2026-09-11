@@ -148,6 +148,27 @@ class QuizIT {
     }
 
     @Test
+    void closeWithoutRevealKeepsPublicCorrectionProtected() {
+        Scenario scenario = scenario(QuestionType.MULTIPLE_CHOICE, 1);
+        QuizService.StateView prepared = quizService.prepare(scenario.sessionId(), scenario.questionId());
+        quizService.open(scenario.sessionId(), prepared.round().id());
+
+        UUID participantId = scenario.participants().getFirst().getId();
+        quizService.answer(scenario.sessionId(), prepared.round().id(), participantId, "a");
+        quizService.lock(scenario.sessionId(), prepared.round().id());
+        quizService.close(scenario.sessionId(), prepared.round().id());
+
+        QuizService.StateView publicState = quizService.publicState(scenario.sessionId());
+        assertThat(publicState.round().status()).isEqualTo(QuizStatus.CLOSED);
+        assertThat(publicState.round().publicResultsVisible()).isFalse();
+        assertThat(publicState.round().correctAnswer()).isNull();
+        assertThat(publicState.round().distribution()).allSatisfy(item -> {
+            assertThat(item.answerCount()).isNull();
+            assertThat(item.percentage()).isNull();
+        });
+    }
+
+    @Test
     void sessionFinishClosesCurrentQuiz() {
         Scenario scenario = scenario(QuestionType.MULTIPLE_CHOICE, 1);
         QuizService.StateView prepared = quizService.prepare(scenario.sessionId(), scenario.questionId());

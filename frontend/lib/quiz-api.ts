@@ -68,6 +68,54 @@ export class QuizApiError extends Error {
   }
 }
 
+async function teacherRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await apiFetch(path, init);
+  if (!response.ok) {
+    let body: ApiErrorBody | undefined;
+    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
+    throw new QuizApiError(body?.message || `Falha na API de Quiz (${response.status}).`, response.status);
+  }
+  if (response.status === 204) return undefined as T;
+  return (await response.json()) as T;
+}
+
+function quizPath(sessionId: string, roundId?: string) {
+  const base = `/api/sessions/${sessionId}/quiz`;
+  return roundId ? `${base}/${roundId}` : base;
+}
+
+export function fetchQuizState(sessionId: string) {
+  return teacherRequest<QuizState>(quizPath(sessionId));
+}
+
+export function prepareQuiz(sessionId: string, questionId: string) {
+  return teacherRequest<QuizState>(quizPath(sessionId), {
+    method: "POST",
+    body: JSON.stringify({ questionId }),
+  });
+}
+
+export function openQuiz(sessionId: string, roundId: string) {
+  return teacherRequest<QuizState>(`${quizPath(sessionId, roundId)}/open`, { method: "POST" });
+}
+
+export function lockQuiz(sessionId: string, roundId: string) {
+  return teacherRequest<QuizState>(`${quizPath(sessionId, roundId)}/lock`, { method: "POST" });
+}
+
+export function revealQuiz(sessionId: string, roundId: string) {
+  return teacherRequest<QuizState>(`${quizPath(sessionId, roundId)}/reveal`, { method: "POST" });
+}
+
+export function closeQuiz(sessionId: string, roundId: string) {
+  return teacherRequest<QuizState>(`${quizPath(sessionId, roundId)}/close`, { method: "POST" });
+}
+
+export function quizOptionMatchesAnswer(optionId: string, answer: string | boolean | null) {
+  if (typeof answer === "boolean") return optionId === String(answer);
+  return answer !== null && optionId === answer;
+}
+
 export function emptyQuizParticipantState(): QuizParticipantState {
   return {
     roundId: null,

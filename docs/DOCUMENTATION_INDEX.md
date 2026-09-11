@@ -8,10 +8,11 @@
 4. [`INCREMENT_13_0.md`](INCREMENT_13_0.md)
 5. [`INCREMENT_13_1.md`](INCREMENT_13_1.md)
 6. [`INCREMENT_13_2.md`](INCREMENT_13_2.md)
-7. [`RELEASE_0_4_0.md`](RELEASE_0_4_0.md) — baseline pública congelada
-6. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md)
-7. [`ACCESSIBILITY.md`](ACCESSIBILITY.md)
-8. [`adr/README.md`](adr/README.md)
+7. [`INCREMENT_13_3.md`](INCREMENT_13_3.md)
+8. [`RELEASE_0_4_0.md`](RELEASE_0_4_0.md) — baseline pública congelada
+9. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md)
+10. [`ACCESSIBILITY.md`](ACCESSIBILITY.md)
+11. [`adr/README.md`](adr/README.md)
 
 ## Linha histórica v0.4
 
