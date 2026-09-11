@@ -71,7 +71,7 @@ public class QuizRound {
     }
 
     public boolean acceptsAnswers() { return status == QuizStatus.OPEN; }
-    public boolean resultsVisiblePublicly() { return status == QuizStatus.REVEALED || status == QuizStatus.CLOSED; }
+    public boolean resultsVisiblePublicly() { return revealedAt != null; }
 
     public UUID getId() { return id; }
     public ClassSession getSession() { return session; }

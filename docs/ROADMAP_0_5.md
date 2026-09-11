@@ -82,16 +82,20 @@ TRUE_FALSE
 - [x] manter `QUIZ_STATE` como projeção realtime;
 - [x] UI mobile-first com controles nativos acessíveis;
 - [x] testes de contrato frontend e `QuizJoinIT` adicionados;
-- [ ] `npm test`, `npm run typecheck`, `npm run build` e `mvn verify` verdes para fechar o incremento.
+- [x] `npm test`, `npm run typecheck`, `npm run build` e `mvn verify` verdes no gate local do incremento.
 
 ### 13.3 — Resultados + Projetor
 
-- [ ] professor acompanha `respondidos / presentes`;
-- [ ] Projetor mostra quantidade enquanto resultado estiver protegido;
-- [ ] reveal publica distribuição agregada;
-- [ ] resposta correta só aparece quando permitido;
-- [ ] reload do Projetor restaura o mesmo resultado;
-- [ ] nenhuma identidade canônica é exposta publicamente.
+- [x] painel do professor acompanha `respondidos / presentes / pendentes`;
+- [x] professor controla `READY → OPEN → LOCKED → REVEALED → CLOSED`;
+- [x] Projetor mostra quantidade de respostas enquanto resultado estiver protegido;
+- [x] reveal publica distribuição agregada;
+- [x] resposta correta só aparece quando `revealedAt != null`;
+- [x] fechar sem reveal mantém distribuição e correção protegidas;
+- [x] reload/reconnect do Projetor restaura o mesmo resultado;
+- [x] nenhuma identidade canônica é exposta publicamente;
+- [x] testes frontend e backend adicionados;
+- [ ] `npm test`, `typecheck`, `build` e `mvn verify` verdes para fechar o incremento.
 
 ### 13.4 — Avaliação + XP
 

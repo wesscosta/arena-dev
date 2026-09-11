@@ -12,6 +12,7 @@ import { emptyLiveStageState, type LiveStageState } from "@/lib/live-stage-api";
 import type { TimerState } from "@/lib/timer-api";
 import type { WordCloudState } from "@/lib/word-cloud-api";
 import type { PollState } from "@/lib/poll-api";
+import { quizOptionMatchesAnswer, type QuizState } from "@/lib/quiz-api";
 import { reconnectDelayMs, type PublicBossState, type PublicBuzzerState, type PublicRuntimeSnapshot } from "@/lib/runtime-snapshot";
 import {
   wordCloudFontSize,
@@ -45,6 +46,7 @@ export default function ProjectorView() {
   const [timerState, setTimerState] = useState<TimerState>({ timer: null });
   const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
   const [pollState, setPollState] = useState<PollState>({ round: null });
+  const [quizState, setQuizState] = useState<QuizState>({ round: null });
   const [liveStage, setLiveStage] = useState<LiveStageState>(() => emptyLiveStageState());
   const [buzzerState, setBuzzerState] = useState<PublicBuzzerState>({ status: "IDLE", presses: [] });
   const [bossState, setBossState] = useState<PublicBossState | null>(null);
@@ -69,6 +71,7 @@ export default function ProjectorView() {
       setTimerState({ timer: null });
       setWordCloudState({ round: null });
       setPollState({ round: null });
+      setQuizState({ round: null });
       setLiveStage(emptyLiveStageState());
       setBuzzerState({ status: "IDLE", presses: [] });
       setBossState(null);
@@ -94,6 +97,7 @@ export default function ProjectorView() {
         setBuzzerState(next.runtime.buzzer ?? { status: "IDLE", presses: [] });
         setWordCloudState(next.runtime.wordCloud ?? { round: null });
         setPollState(next.runtime.poll ?? { round: null });
+        setQuizState(next.runtime.quiz ?? { round: null });
         setBossState(next.runtime.boss ?? null);
       })
       .catch((failure) => {
@@ -140,6 +144,7 @@ export default function ProjectorView() {
           });
           setWordCloudState(runtime.wordCloud);
           setPollState(runtime.poll);
+          setQuizState(runtime.quiz);
           setBossState(runtime.boss ?? null);
           return;
         }
@@ -170,6 +175,11 @@ export default function ProjectorView() {
 
         if (event.type === "POLL_STATE") {
           setPollState(event.payload as PollState);
+          return;
+        }
+
+        if (event.type === "QUIZ_STATE") {
+          setQuizState(event.payload as QuizState);
           return;
         }
 
@@ -252,6 +262,8 @@ export default function ProjectorView() {
   const showWordCloud = primaryType === "WORD_CLOUD" && Boolean(wordCloudRound);
   const pollRound = pollState.round;
   const showPoll = primaryType === "POLL" && Boolean(pollRound);
+  const quizRound = quizState.round;
+  const showQuiz = primaryType === "QUIZ" && Boolean(quizRound?.question);
   const preparedStep = liveStage.primary.step;
   const showSlide = primaryType === "SLIDE" && Boolean(preparedStep?.slideContent);
   const showQuestion = primaryType === "QUESTION" && Boolean(preparedStep?.question);
@@ -371,7 +383,7 @@ export default function ProjectorView() {
         </div>
       )}
 
-      <section className={`${styles.stage} ${showWordCloud ? styles.wordCloudFocus : ""} ${showPoll ? styles.pollFocus : ""}`}>
+      <section className={`${styles.stage} ${showWordCloud ? styles.wordCloudFocus : ""} ${showPoll ? styles.pollFocus : ""} ${showQuiz ? styles.quizFocus : ""}`}>
         {sessionFinished ? (
           <div className={styles.waiting}>
             <span className={styles.eyebrow}>SESSÃO ENCERRADA</span>
@@ -441,6 +453,86 @@ export default function ProjectorView() {
                     <span>{option.text}</span>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        ) : showQuiz && quizRound?.question ? (
+          <div className={styles.quizStage}>
+            <div className={styles.quizTop}>
+              <div>
+                <span className={styles.eyebrow}>QUIZ AO VIVO</span>
+                <h1>{quizRound.question.statement}</h1>
+              </div>
+              <div className={styles.quizMeta}>
+                <strong>{quizRound.totalAnswers} resposta(s)</strong>
+                <span>
+                  {quizRound.status === "OPEN"
+                    ? "RESPONDENDO"
+                    : quizRound.status === "LOCKED"
+                      ? "BLOQUEADO"
+                      : quizRound.status === "REVEALED"
+                        ? "REVELADO"
+                        : "ENCERRADO"}
+                </span>
+              </div>
+            </div>
+
+            {showTimerOverlay && timer && status && (
+              <div className={styles.miniTimer}>
+                <span>{timer.title}</span>
+                <strong>{formatTimer(remaining)}</strong>
+              </div>
+            )}
+
+            {quizRound.question.code && (
+              <pre className={styles.questionCode}><code>{quizRound.question.code}</code></pre>
+            )}
+
+            {quizRound.publicResultsVisible ? (
+              <div className={styles.quizResults}>
+                {quizRound.distribution.map((option, index) => {
+                  const correct = quizOptionMatchesAnswer(option.optionId, quizRound.correctAnswer);
+                  return (
+                    <div
+                      className={`${styles.quizOption} ${correct ? styles.quizCorrect : ""}`}
+                      key={option.optionId}
+                    >
+                      <div className={styles.quizOptionHead}>
+                        <span>
+                          <b>
+                            {quizRound.question?.type === "TRUE_FALSE"
+                              ? (option.optionId === "true" ? "V" : "F")
+                              : String.fromCharCode(65 + index)}
+                          </b>
+                          {option.label}
+                          {correct && <em>RESPOSTA CORRETA</em>}
+                        </span>
+                        <strong>{option.answerCount ?? 0} · {(option.percentage ?? 0).toFixed(0)}%</strong>
+                      </div>
+                      <div className={styles.quizBar}>
+                        <span style={{ width: `${option.percentage ?? 0}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className={styles.quizProtected}>
+                <div className={styles.quizChoices}>
+                  {quizRound.question.options.map((option, index) => (
+                    <div key={option.id}>
+                      <b>
+                        {quizRound.question?.type === "TRUE_FALSE"
+                          ? (option.id === "true" ? "V" : "F")
+                          : String.fromCharCode(65 + index)}
+                      </b>
+                      <span>{option.text}</span>
+                    </div>
+                  ))}
+                </div>
+                <strong>Resultados protegidos</strong>
+                <p>O professor ainda não revelou a distribuição nem a resposta correta.</p>
+                <span>{quizRound.totalAnswers} resposta(s) recebida(s)</span>
               </div>
             )}
           </div>

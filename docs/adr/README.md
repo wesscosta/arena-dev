@@ -52,6 +52,7 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0033](ADR-0033-quiz-runtime-e-respostas-estruturadas.md) | Quiz Runtime reutiliza ActivityQuestion e preserva ScoreEvent como fonte de XP | Aceito |
 | [ADR-0034](ADR-0034-maquina-de-estados-do-quiz-e-resposta-mutavel.md) | Máquina de estados do Quiz e resposta mutável antes do lock | Aceito |
 | [ADR-0035](ADR-0035-resposta-quiz-rest-e-websocket-como-projecao.md) | Resposta de Quiz via REST; WebSocket permanece como projeção | Aceito |
+| [ADR-0036](ADR-0036-reveal-do-quiz-e-fechamento-nao-implicito.md) | Reveal do Quiz é explícito; fechar não revela resultado | Aceito |
 
 ## Template
 

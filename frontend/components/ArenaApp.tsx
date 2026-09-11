@@ -9,6 +9,7 @@ import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
 import WordCloudPanel from "@/components/WordCloudPanel";
 import PollPanel from "@/components/PollPanel";
+import QuizPanel from "@/components/QuizPanel";
 import SessionAccessCard from "@/components/SessionAccessCard";
 import SessionTimeline from "@/components/SessionTimeline";
 import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
@@ -51,6 +52,7 @@ import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
 import type { TimerState } from "@/lib/timer-api";
 import { fetchWordCloudState, type WordCloudState } from "@/lib/word-cloud-api";
 import { fetchPollState, type PollState } from "@/lib/poll-api";
+import { fetchQuizState, type QuizState } from "@/lib/quiz-api";
 import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
 import { activeSessionId, selectPreferredClassroomId } from "@/lib/app-state";
 import {
@@ -1276,7 +1278,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
   const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "presence" | "groups" | "boss">("live");
-  const [interactionTool, setInteractionTool] = useState<"draw" | "wordcloud" | "poll" | "buzzer">("draw");
+  const [interactionTool, setInteractionTool] = useState<"draw" | "wordcloud" | "poll" | "quiz" | "buzzer">("draw");
   const [accessOpen, setAccessOpen] = useState(false);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
@@ -1295,6 +1297,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [timerState, setTimerState] = useState<TimerState>({ timer: null });
   const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
   const [pollState, setPollState] = useState<PollState>({ round: null });
+  const [quizState, setQuizState] = useState<QuizState>({ round: null });
   const [realtimeStatus, setRealtimeStatus] = useState<"offline" | "connecting" | "online">("offline");
   const [realtimeVersion, setRealtimeVersion] = useState(0);
   const [publicBaseUrl, setPublicBaseUrl] = useState("");
@@ -1357,6 +1360,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       setTimerState({ timer: null });
       setWordCloudState({ round: null });
       setPollState({ round: null });
+      setQuizState({ round: null });
       setRealtimeStatus("offline");
       return;
     }
@@ -1370,13 +1374,15 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       fetchBuzzerState(currentSession.id),
       fetchWordCloudState(currentSession.id),
       fetchPollState(currentSession.id),
+      fetchQuizState(currentSession.id),
     ])
-      .then(([code, buzzer, wordCloud, poll]) => {
+      .then(([code, buzzer, wordCloud, poll, quiz]) => {
         if (!active) return;
         setJoinCode(code);
         setBuzzerState(buzzer);
         setWordCloudState(wordCloud);
         setPollState(poll);
+        setQuizState(quiz);
         if (buzzer.presses[0]) setSelectedId(buzzer.presses[0].studentId);
       })
       .catch((error) => { if (active) notify(errorMessage(error)); });
@@ -1400,6 +1406,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }
       if (event.type === "POLL_STATE") {
         setPollState(event.payload as PollState);
+      }
+      if (event.type === "QUIZ_STATE") {
+        setQuizState(event.payload as QuizState);
       }
       if (event.type === "PARTICIPANT_CONNECTED" || event.type === "PARTICIPANT_DISCONNECTED") {
         void refreshRealtimeParticipants(currentSession.id);
@@ -2160,6 +2169,32 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             <button
               type="button"
               role="tab"
+              aria-selected={interactionTool === "quiz"}
+              className={interactionTool === "quiz" ? "active" : ""}
+              onClick={() => setInteractionTool("quiz")}
+            >
+              <span>?</span>
+              <div>
+                <strong>Quiz</strong>
+                <small>
+                  {quizState.round
+                    ? quizState.round.status === "OPEN"
+                      ? `${quizState.round.totalAnswers} resposta(s)`
+                      : quizState.round.status === "LOCKED"
+                        ? "Respostas bloqueadas"
+                        : quizState.round.status === "REVEALED"
+                          ? "Resultado revelado"
+                          : quizState.round.status === "READY"
+                            ? "Preparado"
+                            : "Rodada encerrada"
+                    : "Questão com resposta estruturada"}
+                </small>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              role="tab"
               aria-selected={interactionTool === "buzzer"}
               className={interactionTool === "buzzer" ? "active" : ""}
               onClick={() => setInteractionTool("buzzer")}
@@ -2249,6 +2284,16 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
               presentCount={sessionParticipants.filter((participant) => participant.present).length}
               showAccessCard={false}
+            />
+          ) : interactionTool === "quiz" ? (
+            <QuizPanel
+              sessionId={currentSession.id}
+              state={quizState}
+              onStateChange={setQuizState}
+              questions={activeActivity?.questions ?? []}
+              presentCount={sessionParticipants.filter((participant) => participant.present).length}
+              joinCode={joinCode}
+              notify={notify}
             />
           ) : (
             <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">

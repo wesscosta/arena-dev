@@ -2,7 +2,7 @@
 
 **Data:** 10/09/2026  
 **Linha:** `v0.5.0 — Live Quiz & Structured Responses`  
-**Estado:** implementação preparada; gates frontend/backend pendentes.
+**Estado:** concluído localmente em 10/09/2026; frontend 93/93, typecheck, build e `mvn -B -ntp verify` informados como verdes.
 
 ## Objetivo
 
