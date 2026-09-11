@@ -2,7 +2,7 @@
 
 **Data:** 10/09/2026  
 **Linha:** `v0.5.0 — Live Quiz & Structured Responses`  
-**Estado:** implementação preparada; validação Maven/CI pendente.
+**Estado:** concluído localmente; `mvn -B -ntp verify` informado como verde em 10/09/2026. CI permanece como gate da linha/release.
 
 ## Objetivo
 

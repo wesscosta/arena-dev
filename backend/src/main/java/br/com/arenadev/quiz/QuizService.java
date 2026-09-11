@@ -6,6 +6,7 @@ import br.com.arenadev.activity.QuestionType;
 import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.session.*;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import br.com.arenadev.stage.LiveStageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
@@ -29,6 +30,7 @@ public class QuizService {
     private final SessionParticipantRepository participantRepository;
     private final ActivityQuestionRepository questionRepository;
     private final SessionRealtimeGateway realtimeGateway;
+    private final LiveStageService liveStageService;
     private final JsonMapper json = JsonMapper.builder().build();
 
     public QuizService(
@@ -37,7 +39,8 @@ public class QuizService {
             ClassSessionRepository sessionRepository,
             SessionParticipantRepository participantRepository,
             ActivityQuestionRepository questionRepository,
-            SessionRealtimeGateway realtimeGateway
+            SessionRealtimeGateway realtimeGateway,
+            LiveStageService liveStageService
     ) {
         this.roundRepository = roundRepository;
         this.answerRepository = answerRepository;
@@ -45,6 +48,7 @@ public class QuizService {
         this.participantRepository = participantRepository;
         this.questionRepository = questionRepository;
         this.realtimeGateway = realtimeGateway;
+        this.liveStageService = liveStageService;
     }
 
     @Transactional
@@ -73,6 +77,7 @@ public class QuizService {
         ensureActive(session);
         QuizRound round = lockRound(sessionId, roundId);
         round.open(Instant.now());
+        liveStageService.showQuiz(sessionId, round.getId());
         broadcastStateAfterCommit(sessionId, round);
         return stateOf(round, Projection.TEACHER);
     }
