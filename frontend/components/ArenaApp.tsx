@@ -2805,10 +2805,17 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
           ) : (
             <button
               className="button primary"
-              disabled={!title.trim() || activityBusy}
-              onClick={() => { void saveActivity(true); }}
+              disabled={activityBusy}
+              onClick={() => {
+                if (!title.trim()) {
+                  setEditorTab("general");
+                  notify("As questões já estão no rascunho. Informe o título da atividade para salvar.");
+                  return;
+                }
+                void saveActivity(true);
+              }}
             >
-              Salvar atividade
+              {activityBusy ? "Salvando..." : title.trim() ? "Salvar atividade" : "Definir título e salvar"}
             </button>
           )}
         </div>
