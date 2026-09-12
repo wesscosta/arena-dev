@@ -1618,3 +1618,76 @@ button:disabled { cursor: not-allowed; opacity: .45; }
   .arena-tab { min-height: 3.25rem; }
 }
 .student-secondary-button{width:100%;border:1px solid var(--border);border-radius:12px;padding:13px;background:transparent;color:var(--text);font-weight:800}.student-secondary-button:disabled{opacity:.45}.student-remember-device{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--border);border-radius:11px;background:#0a1411;cursor:pointer}.student-remember-device input{margin-top:2px;accent-color:var(--accent)}.student-remember-device span,.student-remember-device strong,.student-remember-device small{display:block}.student-remember-device strong{font-size:12px}.student-remember-device small{margin-top:3px;color:var(--muted);font-size:9px;line-height:1.45}
+
+/* 13.6 — Mobile/PWA join shell */
+.pwa-install-prompt {
+  position: fixed;
+  z-index: 1200;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 24px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 18px 60px rgba(0,0,0,.28);
+}
+.pwa-install-prompt > div:first-child { display:grid; gap:3px; }
+.pwa-install-prompt span { color: var(--muted); font-size: 13px; }
+.pwa-install-prompt > div:last-child { display:flex; gap:8px; }
+.pwa-install-prompt button { min-height:44px; padding:8px 12px; border-radius:10px; border:1px solid var(--border); font:inherit; font-weight:800; cursor:pointer; }
+.pwa-install-prompt button:not(.ghost) { background:var(--accent); color:var(--accent-contrast); border-color:var(--accent); }
+.pwa-install-prompt .ghost { background:transparent; color:var(--text); }
+
+.student-network-warning {
+  display:grid;
+  gap:4px;
+  padding:12px 14px;
+  border:1px solid color-mix(in srgb, #f59e0b 45%, var(--border));
+  border-radius:12px;
+  background:color-mix(in srgb, #f59e0b 8%, var(--surface));
+}
+.student-network-warning span { color:var(--muted); font-size:13px; }
+.public-live-reconnect { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.public-live-reconnect button {
+  flex:0 0 auto;
+  min-height:44px;
+  padding:8px 12px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface-raised);
+  color:var(--text);
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+}
+
+@media (max-width: 640px) {
+  .student-join-shell {
+    min-height:100dvh;
+    align-items:stretch;
+    padding:max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+  .student-join-card {
+    width:100%;
+    max-width:none;
+    min-height:calc(100dvh - 24px);
+    border-radius:18px;
+  }
+  .student-live-top { align-items:flex-start; flex-direction:column; gap:10px; }
+  .student-connection { align-self:flex-start; }
+  .student-code-input,
+  .student-identity-input { min-height:52px; font-size:16px; }
+  .student-primary-button,
+  .student-secondary-button,
+  .student-back-button,
+  .public-live-reconnect button { min-height:48px; touch-action:manipulation; }
+  .public-live-reconnect { align-items:stretch; flex-direction:column; }
+  .pwa-install-prompt { align-items:stretch; flex-direction:column; bottom:max(10px, env(safe-area-inset-bottom)); }
+  .pwa-install-prompt > div:last-child { display:grid; grid-template-columns:1fr 1fr; }
+}

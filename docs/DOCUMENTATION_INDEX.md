@@ -43,3 +43,4 @@ Não reescrever documentos históricos para fabricar evidência que não foi reg
 Atualizado em 10/09/2026 no bootstrap `13.0` da v0.5.
 
 - `INCREMENT_13_5.md` — feedback pedagógico derivado do Quiz e decisões explícitas do professor.
+- `INCREMENT_13_6.md` — Mobile/PWA, installability, shell offline e reconnect explícito.
