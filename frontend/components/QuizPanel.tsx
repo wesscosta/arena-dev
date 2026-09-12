@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ActivityQuestion } from "@/lib/types";
 import type { JoinCode } from "@/lib/realtime-api";
+import { deriveQuizFeedback } from "@/lib/quiz-feedback";
 import {
   closeQuiz,
   lockQuiz,
@@ -22,6 +23,8 @@ type Props = {
   presentCount: number;
   joinCode: JoinCode | null;
   notify: (message: string) => void;
+  canAdvanceFlow?: boolean;
+  onContinue?: () => Promise<void>;
 };
 
 function statusLabel(status: string) {
@@ -44,6 +47,8 @@ export default function QuizPanel({
   presentCount,
   joinCode,
   notify,
+  canAdvanceFlow = false,
+  onContinue,
 }: Props) {
   const supported = useMemo(
     () => questions.filter((question) =>
@@ -54,6 +59,7 @@ export default function QuizPanel({
   const [questionId, setQuestionId] = useState(supported[0]?.id ?? "");
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(!state.round);
+  const [pedagogyMode, setPedagogyMode] = useState<"explain" | "discussion" | null>(null);
   const round = state.round;
 
   useEffect(() => {
@@ -64,9 +70,19 @@ export default function QuizPanel({
 
   useEffect(() => {
     if (!round) setCreating(true);
+    setPedagogyMode(null);
   }, [round?.id]);
 
   const pending = Math.max(0, presentCount - (round?.totalAnswers ?? 0));
+  const feedback = useMemo(() => deriveQuizFeedback(round), [round]);
+  const authoredQuestion = useMemo(
+    () => questions.find((question) => question.id === round?.question?.id),
+    [questions, round?.question?.id],
+  );
+  const feedbackAvailable = Boolean(
+    feedback && round
+      && (round.status === "LOCKED" || round.status === "REVEALED" || round.status === "CLOSED"),
+  );
 
   async function run(
     action: () => Promise<QuizState>,
@@ -115,6 +131,44 @@ export default function QuizPanel({
         : "Quiz encerrado sem revelar a correção.",
       "Não foi possível encerrar o Quiz.",
     );
+  }
+
+  async function continueLesson() {
+    if (!round || busy) return;
+    setBusy(true);
+    try {
+      if (round.status !== "CLOSED") {
+        onStateChange(await closeQuiz(sessionId, round.id));
+      }
+      if (canAdvanceFlow && onContinue) {
+        await onContinue();
+      } else {
+        notify("Quiz encerrado. Escolha explicitamente a próxima ação da aula.");
+      }
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível continuar a condução.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function retryQuestion() {
+    if (!round?.question || busy) return;
+    setBusy(true);
+    try {
+      if (round.status !== "CLOSED") {
+        await closeQuiz(sessionId, round.id);
+      }
+      const next = await prepareQuiz(sessionId, round.question.id);
+      onStateChange(next);
+      setCreating(false);
+      setPedagogyMode(null);
+      notify("Nova rodada preparada com a mesma questão. Abra as respostas quando decidir.");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível preparar uma nova tentativa.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   function project() {
@@ -179,6 +233,11 @@ export default function QuizPanel({
 
   const question = round.question;
   const correctAnswer = round.correctAnswer;
+  const correctOption = question
+    ? round.distribution.find((option) =>
+        quizOptionMatchesAnswer(option.optionId, correctAnswer)
+      )
+    : undefined;
 
   return (
     <section className={styles.shell}>
@@ -224,6 +283,75 @@ export default function QuizPanel({
             );
           })}
         </div>
+      )}
+
+      {feedbackAvailable && feedback && (
+        <section className={styles.feedback} aria-labelledby="quiz-feedback-title">
+          <div className={styles.feedbackHeader}>
+            <div>
+              <span className={styles.eyebrow}>LEITURA PEDAGÓGICA</span>
+              <h4 id="quiz-feedback-title">Como a turma respondeu</h4>
+            </div>
+            <strong>{feedback.accuracyPercentage.toFixed(0)}% de acerto</strong>
+          </div>
+
+          <div className={styles.feedbackMetrics}>
+            <div><strong>{feedback.correctAnswers}</strong><span>acertos</span></div>
+            <div><strong>{feedback.incorrectAnswers}</strong><span>erros</span></div>
+            <div><strong>{feedback.totalAnswers}</strong><span>respostas avaliadas</span></div>
+          </div>
+
+          <div className={styles.feedbackInsight}>
+            {feedback.topDistractor ? (
+              <>
+                <span>Maior incidência de erro</span>
+                <strong>{feedback.topDistractor.label}</strong>
+                <p>{feedback.topDistractor.answerCount} resposta(s) · {feedback.topDistractor.percentage.toFixed(0)}% dos envios.</p>
+              </>
+            ) : feedback.totalAnswers > 0 ? (
+              <><span>Distribuição dos erros</span><strong>Nenhum distrator recebeu resposta.</strong><p>As respostas enviadas convergiram para a alternativa correta.</p></>
+            ) : (
+              <><span>Sem amostra</span><strong>Nenhuma resposta foi enviada.</strong><p>Não há dados suficientes para leitura pedagógica desta rodada.</p></>
+            )}
+          </div>
+
+          <div className={styles.pedagogyActions} aria-label="Decisões pedagógicas">
+            <button className={styles.primary} disabled={busy} onClick={() => void continueLesson()}>Continuar</button>
+            <button className={styles.secondary} disabled={busy} aria-pressed={pedagogyMode === "explain"} onClick={() => setPedagogyMode((mode) => mode === "explain" ? null : "explain")}>Reexplicar</button>
+            <button className={styles.secondary} disabled={busy || !question} onClick={() => void retryQuestion()}>Refazer questão</button>
+            <button className={styles.secondary} disabled={busy} aria-pressed={pedagogyMode === "discussion"} onClick={() => setPedagogyMode((mode) => mode === "discussion" ? null : "discussion")}>Abrir discussão</button>
+          </div>
+
+          <p className={styles.controlNote}>
+            {canAdvanceFlow
+              ? "Continuar avança o roteiro somente após clique explícito do professor."
+              : "Nenhuma decisão avança o roteiro automaticamente."}
+          </p>
+
+          {pedagogyMode === "explain" && (
+            <div className={styles.pedagogyCard}>
+              <span>REEXPLICAÇÃO</span>
+              <h5>Retome o conceito antes de decidir o próximo passo.</h5>
+              {authoredQuestion?.explanation?.trim() ? (
+                <p>{authoredQuestion.explanation}</p>
+              ) : (
+                <p>Esta questão não possui explicação autorada. Compare a resposta correta{correctOption ? ` (${correctOption.label})` : ""} com o erro mais frequente{feedback.topDistractor ? ` (${feedback.topDistractor.label})` : ""}.</p>
+              )}
+            </div>
+          )}
+
+          {pedagogyMode === "discussion" && (
+            <div className={styles.pedagogyCard}>
+              <span>DISCUSSÃO ORIENTADA</span>
+              <h5>Transforme o resultado em argumento, não em avanço automático.</h5>
+              {feedback.topDistractor ? (
+                <p>Comece perguntando por que “{feedback.topDistractor.label}” pareceu plausível. Depois peça à turma que compare os critérios usados nessa escolha com a resposta correta{correctOption ? ` “${correctOption.label}”` : ""}.</p>
+              ) : (
+                <p>Peça a dois ou três alunos que justifiquem caminhos diferentes e explicitem qual evidência descarta as demais alternativas.</p>
+              )}
+            </div>
+          )}
+        </section>
       )}
 
       <div className={styles.actions}>

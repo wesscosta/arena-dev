@@ -111,10 +111,10 @@ TRUE_FALSE
 
 ### 13.5 — Feedback pedagógico
 
-- [ ] resumo de acerto/erro;
-- [ ] alternativas com maior incidência de erro;
-- [ ] ações `Continuar`, `Reexplicar`, `Refazer questão`, `Abrir discussão`;
-- [ ] nenhuma ação avança automaticamente.
+- [x] resumo de acerto/erro;
+- [x] alternativas com maior incidência de erro;
+- [x] ações `Continuar`, `Reexplicar`, `Refazer questão`, `Abrir discussão`;
+- [x] nenhuma ação avança automaticamente.
 
 ### 13.6 — Mobile/PWA
 
