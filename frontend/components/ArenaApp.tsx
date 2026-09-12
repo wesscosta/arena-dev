@@ -2294,6 +2294,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               presentCount={sessionParticipants.filter((participant) => participant.present).length}
               joinCode={joinCode}
               notify={notify}
+              canAdvanceFlow={Boolean(liveFlowState?.started && liveFlowState.hasNext)}
+              onContinue={() => movePreparedFlow("next")}
             />
           ) : (
             <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">

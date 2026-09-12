@@ -58,3 +58,5 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 ## Template
 
 Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
+
+- [ADR-0038 — Feedback pedagógico derivado e decisões explícitas](ADR-0038-feedback-pedagogico-derivado-e-decisoes-explicitas.md)
