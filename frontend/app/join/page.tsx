@@ -56,6 +56,7 @@ export default function JoinPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [socketState, setSocketState] = useState<"offline" | "connecting" | "reconnecting" | "online">("offline");
+  const [browserOnline, setBrowserOnline] = useState(true);
   const [sessionFinished, setSessionFinished] = useState(false);
   const [reconnectVersion, setReconnectVersion] = useState(0);
   const socketRef = useRef<WebSocket | null>(null);
@@ -127,6 +128,17 @@ export default function JoinPage() {
       setError(`${message} Identifique-se novamente para continuar.`);
     }
   }
+
+  useEffect(() => {
+    const updateNetworkState = () => setBrowserOnline(navigator.onLine);
+    updateNetworkState();
+    window.addEventListener("online", updateNetworkState);
+    window.addEventListener("offline", updateNetworkState);
+    return () => {
+      window.removeEventListener("online", updateNetworkState);
+      window.removeEventListener("offline", updateNetworkState);
+    };
+  }, []);
 
   useEffect(() => {
     const queryCode = new URLSearchParams(window.location.search).get("code");
@@ -312,6 +324,14 @@ export default function JoinPage() {
     if (token) void revokeRememberedDevice(token).catch(() => undefined);
   }
 
+  function reconnectNow() {
+    if (!access || sessionFinished || !navigator.onLine) return;
+    reconnectAttemptRef.current = 0;
+    setError("");
+    setSocketState("connecting");
+    setReconnectVersion((value) => value + 1);
+  }
+
   function pressBuzzer() {
     const socket = socketRef.current;
     if (!socket || socket.readyState !== WebSocket.OPEN || buzzer.status !== "OPEN") return;
@@ -403,9 +423,21 @@ export default function JoinPage() {
               <span className={`student-connection ${socketState}`}><i />{socketState === "online" ? "Conectado" : socketState === "connecting" ? "Conectando" : socketState === "reconnecting" ? "Reconectando" : "Offline"}</span>
             </div>
 
-            {socketState === "reconnecting" && (
+            {!browserOnline && (
+              <div className="student-network-warning" role="status">
+                <strong>Sem internet</strong>
+                <span>
+                  A interface continua disponível, mas respostas e o estado da aula dependem do servidor.
+                </span>
+              </div>
+            )}
+
+            {browserOnline && (socketState === "reconnecting" || socketState === "offline") && (
               <div className="public-live-reconnect" role="status">
-                Conexão interrompida. Mantendo o último estado enquanto reconectamos.
+                <span>
+                  Conexão interrompida. Mantendo apenas a interface enquanto buscamos o estado autoritativo.
+                </span>
+                <button type="button" onClick={reconnectNow}>Tentar agora</button>
               </div>
             )}
 
@@ -486,7 +518,7 @@ export default function JoinPage() {
                         type="button"
                         key={option.id}
                         className={`${quizStyles.option} ${selected ? quizStyles.selected : ""}`}
-                        disabled={!quizParticipant.canAnswer || quizSubmitting}
+                        disabled={!quizParticipant.canAnswer || quizSubmitting || !browserOnline}
                         aria-pressed={selected}
                         onClick={() => void answerQuiz(answer)}
                       >

@@ -60,3 +60,4 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 
 - [ADR-0038 — Feedback pedagógico derivado e decisões explícitas](ADR-0038-feedback-pedagogico-derivado-e-decisoes-explicitas.md)
+- [ADR-0039 — Cache da PWA serve ao shell, nunca à verdade do domínio](ADR-0039-pwa-cache-de-shell-nao-e-verdade-do-dominio.md)

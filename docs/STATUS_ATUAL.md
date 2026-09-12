@@ -8,7 +8,7 @@
 
 **Branch de desenvolvimento:** `feat/v0.5-live-quiz`.
 
-**Checkpoint:** `13.5 — Feedback pedagógico implementado para validação`.
+**Checkpoint:** `13.6 — Mobile/PWA implementado para validação`.
 
 Este arquivo é a referência técnica versionada do estado corrente.
 
@@ -84,13 +84,12 @@ Não duplicar `ActivityQuestion` dentro do runtime.
 ```text
 13.0  Bootstrap documental                         concluído
 13.1  Quiz Runtime                                 concluído localmente
-13.2  Respostas estruturadas no /join                concluído localmente
-13.3  Resultados + Projetor                           concluído localmente
-13.4  Avaliação + integração com ScoreEvent           concluído localmente
-13.5  Feedback pedagógico                            implementado; gates pendentes
-13.5  Feedback pedagógico                            implementado; gates pendentes
-13.6  Mobile/PWA                                     próximo
-13.7  Hardening/E2E + gate v0.5.0
+13.2  Respostas estruturadas no /join              concluído localmente
+13.3  Resultados + Projetor                        concluído localmente
+13.4  Avaliação + integração com ScoreEvent        concluído localmente
+13.5  Feedback pedagógico                          concluído localmente
+13.6  Mobile/PWA                                   implementado; gates pendentes
+13.7  Hardening/E2E + gate v0.5.0                  próximo
 ```
 
 ## Schema
@@ -105,4 +104,4 @@ Os manifests permanecem em `0.4.0` durante o desenvolvimento inicial da v0.5. O 
 
 ## Próximo passo
 
-**Gate imediato:** executar frontend (`npm test`, `typecheck`, `build`) e backend (`mvn -B -ntp verify`). Com os gates verdes, fechar 13.5 e avançar para **13.6 — Mobile/PWA**.
+**Gate imediato:** executar frontend (`npm test`, `typecheck`, `build`) e backend (`mvn -B -ntp verify`). Com os gates verdes, avançar para **13.7 — Hardening, E2E e release gate v0.5.0**.

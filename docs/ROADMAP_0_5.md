@@ -107,7 +107,7 @@ TRUE_FALSE
 - [x] registrar somente transições da rodada em `SessionEvent`;
 - [x] migration `V16__quiz_evaluation_score_event.sql`;
 - [x] `QuizScoringIT` cobre avaliação, idempotência, reversão e timeline;
-- [ ] `npm test`, `typecheck`, `build` e `mvn verify` verdes para fechar o incremento.
+- [x] `npm test`, `typecheck`, `build` e `mvn verify` verdes no gate local do 13.4.
 
 ### 13.5 — Feedback pedagógico
 
@@ -115,14 +115,16 @@ TRUE_FALSE
 - [x] alternativas com maior incidência de erro;
 - [x] ações `Continuar`, `Reexplicar`, `Refazer questão`, `Abrir discussão`;
 - [x] nenhuma ação avança automaticamente.
+- [x] `npm test` 107/107, `typecheck`, `build` e `mvn verify` verdes no gate local.
 
 ### 13.6 — Mobile/PWA
 
-- [ ] revisar `/join` em viewport móvel;
-- [ ] manifest e installability;
-- [ ] shell offline limitado à interface;
-- [ ] reconnect explícito;
-- [ ] cache nunca é fonte de verdade do domínio.
+- [x] revisar `/join` em viewport móvel;
+- [x] manifest e installability;
+- [x] shell offline limitado à interface;
+- [x] reconnect explícito;
+- [x] cache nunca é fonte de verdade do domínio.
+- [ ] `npm test`, `typecheck`, `build` e `mvn verify` verdes para fechar o incremento.
 
 ### 13.7 — Hardening, E2E e release gate v0.5.0
 

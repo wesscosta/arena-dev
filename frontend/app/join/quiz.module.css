@@ -1,1 +1,15 @@
 .card{display:grid;gap:16px;padding:20px;border:1px solid var(--border);border-radius:18px;background:var(--surface)}.heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.heading span{font-size:11px;font-weight:850;letter-spacing:.11em;color:var(--accent)}.heading h2{margin:5px 0 0;font-size:22px;line-height:1.25}.heading>strong{font-size:11px;border:1px solid currentColor;border-radius:999px;padding:6px 9px;color:var(--accent);white-space:nowrap}.hint{margin:0;color:var(--muted);line-height:1.45}.code{margin:0;padding:14px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--surface) 84%,black);overflow:auto;font-size:13px}.options{display:grid;gap:10px}.option{width:100%;display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:10px;text-align:left;padding:14px;border:1px solid var(--border);border-radius:13px;background:var(--surface);color:var(--text);font:inherit;cursor:pointer;transition:border-color .16s ease,background .16s ease,transform .16s ease}.option:not(:disabled):hover{border-color:var(--accent);transform:translateY(-1px)}.option:disabled{cursor:default}.option.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface))}.letter{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--accent) 12%,var(--surface));font-weight:900;color:var(--accent)}.done{padding:12px;border-radius:12px;background:color-mix(in srgb,var(--accent) 8%,var(--surface));font-size:13px;line-height:1.4}.protected{padding:13px;border:1px dashed var(--border);border-radius:12px;color:var(--muted);text-align:center;font-size:13px}.meta{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px}.submitting{opacity:.68;pointer-events:none}@media(max-width:520px){.heading{flex-direction:column}.meta{flex-direction:column;gap:4px}}
+
+@media (pointer: coarse) {
+  .option {
+    min-height: 56px;
+    touch-action: manipulation;
+  }
+}
+
+@media (max-width: 640px) {
+  .card { padding: 16px; border-radius: 14px; }
+  .options { gap: 8px; }
+  .option { min-height: 56px; padding: 14px 12px; }
+  .heading h2 { font-size: clamp(20px, 6vw, 26px); }
+}
