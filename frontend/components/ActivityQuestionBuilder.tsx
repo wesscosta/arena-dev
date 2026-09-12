@@ -43,6 +43,7 @@ export default function ActivityQuestionBuilder({
 
   const [jsonInput, setJsonInput] = useState("");
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [lastImportedCount, setLastImportedCount] = useState(0);
 
   const [theme, setTheme] = useState(defaultTheme);
   const [context, setContext] = useState("");
@@ -109,10 +110,16 @@ export default function ActivityQuestionBuilder({
   function importJson() {
     const result = parseQuestionPackage(jsonInput);
     setImportErrors(result.errors);
-    if (!result.package) return;
+    if (!result.package) {
+      setLastImportedCount(0);
+      return;
+    }
+    const importedCount = result.package.questions.length;
     setQuestions([...questions, ...result.package.questions]);
     setJsonInput("");
-    notify(`${result.package.questions.length} questão(ões) importada(s).`);
+    setImportErrors([]);
+    setLastImportedCount(importedCount);
+    notify(`${importedCount} questão(ões) adicionada(s) ao rascunho da atividade.`);
   }
 
   function readJsonFile(file?: File) {
@@ -215,8 +222,14 @@ export default function ActivityQuestionBuilder({
       {tab === "import" && (
         <div className="question-tool-body">
           <p className="tool-note">Cole a resposta JSON da IA ou carregue um arquivo <b>.json</b>. O Arena Dev valida o pacote antes de adicionar as questões.</p>
-          <textarea className="input textarea json-area" rows={12} value={jsonInput} onChange={(event) => { setJsonInput(event.target.value); setImportErrors([]); }} placeholder={'{\n  "version": "1.0",\n  "questions": [...]\n}'} />
+          <textarea className="input textarea json-area" rows={12} value={jsonInput} onChange={(event) => { setJsonInput(event.target.value); setImportErrors([]); setLastImportedCount(0); }} placeholder={'{\n  "version": "1.0",\n  "questions": [...]\n}'} />
           {importErrors.length > 0 && <div className="validation-box"><strong>Revise antes de importar</strong>{importErrors.map((error) => <span key={error}>{error}</span>)}</div>}
+          {lastImportedCount > 0 && (
+            <div className="inline-note">
+              <strong>{lastImportedCount} questão(ões) adicionada(s) ao rascunho.</strong>
+              <span>Agora use <b>Salvar atividade</b> para persistir a atividade no PostgreSQL.</span>
+            </div>
+          )}
           <div className="inline-actions solid-actions">
             <label className="button file-button">Carregar .json<input type="file" accept="application/json,.json" onChange={(event) => readJsonFile(event.target.files?.[0])} /></label>
             <button className="button primary" onClick={importJson} disabled={!jsonInput.trim()}>Validar e importar</button>
