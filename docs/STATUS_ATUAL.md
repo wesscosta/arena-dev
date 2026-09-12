@@ -8,7 +8,7 @@
 
 **Branch de desenvolvimento:** `feat/v0.5-live-quiz`.
 
-**Checkpoint:** `13.3 — Resultados + Projetor implementado para validação`.
+**Checkpoint:** `13.4 — Avaliação automática + ScoreEvent implementado para validação`.
 
 Este arquivo é a referência técnica versionada do estado corrente.
 
@@ -85,8 +85,9 @@ Não duplicar `ActivityQuestion` dentro do runtime.
 13.0  Bootstrap documental                         concluído
 13.1  Quiz Runtime                                 concluído localmente
 13.2  Respostas estruturadas no /join                concluído localmente
-13.3  Resultados + Projetor                           implementado; gates pendentes
-13.4  Avaliação + integração com ScoreEvent           próximo
+13.3  Resultados + Projetor                           concluído localmente
+13.4  Avaliação + integração com ScoreEvent           implementado; gates pendentes
+13.5  Feedback pedagógico                              próximo
 13.5  Feedback pedagógico
 13.6  Mobile/PWA
 13.7  Hardening/E2E + gate v0.5.0
@@ -104,4 +105,4 @@ Os manifests permanecem em `0.4.0` durante o desenvolvimento inicial da v0.5. O 
 
 ## Próximo passo
 
-**Gate imediato:** executar frontend (`npm test`, `typecheck`, `build`) e backend (`mvn -B -ntp verify`). Com os gates verdes, fechar 13.3 e avançar para **13.4 — Avaliação + integração com ScoreEvent**.
+**Gate imediato:** executar frontend (`npm test`, `typecheck`, `build`) e backend (`mvn -B -ntp verify`). Com os gates verdes, fechar 13.4 e avançar para **13.5 — Feedback pedagógico**.

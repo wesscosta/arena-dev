@@ -4,7 +4,13 @@ import br.com.arenadev.activity.ActivityQuestion;
 import br.com.arenadev.activity.ActivityQuestionRepository;
 import br.com.arenadev.activity.QuestionType;
 import br.com.arenadev.realtime.SessionRealtimeGateway;
+import br.com.arenadev.scoring.ScoreCategory;
+import br.com.arenadev.scoring.ScoreEventService;
+import br.com.arenadev.scoring.ScoreSource;
 import br.com.arenadev.session.*;
+import br.com.arenadev.sessionevent.SessionEventActor;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import br.com.arenadev.stage.LiveStageService;
 import org.springframework.stereotype.Service;
@@ -31,6 +37,8 @@ public class QuizService {
     private final ActivityQuestionRepository questionRepository;
     private final SessionRealtimeGateway realtimeGateway;
     private final LiveStageService liveStageService;
+    private final ScoreEventService scoreEventService;
+    private final SessionEventService sessionEventService;
     private final JsonMapper json = JsonMapper.builder().build();
 
     public QuizService(
@@ -40,7 +48,9 @@ public class QuizService {
             SessionParticipantRepository participantRepository,
             ActivityQuestionRepository questionRepository,
             SessionRealtimeGateway realtimeGateway,
-            LiveStageService liveStageService
+            LiveStageService liveStageService,
+            ScoreEventService scoreEventService,
+            SessionEventService sessionEventService
     ) {
         this.roundRepository = roundRepository;
         this.answerRepository = answerRepository;
@@ -49,6 +59,8 @@ public class QuizService {
         this.questionRepository = questionRepository;
         this.realtimeGateway = realtimeGateway;
         this.liveStageService = liveStageService;
+        this.scoreEventService = scoreEventService;
+        this.sessionEventService = sessionEventService;
     }
 
     @Transactional
@@ -67,6 +79,14 @@ public class QuizService {
         validateQuestion(question);
 
         QuizRound round = roundRepository.save(new QuizRound(session, question));
+        recordQuizTransition(
+                session,
+                SessionEventType.QUIZ_PREPARED,
+                SessionEventActor.TEACHER,
+                "Quiz preparado",
+                round,
+                Map.of("questionId", question.getId().toString())
+        );
         broadcastStateAfterCommit(sessionId, round);
         return stateOf(round, Projection.TEACHER);
     }
@@ -76,8 +96,19 @@ public class QuizService {
         ClassSession session = getSession(sessionId);
         ensureActive(session);
         QuizRound round = lockRound(sessionId, roundId);
+        QuizStatus before = round.getStatus();
         round.open(Instant.now());
         liveStageService.showQuiz(sessionId, round.getId());
+        if (before != round.getStatus()) {
+            recordQuizTransition(
+                    session,
+                    SessionEventType.QUIZ_OPENED,
+                    SessionEventActor.TEACHER,
+                    "Quiz aberto para respostas",
+                    round,
+                    Map.of()
+            );
+        }
         broadcastStateAfterCommit(sessionId, round);
         return stateOf(round, Projection.TEACHER);
     }
@@ -87,7 +118,23 @@ public class QuizService {
         ClassSession session = getSession(sessionId);
         ensureActive(session);
         QuizRound round = lockRound(sessionId, roundId);
+        QuizStatus before = round.getStatus();
         round.lock(Instant.now());
+        EvaluationSummary evaluation = evaluateLockedRound(round);
+        if (before != round.getStatus()) {
+            recordQuizTransition(
+                    session,
+                    SessionEventType.QUIZ_LOCKED,
+                    SessionEventActor.TEACHER,
+                    "Quiz bloqueado e avaliado",
+                    round,
+                    Map.of(
+                            "evaluatedAnswers", evaluation.evaluatedAnswers(),
+                            "correctAnswers", evaluation.correctAnswers(),
+                            "awardedXp", evaluation.awardedXp()
+                    )
+            );
+        }
         broadcastStateAfterCommit(sessionId, round);
         return stateOf(round, Projection.TEACHER);
     }
@@ -97,7 +144,18 @@ public class QuizService {
         ClassSession session = getSession(sessionId);
         ensureActive(session);
         QuizRound round = lockRound(sessionId, roundId);
+        QuizStatus before = round.getStatus();
         round.reveal(Instant.now());
+        if (before != round.getStatus()) {
+            recordQuizTransition(
+                    session,
+                    SessionEventType.QUIZ_REVEALED,
+                    SessionEventActor.TEACHER,
+                    "Resultado do Quiz revelado",
+                    round,
+                    Map.of()
+            );
+        }
         broadcastStateAfterCommit(sessionId, round);
         return stateOf(round, Projection.TEACHER);
     }
@@ -107,7 +165,18 @@ public class QuizService {
         ClassSession session = getSession(sessionId);
         ensureActive(session);
         QuizRound round = lockRound(sessionId, roundId);
+        QuizStatus before = round.getStatus();
         round.close(Instant.now());
+        if (before != round.getStatus()) {
+            recordQuizTransition(
+                    session,
+                    SessionEventType.QUIZ_CLOSED,
+                    SessionEventActor.TEACHER,
+                    "Quiz encerrado",
+                    round,
+                    Map.of("revealed", round.resultsVisiblePublicly())
+            );
+        }
         broadcastStateAfterCommit(sessionId, round);
         return stateOf(round, Projection.TEACHER);
     }
@@ -176,8 +245,81 @@ public class QuizService {
         List<QuizRound> current = roundRepository.findCurrentBySessionIdForUpdate(sessionId, CURRENT_STATUSES);
         if (current.isEmpty()) return;
         Instant now = Instant.now();
-        current.forEach(round -> round.close(now));
+        for (QuizRound round : current) {
+            QuizStatus before = round.getStatus();
+            round.close(now);
+            if (before != round.getStatus()) {
+                recordQuizTransition(
+                        round.getSession(),
+                        SessionEventType.QUIZ_CLOSED,
+                        SessionEventActor.SYSTEM,
+                        "Quiz encerrado com a sessão",
+                        round,
+                        Map.of("revealed", round.resultsVisiblePublicly())
+                );
+            }
+        }
         broadcastStateAfterCommit(sessionId, current.getFirst());
+    }
+
+    private EvaluationSummary evaluateLockedRound(QuizRound round) {
+        ActivityQuestion question = round.getQuestion();
+        Object expected = readJsonValue(question.getAnswerJson());
+        int evaluatedAnswers = 0;
+        int correctAnswers = 0;
+        int awardedXp = 0;
+        Instant now = Instant.now();
+
+        for (ParticipantAnswer answer : answerRepository.findByRoundIdOrderBySubmittedAtAsc(round.getId())) {
+            if (answer.isEvaluated()) continue;
+
+            boolean correct = Objects.equals(readJsonValue(answer.getAnswerJson()), expected);
+            UUID scoreEventId = null;
+
+            if (correct) {
+                correctAnswers += 1;
+                int points = Math.max(0, question.getPoints());
+                if (points > 0) {
+                    SessionParticipant participant = answer.getParticipant();
+                    ScoreEventService.ScoreEventView score = scoreEventService.create(
+                            new ScoreEventService.CreateScoreEvent(
+                                    round.getSession().getClassroom().getId(),
+                                    participant.getStudent().getId(),
+                                    round.getSession().getId(),
+                                    points,
+                                    ScoreCategory.QUESTION,
+                                    "Quiz · resposta correta: " + question.getStatement(),
+                                    ScoreSource.QUIZ,
+                                    question.getActivity().getId().toString(),
+                                    question.getId().toString()
+                            )
+                    );
+                    scoreEventId = score.id();
+                    awardedXp += points;
+                }
+            }
+
+            answer.evaluate(correct, scoreEventId, now);
+            evaluatedAnswers += 1;
+        }
+
+        return new EvaluationSummary(evaluatedAnswers, correctAnswers, awardedXp);
+    }
+
+    private void recordQuizTransition(
+            ClassSession session,
+            SessionEventType type,
+            SessionEventActor actor,
+            String summary,
+            QuizRound round,
+            Map<String, ?> extra
+    ) {
+        LinkedHashMap<String, Object> payload = new LinkedHashMap<>();
+        payload.put("roundId", round.getId().toString());
+        payload.put("questionId", round.getQuestion().getId().toString());
+        payload.put("status", round.getStatus().name());
+        if (extra != null) payload.putAll(extra);
+        sessionEventService.record(session, type, actor, summary, payload);
     }
 
     private StateView stateOf(QuizRound round, Projection projection) {
@@ -384,6 +526,12 @@ public class QuizService {
     }
 
     private enum Projection { TEACHER, PUBLIC }
+
+    private record EvaluationSummary(
+            int evaluatedAnswers,
+            int correctAnswers,
+            int awardedXp
+    ) {}
 
     public record StateView(RoundView round) {
         public static StateView empty() { return new StateView(null); }

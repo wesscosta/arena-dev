@@ -25,6 +25,11 @@ public enum SessionEventType {
     POLL_OPENED,
     POLL_REVEALED,
     POLL_CLOSED,
+    QUIZ_PREPARED,
+    QUIZ_OPENED,
+    QUIZ_LOCKED,
+    QUIZ_REVEALED,
+    QUIZ_CLOSED,
     BOSS_STARTED,
     BOSS_DEFEATED
 }

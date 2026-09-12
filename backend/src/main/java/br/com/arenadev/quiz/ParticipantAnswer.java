@@ -29,6 +29,15 @@ public class ParticipantAnswer {
     @Column(name = "answer_json", nullable = false, columnDefinition = "text")
     private String answerJson;
 
+    @Column(name = "evaluated_at")
+    private Instant evaluatedAt;
+
+    @Column(name = "is_correct")
+    private Boolean correct;
+
+    @Column(name = "score_event_id")
+    private UUID scoreEventId;
+
     @Column(name = "submitted_at", nullable = false, updatable = false)
     private Instant submittedAt = Instant.now();
 
@@ -44,14 +53,32 @@ public class ParticipantAnswer {
     }
 
     public void updateAnswer(String answerJson, Instant now) {
+        if (evaluatedAt != null) {
+            throw new IllegalStateException("Uma resposta já avaliada não pode ser alterada.");
+        }
         this.answerJson = answerJson;
         this.updatedAt = now;
     }
 
+    public void evaluate(boolean correct, UUID scoreEventId, Instant now) {
+        if (evaluatedAt != null) return;
+        if (!correct && scoreEventId != null) {
+            throw new IllegalArgumentException("Resposta incorreta não pode possuir ScoreEvent de acerto.");
+        }
+        this.correct = correct;
+        this.scoreEventId = scoreEventId;
+        this.evaluatedAt = now;
+        this.updatedAt = now;
+    }
+
+    public boolean isEvaluated() { return evaluatedAt != null; }
     public UUID getId() { return id; }
     public QuizRound getRound() { return round; }
     public SessionParticipant getParticipant() { return participant; }
     public String getAnswerJson() { return answerJson; }
+    public Instant getEvaluatedAt() { return evaluatedAt; }
+    public Boolean isCorrect() { return correct; }
+    public UUID getScoreEventId() { return scoreEventId; }
     public Instant getSubmittedAt() { return submittedAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }
