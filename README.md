@@ -6,7 +6,7 @@
 >
 > **Current development line:** `v0.5.0 — Live Quiz & Structured Responses`, branch `feat/v0.5-live-quiz`.
 >
-> **Current checkpoint:** `13.0` bootstrap documental. The `v0.4.0` baseline is frozen; no new runtime, migration or version bump is introduced by this bootstrap. The next implementation increment is **13.1 — Quiz Runtime**.
+> **Current checkpoint:** `13.7` release-candidate preparation. Quiz runtime, structured `/join` answers, results/Projector, `ScoreEvent` evaluation, pedagogical feedback and Mobile/PWA are implemented; publication still depends on local gate, CI, backup/restore and final gate on the same SHA.
 
 ## Product model
 
@@ -246,15 +246,17 @@ docker compose ps
 
 The `v0.3.0` tag is frozen and must not be moved or recreated.
 
-## v0.4.0 release candidate metadata
+## v0.5.0 release candidate metadata
 
-Maven, npm and release tooling are aligned on `0.4.0` as part of 12.6. This does **not** mean the tag is published: `v0.4.0` may be created only after the final CI, backup/restore and release gate are green on the same commit.
+Maven, npm and release tooling are aligned on `0.5.0` as part of 13.7. This does **not** mean the tag is published: `v0.5.0` may be created only after final CI, backup/restore through Flyway V16 and the final release gate are green on the same commit.
 
 ## Documentation
 
 Current:
 
 - [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
+- [`docs/RELEASE_0_5_0.md`](docs/RELEASE_0_5_0.md) — v0.5 release-candidate checklist
+- [`docs/INCREMENT_13_7.md`](docs/INCREMENT_13_7.md)
 - [`docs/ROADMAP_0_4.md`](docs/ROADMAP_0_4.md)
 - [`docs/INCREMENT_12_4D_0.md`](docs/INCREMENT_12_4D_0.md)
 - [`docs/INCREMENT_12_6.md`](docs/INCREMENT_12_6.md)
