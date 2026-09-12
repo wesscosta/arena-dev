@@ -496,7 +496,7 @@ test("Quiz completo preserva resposta no reconnect, revela no Projetor e gera Sc
 
     await participantPage.getByRole("button", { name: new RegExp(correctText) }).click();
     await expect(
-      participantPage.getByText("Resposta registrada", { exact: true }),
+      participantPage.getByText(/^Resposta registrada/),
     ).toBeVisible();
 
     // Reload exercises participant token restoration + authoritative runtime snapshot.
@@ -505,7 +505,7 @@ test("Quiz completo preserva resposta no reconnect, revela no Projetor e gera Sc
       participantPage.getByRole("heading", { name: questionText }),
     ).toBeVisible();
     await expect(
-      participantPage.getByText("Resposta registrada", { exact: true }),
+      participantPage.getByText(/^Resposta registrada/),
     ).toBeVisible();
 
     const lockResponse = await api.post(
@@ -541,8 +541,10 @@ test("Quiz completo preserva resposta no reconnect, revela no Projetor e gera Sc
       projector.page.getByText("RESPOSTA CORRETA", { exact: true }),
     ).toBeVisible();
     await expect(
-      projector.page.getByText(correctText, { exact: true }),
-    ).toBeVisible();
+      projector.page
+        .getByText("RESPOSTA CORRETA", { exact: true })
+        .locator(".."),
+    ).toContainText(correctText);
 
     // Snapshot REST/realtime must preserve revealed correction after reload.
     await projector.page.reload();
@@ -550,8 +552,10 @@ test("Quiz completo preserva resposta no reconnect, revela no Projetor e gera Sc
       projector.page.getByText("RESPOSTA CORRETA", { exact: true }),
     ).toBeVisible();
     await expect(
-      projector.page.getByText(correctText, { exact: true }),
-    ).toBeVisible();
+      projector.page
+        .getByText("RESPOSTA CORRETA", { exact: true })
+        .locator(".."),
+    ).toContainText(correctText);
   } finally {
     await projectorContext?.close();
     await participantContext.close();

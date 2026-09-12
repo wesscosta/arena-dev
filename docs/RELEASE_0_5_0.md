@@ -20,11 +20,12 @@
 
 ## Persistência
 
-Schema máximo: **Flyway V16**.
+Schema máximo: **Flyway V17**.
 
 ```text
 V15  quiz_rounds + quiz_participant_answers
 V16  avaliação + vínculo opcional com ScoreEvent
+V17  cor e ícone semânticos da turma
 ```
 
 Não existe `QuizScore`.
@@ -62,7 +63,7 @@ release tooling 0.5.0
 - [ ] CI final verde no SHA de merge;
 - [ ] backup real produzido;
 - [ ] SHA-256 do backup validado;
-- [ ] restore-check PostgreSQL 17 / Flyway V1–V16 verde;
+- [ ] restore-check PostgreSQL 17 / Flyway V1–V17 verde;
 - [ ] rollback/restore ensaiado e registrado;
 - [ ] `release-gate.sh final` verde no mesmo SHA.
 

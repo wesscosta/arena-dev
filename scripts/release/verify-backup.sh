@@ -18,7 +18,7 @@ usage() {
 Uso: scripts/release/verify-backup.sh CAMINHO_DO_DUMP
 
 Restaura o dump em um PostgreSQL 17 temporário e isolado, confirma o histórico
-Flyway V1-V16 e as tabelas centrais da v0.5, e remove o container ao terminar.
+Flyway V1-V17 e as tabelas centrais da v0.5, e remove o container ao terminar.
 EOF
 }
 
@@ -82,12 +82,12 @@ docker exec -i "$CONTAINER_NAME" \
 migration_count="$(docker exec "$CONTAINER_NAME" \
   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
   --command "select count(*) from flyway_schema_history where success")"
-[[ "$migration_count" -eq 16 ]] || fail "histórico Flyway restaurado possui $migration_count migrations; esperado 16"
+[[ "$migration_count" -eq 17 ]] || fail "histórico Flyway restaurado possui $migration_count migrations; esperado 17"
 
 latest_version="$(docker exec "$CONTAINER_NAME" \
   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
   --command "select max(version::integer) from flyway_schema_history where success and version ~ '^[0-9]+$'")"
-[[ "$latest_version" -eq 16 ]] || fail "maior migration restaurada é V$latest_version; esperado V16"
+[[ "$latest_version" -eq 17 ]] || fail "maior migration restaurada é V$latest_version; esperado V17"
 
 core_table_count="$(docker exec "$CONTAINER_NAME" \
   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
@@ -98,5 +98,8 @@ quiz_evaluation_columns="$(docker exec "$CONTAINER_NAME" \
   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
   --command "select count(*) from information_schema.columns where table_schema='public' and table_name='quiz_participant_answers' and column_name in ('evaluated_at','is_correct','score_event_id')")"
 [[ "$quiz_evaluation_columns" -eq 3 ]] || fail "V16 não restaurou integralmente as colunas de avaliação do Quiz"
+
+classroom_theme_columns="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select count(*) from information_schema.columns where table_schema='public' and table_name='classrooms' and column_name in ('theme_color','theme_icon')")"
+[[ "$classroom_theme_columns" -eq 2 ]] || fail "V17 não restaurou integralmente a identidade visual das turmas"
 
 printf 'Backup v0.5 restaurado e validado em PostgreSQL 17: %s\n' "$backup_file"
