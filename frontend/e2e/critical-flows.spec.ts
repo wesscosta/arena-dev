@@ -398,3 +398,163 @@ test("Buzzer e Boss permanecem sincronizados entre participante e Projetor", asy
     await api.dispose();
   }
 });
+
+
+test("Quiz completo preserva resposta no reconnect, revela no Projetor e gera ScoreEvent", async ({ browser }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  const participantContext = await browser.newContext();
+  const participantPage = await participantContext.newPage();
+  let projectorContext: { close: () => Promise<void> } | undefined;
+
+  try {
+    const fixture = await createSessionFixture(api, csrfHeaders, "QUIZ");
+    const questionText = `Qual alternativa fecha o Quiz E2E ${fixture.suffix}?`;
+    const correctText = `Resposta correta ${fixture.suffix.slice(-5)}`;
+
+    const activityResponse = await api.post("/api/activities", {
+      headers: csrfHeaders,
+      data: {
+        classroomId: fixture.classroom.id,
+        title: `Atividade Quiz E2E ${fixture.suffix}`,
+        topic: "Quiz E2E",
+        points: 100,
+        onTimeBonus: 0,
+        resource: { kind: "INTERNAL", platform: null, url: null },
+        questions: [{
+          id: null,
+          type: "MULTIPLE_CHOICE",
+          statement: questionText,
+          difficulty: "EASY",
+          points: 10,
+          options: [
+            { id: "a", text: correctText },
+            { id: "b", text: `Distrator B ${fixture.suffix.slice(-4)}` },
+            { id: "c", text: `Distrator C ${fixture.suffix.slice(-4)}` },
+            { id: "d", text: `Distrator D ${fixture.suffix.slice(-4)}` },
+          ],
+          answer: "a",
+          expectedAnswer: null,
+          explanation: "A alternativa A é a resposta autorada para o gate E2E.",
+          code: null,
+          language: null,
+          expectedOutcome: null,
+          evaluationCriteria: [],
+        }],
+      },
+    });
+    await expectOk(activityResponse, "Criação da atividade Quiz E2E");
+    const activity = await activityResponse.json() as ActivityView;
+    const questionId = activity.questions[0]?.id;
+    expect(questionId).toBeTruthy();
+
+    const prepareResponse = await api.post(`/api/sessions/${fixture.session.id}/quiz`, {
+      headers: csrfHeaders,
+      data: { questionId },
+    });
+    await expectOk(prepareResponse, "Preparação do Quiz E2E");
+    const prepared = await prepareResponse.json() as {
+      round: { id: string; status: string } | null;
+    };
+    expect(prepared.round?.status).toBe("READY");
+    const roundId = prepared.round?.id;
+    expect(roundId).toBeTruthy();
+
+    await joinParticipant(
+      participantPage,
+      fixture.joinCode.code,
+      fixture.classroomName,
+      fixture.registration,
+      fixture.studentNickname,
+    );
+
+    const projector = await openProjector(
+      browser,
+      fixture.joinCode.code,
+      fixture.classroomName,
+    );
+    projectorContext = projector.context;
+
+    const openResponse = await api.post(
+      `/api/sessions/${fixture.session.id}/quiz/${roundId}/open`,
+      { headers: csrfHeaders },
+    );
+    await expectOk(openResponse, "Abertura do Quiz E2E");
+
+    await expect(
+      participantPage.getByRole("heading", { name: questionText }),
+    ).toBeVisible();
+    await expect(
+      projector.page.getByRole("heading", { name: questionText }),
+    ).toBeVisible();
+
+    await expect(
+      projector.page.getByText("Resultados protegidos", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      projector.page.getByText("RESPOSTA CORRETA", { exact: true }),
+    ).toHaveCount(0);
+
+    await participantPage.getByRole("button", { name: new RegExp(correctText) }).click();
+    await expect(
+      participantPage.getByText("Resposta registrada", { exact: true }),
+    ).toBeVisible();
+
+    // Reload exercises participant token restoration + authoritative runtime snapshot.
+    await participantPage.reload();
+    await expect(
+      participantPage.getByRole("heading", { name: questionText }),
+    ).toBeVisible();
+    await expect(
+      participantPage.getByText("Resposta registrada", { exact: true }),
+    ).toBeVisible();
+
+    const lockResponse = await api.post(
+      `/api/sessions/${fixture.session.id}/quiz/${roundId}/lock`,
+      { headers: csrfHeaders },
+    );
+    await expectOk(lockResponse, "Bloqueio/avaliação do Quiz E2E");
+
+    const scoreResponse = await api.get(
+      `/api/score-events?classroomId=${encodeURIComponent(fixture.classroom.id)}`,
+    );
+    await expectOk(scoreResponse, "Consulta de ScoreEvent do Quiz E2E");
+    const scores = await scoreResponse.json() as Array<{
+      studentId: string;
+      points: number;
+      source: string;
+      questionId: string | null;
+    }>;
+    const quizScores = scores.filter(
+      (score) => score.source === "QUIZ" && score.questionId === questionId,
+    );
+    expect(quizScores).toHaveLength(1);
+    expect(quizScores[0]?.studentId).toBe(fixture.student.id);
+    expect(quizScores[0]?.points).toBe(10);
+
+    const revealResponse = await api.post(
+      `/api/sessions/${fixture.session.id}/quiz/${roundId}/reveal`,
+      { headers: csrfHeaders },
+    );
+    await expectOk(revealResponse, "Reveal do Quiz E2E");
+
+    await expect(
+      projector.page.getByText("RESPOSTA CORRETA", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      projector.page.getByText(correctText, { exact: true }),
+    ).toBeVisible();
+
+    // Snapshot REST/realtime must preserve revealed correction after reload.
+    await projector.page.reload();
+    await expect(
+      projector.page.getByText("RESPOSTA CORRETA", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      projector.page.getByText(correctText, { exact: true }),
+    ).toBeVisible();
+  } finally {
+    await projectorContext?.close();
+    await participantContext.close();
+    await api.dispose();
+  }
+});

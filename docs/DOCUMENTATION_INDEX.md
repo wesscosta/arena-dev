@@ -44,3 +44,5 @@ Atualizado em 10/09/2026 no bootstrap `13.0` da v0.5.
 
 - `INCREMENT_13_5.md` — feedback pedagógico derivado do Quiz e decisões explícitas do professor.
 - `INCREMENT_13_6.md` — Mobile/PWA, installability, shell offline e reconnect explícito.
+- `INCREMENT_13_7.md` — hardening, E2E e gate da v0.5.0.
+- `RELEASE_0_5_0.md` — checklist do release candidate v0.5.0.

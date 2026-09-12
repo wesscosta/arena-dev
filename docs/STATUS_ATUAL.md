@@ -8,7 +8,7 @@
 
 **Branch de desenvolvimento:** `feat/v0.5-live-quiz`.
 
-**Checkpoint:** `13.6 — Mobile/PWA implementado para validação`.
+**Checkpoint:** `13.7 — release candidate v0.5.0 preparada; gates operacionais pendentes`.
 
 Este arquivo é a referência técnica versionada do estado corrente.
 
@@ -88,8 +88,8 @@ Não duplicar `ActivityQuestion` dentro do runtime.
 13.3  Resultados + Projetor                        concluído localmente
 13.4  Avaliação + integração com ScoreEvent        concluído localmente
 13.5  Feedback pedagógico                          concluído localmente
-13.6  Mobile/PWA                                   implementado; gates pendentes
-13.7  Hardening/E2E + gate v0.5.0                  próximo
+13.6  Mobile/PWA                                   concluído em código
+13.7  Hardening/E2E + gate v0.5.0                  candidate preparada; gates pendentes
 ```
 
 ## Schema
@@ -100,8 +100,8 @@ Maior migration atual: **V16**.
 
 ## Versionamento
 
-Os manifests permanecem em `0.4.0` durante o desenvolvimento inicial da v0.5. O bump para `0.5.0` fica reservado ao incremento de fechamento/release.
+Os manifests e o release tooling estão alinhados em `0.5.0` para o release candidate. Isso não autoriza a tag antes dos gates final e de backup/restore.
 
 ## Próximo passo
 
-**Gate imediato:** executar frontend (`npm test`, `typecheck`, `build`) e backend (`mvn -B -ntp verify`). Com os gates verdes, avançar para **13.7 — Hardening, E2E e release gate v0.5.0**.
+Executar o gate local do 13.7. Depois de commit/push, abrir o PR para `main` e usar a CI do SHA final como entrada do gate final. Backup real, restore-check V1–V16, rollback/restore e `release-gate.sh final` continuam obrigatórios antes da tag `v0.5.0`.

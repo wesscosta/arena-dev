@@ -18,7 +18,7 @@ usage() {
 Uso: scripts/release/verify-backup.sh CAMINHO_DO_DUMP
 
 Restaura o dump em um PostgreSQL 17 temporário e isolado, confirma o histórico
-Flyway V1-V14 e as tabelas centrais da v0.4, e remove o container ao terminar.
+Flyway V1-V16 e as tabelas centrais da v0.5, e remove o container ao terminar.
 EOF
 }
 
@@ -82,11 +82,21 @@ docker exec -i "$CONTAINER_NAME" \
 migration_count="$(docker exec "$CONTAINER_NAME" \
   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
   --command "select count(*) from flyway_schema_history where success")"
-[[ "$migration_count" -eq 14 ]] || fail "histórico Flyway restaurado possui $migration_count migrations; esperado 14"
+[[ "$migration_count" -eq 16 ]] || fail "histórico Flyway restaurado possui $migration_count migrations; esperado 16"
+
+latest_version="$(docker exec "$CONTAINER_NAME" \
+  psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
+  --command "select max(version::integer) from flyway_schema_history where success and version ~ '^[0-9]+$'")"
+[[ "$latest_version" -eq 16 ]] || fail "maior migration restaurada é V$latest_version; esperado V16"
 
 core_table_count="$(docker exec "$CONTAINER_NAME" \
   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
-  --command "select count(*) from (values ('classrooms'), ('students'), ('enrollments'), ('class_sessions'), ('score_events'), ('activities'), ('activity_steps'), ('session_events'), ('session_timers'), ('buzzer_rounds'), ('word_cloud_rounds'), ('poll_rounds'), ('enrollment_device_claims')) as expected(name) where to_regclass('public.' || name) is not null")"
-[[ "$core_table_count" -eq 13 ]] || fail "nem todas as 13 tabelas centrais da v0.4 foram restauradas"
+  --command "select count(*) from (values ('classrooms'), ('students'), ('enrollments'), ('class_sessions'), ('score_events'), ('activities'), ('activity_steps'), ('session_events'), ('session_timers'), ('buzzer_rounds'), ('word_cloud_rounds'), ('poll_rounds'), ('enrollment_device_claims'), ('quiz_rounds'), ('quiz_participant_answers')) as expected(name) where to_regclass('public.' || name) is not null")"
+[[ "$core_table_count" -eq 15 ]] || fail "nem todas as 15 tabelas centrais da v0.5 foram restauradas"
 
-printf 'Backup restaurado e validado em PostgreSQL 17: %s\n' "$backup_file"
+quiz_evaluation_columns="$(docker exec "$CONTAINER_NAME" \
+  psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
+  --command "select count(*) from information_schema.columns where table_schema='public' and table_name='quiz_participant_answers' and column_name in ('evaluated_at','is_correct','score_event_id')")"
+[[ "$quiz_evaluation_columns" -eq 3 ]] || fail "V16 não restaurou integralmente as colunas de avaliação do Quiz"
+
+printf 'Backup v0.5 restaurado e validado em PostgreSQL 17: %s\n' "$backup_file"

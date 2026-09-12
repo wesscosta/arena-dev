@@ -129,14 +129,14 @@ TRUE_FALSE
 ### 13.7 — Hardening, E2E e release gate v0.5.0
 
 - [ ] E2E de Quiz completo;
-- [ ] resposta + reconnect;
-- [ ] reveal + Projetor;
-- [ ] avaliação + `ScoreEvent`;
+- [x] resposta + reconnect;
+- [x] reveal + Projetor;
+- [x] avaliação + `ScoreEvent`;
 - [ ] audit/test/typecheck/build;
 - [ ] `mvn verify`;
 - [ ] Compose;
 - [ ] backup/restore da maior migration;
-- [ ] manifests/tooling em `0.5.0`;
+- [x] manifests/tooling em `0.5.0`;
 - [ ] gate final no mesmo SHA;
 - [ ] tag somente depois do gate.
 
