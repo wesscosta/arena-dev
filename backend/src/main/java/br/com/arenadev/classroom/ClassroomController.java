@@ -37,7 +37,7 @@ public class ClassroomController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ClassroomService.ClassroomView create(@Valid @RequestBody ClassroomRequest request) {
-        return service.create(request.name(), request.code());
+        return service.create(request.name(), request.code(), request.themeColor(), request.themeIcon());
     }
 
     @PutMapping("/{id}")
@@ -45,7 +45,7 @@ public class ClassroomController {
             @PathVariable UUID id,
             @Valid @RequestBody ClassroomUpdateRequest request
     ) {
-        return service.update(id, request.name(), request.code(), request.active());
+        return service.update(id, request.name(), request.code(), request.active(), request.themeColor(), request.themeIcon());
     }
 
     @DeleteMapping("/{id}")
@@ -95,10 +95,21 @@ public class ClassroomController {
         service.remove(id, studentId);
     }
 
-    public record ClassroomRequest(@NotBlank String name, String code) {
+    public record ClassroomRequest(
+            @NotBlank String name,
+            String code,
+            String themeColor,
+            String themeIcon
+    ) {
     }
 
-    public record ClassroomUpdateRequest(@NotBlank String name, String code, boolean active) {
+    public record ClassroomUpdateRequest(
+            @NotBlank String name,
+            String code,
+            boolean active,
+            String themeColor,
+            String themeIcon
+    ) {
     }
 
     public record EnrollmentStatusRequest(boolean active) {

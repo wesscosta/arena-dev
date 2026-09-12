@@ -12,7 +12,7 @@ Fechar `v0.5.0 — Live Quiz & Structured Responses` como release candidate repr
 O 13.7 concentra:
 
 1. E2E real do Quiz em Chromium;
-2. restore-check atualizado até Flyway V16;
+2. restore-check atualizado até Flyway V17;
 3. metadata/tooling alinhados em `0.5.0`;
 4. documentação de release candidate;
 5. gate local e gate final no mesmo SHA da CI.
@@ -140,7 +140,7 @@ GitHub Release v0.5.0
 - [ ] PR integrado em `main`;
 - [ ] CI verde no SHA de merge;
 - [ ] backup real + SHA-256 criados;
-- [ ] restore-check V1–V16 verde;
+- [ ] restore-check V1–V17 verde;
 - [ ] ensaio de rollback/restore registrado;
 - [ ] `release-gate.sh final` verde no mesmo SHA;
 - [ ] tag anotada `v0.5.0`;

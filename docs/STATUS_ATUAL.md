@@ -8,7 +8,7 @@
 
 **Branch de desenvolvimento:** `feat/v0.5-live-quiz`.
 
-**Checkpoint:** `13.7 — release candidate v0.5.0 preparada; gates operacionais pendentes`.
+**Checkpoint:** `13.7A — UX Friction Pass aplicado sobre o release candidate; gates precisam ser repetidos`.
 
 Este arquivo é a referência técnica versionada do estado corrente.
 
@@ -94,7 +94,7 @@ Não duplicar `ActivityQuestion` dentro do runtime.
 
 ## Schema
 
-Maior migration atual: **V16**.
+Maior migration atual: **V17**.
 
 `V15__quiz_runtime.sql` adiciona `quiz_rounds` e `quiz_participant_answers`.
 

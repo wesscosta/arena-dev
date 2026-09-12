@@ -1,4 +1,4 @@
-import type { Classroom, Enrollment, Student } from "./types";
+import type { Classroom, ClassroomThemeColor, ClassroomThemeIcon, Enrollment, Student } from "./types";
 import { apiFetch } from "./auth-api";
 
 
@@ -46,6 +46,8 @@ type ClassroomView = {
   name: string;
   code: string | null;
   active: boolean;
+  themeColor: ClassroomThemeColor;
+  themeIcon: ClassroomThemeIcon;
   createdAt: string;
 };
 
@@ -76,6 +78,8 @@ function mapClassroom(item: ClassroomView): Classroom {
     name: item.name,
     code: item.code ?? "",
     active: item.active,
+    themeColor: item.themeColor ?? "emerald",
+    themeIcon: item.themeIcon ?? "code",
     createdAt: item.createdAt,
   };
 }
@@ -128,22 +132,41 @@ export async function fetchClassroomDomain(): Promise<{
   };
 }
 
-export async function createClassroom(input: { name: string; code?: string }): Promise<Classroom> {
+export async function createClassroom(input: {
+  name: string;
+  code?: string;
+  themeColor?: ClassroomThemeColor;
+  themeIcon?: ClassroomThemeIcon;
+}): Promise<Classroom> {
   const result = await request<ClassroomView>("/api/classrooms", {
     method: "POST",
-    body: JSON.stringify({ name: input.name, code: input.code || null }),
+    body: JSON.stringify({
+      name: input.name,
+      code: input.code || null,
+      themeColor: input.themeColor ?? "emerald",
+      themeIcon: input.themeIcon ?? "code",
+    }),
   });
   return mapClassroom(result);
 }
 
 
-export async function updateClassroom(input: { id: string; name: string; code?: string; active: boolean }): Promise<Classroom> {
+export async function updateClassroom(input: {
+  id: string;
+  name: string;
+  code?: string;
+  active: boolean;
+  themeColor?: ClassroomThemeColor;
+  themeIcon?: ClassroomThemeIcon;
+}): Promise<Classroom> {
   const result = await request<ClassroomView>(`/api/classrooms/${input.id}`, {
     method: "PUT",
     body: JSON.stringify({
       name: input.name,
       code: input.code || null,
       active: input.active,
+      themeColor: input.themeColor ?? null,
+      themeIcon: input.themeIcon ?? null,
     }),
   });
   return mapClassroom(result);

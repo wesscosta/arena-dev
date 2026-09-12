@@ -23,10 +23,12 @@ test("v0.5 release manifests are aligned", () => {
   assert.match(gate, /ARENA_RELEASE_VERSION:-0\.5\.0/);
 });
 
-test("v0.5 backup verifier requires Flyway V16 and Quiz persistence", () => {
-  assert.match(verifier, /esperado 16/);
+test("v0.5 backup verifier requires Flyway V17, Quiz persistence and classroom identity", () => {
+  assert.match(verifier, /esperado 17/);
   assert.match(verifier, /quiz_rounds/);
   assert.match(verifier, /quiz_participant_answers/);
   assert.match(verifier, /evaluated_at/);
   assert.match(verifier, /score_event_id/);
+  assert.match(verifier, /theme_color/);
+  assert.match(verifier, /theme_icon/);
 });
