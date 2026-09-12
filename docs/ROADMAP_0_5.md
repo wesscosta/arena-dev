@@ -95,16 +95,19 @@ TRUE_FALSE
 - [x] reload/reconnect do Projetor restaura o mesmo resultado;
 - [x] nenhuma identidade canônica é exposta publicamente;
 - [x] testes frontend e backend adicionados;
-- [ ] `npm test`, `typecheck`, `build` e `mvn verify` verdes para fechar o incremento.
+- [x] `npm test`, `typecheck`, `build` e `mvn verify` verdes no gate local do incremento.
 
 ### 13.4 — Avaliação + XP
 
-- [ ] avaliar respostas objetivas no backend;
-- [ ] mapear acerto para `ScoreEvent`;
-- [ ] impedir XP duplicado;
-- [ ] reversão continua no domínio `ScoreEvent`;
-- [ ] não criar `QuizScore`;
-- [ ] `SessionEvent` registra transições da rodada, não cada resposta.
+- [x] avaliar `MULTIPLE_CHOICE` e `TRUE_FALSE` no backend ao entrar em `LOCKED`;
+- [x] mapear acerto elegível para `ScoreEvent` com `source=QUIZ`;
+- [x] impedir XP duplicado com lock pessimista + `evaluated_at` + vínculo ao evento;
+- [x] manter reversão exclusivamente no domínio `ScoreEvent`;
+- [x] não criar `QuizScore`;
+- [x] registrar somente transições da rodada em `SessionEvent`;
+- [x] migration `V16__quiz_evaluation_score_event.sql`;
+- [x] `QuizScoringIT` cobre avaliação, idempotência, reversão e timeline;
+- [ ] `npm test`, `typecheck`, `build` e `mvn verify` verdes para fechar o incremento.
 
 ### 13.5 — Feedback pedagógico
 

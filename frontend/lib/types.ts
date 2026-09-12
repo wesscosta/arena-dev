@@ -1,4 +1,4 @@
-export type ScoreSource = "ARENA" | "ACTIVITY" | "BUZZER" | "BOSS" | "MANUAL";
+export type ScoreSource = "ARENA" | "ACTIVITY" | "QUIZ" | "BUZZER" | "BOSS" | "MANUAL";
 
 export type ScoreCategory =
   | "QUESTION"
