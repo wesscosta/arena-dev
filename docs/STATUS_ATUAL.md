@@ -1,6 +1,6 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 12 de setembro de 2026
+**Última sincronização documental:** 13 de setembro de 2026
 
 **Release estável:** `v0.4.0 — Live Classroom`.
 
@@ -8,7 +8,7 @@
 
 **Branch de desenvolvimento:** `feat/v0.5-live-quiz`.
 
-**Checkpoint:** `13.7E — fechamento funcional/UX concluído; gate local completo verde`.
+**Checkpoint:** `13.7A–13.7E concluídos localmente; release-gate local verde; fechamento remoto/backup pendente`.
 
 Este arquivo é a referência técnica versionada do estado corrente.
 
@@ -113,15 +113,15 @@ Os manifests e o release tooling estão alinhados em `0.5.0` para o release cand
 
 ## Próximo passo
 
-Versionar README/status/roadmap/release docs no mesmo working tree já validado e criar os commits finais da branch `feat/v0.5-live-quiz`.
+O gate local do release candidate está verde. O próximo passo é versionar o mesmo estado validado, fazer push da branch `feat/v0.5-live-quiz`, abrir PR para `main` e exigir CI verde no SHA final.
 
-Depois:
+Depois do merge/CI ainda são obrigatórios:
 
-1. `git push`;
-2. abrir PR para `main`;
-3. exigir CI verde no SHA final;
-4. produzir backup real + SHA-256;
-5. executar restore-check PostgreSQL 17 / Flyway V1–V17;
-6. registrar ensaio de rollback/restore;
-7. executar `scripts/release/release-gate.sh final`;
-8. somente então criar a tag anotada `v0.5.0` e publicar a GitHub Release.
+- backup real;
+- SHA-256 do backup;
+- restore-check PostgreSQL 17 / Flyway V1–V17;
+- ensaio de rollback/restore;
+- `scripts/release/release-gate.sh final` no mesmo SHA;
+- somente então tag anotada `v0.5.0` e GitHub Release.
+
+Nenhuma evidência de CI remoto, backup/restore ou gate final deve ser inferida a partir do gate local.

@@ -1,6 +1,6 @@
 # Release candidate `v0.5.0` — Live Quiz & Structured Responses
 
-**Data de preparação:** 12/09/2026  
+**Data de preparação:** 13/09/2026  
 **Estado:** candidate preparada; **não publicada**.
 
 ## Escopo
@@ -45,6 +45,7 @@ release tooling 0.5.0
 ## Checklist de preparação
 
 - [x] 13.0–13.6 implementados em código;
+- [x] 13.7A–13.7E implementados e validados localmente;
 - [x] cenário E2E completo do Quiz versionado;
 - [x] verifier de backup atualizado para V17;
 - [x] metadata preparada para 0.5.0;

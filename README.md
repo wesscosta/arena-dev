@@ -6,7 +6,7 @@
 >
 > **Current development line:** `v0.5.0 — Live Quiz & Structured Responses`, branch `feat/v0.5-live-quiz`.
 >
-> **Current checkpoint:** `13.7E` release-candidate UX closure. Quiz Runtime, structured `/join`, Projector results, `ScoreEvent` evaluation, pedagogical feedback, Mobile/PWA and UX increments `13.7A–13.7E` are implemented; the complete local release gate is green. Publication still requires commit/push, PR/merge, CI on the final SHA, backup/restore through Flyway V17, rollback rehearsal and the final release gate.
+> **Current checkpoint:** `13.7A–13.7E` UX consolidation complete locally. Quiz runtime, structured `/join`, scoring, PWA, classroom identity, safe lifecycle management, dedicated classroom settings and Dark/Light/System themes are implemented. Local release gate is green; remote CI, backup/restore, rollback rehearsal and final gate are still required before `v0.5.0`.
 
 ## Product model
 
@@ -32,7 +32,11 @@ Arena Dev centralizes attendance, activities, smart draws, XP, rankings, groups,
 - Synchronized Timer.
 - Word Cloud.
 - Public Projector.
-- Student `/join`.
+- Student `/join` with structured Quiz responses.
+- Live Quiz runtime with `MULTIPLE_CHOICE` and `TRUE_FALSE`.
+- Dark / Light / System interface themes.
+- Per-classroom color and semantic icon identity.
+- Dedicated classroom management page with archive and safe hard delete.
 - Structured Live Quiz with `MULTIPLE_CHOICE` and `TRUE_FALSE` responses.
 - Mobile/PWA shell with explicit reconnect and offline-safe boundaries.
 - Classroom visual identity with curated color/icon tokens.
