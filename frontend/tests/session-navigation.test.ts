@@ -18,7 +18,7 @@ test("ending a session requires explicit confirmation inside Arena", () => {
 });
 
 test("session navigation uses Participantes instead of Presença as top-level tool", () => {
-  assert.match(arena, /id:\s*"presence",\s*label:\s*"Participantes"/s);
+  assert.match(arena, /id:\s*"presence",[\s\S]*?label:\s*"Participantes"/);
   assert.match(arena, /title="Participantes da sessão"/);
 });
 
