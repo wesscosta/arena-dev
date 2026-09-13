@@ -18,3 +18,9 @@ test("home CTA keeps session lifecycle inside Arena", () => {
   assert.doesNotMatch(arena, /arena-launch-overflow/);
   assert.doesNotMatch(arena, /quickFinishSession/);
 });
+
+test("Home CTA keeps session ending inside the Arena", () => {
+  assert.doesNotMatch(arena, /arena-launch-overflow/);
+  assert.doesNotMatch(arena, /quickFinishSession/);
+  assert.doesNotMatch(arena, /Encerrar aula em andamento/);
+});
