@@ -1,6 +1,6 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 11 de setembro de 2026
+**Última sincronização documental:** 12 de setembro de 2026
 
 **Release estável:** `v0.4.0 — Live Classroom`.
 
@@ -8,7 +8,7 @@
 
 **Branch de desenvolvimento:** `feat/v0.5-live-quiz`.
 
-**Checkpoint:** `13.7A — UX Friction Pass aplicado sobre o release candidate; gates precisam ser repetidos`.
+**Checkpoint:** `13.7E — fechamento funcional/UX concluído; gate local completo verde`.
 
 Este arquivo é a referência técnica versionada do estado corrente.
 
@@ -83,13 +83,18 @@ Não duplicar `ActivityQuestion` dentro do runtime.
 
 ```text
 13.0  Bootstrap documental                         concluído
-13.1  Quiz Runtime                                 concluído localmente
-13.2  Respostas estruturadas no /join              concluído localmente
-13.3  Resultados + Projetor                        concluído localmente
-13.4  Avaliação + integração com ScoreEvent        concluído localmente
-13.5  Feedback pedagógico                          concluído localmente
-13.6  Mobile/PWA                                   concluído em código
-13.7  Hardening/E2E + gate v0.5.0                  candidate preparada; gates pendentes
+13.1  Quiz Runtime                                 concluído
+13.2  Respostas estruturadas no /join              concluído
+13.3  Resultados + Projetor                        concluído
+13.4  Avaliação + integração com ScoreEvent        concluído
+13.5  Feedback pedagógico                          concluído
+13.6  Mobile/PWA                                   concluído
+13.7  Hardening/E2E + gate v0.5.0                  gate local completo verde
+13.7A Students UX + identidade visual + V17        concluído
+13.7B Finish polish + hard delete seguro           concluído
+13.7C Iniciar/Continuar Arena distintos            concluído
+13.7D Gerenciar turma como página dedicada         concluído
+13.7E Tema Escuro/Claro/Sistema                    concluído
 ```
 
 ## Schema
@@ -98,10 +103,25 @@ Maior migration atual: **V17**.
 
 `V15__quiz_runtime.sql` adiciona `quiz_rounds` e `quiz_participant_answers`.
 
+`V16__quiz_evaluation_score_event.sql` adiciona avaliação persistida e vínculo idempotente com `ScoreEvent`.
+
+`V17__classroom_theme_identity.sql` adiciona `theme_color` e `theme_icon` à turma.
+
 ## Versionamento
 
 Os manifests e o release tooling estão alinhados em `0.5.0` para o release candidate. Isso não autoriza a tag antes dos gates final e de backup/restore.
 
 ## Próximo passo
 
-Executar o gate local do 13.7. Depois de commit/push, abrir o PR para `main` e usar a CI do SHA final como entrada do gate final. Backup real, restore-check V1–V16, rollback/restore e `release-gate.sh final` continuam obrigatórios antes da tag `v0.5.0`.
+Versionar README/status/roadmap/release docs no mesmo working tree já validado e criar os commits finais da branch `feat/v0.5-live-quiz`.
+
+Depois:
+
+1. `git push`;
+2. abrir PR para `main`;
+3. exigir CI verde no SHA final;
+4. produzir backup real + SHA-256;
+5. executar restore-check PostgreSQL 17 / Flyway V1–V17;
+6. registrar ensaio de rollback/restore;
+7. executar `scripts/release/release-gate.sh final`;
+8. somente então criar a tag anotada `v0.5.0` e publicar a GitHub Release.

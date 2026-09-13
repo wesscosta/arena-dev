@@ -1,0 +1,105 @@
+/*
+ * Arena Dev — Semantic Color Contract
+ * 13.7F
+ *
+ * Single source of truth for theme-sensitive colors.
+ * New component CSS should consume --ds-* aliases from tokens.css.
+ */
+:root,
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --theme-canvas: #08100e;
+  --theme-surface: #0d1714;
+  --theme-surface-raised: #111e1a;
+  --theme-surface-muted: #16251f;
+  --theme-surface-control: #0b1512;
+  --theme-surface-subtle: #0c1613;
+  --theme-surface-inset: #0a1310;
+  --theme-surface-toolbar: #09120f;
+  --theme-surface-stat: rgba(0, 0, 0, .08);
+  --theme-surface-hover: rgba(255, 255, 255, .035);
+  --theme-surface-interactive: rgba(255, 255, 255, .018);
+  --theme-text-primary: #f3f7f5;
+  --theme-text-secondary: #8ea39a;
+  --theme-text-tertiary: #6f847b;
+  --theme-border: rgba(255, 255, 255, .09);
+  --theme-border-subtle: rgba(255, 255, 255, .055);
+  --theme-border-strong: rgba(255, 255, 255, .18);
+  --theme-accent: #58f3a7;
+  --theme-accent-strong: #b5ffda;
+  --theme-accent-contrast: #04110b;
+  --theme-danger: #ff6b73;
+  --theme-danger-fill: #7d2d36;
+  --theme-danger-text: #ff9da3;
+  --theme-warning: #ffd166;
+  --theme-warning-text: #d8b778;
+  --theme-topbar: rgba(8, 16, 14, .78);
+  --theme-sticky-top: rgba(8, 16, 14, .97);
+  --theme-sticky-bottom: rgba(8, 16, 14, .92);
+  --theme-avatar-start: #1e352b;
+  --theme-avatar-end: #243f34;
+  --theme-avatar-text: #b8d8ca;
+  --theme-shadow-panel: 0 14px 40px rgba(0, 0, 0, .10);
+  --theme-shadow-elevated: 0 22px 60px rgba(0, 0, 0, .26);
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --theme-canvas: #f4f8f6;
+  --theme-surface: #ffffff;
+  --theme-surface-raised: #f8fbf9;
+  --theme-surface-muted: #eef4f1;
+  --theme-surface-control: #ffffff;
+  --theme-surface-subtle: #f7faf8;
+  --theme-surface-inset: #eef4f0;
+  --theme-surface-toolbar: #ffffff;
+  --theme-surface-stat: #f1f5f3;
+  --theme-surface-hover: rgba(20, 46, 35, .045);
+  --theme-surface-interactive: rgba(20, 46, 35, .025);
+  --theme-text-primary: #13231c;
+  --theme-text-secondary: #61756c;
+  --theme-text-tertiary: #7b8d85;
+  --theme-border: rgba(20, 46, 35, .13);
+  --theme-border-subtle: rgba(20, 46, 35, .075);
+  --theme-border-strong: rgba(20, 46, 35, .22);
+  --theme-accent: #22b978;
+  --theme-accent-strong: #0d6f48;
+  --theme-accent-contrast: #06150e;
+  --theme-danger: #d84f5a;
+  --theme-danger-fill: #fff0f1;
+  --theme-danger-text: #a93640;
+  --theme-warning: #b87b08;
+  --theme-warning-text: #8a5d08;
+  --theme-topbar: rgba(248, 252, 250, .90);
+  --theme-sticky-top: rgba(244, 248, 246, .98);
+  --theme-sticky-bottom: rgba(244, 248, 246, .94);
+  --theme-avatar-start: #e4f3eb;
+  --theme-avatar-end: #d6ebe0;
+  --theme-avatar-text: #275c44;
+  --theme-shadow-panel: 0 12px 34px rgba(24, 56, 42, .06);
+  --theme-shadow-elevated: 0 20px 55px rgba(24, 56, 42, .10);
+}
+
+/* Legacy compatibility. Prefer --ds-* in new CSS. */
+:root,
+html[data-theme="dark"],
+html[data-theme="light"] {
+  --bg: var(--theme-canvas);
+  --surface: var(--theme-surface);
+  --surface-2: var(--theme-surface-raised);
+  --surface-3: var(--theme-surface-muted);
+  --border: var(--theme-border);
+  --text: var(--theme-text-primary);
+  --muted: var(--theme-text-secondary);
+  --text-tertiary: var(--theme-text-tertiary);
+  --accent: var(--theme-accent);
+  --accent-2: var(--theme-accent-strong);
+  --danger: var(--theme-danger);
+  --warning: var(--theme-warning);
+  --shadow: var(--theme-shadow-elevated);
+  --topbar-bg: var(--theme-topbar);
+  --input-bg: var(--theme-surface-control);
+  --control-bg: var(--theme-surface-raised);
+  --control-subtle-bg: var(--theme-surface-subtle);
+  --inset-bg: var(--theme-surface-inset);
+}

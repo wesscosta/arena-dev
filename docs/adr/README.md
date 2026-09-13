@@ -63,3 +63,4 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0039 — Cache da PWA serve ao shell, nunca à verdade do domínio](ADR-0039-pwa-cache-de-shell-nao-e-verdade-do-dominio.md)
 - [ADR-0040 — Release v0.5 exige evidência operacional no mesmo SHA](ADR-0040-release-gate-v0.5-e-evidencia-no-mesmo-sha.md)
 - [ADR-0041 — Identidade de turma por tokens semânticos](ADR-0041-identidade-da-turma-por-tokens-semanticos.md)
+- [ADR-0042 — Hard delete explícito sem cascade global](ADR-0042-hard-delete-explicito-sem-cascade-global.md)

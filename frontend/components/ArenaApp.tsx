@@ -63,18 +63,20 @@ import {
 } from "@/lib/classroom-overview";
 import type { Activity, ActivityQuestion, ActivityStep, ArenaData, Classroom, ClassroomThemeColor, ClassroomThemeIcon, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 import { classroomArenaCtaState } from "@/lib/classroom-arena-cta";
+import { applyThemePreference, loadThemePreference, saveThemePreference, type ThemePreference } from "@/lib/theme-preference";
 import {
   CLASSROOM_THEME_COLORS,
   CLASSROOM_THEME_ICONS,
   classroomThemePresentation,
 } from "@/lib/classroom-theme";
 
-type View = "dashboard" | "classroom" | "arena" | "settings";
+type View = "dashboard" | "classroom" | "classroom-settings" | "arena" | "settings";
 type ClassroomTab = "home" | "students" | "activities" | "ranking" | "history";
 
 const VIEW_LABEL: Record<View, string> = {
   dashboard: "Visão geral",
   classroom: "Turma",
+  "classroom-settings": "Gerenciar turma",
   arena: "Arena",
   settings: "Configurações",
 };
@@ -120,9 +122,11 @@ export default function ArenaApp() {
   const [hydrated, setHydrated] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [classroomTab, setClassroomTab] = useState<ClassroomTab>("home");
+  const [classroomSettingsIntent, setClassroomSettingsIntent] = useState<"general" | "delete">("general");
   const [toast, setToast] = useState("");
   const [apiError, setApiError] = useState("");
   const [arenaActivityId, setArenaActivityId] = useState<string | undefined>();
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>("system");
 
   useEffect(() => {
     let cancelled = false;
@@ -181,6 +185,26 @@ export default function ArenaApp() {
     const timer = window.setTimeout(() => setToast(""), 2500);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    const initial = loadThemePreference();
+    setThemePreferenceState(initial);
+    applyThemePreference(initial);
+  }, []);
+
+  useEffect(() => {
+    applyThemePreference(themePreference);
+    if (themePreference !== "system") return;
+    const media = window.matchMedia("(prefers-color-scheme: light)");
+    const sync = () => applyThemePreference("system");
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, [themePreference]);
+
+  function setThemePreference(preference: ThemePreference) {
+    setThemePreferenceState(preference);
+    saveThemePreference(preference);
+  }
 
   const activeClassroom = data.classrooms.find((item) => item.id === data.activeClassroomId) ?? data.classrooms[0];
   const activeClassroomId = activeClassroom?.id;
@@ -260,6 +284,12 @@ export default function ArenaApp() {
     setView("classroom");
   }
 
+  function openClassroomSettings(classroomId?: string, intent: "general" | "delete" = "general") {
+    if (classroomId) setActiveClassroom(classroomId);
+    setClassroomSettingsIntent(intent);
+    setView("classroom-settings");
+  }
+
   if (teacherSession === undefined) {
     return <div className="loading-screen">Validando acesso...</div>;
   }
@@ -308,7 +338,7 @@ export default function ArenaApp() {
                       setView("dashboard");
                     },
               },
-              ...((view === "classroom" || view === "arena") && activeClassroom
+              ...((view === "classroom" || view === "classroom-settings" || view === "arena") && activeClassroom
                 ? [{
                     id: "classroom",
                     label: (
@@ -337,6 +367,13 @@ export default function ArenaApp() {
                 ? [{
                     id: "arena",
                     label: "Arena",
+                    current: true,
+                  } satisfies BreadcrumbItem]
+                : []),
+              ...(view === "classroom-settings"
+                ? [{
+                    id: "classroom-settings",
+                    label: "Gerenciar turma",
                     current: true,
                   } satisfies BreadcrumbItem]
                 : []),
@@ -404,6 +441,7 @@ export default function ArenaApp() {
             <OverviewView
               data={data}
               onSelectClassroom={(classroomId) => { setActiveClassroom(classroomId); openClassroom("home"); }}
+              onManageClassroom={(classroomId, intent) => openClassroomSettings(classroomId, intent)}
               notify={notify}
               refreshClassroomDomain={refreshClassroomDomain}
             />
@@ -428,6 +466,7 @@ export default function ArenaApp() {
                     events={data.scoreEvents.filter((event) => event.classroomId === activeClassroom.id)}
                     currentSession={currentSession}
                     onOpenArena={() => setView("arena")}
+                    onManageClassroom={() => openClassroomSettings(activeClassroom.id)}
                     notify={notify}
                     refreshClassroomDomain={refreshClassroomDomain}
                   />
@@ -483,6 +522,28 @@ export default function ArenaApp() {
               <EmptyState
                 title="Nenhuma turma selecionada"
                 text="Selecione uma turma na Visão geral ou crie uma nova turma para abrir o workspace pedagógico."
+                actionLabel="Ir para Visão geral"
+                onAction={() => setView("dashboard")}
+              />
+            )
+          )}
+
+          {view === "classroom-settings" && (
+            activeClassroom ? (
+              <ClassroomManagementPage
+                classroom={activeClassroom}
+                data={data}
+                currentSession={currentSession}
+                initialAction={classroomSettingsIntent}
+                onBack={() => setView("classroom")}
+                onDeleted={() => setView("dashboard")}
+                notify={notify}
+                refreshClassroomDomain={refreshClassroomDomain}
+              />
+            ) : (
+              <EmptyState
+                title="Nenhuma turma selecionada"
+                text="Selecione uma turma para abrir suas configurações."
                 actionLabel="Ir para Visão geral"
                 onAction={() => setView("dashboard")}
               />
@@ -562,6 +623,46 @@ export default function ArenaApp() {
                 </Panel>
               </div>
 
+              <section className="settings-appearance-section">
+                <div className="settings-section-heading">
+                  <span className="eyebrow accent">APARÊNCIA</span>
+                  <h3>Tema da interface</h3>
+                  <p>Escolha como o Arena Dev deve aparecer neste navegador.</p>
+                </div>
+
+                <Panel title="Tema" subtitle="Preferência local deste dispositivo">
+                  <div className="theme-choice-grid" role="radiogroup" aria-label="Tema da interface">
+                    {([
+                      { id: "dark", label: "Escuro", description: "Tema padrão do Arena Dev.", icon: "◐" },
+                      { id: "light", label: "Claro", description: "Superfícies claras e contraste suave.", icon: "☀" },
+                      { id: "system", label: "Sistema", description: "Segue a preferência do sistema operacional.", icon: "◒" },
+                    ] as const).map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={themePreference === option.id}
+                        className={themePreference === option.id ? "theme-choice active" : "theme-choice"}
+                        onClick={() => setThemePreference(option.id)}
+                      >
+                        <span className={`theme-choice-preview theme-choice-preview-${option.id}`} aria-hidden>
+                          <i />
+                          <b />
+                        </span>
+                        <span className="theme-choice-copy">
+                          <strong><span aria-hidden>{option.icon}</span> {option.label}</strong>
+                          <small>{option.description}</small>
+                        </span>
+                        <span className="theme-choice-check" aria-hidden>{themePreference === option.id ? "✓" : ""}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="settings-theme-note">
+                    A preferência é salva localmente. “Sistema” acompanha automaticamente mudanças entre claro e escuro.
+                  </div>
+                </Panel>
+              </section>
+
               <section className="settings-backup-section">
                 <div className="settings-section-heading">
                   <span className="eyebrow accent">SEGURANÇA E DADOS</span>
@@ -585,9 +686,10 @@ export default function ArenaApp() {
   );
 }
 
-function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain }: {
+function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refreshClassroomDomain }: {
   data: ArenaData;
   onSelectClassroom: (classroomId: string) => void;
+  onManageClassroom: (classroomId: string, intent: "general" | "delete") => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
@@ -596,8 +698,6 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
   const [sortMode, setSortMode] = useState<ClassroomSortMode>("RECENT");
   const [recentClassroomIds] = useState<string[]>(() => loadRecentClassroomIds());
   const [createOpen, setCreateOpen] = useState(false);
-  const [editingClassroom, setEditingClassroom] = useState<Classroom | undefined>();
-  const [editIntent, setEditIntent] = useState<"edit" | "delete">("edit");
   const [openCardMenuId, setOpenCardMenuId] = useState<string | null>(null);
 
   const activeSessions = data.sessions.filter((session) => session.status === "ACTIVE" && !session.endedAt);
@@ -649,7 +749,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
         <Metric label="Turmas ativas" value={data.classrooms.filter((item) => item.active).length.toString()} hint={`${data.classrooms.length} cadastradas`} />
         <Metric label="Matrículas ativas" value={activeEnrollments.length.toString()} hint="vínculos em todas as turmas" />
         <Metric label="Atividades" value={data.activities.length.toString()} hint="conteúdo preparado" />
-        <Metric label="Sessões agora" value={activeSessions.length.toString()} hint="aulas em andamento" />
+        <Metric label="Sessões agora" value={activeSessions.length.toString()} hint="sessões em andamento" />
       </div>
 
       <div className="overview-toolbar">
@@ -734,7 +834,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
                       {(session || !classroom.active) && (
                         <div className="status-line">
                           {session ? (
-                            <span className="live-pill compact"><span /> AO VIVO</span>
+                            <span className="live-pill compact"><span /> SESSÃO EM ANDAMENTO</span>
                           ) : (
                             <span className="status">Inativa</span>
                           )}
@@ -771,8 +871,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
                             type="button"
                             onClick={() => {
                               setOpenCardMenuId(null);
-                              setEditIntent("edit");
-                              setEditingClassroom(classroom);
+                              onManageClassroom(classroom.id, "general");
                             }}
                           >
                             <span>✎</span>
@@ -798,8 +897,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
                             className="danger"
                             onClick={() => {
                               setOpenCardMenuId(null);
-                              setEditIntent("delete");
-                              setEditingClassroom(classroom);
+                              onManageClassroom(classroom.id, "delete");
                             }}
                           >
                             <span>⌫</span>
@@ -832,16 +930,6 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
           onCreated={(classroomId) => { setCreateOpen(false); onSelectClassroom(classroomId); }}
           notify={notify}
           refreshClassroomDomain={refreshClassroomDomain}
-        />
-      )}
-      {editingClassroom && (
-        <ClassroomEditModal
-          classroom={editingClassroom}
-          data={data}
-          onClose={() => setEditingClassroom(undefined)}
-          notify={notify}
-          refreshClassroomDomain={refreshClassroomDomain}
-          confirmDeleteInitially={editIntent === "delete"}
         />
       )}
     </div>
@@ -887,7 +975,7 @@ function ClassroomWorkspaceTabs({ tab, onTabChange, studentCount, activityCount,
   );
 }
 
-function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, notify, refreshClassroomDomain }: {
+function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, onManageClassroom, notify, refreshClassroomDomain }: {
   classroom: Classroom;
   data: ArenaData;
   students: Student[];
@@ -895,10 +983,10 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
   events: ArenaData["scoreEvents"];
   currentSession?: ArenaData["sessions"][number];
   onOpenArena: () => void;
+  onManageClassroom: () => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
-  const [editOpen, setEditOpen] = useState(false);
   const totalXp = leaderboard.reduce((sum, row) => sum + row.xp, 0);
   const today = new Date().toDateString();
   const todayEvents = events.filter((event) => new Date(event.createdAt).toDateString() === today);
@@ -909,12 +997,13 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
   );
   const classroomTheme = classroomThemePresentation(classroom);
 
+
   return (
     <div className="stack-lg">
       {!classroom.active && (
         <div className="context-warning">
           <div><strong>Turma inativa</strong><span>O histórico está preservado, mas novas sessões ficam desabilitadas até a reativação.</span></div>
-          <button className="button small" onClick={() => setEditOpen(true)}>Gerenciar turma</button>
+          <button className="button small" onClick={onManageClassroom}>Gerenciar turma</button>
         </div>
       )}
       <section className="classroom-home-hero-v2" style={classroomTheme.style}>
@@ -928,21 +1017,26 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
 
           <button
             className="button ghost classroom-manage-button"
-            onClick={() => setEditOpen(true)}
+            onClick={onManageClassroom}
           >
             Gerenciar turma
           </button>
         </div>
 
         <div className="classroom-home-hero-cta">
-          <button
-            className={`arena-launch-button arena-launch-button-centered ${arenaCta.live ? "live" : ""}`}
-            onClick={onOpenArena}
-            disabled={arenaCta.disabled}
-          >
-            <span className="arena-launch-icon">{arenaCta.live ? "↗" : "▶"}</span>
-            <strong>{arenaCta.buttonLabel}</strong>
-          </button>
+          <div className="arena-launch-shell">
+            <button
+              className={`arena-launch-button arena-launch-button-centered arena-launch-button-${arenaCta.tone} ${arenaCta.live ? "live" : ""}`}
+              onClick={onOpenArena}
+              disabled={arenaCta.disabled}
+            >
+              <span className="arena-launch-icon" aria-hidden>{arenaCta.icon}</span>
+              <span className="arena-launch-content">
+                <strong>{arenaCta.buttonLabel}</strong>
+                <small>{arenaCta.supportingLabel}</small>
+              </span>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -952,20 +1046,11 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
         <Metric label="XP distribuído" value={totalXp.toString()} hint="acumulado da turma" />
         <Metric
           label="Sessão"
-          value={currentSession ? "AO VIVO" : "—"}
+          value={currentSession ? "SESSÃO EM ANDAMENTO" : "—"}
           hint={currentSession ? currentSession.title : `${todayEvents.length} evento(s) hoje`}
         />
       </div>
 
-      {editOpen && (
-        <ClassroomEditModal
-          classroom={classroom}
-          data={data}
-          onClose={() => setEditOpen(false)}
-          notify={notify}
-          refreshClassroomDomain={refreshClassroomDomain}
-        />
-      )}
     </div>
   );
 }
@@ -1313,25 +1398,43 @@ function ClassroomCreateModal({ data, onClose, onCreated, notify, refreshClassro
   );
 }
 
-function ClassroomEditModal({ classroom, data, onClose, notify, refreshClassroomDomain, confirmDeleteInitially = false }: {
+function ClassroomManagementPage({
+  classroom,
+  data,
+  currentSession,
+  initialAction = "general",
+  onBack,
+  onDeleted,
+  notify,
+  refreshClassroomDomain,
+}: {
   classroom: Classroom;
   data: ArenaData;
-  onClose: () => void;
+  currentSession?: ArenaData["sessions"][number];
+  initialAction?: "general" | "delete";
+  onBack: () => void;
+  onDeleted: () => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
-  confirmDeleteInitially?: boolean;
 }) {
-  const [tab, setTab] = useState<"general" | "students">("general");
   const [name, setName] = useState(classroom.name);
   const [code, setCode] = useState(classroom.code);
   const [themeColor, setThemeColor] = useState<ClassroomThemeColor>(classroom.themeColor ?? "emerald");
   const [themeIcon, setThemeIcon] = useState<ClassroomThemeIcon>(classroom.themeIcon ?? "code");
   const [busy, setBusy] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(confirmDeleteInitially);
-  const hasActiveSession = data.sessions.some((session) => session.classroomId === classroom.id && session.status === "ACTIVE" && !session.endedAt);
-  const hasHistory = data.sessions.some((session) => session.classroomId === classroom.id)
-    || data.activities.some((activity) => activity.classroomId === classroom.id)
-    || data.scoreEvents.some((event) => event.classroomId === classroom.id);
+  const [managementAction, setManagementAction] = useState<"archive" | "delete" | null>(
+    initialAction === "delete" ? "delete" : null,
+  );
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+
+  const hasActiveSession = Boolean(
+    currentSession && currentSession.status === "ACTIVE" && !currentSession.endedAt,
+  );
+  const enrollmentCount = data.enrollments.filter((item) => item.classroomId === classroom.id).length;
+  const sessionCount = data.sessions.filter((session) => session.classroomId === classroom.id).length;
+  const activityCount = data.activities.filter((activity) => activity.classroomId === classroom.id).length;
+  const scoreCount = data.scoreEvents.filter((event) => event.classroomId === classroom.id).length;
+  const deleteConfirmed = deleteConfirmation === classroom.name;
   const appearancePreview = classroomThemePresentation({ ...classroom, themeColor, themeIcon });
 
   useEffect(() => {
@@ -1339,7 +1442,16 @@ function ClassroomEditModal({ classroom, data, onClose, notify, refreshClassroom
     setCode(classroom.code);
     setThemeColor(classroom.themeColor ?? "emerald");
     setThemeIcon(classroom.themeIcon ?? "code");
-  }, [classroom.id, classroom.name, classroom.code, classroom.themeColor, classroom.themeIcon]);
+    setDeleteConfirmation("");
+    setManagementAction(initialAction === "delete" ? "delete" : null);
+  }, [
+    classroom.id,
+    classroom.name,
+    classroom.code,
+    classroom.themeColor,
+    classroom.themeIcon,
+    initialAction,
+  ]);
 
   async function save() {
     if (!name.trim() || busy) return;
@@ -1354,8 +1466,7 @@ function ClassroomEditModal({ classroom, data, onClose, notify, refreshClassroom
         themeIcon,
       });
       await refreshClassroomDomain(classroom.id);
-      notify("Turma atualizada.");
-      onClose();
+      notify("Configurações da turma salvas.");
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1377,7 +1488,7 @@ function ClassroomEditModal({ classroom, data, onClose, notify, refreshClassroom
       });
       await refreshClassroomDomain(classroom.id);
       notify(archived ? "Turma arquivada. O histórico foi preservado." : "Turma reativada.");
-      onClose();
+      setManagementAction(null);
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1386,13 +1497,13 @@ function ClassroomEditModal({ classroom, data, onClose, notify, refreshClassroom
   }
 
   async function removeClassroom() {
-    if (busy || hasHistory) return;
+    if (busy || hasActiveSession || !deleteConfirmed) return;
     setBusy(true);
     try {
-      await deleteClassroomApi(classroom.id);
+      await deleteClassroomApi(classroom.id, deleteConfirmation);
       await refreshClassroomDomain();
-      notify("Turma vazia excluída definitivamente.");
-      onClose();
+      notify("Turma excluída definitivamente. Os cadastros globais dos alunos foram preservados.");
+      onDeleted();
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1401,99 +1512,236 @@ function ClassroomEditModal({ classroom, data, onClose, notify, refreshClassroom
   }
 
   return (
-    <Modal open title="Gerenciar turma" subtitle={classroom.name} onClose={onClose} size={tab === "students" ? "large" : "medium"}>
-      <div className="modal-tabs">
-        <button className={tab === "general" ? "active" : ""} onClick={() => setTab("general")}>Geral</button>
-        <button className={tab === "students" ? "active" : ""} onClick={() => setTab("students")}>Alunos <span>{data.enrollments.filter((item) => item.classroomId === classroom.id && item.active).length}</span></button>
-      </div>
-
-      {tab === "general" ? (
-        <div className="modal-section-stack">
-          <section className="classroom-manager-section">
-            <div className="classroom-manager-section-heading"><span className="eyebrow accent">GERAL</span><p>Identificação e organização da turma.</p></div>
-            <label className="field"><span>Nome da turma</span><input className="input" value={name} onChange={(event) => setName(event.target.value)} /></label>
-            <label className="field"><span>Código <small>opcional</small></span><input className="input" value={code} onChange={(event) => setCode(event.target.value)} /></label>
-          </section>
-
-          <section className="classroom-manager-section">
-            <div className="classroom-manager-section-heading"><span className="eyebrow accent">APARÊNCIA</span><p>Identidade sutil para reconhecer a turma sem alterar o tema inteiro.</p></div>
-
-            <div className="field">
-              <span>Cor da turma</span>
-              <div className="classroom-color-picker" role="radiogroup" aria-label="Cor da turma">
-                {CLASSROOM_THEME_COLORS.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={themeColor === option.id}
-                    aria-label={option.label}
-                    title={option.label}
-                    className={themeColor === option.id ? "classroom-color-swatch selected" : "classroom-color-swatch"}
-                    style={{ background: option.value }}
-                    onClick={() => setThemeColor(option.id)}
-                  >
-                    {themeColor === option.id && <span>✓</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="field">
-              <span>Ícone da turma</span>
-              <div className="classroom-icon-picker" role="radiogroup" aria-label="Ícone da turma">
-                {CLASSROOM_THEME_ICONS.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={themeIcon === option.id}
-                    className={themeIcon === option.id ? "classroom-icon-choice selected" : "classroom-icon-choice"}
-                    onClick={() => setThemeIcon(option.id)}
-                    title={option.label}
-                  >
-                    <strong>{option.glyph}</strong><small>{option.label}</small>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="classroom-appearance-preview" style={appearancePreview.style}>
-              <span className="classroom-appearance-preview-icon" aria-hidden>{appearancePreview.glyph}</span>
-              <div><small>Pré-visualização</small><strong>{name.trim() || classroom.name}</strong><span>{code.trim() || classroom.code || "Sem código"}</span></div>
-            </div>
-          </section>
-
-          <section className="classroom-manager-section">
-            <div className="classroom-manager-section-heading"><span className="eyebrow accent">ARQUIVAMENTO</span><p>Arquivar remove a turma do fluxo operacional sem apagar sessões, atividades ou XP.</p></div>
-            {classroom.active !== false ? (
-              <button className="button ghost classroom-archive-button" disabled={busy || hasActiveSession} onClick={() => { void setArchived(true); }}>Arquivar turma</button>
-            ) : (
-              <button className="button primary classroom-archive-button" disabled={busy} onClick={() => { void setArchived(false); }}>Reativar turma</button>
-            )}
-            {hasActiveSession && <div className="inline-note warning">Encerre a sessão ativa antes de arquivar esta turma.</div>}
-          </section>
-
-          <details className="classroom-advanced-options">
-            <summary>Mais opções</summary>
-            <div className="danger-zone">
-              <div><strong>Excluir definitivamente</strong><p>Disponível somente para turmas vazias, sem sessões, atividades ou XP.</p></div>
-              {hasHistory ? (
-                <div className="inline-note">Exclusão indisponível porque esta turma possui histórico. Use <strong>Arquivar turma</strong>.</div>
-              ) : !confirmDelete ? (
-                <button className="button danger-outline" onClick={() => setConfirmDelete(true)}>Excluir definitivamente</button>
-              ) : (
-                <div className="confirm-actions"><button className="button ghost" onClick={() => setConfirmDelete(false)}>Cancelar</button><button className="button danger" disabled={busy} onClick={() => { void removeClassroom(); }}>Confirmar exclusão</button></div>
-              )}
-            </div>
-          </details>
-
-          <div className="modal-footer"><button className="button ghost" onClick={onClose}>Cancelar</button><button className="button primary" disabled={busy || !name.trim()} onClick={() => { void save(); }}>{busy ? "Salvando..." : "Salvar alterações"}</button></div>
+    <div className="classroom-settings-page stack-lg">
+      <header className="classroom-settings-heading">
+        <div>
+          <span className="eyebrow accent">GERENCIAR TURMA</span>
+          <h2>{classroom.name}</h2>
+          <p>Identidade, aparência, status e ciclo de vida desta turma.</p>
         </div>
-      ) : (
-        <StudentManager data={data} classroomId={classroom.id} notify={notify} refreshClassroomDomain={refreshClassroomDomain} showSummary />
-      )}
-    </Modal>
+        <div className="classroom-settings-heading-actions">
+          <button className="button ghost" type="button" onClick={onBack}>
+            ← Voltar para a turma
+          </button>
+          <button className="button primary" type="button" disabled={busy || !name.trim()} onClick={() => { void save(); }}>
+            {busy ? "Salvando..." : "Salvar alterações"}
+          </button>
+        </div>
+      </header>
+
+      <div className="classroom-settings-grid">
+        <div className="classroom-settings-main">
+          <section className="classroom-settings-card">
+            <div className="classroom-settings-section-heading">
+              <span className="eyebrow accent">GERAL</span>
+              <h3>Identificação</h3>
+              <p>Defina como a turma é identificada no Arena Dev.</p>
+            </div>
+
+            <div className="classroom-settings-fields">
+              <label className="field">
+                <span>Nome da turma</span>
+                <input className="input" value={name} onChange={(event) => setName(event.target.value)} />
+              </label>
+              <label className="field">
+                <span>Código <small>opcional</small></span>
+                <input className="input" value={code} onChange={(event) => setCode(event.target.value)} />
+              </label>
+            </div>
+          </section>
+
+          <section className="classroom-settings-card">
+            <div className="classroom-settings-section-heading">
+              <span className="eyebrow accent">APARÊNCIA</span>
+              <h3>Identidade visual da turma</h3>
+              <p>Cor e ícone funcionam como referência contextual sem alterar o tema inteiro da aplicação.</p>
+            </div>
+
+            <div className="classroom-settings-appearance">
+              <div className="field">
+                <span>Cor da turma</span>
+                <div className="classroom-color-picker" role="radiogroup" aria-label="Cor da turma">
+                  {CLASSROOM_THEME_COLORS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={themeColor === option.id}
+                      aria-label={option.label}
+                      title={option.label}
+                      className={themeColor === option.id ? "classroom-color-swatch selected" : "classroom-color-swatch"}
+                      style={{ background: option.value }}
+                      onClick={() => setThemeColor(option.id)}
+                    >
+                      {themeColor === option.id && <span>✓</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="field">
+                <span>Ícone da turma</span>
+                <div className="classroom-icon-picker classroom-settings-icon-picker" role="radiogroup" aria-label="Ícone da turma">
+                  {CLASSROOM_THEME_ICONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={themeIcon === option.id}
+                      className={themeIcon === option.id ? "classroom-icon-choice selected" : "classroom-icon-choice"}
+                      onClick={() => setThemeIcon(option.id)}
+                      title={option.label}
+                    >
+                      <strong>{option.glyph}</strong>
+                      <small>{option.label}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="classroom-appearance-preview classroom-settings-preview" style={appearancePreview.style}>
+                <span className="classroom-appearance-preview-icon" aria-hidden>{appearancePreview.glyph}</span>
+                <div>
+                  <small>Pré-visualização</small>
+                  <strong>{name.trim() || classroom.name}</strong>
+                  <span>{code.trim() || classroom.code || "Sem código"}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside className="classroom-settings-side">
+          <section className="classroom-settings-card">
+            <div className="classroom-settings-section-heading">
+              <span className="eyebrow accent">STATUS</span>
+              <h3>{classroom.active === false ? "Turma arquivada" : "Turma ativa"}</h3>
+              <p>
+                {classroom.active === false
+                  ? "Fora do fluxo operacional diário, com histórico preservado."
+                  : "Disponível para alunos, atividades e novas aulas."}
+              </p>
+            </div>
+
+            <div className="classroom-status-summary">
+              <div>
+                <span>Turma</span>
+                <strong>{classroom.active === false ? "Arquivada" : "Ativa"}</strong>
+              </div>
+              <div>
+                <span>Aula</span>
+                <strong>{hasActiveSession ? "Em andamento" : "Sem aula aberta"}</strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="classroom-settings-card">
+            <div className="classroom-settings-section-heading">
+              <span className="eyebrow accent">CICLO DE VIDA</span>
+              <h3>{classroom.active === false ? "Reativar turma" : "Arquivar turma"}</h3>
+              <p>
+                {classroom.active === false
+                  ? "Retorne a turma ao fluxo operacional."
+                  : "Retire a turma do uso diário preservando alunos, atividades, sessões, histórico e XP."}
+              </p>
+            </div>
+
+            {classroom.active === false ? (
+              <button className="button primary full" type="button" disabled={busy} onClick={() => { void setArchived(false); }}>
+                Reativar turma
+              </button>
+            ) : managementAction !== "archive" ? (
+              <button className="button ghost full" type="button" onClick={() => setManagementAction("archive")}>
+                Arquivar turma
+              </button>
+            ) : (
+              <div className="classroom-lifecycle-confirmation">
+                {hasActiveSession ? (
+                  <div className="inline-note warning">
+                    Há uma sessão em andamento. Encerre-a antes de arquivar a turma.
+                  </div>
+                ) : (
+                  <>
+                    <strong>Arquivar “{classroom.name}”?</strong>
+                    <p>O histórico será preservado e a turma poderá ser reativada depois.</p>
+                    <div className="confirm-actions">
+                      <button className="button ghost" type="button" onClick={() => setManagementAction(null)}>Cancelar</button>
+                      <button className="button primary" type="button" disabled={busy} onClick={() => { void setArchived(true); }}>
+                        Confirmar
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </section>
+
+          <section className="classroom-settings-card classroom-settings-danger">
+            <div className="classroom-settings-section-heading">
+              <span className="eyebrow danger-eyebrow">ZONA DE RISCO</span>
+              <h3>Excluir esta turma</h3>
+              <p>A exclusão é permanente e remove todos os dados pertencentes a esta turma.</p>
+            </div>
+
+            <div className="classroom-delete-impact">
+              <span>{enrollmentCount} vínculo(s)</span>
+              <span>{activityCount} atividade(s)</span>
+              <span>{sessionCount} sessão(ões)</span>
+              <span>{scoreCount} evento(s) de XP</span>
+            </div>
+
+            {managementAction !== "delete" ? (
+              <button className="button danger-outline full" type="button" onClick={() => setManagementAction("delete")}>
+                Excluir esta turma
+              </button>
+            ) : hasActiveSession ? (
+              <div className="classroom-delete-confirmation">
+                <strong>Há uma sessão em andamento.</strong>
+                <p>Encerre a sessão antes da exclusão definitiva para não interromper participantes conectados.</p>
+                <button className="button ghost" type="button" onClick={() => setManagementAction(null)}>Voltar</button>
+              </div>
+            ) : (
+              <div className="classroom-delete-confirmation">
+                <strong>Esta ação não pode ser desfeita.</strong>
+                <p>Digite exatamente o nome completo da turma:</p>
+                <code className="classroom-delete-name">{classroom.name}</code>
+                <label className="field">
+                  <span>Nome completo da turma</span>
+                  <input
+                    className="input"
+                    autoComplete="off"
+                    value={deleteConfirmation}
+                    onChange={(event) => setDeleteConfirmation(event.target.value)}
+                    placeholder={classroom.name}
+                  />
+                </label>
+                <div className="confirm-actions">
+                  <button
+                    className="button ghost"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      setManagementAction(null);
+                      setDeleteConfirmation("");
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="button danger"
+                    type="button"
+                    disabled={busy || !deleteConfirmed}
+                    onClick={() => { void removeClassroom(); }}
+                  >
+                    {busy ? "Excluindo..." : "Excluir definitivamente"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        </aside>
+      </div>
+    </div>
   );
 }
 
@@ -1510,8 +1758,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   notify: (message: string) => void;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
-  const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "presence" | "groups" | "boss">("live");
-  const [interactionTool, setInteractionTool] = useState<"draw" | "wordcloud" | "poll" | "quiz" | "buzzer">("draw");
+  const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "presence" | "groups">("live");
+  const [interactionTool, setInteractionTool] = useState<"draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss">("draw");
   const [accessOpen, setAccessOpen] = useState(false);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
@@ -1720,6 +1968,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
   async function endSession() {
     if (!currentSession || sessionBusy) return;
+    const confirmed = window.confirm(
+      `Encerrar a sessão "${currentSession.title}"?\n\n`
+      + "Participantes deixarão a sessão ativa. Histórico, XP e atividades permanecem salvos."
+    );
+    if (!confirmed) return;
     setSessionBusy(true);
     try {
       const finished = await finishSessionApi(currentSession.id);
@@ -2188,7 +2441,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         activeId={arenaTab}
         onChange={(id) => {
           setArenaTab(
-            id as "live" | "interactions" | "timer" | "presence" | "groups" | "boss"
+            id as "live" | "interactions" | "timer" | "presence" | "groups"
           );
         }}
         items={[
@@ -2216,7 +2469,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           },
           {
             id: "presence",
-            label: "Presença",
+            label: "Participantes",
             description: `${currentSession.presentStudentIds.length}/${sessionParticipants.length} presentes`,
           },
           {
@@ -2230,13 +2483,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                   : groupSize === 3
                     ? "Trios"
                     : `Grupos de ${groupSize}`,
-          },
-          {
-            id: "boss",
-            label: "Boss Battle",
-            description: currentSession.boss
-              ? `${currentSession.boss.currentHp}/${currentSession.boss.maxHp} HP`
-              : "Não iniciado",
           },
         ] satisfies TabItem[]}
       />
@@ -2444,6 +2690,23 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 </small>
               </div>
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={interactionTool === "boss"}
+              className={interactionTool === "boss" ? "active" : ""}
+              onClick={() => setInteractionTool("boss")}
+            >
+              <span>◆</span>
+              <div>
+                <strong>Boss Battle</strong>
+                <small>
+                  {currentSession.boss
+                    ? `${currentSession.boss.currentHp}/${currentSession.boss.maxHp} HP`
+                    : "Objetivo coletivo com HP"}
+                </small>
+              </div>
+            </button>
           </div>
 
           {interactionTool === "draw" ? (
@@ -2530,7 +2793,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               canAdvanceFlow={Boolean(liveFlowState?.started && liveFlowState.hasNext)}
               onContinue={() => movePreparedFlow("next")}
             />
-          ) : (
+          ) : interactionTool === "buzzer" ? (
             <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">
               <div className={`teacher-buzzer-state ${buzzerState.status.toLowerCase()}`}>
                 <div className="teacher-buzzer-head">
@@ -2574,13 +2837,38 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 <MiniEmpty text={buzzerState.status === "OPEN" ? "Aguardando o primeiro clique dos alunos conectados." : "Abra uma rodada quando quiser usar o Buzzer."} />
               )}
             </Panel>
+          ) : (
+            <Panel title="Boss Battle" subtitle="Objetivo coletivo sincronizado com participantes e Projetor">
+              <div className="boss-guide">
+                <strong>Como funciona nesta versão</strong>
+                <p>
+                  Defina um Boss e seus pontos de vida. Conforme a turma cumpre desafios,
+                  aplique o dano manualmente. Todos acompanham o HP sincronizado.
+                </p>
+                <small>Dano manual nesta versão — Quiz e XP não reduzem HP automaticamente.</small>
+              </div>
+              {currentSession.boss ? (
+                <div className="boss-box">
+                  <div className="boss-head"><div><span className="eyebrow accent">BOSS</span><h3>{currentSession.boss.name}</h3></div><b>{currentSession.boss.currentHp}/{currentSession.boss.maxHp} HP</b></div>
+                  <div className="hp-track"><span style={{ width: `${(currentSession.boss.currentHp / currentSession.boss.maxHp) * 100}%` }} /></div>
+                  <div className="damage-buttons"><button onClick={() => { void damageBoss(10); }}>−10 HP</button><button onClick={() => { void damageBoss(20); }}>−20 HP</button><button onClick={() => { void damageBoss(30); }}>−30 HP</button></div>
+                  {currentSession.boss.currentHp === 0 && <div className="boss-defeated">BOSS DERROTADO · objetivo coletivo concluído</div>}
+                </div>
+              ) : (
+                <div className="boss-create">
+                  <input className="input" value={bossName} onChange={(e) => setBossName(e.target.value)} placeholder="Nome do Boss" />
+                  <input className="input" type="number" min="10" value={bossHp} onChange={(e) => setBossHp(Math.max(10, Number(e.target.value)))} />
+                  <button className="button" onClick={() => { void createBoss(); }}>Criar Boss</button>
+                </div>
+              )}
+            </Panel>
           )}
         </div>
       )}
 
       {arenaTab === "presence" && (
-        <Panel title="Presença da sessão" subtitle="Alterações são salvas imediatamente no PostgreSQL">
-          <div className="attendance-head"><strong>Participantes</strong><span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span></div>
+        <Panel title="Participantes da sessão" subtitle="Presença e conexão são salvas imediatamente no PostgreSQL">
+          <div className="attendance-head"><strong>Presença</strong><span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span></div>
           <div className="attendance-list compact-attendance">
             {sessionParticipants.map((participant) => {
               const student = data.students.find((item) => item.id === participant.studentId);
@@ -2614,24 +2902,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </Panel>
       )}
 
-      {arenaTab === "boss" && (
-        <Panel title="Boss Battle" subtitle="Transforme questões em um objetivo coletivo">
-          {currentSession.boss ? (
-            <div className="boss-box">
-              <div className="boss-head"><div><span className="eyebrow accent">BOSS</span><h3>{currentSession.boss.name}</h3></div><b>{currentSession.boss.currentHp}/{currentSession.boss.maxHp} HP</b></div>
-              <div className="hp-track"><span style={{ width: `${(currentSession.boss.currentHp / currentSession.boss.maxHp) * 100}%` }} /></div>
-              <div className="damage-buttons"><button onClick={() => { void damageBoss(10); }}>−10 HP</button><button onClick={() => { void damageBoss(20); }}>−20 HP</button><button onClick={() => { void damageBoss(30); }}>−30 HP</button></div>
-              {currentSession.boss.currentHp === 0 && <div className="boss-defeated">BOSS DERROTADO · objetivo coletivo concluído</div>}
-            </div>
-          ) : (
-            <div className="boss-create">
-              <input className="input" value={bossName} onChange={(e) => setBossName(e.target.value)} placeholder="Nome do Boss" />
-              <input className="input" type="number" min="10" value={bossHp} onChange={(e) => setBossHp(Math.max(10, Number(e.target.value)))} />
-              <button className="button" onClick={() => { void createBoss(); }}>Criar Boss</button>
-            </div>
-          )}
-        </Panel>
-      )}
     </div>
   );
 }
@@ -3234,11 +3504,12 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
   );
 }
 
-function Modal({ open, title, subtitle, size = "medium", onClose, children }: {
+function Modal({ open, title, subtitle, size = "medium", bodyClassName, onClose, children }: {
   open: boolean;
   title: string;
   subtitle?: string;
   size?: "medium" | "large";
+  bodyClassName?: string;
   onClose: () => void;
   children: React.ReactNode;
 }) {
@@ -3264,7 +3535,7 @@ function Modal({ open, title, subtitle, size = "medium", onClose, children }: {
           <div><h2 id="arena-modal-title">{title}</h2>{subtitle && <p>{subtitle}</p>}</div>
           <button className="modal-close" type="button" aria-label="Fechar" onClick={onClose}>×</button>
         </header>
-        <div className="modal-body">{children}</div>
+        <div className={bodyClassName ? `modal-body ${bodyClassName}` : "modal-body"}>{children}</div>
       </section>
     </div>
   );

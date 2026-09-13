@@ -347,3 +347,38 @@
   }
 }
 
+/* 13.7B — themed classroom switcher scroll */
+.list {
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(88,243,167,.28) rgba(255,255,255,.02);
+  scrollbar-gutter: stable;
+}
+.list::-webkit-scrollbar { width: 8px; }
+.list::-webkit-scrollbar-track {
+  background: rgba(255,255,255,.02);
+  border-radius: 999px;
+}
+.list::-webkit-scrollbar-thumb {
+  background: rgba(88,243,167,.20);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+.list:hover::-webkit-scrollbar-thumb {
+  background: rgba(88,243,167,.38);
+  background-clip: padding-box;
+}
+
+/* 13.7E — light theme support */
+:global(html[data-theme="light"]) .popover {
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(24,56,42,.16);
+}
+:global(html[data-theme="light"]) .searchWrap {
+  background: #f7faf8;
+}
+:global(html[data-theme="light"]) .list > button:hover,
+:global(html[data-theme="light"]) .list > button.selected {
+  background: rgba(34,185,120,.07);
+}

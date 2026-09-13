@@ -1,6 +1,6 @@
 # Release candidate `v0.5.0` — Live Quiz & Structured Responses
 
-**Data de preparação:** 11/09/2026  
+**Data de preparação:** 12/09/2026  
 **Estado:** candidate preparada; **não publicada**.
 
 ## Escopo
@@ -16,7 +16,8 @@
 - XP exclusivamente via `ScoreEvent`;
 - feedback pedagógico derivado;
 - experiência Mobile/PWA;
-- hardening/E2E e release gate.
+- hardening/E2E e release gate;
+- UX final 13.7A–13.7E: Students, identidade visual, hard delete seguro, CTAs de sessão, página de gerenciamento e tema Escuro/Claro/Sistema.
 
 ## Persistência
 
@@ -45,20 +46,20 @@ release tooling 0.5.0
 
 - [x] 13.0–13.6 implementados em código;
 - [x] cenário E2E completo do Quiz versionado;
-- [x] verifier de backup atualizado para V16;
+- [x] verifier de backup atualizado para V17;
 - [x] metadata preparada para 0.5.0;
 - [x] documentação de release candidate criada.
 
 ## Gates ainda obrigatórios
 
-- [ ] `npm audit --omit=dev --audit-level=high` verde;
-- [ ] `npm test` verde;
-- [ ] `npm run typecheck` verde;
-- [ ] `npm run build` verde;
-- [ ] `mvn -B -ntp verify` verde;
-- [ ] Compose dev/prod válido;
-- [ ] Playwright crítico completo verde;
-- [ ] `release-gate.sh local` verde;
+- [x] `npm audit --omit=dev --audit-level=high` verde;
+- [x] `npm test` verde;
+- [x] `npm run typecheck` verde;
+- [x] `npm run build` verde;
+- [x] `mvn -B -ntp verify` verde;
+- [x] Compose dev/prod válido;
+- [x] Playwright crítico completo verde;
+- [x] `release-gate.sh local` verde;
 - [ ] PR mergeado em `main`;
 - [ ] CI final verde no SHA de merge;
 - [ ] backup real produzido;
