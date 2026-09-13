@@ -88,6 +88,9 @@ public class LiveStageService {
         if ((type == LiveStageType.SLIDE || type == LiveStageType.QUESTION) && sourceId == null) {
             throw new IllegalArgumentException("Informe o bloco do Roteiro ao Vivo para este palco.");
         }
+        if (type == LiveStageType.QUIZ && sourceId == null) {
+            throw new IllegalArgumentException("Informe a rodada de Quiz para este palco.");
+        }
         if (type == LiveStageType.SLIDE) {
             requirePreparedStep(session, sourceId, ActivityStepType.SLIDE);
         }
@@ -178,6 +181,22 @@ public class LiveStageService {
                 sessionId,
                 new ActivateCommand(
                         LiveStageType.POLL,
+                        roundId,
+                        LiveStageAudience.BOTH,
+                        true
+                )
+        );
+    }
+
+    @Transactional
+    public StateView showQuiz(UUID sessionId, UUID roundId) {
+        if (roundId == null) {
+            throw new IllegalArgumentException("Informe a rodada de Quiz para este palco.");
+        }
+        return activate(
+                sessionId,
+                new ActivateCommand(
+                        LiveStageType.QUIZ,
                         roundId,
                         LiveStageAudience.BOTH,
                         true

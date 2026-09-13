@@ -65,6 +65,26 @@
   --ds-surface: var(--surface);
   --ds-surface-raised: var(--surface-2, var(--surface));
   --ds-border: var(--border);
+  --ds-canvas: var(--theme-canvas);
+  --ds-surface-control: var(--theme-surface-control);
+  --ds-surface-subtle: var(--theme-surface-subtle);
+  --ds-surface-inset: var(--theme-surface-inset);
+  --ds-surface-stat: var(--theme-surface-stat);
+  --ds-surface-hover: var(--theme-surface-hover);
+  --ds-surface-interactive: var(--theme-surface-interactive);
+  --ds-text-tertiary: var(--theme-text-tertiary);
+  --ds-border-subtle: var(--theme-border-subtle);
+  --ds-border-strong: var(--theme-border-strong);
+  --ds-danger: var(--theme-danger);
+  --ds-danger-fill: var(--theme-danger-fill);
+  --ds-danger-text: var(--theme-danger-text);
+  --ds-warning: var(--theme-warning);
+  --ds-warning-text: var(--theme-warning-text);
+  --ds-avatar-start: var(--theme-avatar-start);
+  --ds-avatar-end: var(--theme-avatar-end);
+  --ds-avatar-text: var(--theme-avatar-text);
+  --ds-sticky-top: var(--theme-sticky-top);
+  --ds-sticky-bottom: var(--theme-sticky-bottom);
 
   --motion-fast: 120ms;
   --motion-base: 180ms;

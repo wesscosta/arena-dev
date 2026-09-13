@@ -1,8 +1,10 @@
 package br.com.arenadev.session;
 
 import br.com.arenadev.realtime.QrCodeService;
+import br.com.arenadev.quiz.QuizService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +23,16 @@ import java.util.UUID;
 public class SessionJoinController {
     private final SessionJoinService joinService;
     private final QrCodeService qrCodeService;
+    private final QuizService quizService;
 
-    public SessionJoinController(SessionJoinService joinService, QrCodeService qrCodeService) {
+    public SessionJoinController(
+            SessionJoinService joinService,
+            QrCodeService qrCodeService,
+            QuizService quizService
+    ) {
         this.joinService = joinService;
         this.qrCodeService = qrCodeService;
+        this.quizService = quizService;
     }
 
     @GetMapping("/api/sessions/{sessionId}/join-code")
@@ -87,6 +95,25 @@ public class SessionJoinController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/api/join/{code}/quiz/{roundId}/answer")
+    public QuizService.ParticipantStateView answerQuiz(
+            @PathVariable String code,
+            @PathVariable UUID roundId,
+            @Valid @RequestBody QuizAnswerRequest request
+    ) {
+        SessionJoinService.PublicSessionView session = joinService.lookup(code);
+        SessionParticipant participant = joinService.validateParticipantToken(
+                session.sessionId(),
+                request.token()
+        );
+        return quizService.answer(
+                session.sessionId(),
+                roundId,
+                participant.getId(),
+                request.answer()
+        );
+    }
+
     private static String validateBaseUrl(String raw) {
         try {
             URI uri = URI.create(raw == null ? "" : raw.trim());
@@ -105,5 +132,11 @@ public class SessionJoinController {
     }
 
     public record DeviceRequest(@NotBlank String deviceToken) {
+    }
+
+    public record QuizAnswerRequest(
+            @NotBlank String token,
+            @NotNull Object answer
+    ) {
     }
 }

@@ -9,6 +9,7 @@ import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
 import WordCloudPanel from "@/components/WordCloudPanel";
 import PollPanel from "@/components/PollPanel";
+import QuizPanel from "@/components/QuizPanel";
 import SessionAccessCard from "@/components/SessionAccessCard";
 import SessionTimeline from "@/components/SessionTimeline";
 import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
@@ -51,6 +52,7 @@ import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
 import type { TimerState } from "@/lib/timer-api";
 import { fetchWordCloudState, type WordCloudState } from "@/lib/word-cloud-api";
 import { fetchPollState, type PollState } from "@/lib/poll-api";
+import { fetchQuizState, type QuizState } from "@/lib/quiz-api";
 import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
 import { activeSessionId, selectPreferredClassroomId } from "@/lib/app-state";
 import {
@@ -59,15 +61,22 @@ import {
   rememberClassroomAccess,
   type ClassroomSortMode,
 } from "@/lib/classroom-overview";
-import type { Activity, ActivityQuestion, ActivityStep, ArenaData, Classroom, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
+import type { Activity, ActivityQuestion, ActivityStep, ArenaData, Classroom, ClassroomThemeColor, ClassroomThemeIcon, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 import { classroomArenaCtaState } from "@/lib/classroom-arena-cta";
+import { applyThemePreference, loadThemePreference, saveThemePreference, type ThemePreference } from "@/lib/theme-preference";
+import {
+  CLASSROOM_THEME_COLORS,
+  CLASSROOM_THEME_ICONS,
+  classroomThemePresentation,
+} from "@/lib/classroom-theme";
 
-type View = "dashboard" | "classroom" | "arena" | "settings";
+type View = "dashboard" | "classroom" | "classroom-settings" | "arena" | "settings";
 type ClassroomTab = "home" | "students" | "activities" | "ranking" | "history";
 
 const VIEW_LABEL: Record<View, string> = {
   dashboard: "Visão geral",
   classroom: "Turma",
+  "classroom-settings": "Gerenciar turma",
   arena: "Arena",
   settings: "Configurações",
 };
@@ -113,9 +122,11 @@ export default function ArenaApp() {
   const [hydrated, setHydrated] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [classroomTab, setClassroomTab] = useState<ClassroomTab>("home");
+  const [classroomSettingsIntent, setClassroomSettingsIntent] = useState<"general" | "delete">("general");
   const [toast, setToast] = useState("");
   const [apiError, setApiError] = useState("");
   const [arenaActivityId, setArenaActivityId] = useState<string | undefined>();
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>("system");
 
   useEffect(() => {
     let cancelled = false;
@@ -174,6 +185,26 @@ export default function ArenaApp() {
     const timer = window.setTimeout(() => setToast(""), 2500);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    const initial = loadThemePreference();
+    setThemePreferenceState(initial);
+    applyThemePreference(initial);
+  }, []);
+
+  useEffect(() => {
+    applyThemePreference(themePreference);
+    if (themePreference !== "system") return;
+    const media = window.matchMedia("(prefers-color-scheme: light)");
+    const sync = () => applyThemePreference("system");
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, [themePreference]);
+
+  function setThemePreference(preference: ThemePreference) {
+    setThemePreferenceState(preference);
+    saveThemePreference(preference);
+  }
 
   const activeClassroom = data.classrooms.find((item) => item.id === data.activeClassroomId) ?? data.classrooms[0];
   const activeClassroomId = activeClassroom?.id;
@@ -253,6 +284,12 @@ export default function ArenaApp() {
     setView("classroom");
   }
 
+  function openClassroomSettings(classroomId?: string, intent: "general" | "delete" = "general") {
+    if (classroomId) setActiveClassroom(classroomId);
+    setClassroomSettingsIntent(intent);
+    setView("classroom-settings");
+  }
+
   if (teacherSession === undefined) {
     return <div className="loading-screen">Validando acesso...</div>;
   }
@@ -301,7 +338,7 @@ export default function ArenaApp() {
                       setView("dashboard");
                     },
               },
-              ...((view === "classroom" || view === "arena") && activeClassroom
+              ...((view === "classroom" || view === "classroom-settings" || view === "arena") && activeClassroom
                 ? [{
                     id: "classroom",
                     label: (
@@ -330,6 +367,13 @@ export default function ArenaApp() {
                 ? [{
                     id: "arena",
                     label: "Arena",
+                    current: true,
+                  } satisfies BreadcrumbItem]
+                : []),
+              ...(view === "classroom-settings"
+                ? [{
+                    id: "classroom-settings",
+                    label: "Gerenciar turma",
                     current: true,
                   } satisfies BreadcrumbItem]
                 : []),
@@ -397,6 +441,7 @@ export default function ArenaApp() {
             <OverviewView
               data={data}
               onSelectClassroom={(classroomId) => { setActiveClassroom(classroomId); openClassroom("home"); }}
+              onManageClassroom={(classroomId, intent) => openClassroomSettings(classroomId, intent)}
               notify={notify}
               refreshClassroomDomain={refreshClassroomDomain}
             />
@@ -421,6 +466,7 @@ export default function ArenaApp() {
                     events={data.scoreEvents.filter((event) => event.classroomId === activeClassroom.id)}
                     currentSession={currentSession}
                     onOpenArena={() => setView("arena")}
+                    onManageClassroom={() => openClassroomSettings(activeClassroom.id)}
                     notify={notify}
                     refreshClassroomDomain={refreshClassroomDomain}
                   />
@@ -476,6 +522,28 @@ export default function ArenaApp() {
               <EmptyState
                 title="Nenhuma turma selecionada"
                 text="Selecione uma turma na Visão geral ou crie uma nova turma para abrir o workspace pedagógico."
+                actionLabel="Ir para Visão geral"
+                onAction={() => setView("dashboard")}
+              />
+            )
+          )}
+
+          {view === "classroom-settings" && (
+            activeClassroom ? (
+              <ClassroomManagementPage
+                classroom={activeClassroom}
+                data={data}
+                currentSession={currentSession}
+                initialAction={classroomSettingsIntent}
+                onBack={() => setView("classroom")}
+                onDeleted={() => setView("dashboard")}
+                notify={notify}
+                refreshClassroomDomain={refreshClassroomDomain}
+              />
+            ) : (
+              <EmptyState
+                title="Nenhuma turma selecionada"
+                text="Selecione uma turma para abrir suas configurações."
                 actionLabel="Ir para Visão geral"
                 onAction={() => setView("dashboard")}
               />
@@ -555,6 +623,46 @@ export default function ArenaApp() {
                 </Panel>
               </div>
 
+              <section className="settings-appearance-section">
+                <div className="settings-section-heading">
+                  <span className="eyebrow accent">APARÊNCIA</span>
+                  <h3>Tema da interface</h3>
+                  <p>Escolha como o Arena Dev deve aparecer neste navegador.</p>
+                </div>
+
+                <Panel title="Tema" subtitle="Preferência local deste dispositivo">
+                  <div className="theme-choice-grid" role="radiogroup" aria-label="Tema da interface">
+                    {([
+                      { id: "dark", label: "Escuro", description: "Tema padrão do Arena Dev.", icon: "◐" },
+                      { id: "light", label: "Claro", description: "Superfícies claras e contraste suave.", icon: "☀" },
+                      { id: "system", label: "Sistema", description: "Segue a preferência do sistema operacional.", icon: "◒" },
+                    ] as const).map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={themePreference === option.id}
+                        className={themePreference === option.id ? "theme-choice active" : "theme-choice"}
+                        onClick={() => setThemePreference(option.id)}
+                      >
+                        <span className={`theme-choice-preview theme-choice-preview-${option.id}`} aria-hidden>
+                          <i />
+                          <b />
+                        </span>
+                        <span className="theme-choice-copy">
+                          <strong><span aria-hidden>{option.icon}</span> {option.label}</strong>
+                          <small>{option.description}</small>
+                        </span>
+                        <span className="theme-choice-check" aria-hidden>{themePreference === option.id ? "✓" : ""}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="settings-theme-note">
+                    A preferência é salva localmente. “Sistema” acompanha automaticamente mudanças entre claro e escuro.
+                  </div>
+                </Panel>
+              </section>
+
               <section className="settings-backup-section">
                 <div className="settings-section-heading">
                   <span className="eyebrow accent">SEGURANÇA E DADOS</span>
@@ -578,9 +686,10 @@ export default function ArenaApp() {
   );
 }
 
-function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain }: {
+function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refreshClassroomDomain }: {
   data: ArenaData;
   onSelectClassroom: (classroomId: string) => void;
+  onManageClassroom: (classroomId: string, intent: "general" | "delete") => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
@@ -589,8 +698,6 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
   const [sortMode, setSortMode] = useState<ClassroomSortMode>("RECENT");
   const [recentClassroomIds] = useState<string[]>(() => loadRecentClassroomIds());
   const [createOpen, setCreateOpen] = useState(false);
-  const [editingClassroom, setEditingClassroom] = useState<Classroom | undefined>();
-  const [editIntent, setEditIntent] = useState<"edit" | "delete">("edit");
   const [openCardMenuId, setOpenCardMenuId] = useState<string | null>(null);
 
   const activeSessions = data.sessions.filter((session) => session.status === "ACTIVE" && !session.endedAt);
@@ -642,7 +749,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
         <Metric label="Turmas ativas" value={data.classrooms.filter((item) => item.active).length.toString()} hint={`${data.classrooms.length} cadastradas`} />
         <Metric label="Matrículas ativas" value={activeEnrollments.length.toString()} hint="vínculos em todas as turmas" />
         <Metric label="Atividades" value={data.activities.length.toString()} hint="conteúdo preparado" />
-        <Metric label="Sessões agora" value={activeSessions.length.toString()} hint="aulas em andamento" />
+        <Metric label="Sessões agora" value={activeSessions.length.toString()} hint="sessões em andamento" />
       </div>
 
       <div className="overview-toolbar">
@@ -727,7 +834,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
                       {(session || !classroom.active) && (
                         <div className="status-line">
                           {session ? (
-                            <span className="live-pill compact"><span /> AO VIVO</span>
+                            <span className="live-pill compact"><span /> SESSÃO EM ANDAMENTO</span>
                           ) : (
                             <span className="status">Inativa</span>
                           )}
@@ -764,8 +871,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
                             type="button"
                             onClick={() => {
                               setOpenCardMenuId(null);
-                              setEditIntent("edit");
-                              setEditingClassroom(classroom);
+                              onManageClassroom(classroom.id, "general");
                             }}
                           >
                             <span>✎</span>
@@ -791,8 +897,7 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
                             className="danger"
                             onClick={() => {
                               setOpenCardMenuId(null);
-                              setEditIntent("delete");
-                              setEditingClassroom(classroom);
+                              onManageClassroom(classroom.id, "delete");
                             }}
                           >
                             <span>⌫</span>
@@ -825,16 +930,6 @@ function OverviewView({ data, onSelectClassroom, notify, refreshClassroomDomain 
           onCreated={(classroomId) => { setCreateOpen(false); onSelectClassroom(classroomId); }}
           notify={notify}
           refreshClassroomDomain={refreshClassroomDomain}
-        />
-      )}
-      {editingClassroom && (
-        <ClassroomEditModal
-          classroom={editingClassroom}
-          data={data}
-          onClose={() => setEditingClassroom(undefined)}
-          notify={notify}
-          refreshClassroomDomain={refreshClassroomDomain}
-          confirmDeleteInitially={editIntent === "delete"}
         />
       )}
     </div>
@@ -880,7 +975,7 @@ function ClassroomWorkspaceTabs({ tab, onTabChange, studentCount, activityCount,
   );
 }
 
-function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, notify, refreshClassroomDomain }: {
+function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, onManageClassroom, notify, refreshClassroomDomain }: {
   classroom: Classroom;
   data: ArenaData;
   students: Student[];
@@ -888,10 +983,10 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
   events: ArenaData["scoreEvents"];
   currentSession?: ArenaData["sessions"][number];
   onOpenArena: () => void;
+  onManageClassroom: () => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
-  const [editOpen, setEditOpen] = useState(false);
   const totalXp = leaderboard.reduce((sum, row) => sum + row.xp, 0);
   const today = new Date().toDateString();
   const todayEvents = events.filter((event) => new Date(event.createdAt).toDateString() === today);
@@ -900,16 +995,19 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
     classroom.active !== false,
     currentSession?.title,
   );
+  const classroomTheme = classroomThemePresentation(classroom);
+
 
   return (
     <div className="stack-lg">
       {!classroom.active && (
         <div className="context-warning">
           <div><strong>Turma inativa</strong><span>O histórico está preservado, mas novas sessões ficam desabilitadas até a reativação.</span></div>
-          <button className="button small" onClick={() => setEditOpen(true)}>Gerenciar turma</button>
+          <button className="button small" onClick={onManageClassroom}>Gerenciar turma</button>
         </div>
       )}
-      <section className="classroom-home-hero-v2">
+      <section className="classroom-home-hero-v2" style={classroomTheme.style}>
+        <div className="classroom-home-watermark" aria-hidden>{classroomTheme.glyph}</div>
         <div className="classroom-home-hero-main">
           <div>
             <span className="eyebrow accent">HOME DA TURMA</span>
@@ -919,21 +1017,26 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
 
           <button
             className="button ghost classroom-manage-button"
-            onClick={() => setEditOpen(true)}
+            onClick={onManageClassroom}
           >
             Gerenciar turma
           </button>
         </div>
 
         <div className="classroom-home-hero-cta">
-          <button
-            className={`arena-launch-button arena-launch-button-centered ${arenaCta.live ? "live" : ""}`}
-            onClick={onOpenArena}
-            disabled={arenaCta.disabled}
-          >
-            <span className="arena-launch-icon">{arenaCta.live ? "↗" : "▶"}</span>
-            <strong>{arenaCta.buttonLabel}</strong>
-          </button>
+          <div className="arena-launch-shell">
+            <button
+              className={`arena-launch-button arena-launch-button-centered arena-launch-button-${arenaCta.tone} ${arenaCta.live ? "live" : ""}`}
+              onClick={onOpenArena}
+              disabled={arenaCta.disabled}
+            >
+              <span className="arena-launch-icon" aria-hidden>{arenaCta.icon}</span>
+              <span className="arena-launch-content">
+                <strong>{arenaCta.buttonLabel}</strong>
+                <small>{arenaCta.supportingLabel}</small>
+              </span>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -943,20 +1046,11 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
         <Metric label="XP distribuído" value={totalXp.toString()} hint="acumulado da turma" />
         <Metric
           label="Sessão"
-          value={currentSession ? "AO VIVO" : "—"}
+          value={currentSession ? "SESSÃO EM ANDAMENTO" : "—"}
           hint={currentSession ? currentSession.title : `${todayEvents.length} evento(s) hoje`}
         />
       </div>
 
-      {editOpen && (
-        <ClassroomEditModal
-          classroom={classroom}
-          data={data}
-          onClose={() => setEditOpen(false)}
-          notify={notify}
-          refreshClassroomDomain={refreshClassroomDomain}
-        />
-      )}
     </div>
   );
 }
@@ -968,22 +1062,33 @@ function StudentsView({ data, classroomId, notify, refreshClassroomDomain }: {
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
   return (
-    <div className="stack-lg">
-      <div className="page-action-bar">
-        <div><span className="eyebrow accent">ALUNOS</span><h2>Participantes da turma</h2><p>Adicione, importe, inative ou remova vínculos sem sair do contexto da turma.</p></div>
-      </div>
-      <StudentManager data={data} classroomId={classroomId} notify={notify} refreshClassroomDomain={refreshClassroomDomain} showSummary />
-    </div>
+    <StudentManager
+      data={data}
+      classroomId={classroomId}
+      notify={notify}
+      refreshClassroomDomain={refreshClassroomDomain}
+      showSummary
+      showPageHeader
+    />
   );
 }
 
-function StudentManager({ data, classroomId, notify, refreshClassroomDomain, showSummary = false }: {
+function StudentManager({
+  data,
+  classroomId,
+  notify,
+  refreshClassroomDomain,
+  showSummary = false,
+  showPageHeader = false,
+}: {
   data: ArenaData;
   classroomId: string;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
   showSummary?: boolean;
+  showPageHeader?: boolean;
 }) {
+  const [entryMode, setEntryMode] = useState<"add" | "import" | null>(null);
   const [name, setName] = useState("");
   const [preferredName, setPreferredName] = useState("");
   const [preferredDrafts, setPreferredDrafts] = useState<Record<string, string>>({});
@@ -992,19 +1097,26 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
 
   const allRows = data.enrollments
     .filter((enrollment) => enrollment.classroomId === classroomId)
-    .map((enrollment) => ({ enrollment, student: data.students.find((student) => student.id === enrollment.studentId)! }))
+    .map((enrollment) => ({
+      enrollment,
+      student: data.students.find((student) => student.id === enrollment.studentId)!,
+    }))
     .filter((row) => row.student)
     .sort((a, b) => a.student.name.localeCompare(b.student.name));
   const activeCount = allRows.filter((row) => row.enrollment.active).length;
+  const importCount = bulk.split(/\r?\n|;/).map((item) => item.trim()).filter(Boolean).length;
 
   async function addStudent(studentName: string, studentPreferredName = "", silent = false) {
     if (!studentName.trim() || (!silent && busy)) return false;
     if (!silent) setBusy(true);
     try {
-      await createAndEnrollStudent(classroomId, { name: studentName.trim(), preferredName: studentPreferredName.trim() });
+      await createAndEnrollStudent(classroomId, {
+        name: studentName.trim(),
+        preferredName: studentPreferredName.trim(),
+      });
       if (!silent) {
         await refreshClassroomDomain(classroomId);
-        notify("Aluno cadastrado e vinculado à turma.");
+        notify("Aluno adicionado à turma.");
       }
       return true;
     } catch (error) {
@@ -1013,6 +1125,14 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
     } finally {
       if (!silent) setBusy(false);
     }
+  }
+
+  async function submitSingleStudent() {
+    const created = await addStudent(name, preferredName);
+    if (!created) return;
+    setName("");
+    setPreferredName("");
+    setEntryMode(null);
   }
 
   async function importStudents() {
@@ -1026,14 +1146,20 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
       }
       await refreshClassroomDomain(classroomId);
       setBulk("");
-      notify(imported === names.length ? `${imported} aluno(s) importado(s).` : `${imported} de ${names.length} aluno(s) importados.`);
+      setEntryMode(null);
+      notify(
+        imported === names.length
+          ? `${imported} aluno(s) importado(s).`
+          : `${imported} de ${names.length} aluno(s) importados.`,
+      );
     } finally {
       setBusy(false);
     }
   }
 
-  async function removeStudent(studentId: string) {
+  async function removeStudent(studentId: string, studentName: string) {
     if (busy) return;
+    if (!window.confirm(`Remover ${studentName} desta turma? O cadastro global do aluno será preservado.`)) return;
     setBusy(true);
     try {
       await removeEnrollment(classroomId, studentId);
@@ -1052,7 +1178,12 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
     try {
       await updateEnrollmentPreferredName(classroomId, studentId, currentValue);
       await refreshClassroomDomain(classroomId);
-      notify("Nome de exibição atualizado para esta turma.");
+      setPreferredDrafts((current) => {
+        const next = { ...current };
+        delete next[studentId];
+        return next;
+      });
+      notify("Nome público atualizado.");
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1074,44 +1205,138 @@ function StudentManager({ data, classroomId, notify, refreshClassroomDomain, sho
     }
   }
 
+  const actions = (
+    <div className="student-manager-header-actions">
+      <button className="button ghost" type="button" onClick={() => setEntryMode("import")}>Importar lista</button>
+      <button className="button primary" type="button" onClick={() => setEntryMode("add")}>+ Adicionar aluno</button>
+    </div>
+  );
+
   return (
     <div className="student-manager stack-lg">
-      <div className="two-col student-manager-entry">
-        <Panel title="Adicionar aluno" subtitle="Cadastro individual">
-          <div className="form-grid">
-            <input className="input" placeholder="Nome completo" value={name} onChange={(event) => setName(event.target.value)} disabled={busy} />
-            <input className="input" placeholder="Nome de exibição na turma (opcional)" value={preferredName} onChange={(event) => setPreferredName(event.target.value)} disabled={busy} />
-            <button className="button primary" disabled={busy || !name.trim()} onClick={() => { void addStudent(name, preferredName).then((created) => { if (created) { setName(""); setPreferredName(""); } }); }}>Adicionar aluno</button>
+      {showPageHeader ? (
+        <div className="page-action-bar student-page-action-bar">
+          <div>
+            <span className="eyebrow accent">ALUNOS</span>
+            <h2>Participantes da turma</h2>
+            <p>Gerencie participantes, nomes públicos e vínculos sem poluir a área de trabalho.</p>
           </div>
-        </Panel>
-        <Panel title="Importar lista" subtitle="Um aluno por linha">
-          <textarea className="textarea" rows={5} placeholder={"Ana Luiza\nCarlos Henrique\nJoão Pedro"} value={bulk} onChange={(event) => setBulk(event.target.value)} disabled={busy} />
-          <button className="button ghost full" onClick={() => { void importStudents(); }} disabled={busy || !bulk.trim()}>Importar lista</button>
-        </Panel>
-      </div>
+          {actions}
+        </div>
+      ) : (
+        <div className="student-manager-compact-actions">
+          <div><strong>Participantes</strong><small>{activeCount} ativos · {allRows.length} cadastrados</small></div>
+          {actions}
+        </div>
+      )}
 
       {(showSummary || allRows.length > 0) && (
         <Panel title="Alunos da turma" subtitle={`${activeCount} ativos · ${allRows.length} cadastrados`}>
           {!allRows.length ? <MiniEmpty text="Nenhum aluno cadastrado nesta turma." /> : (
-            <div className="student-table">
-              <div className="table-head"><span>Aluno</span><span>Status</span><span>XP</span><span>Ações</span></div>
+            <div className="student-table student-table-v2">
+              <div className="table-head student-table-head-v2">
+                <span>Aluno</span><span>Nome público</span><span>Status</span><span>XP</span><span aria-label="Ações" />
+              </div>
               {allRows.map(({ student, enrollment }) => {
                 const xp = xpForStudent(data.scoreEvents, classroomId, student.id);
+                const draft = preferredDrafts[student.id] ?? enrollment.preferredName;
+                const dirty = draft !== enrollment.preferredName;
                 return (
-                  <div className="table-row" key={enrollment.id}>
-                    <div className="student-cell"><Avatar student={student} /><div><strong>{student.name}</strong><small>Exibição: {enrollment.preferredName || student.nickname || student.name}</small><div className="row-actions"><input className="input" aria-label={`Nome de exibição de ${student.name}`} value={preferredDrafts[student.id] ?? enrollment.preferredName} onChange={(event) => setPreferredDrafts((current) => ({ ...current, [student.id]: event.target.value }))} placeholder="Nome público" disabled={busy} /><button className="text-button" disabled={busy} onClick={() => { void savePreferredName(student.id, preferredDrafts[student.id] ?? enrollment.preferredName); }}>Salvar nome</button></div></div></div>
-                    <span className={enrollment.active ? "status active" : "status"}>{enrollment.active ? "Ativo" : "Inativo"}</span>
-                    <b>{xp} XP</b>
-                    <div className="row-actions">
-                      <button className="text-button" onClick={() => { void toggleStudent(student.id, enrollment.active); }} disabled={busy}>{enrollment.active ? "Inativar" : "Ativar"}</button>
-                      <button className="text-button danger" disabled={busy} onClick={() => { void removeStudent(student.id); }}>Remover</button>
+                  <div className="table-row student-table-row-v2" key={enrollment.id}>
+                    <div className="student-cell student-identity-v2">
+                      <Avatar student={student} />
+                      <div><strong>{student.name}</strong><small>Exibição atual: {enrollment.preferredName || student.nickname || student.name}</small></div>
                     </div>
+                    <div className="student-public-name-editor">
+                      <input
+                        className="input"
+                        aria-label={`Nome público de ${student.name}`}
+                        value={draft}
+                        onChange={(event) => setPreferredDrafts((current) => ({ ...current, [student.id]: event.target.value }))}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" && dirty && !busy) {
+                            event.preventDefault();
+                            void savePreferredName(student.id, draft);
+                          }
+                        }}
+                        placeholder="Nome público"
+                        disabled={busy}
+                      />
+                      <button
+                        className="button ghost student-save-name-button"
+                        type="button"
+                        disabled={busy || !dirty}
+                        onClick={() => { void savePreferredName(student.id, draft); }}
+                      >
+                        Salvar
+                      </button>
+                    </div>
+                    <span className={enrollment.active ? "status active" : "status"}>{enrollment.active ? "Ativo" : "Inativo"}</span>
+                    <b className="student-xp">{xp} XP</b>
+                    <Menu
+                      trigger={(triggerProps) => (
+                        <button {...triggerProps} type="button" className="student-row-menu-trigger" aria-label={`Ações de ${student.name}`}>⋯</button>
+                      )}
+                    >
+                      <MenuItem onSelect={() => { void toggleStudent(student.id, enrollment.active); }}>
+                        {enrollment.active ? "Inativar aluno" : "Reativar aluno"}
+                      </MenuItem>
+                      <MenuItem danger onSelect={() => { void removeStudent(student.id, student.name); }}>Remover da turma</MenuItem>
+                    </Menu>
                   </div>
                 );
               })}
             </div>
           )}
         </Panel>
+      )}
+
+      {entryMode === "add" && (
+        <Modal open title="Adicionar aluno" subtitle="Cadastro individual" onClose={() => { if (!busy) setEntryMode(null); }} size="medium">
+          <div className="modal-section-stack">
+            <label className="field"><span>Nome completo</span><input className="input" autoFocus placeholder="Ex.: Ana Luiza de Sousa" value={name} onChange={(event) => setName(event.target.value)} disabled={busy} /></label>
+            <label className="field">
+              <span>Nome público <small>opcional</small></span>
+              <input
+                className="input"
+                placeholder="Como aparecerá nesta turma"
+                value={preferredName}
+                onChange={(event) => setPreferredName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && name.trim() && !busy) {
+                    event.preventDefault();
+                    void submitSingleStudent();
+                  }
+                }}
+                disabled={busy}
+              />
+            </label>
+            <div className="modal-footer">
+              <button className="button ghost" onClick={() => setEntryMode(null)} disabled={busy}>Cancelar</button>
+              <button className="button primary" disabled={busy || !name.trim()} onClick={() => { void submitSingleStudent(); }}>{busy ? "Adicionando..." : "Adicionar aluno"}</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {entryMode === "import" && (
+        <Modal open title="Importar alunos" subtitle="Um aluno por linha" onClose={() => { if (!busy) setEntryMode(null); }} size="medium">
+          <div className="modal-section-stack">
+            <label className="field">
+              <span>Lista de nomes</span>
+              <textarea className="textarea student-import-textarea" rows={10} placeholder={"Ana Luiza\nCarlos Henrique\nJoão Pedro"} value={bulk} onChange={(event) => setBulk(event.target.value)} disabled={busy} />
+            </label>
+            <div className="inline-note">
+              {importCount
+                ? <><strong>{importCount} aluno(s) identificado(s)</strong><span>Revise a lista antes de importar.</span></>
+                : <span>Cole um nome por linha. Também aceitamos nomes separados por ponto e vírgula.</span>}
+            </div>
+            <div className="modal-footer">
+              <button className="button ghost" onClick={() => setEntryMode(null)} disabled={busy}>Cancelar</button>
+              <button className="button primary" disabled={busy || !importCount} onClick={() => { void importStudents(); }}>{busy ? "Importando..." : `Importar ${importCount || ""} aluno(s)`}</button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
@@ -1173,39 +1398,97 @@ function ClassroomCreateModal({ data, onClose, onCreated, notify, refreshClassro
   );
 }
 
-function ClassroomEditModal({ classroom, data, onClose, notify, refreshClassroomDomain, confirmDeleteInitially = false }: {
+function ClassroomManagementPage({
+  classroom,
+  data,
+  currentSession,
+  initialAction = "general",
+  onBack,
+  onDeleted,
+  notify,
+  refreshClassroomDomain,
+}: {
   classroom: Classroom;
   data: ArenaData;
-  onClose: () => void;
+  currentSession?: ArenaData["sessions"][number];
+  initialAction?: "general" | "delete";
+  onBack: () => void;
+  onDeleted: () => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
-  confirmDeleteInitially?: boolean;
 }) {
-  const [tab, setTab] = useState<"general" | "students">("general");
   const [name, setName] = useState(classroom.name);
   const [code, setCode] = useState(classroom.code);
-  const [active, setActive] = useState<boolean>(classroom.active !== false);
+  const [themeColor, setThemeColor] = useState<ClassroomThemeColor>(classroom.themeColor ?? "emerald");
+  const [themeIcon, setThemeIcon] = useState<ClassroomThemeIcon>(classroom.themeIcon ?? "code");
   const [busy, setBusy] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(confirmDeleteInitially);
-  const hasActiveSession = data.sessions.some((session) => session.classroomId === classroom.id && session.status === "ACTIVE" && !session.endedAt);
-  const hasHistory = data.sessions.some((session) => session.classroomId === classroom.id)
-    || data.activities.some((activity) => activity.classroomId === classroom.id)
-    || data.scoreEvents.some((event) => event.classroomId === classroom.id);
+  const [managementAction, setManagementAction] = useState<"archive" | "delete" | null>(
+    initialAction === "delete" ? "delete" : null,
+  );
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+
+  const hasActiveSession = Boolean(
+    currentSession && currentSession.status === "ACTIVE" && !currentSession.endedAt,
+  );
+  const enrollmentCount = data.enrollments.filter((item) => item.classroomId === classroom.id).length;
+  const sessionCount = data.sessions.filter((session) => session.classroomId === classroom.id).length;
+  const activityCount = data.activities.filter((activity) => activity.classroomId === classroom.id).length;
+  const scoreCount = data.scoreEvents.filter((event) => event.classroomId === classroom.id).length;
+  const deleteConfirmed = deleteConfirmation === classroom.name;
+  const appearancePreview = classroomThemePresentation({ ...classroom, themeColor, themeIcon });
 
   useEffect(() => {
     setName(classroom.name);
     setCode(classroom.code);
-    setActive(classroom.active !== false);
-  }, [classroom.id, classroom.name, classroom.code, classroom.active]);
+    setThemeColor(classroom.themeColor ?? "emerald");
+    setThemeIcon(classroom.themeIcon ?? "code");
+    setDeleteConfirmation("");
+    setManagementAction(initialAction === "delete" ? "delete" : null);
+  }, [
+    classroom.id,
+    classroom.name,
+    classroom.code,
+    classroom.themeColor,
+    classroom.themeIcon,
+    initialAction,
+  ]);
 
   async function save() {
     if (!name.trim() || busy) return;
     setBusy(true);
     try {
-      await updateClassroomApi({ id: classroom.id, name: name.trim(), code: code.trim(), active });
+      await updateClassroomApi({
+        id: classroom.id,
+        name: name.trim(),
+        code: code.trim(),
+        active: classroom.active !== false,
+        themeColor,
+        themeIcon,
+      });
       await refreshClassroomDomain(classroom.id);
-      notify("Turma atualizada.");
-      onClose();
+      notify("Configurações da turma salvas.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function setArchived(archived: boolean) {
+    if (busy || (archived && hasActiveSession)) return;
+    setBusy(true);
+    try {
+      await updateClassroomApi({
+        id: classroom.id,
+        name: classroom.name,
+        code: classroom.code,
+        active: !archived,
+        themeColor: classroom.themeColor ?? "emerald",
+        themeIcon: classroom.themeIcon ?? "code",
+      });
+      await refreshClassroomDomain(classroom.id);
+      notify(archived ? "Turma arquivada. O histórico foi preservado." : "Turma reativada.");
+      setManagementAction(null);
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1214,13 +1497,13 @@ function ClassroomEditModal({ classroom, data, onClose, notify, refreshClassroom
   }
 
   async function removeClassroom() {
-    if (busy || hasHistory) return;
+    if (busy || hasActiveSession || !deleteConfirmed) return;
     setBusy(true);
     try {
-      await deleteClassroomApi(classroom.id);
+      await deleteClassroomApi(classroom.id, deleteConfirmation);
       await refreshClassroomDomain();
-      notify("Turma vazia excluída definitivamente.");
-      onClose();
+      notify("Turma excluída definitivamente. Os cadastros globais dos alunos foram preservados.");
+      onDeleted();
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1229,36 +1512,236 @@ function ClassroomEditModal({ classroom, data, onClose, notify, refreshClassroom
   }
 
   return (
-    <Modal open title="Gerenciar turma" subtitle={classroom.name} onClose={onClose} size={tab === "students" ? "large" : "medium"}>
-      <div className="modal-tabs">
-        <button className={tab === "general" ? "active" : ""} onClick={() => setTab("general")}>Geral</button>
-        <button className={tab === "students" ? "active" : ""} onClick={() => setTab("students")}>Alunos <span>{data.enrollments.filter((item) => item.classroomId === classroom.id && item.active).length}</span></button>
-      </div>
-      {tab === "general" ? (
-        <div className="modal-section-stack">
-          <label className="field"><span>Nome da turma</span><input className="input" value={name} onChange={(event) => setName(event.target.value)} /></label>
-          <label className="field"><span>Código (opcional)</span><input className="input" value={code} onChange={(event) => setCode(event.target.value)} /></label>
-          <div className="class-status-control">
-            <div><strong>Status da turma</strong><small>Turmas inativas saem do fluxo operacional, mas preservam todo o histórico.</small></div>
-            <button className={active ? "status-toggle active" : "status-toggle"} disabled={hasActiveSession && active} onClick={() => setActive((value) => !value)}>{active ? "Ativa" : "Inativa"}</button>
-          </div>
-          {hasActiveSession && <div className="inline-note warning">Encerre a sessão ativa antes de inativar esta turma.</div>}
-
-          <div className="danger-zone">
-            <div><strong>Excluir turma</strong><p>A exclusão definitiva só é permitida para turmas sem sessões, atividades ou XP. Para turmas usadas, inative em vez de apagar o histórico.</p></div>
-            {!confirmDelete ? (
-              <button className="button danger-outline" disabled={hasHistory} onClick={() => setConfirmDelete(true)}>Excluir definitivamente</button>
-            ) : (
-              <div className="confirm-actions"><button className="button ghost" onClick={() => setConfirmDelete(false)}>Cancelar</button><button className="button danger" disabled={busy} onClick={() => { void removeClassroom(); }}>Confirmar exclusão</button></div>
-            )}
-          </div>
-          {hasHistory && <div className="inline-note">Esta turma possui histórico operacional e não pode ser excluída. Use o status <strong>Inativa</strong>.</div>}
-          <div className="modal-footer"><button className="button ghost" onClick={onClose}>Cancelar</button><button className="button primary" disabled={busy || !name.trim()} onClick={() => { void save(); }}>{busy ? "Salvando..." : "Salvar alterações"}</button></div>
+    <div className="classroom-settings-page stack-lg">
+      <header className="classroom-settings-heading">
+        <div>
+          <span className="eyebrow accent">GERENCIAR TURMA</span>
+          <h2>{classroom.name}</h2>
+          <p>Identidade, aparência, status e ciclo de vida desta turma.</p>
         </div>
-      ) : (
-        <StudentManager data={data} classroomId={classroom.id} notify={notify} refreshClassroomDomain={refreshClassroomDomain} showSummary />
-      )}
-    </Modal>
+        <div className="classroom-settings-heading-actions">
+          <button className="button ghost" type="button" onClick={onBack}>
+            ← Voltar para a turma
+          </button>
+          <button className="button primary" type="button" disabled={busy || !name.trim()} onClick={() => { void save(); }}>
+            {busy ? "Salvando..." : "Salvar alterações"}
+          </button>
+        </div>
+      </header>
+
+      <div className="classroom-settings-grid">
+        <div className="classroom-settings-main">
+          <section className="classroom-settings-card">
+            <div className="classroom-settings-section-heading">
+              <span className="eyebrow accent">GERAL</span>
+              <h3>Identificação</h3>
+              <p>Defina como a turma é identificada no Arena Dev.</p>
+            </div>
+
+            <div className="classroom-settings-fields">
+              <label className="field">
+                <span>Nome da turma</span>
+                <input className="input" value={name} onChange={(event) => setName(event.target.value)} />
+              </label>
+              <label className="field">
+                <span>Código <small>opcional</small></span>
+                <input className="input" value={code} onChange={(event) => setCode(event.target.value)} />
+              </label>
+            </div>
+          </section>
+
+          <section className="classroom-settings-card">
+            <div className="classroom-settings-section-heading">
+              <span className="eyebrow accent">APARÊNCIA</span>
+              <h3>Identidade visual da turma</h3>
+              <p>Cor e ícone funcionam como referência contextual sem alterar o tema inteiro da aplicação.</p>
+            </div>
+
+            <div className="classroom-settings-appearance">
+              <div className="field">
+                <span>Cor da turma</span>
+                <div className="classroom-color-picker" role="radiogroup" aria-label="Cor da turma">
+                  {CLASSROOM_THEME_COLORS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={themeColor === option.id}
+                      aria-label={option.label}
+                      title={option.label}
+                      className={themeColor === option.id ? "classroom-color-swatch selected" : "classroom-color-swatch"}
+                      style={{ background: option.value }}
+                      onClick={() => setThemeColor(option.id)}
+                    >
+                      {themeColor === option.id && <span>✓</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="field">
+                <span>Ícone da turma</span>
+                <div className="classroom-icon-picker classroom-settings-icon-picker" role="radiogroup" aria-label="Ícone da turma">
+                  {CLASSROOM_THEME_ICONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={themeIcon === option.id}
+                      className={themeIcon === option.id ? "classroom-icon-choice selected" : "classroom-icon-choice"}
+                      onClick={() => setThemeIcon(option.id)}
+                      title={option.label}
+                    >
+                      <strong>{option.glyph}</strong>
+                      <small>{option.label}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="classroom-appearance-preview classroom-settings-preview" style={appearancePreview.style}>
+                <span className="classroom-appearance-preview-icon" aria-hidden>{appearancePreview.glyph}</span>
+                <div>
+                  <small>Pré-visualização</small>
+                  <strong>{name.trim() || classroom.name}</strong>
+                  <span>{code.trim() || classroom.code || "Sem código"}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside className="classroom-settings-side">
+          <section className="classroom-settings-card">
+            <div className="classroom-settings-section-heading">
+              <span className="eyebrow accent">STATUS</span>
+              <h3>{classroom.active === false ? "Turma arquivada" : "Turma ativa"}</h3>
+              <p>
+                {classroom.active === false
+                  ? "Fora do fluxo operacional diário, com histórico preservado."
+                  : "Disponível para alunos, atividades e novas aulas."}
+              </p>
+            </div>
+
+            <div className="classroom-status-summary">
+              <div>
+                <span>Turma</span>
+                <strong>{classroom.active === false ? "Arquivada" : "Ativa"}</strong>
+              </div>
+              <div>
+                <span>Aula</span>
+                <strong>{hasActiveSession ? "Em andamento" : "Sem aula aberta"}</strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="classroom-settings-card">
+            <div className="classroom-settings-section-heading">
+              <span className="eyebrow accent">CICLO DE VIDA</span>
+              <h3>{classroom.active === false ? "Reativar turma" : "Arquivar turma"}</h3>
+              <p>
+                {classroom.active === false
+                  ? "Retorne a turma ao fluxo operacional."
+                  : "Retire a turma do uso diário preservando alunos, atividades, sessões, histórico e XP."}
+              </p>
+            </div>
+
+            {classroom.active === false ? (
+              <button className="button primary full" type="button" disabled={busy} onClick={() => { void setArchived(false); }}>
+                Reativar turma
+              </button>
+            ) : managementAction !== "archive" ? (
+              <button className="button ghost full" type="button" onClick={() => setManagementAction("archive")}>
+                Arquivar turma
+              </button>
+            ) : (
+              <div className="classroom-lifecycle-confirmation">
+                {hasActiveSession ? (
+                  <div className="inline-note warning">
+                    Há uma sessão em andamento. Encerre-a antes de arquivar a turma.
+                  </div>
+                ) : (
+                  <>
+                    <strong>Arquivar “{classroom.name}”?</strong>
+                    <p>O histórico será preservado e a turma poderá ser reativada depois.</p>
+                    <div className="confirm-actions">
+                      <button className="button ghost" type="button" onClick={() => setManagementAction(null)}>Cancelar</button>
+                      <button className="button primary" type="button" disabled={busy} onClick={() => { void setArchived(true); }}>
+                        Confirmar
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </section>
+
+          <section className="classroom-settings-card classroom-settings-danger">
+            <div className="classroom-settings-section-heading">
+              <span className="eyebrow danger-eyebrow">ZONA DE RISCO</span>
+              <h3>Excluir esta turma</h3>
+              <p>A exclusão é permanente e remove todos os dados pertencentes a esta turma.</p>
+            </div>
+
+            <div className="classroom-delete-impact">
+              <span>{enrollmentCount} vínculo(s)</span>
+              <span>{activityCount} atividade(s)</span>
+              <span>{sessionCount} sessão(ões)</span>
+              <span>{scoreCount} evento(s) de XP</span>
+            </div>
+
+            {managementAction !== "delete" ? (
+              <button className="button danger-outline full" type="button" onClick={() => setManagementAction("delete")}>
+                Excluir esta turma
+              </button>
+            ) : hasActiveSession ? (
+              <div className="classroom-delete-confirmation">
+                <strong>Há uma sessão em andamento.</strong>
+                <p>Encerre a sessão antes da exclusão definitiva para não interromper participantes conectados.</p>
+                <button className="button ghost" type="button" onClick={() => setManagementAction(null)}>Voltar</button>
+              </div>
+            ) : (
+              <div className="classroom-delete-confirmation">
+                <strong>Esta ação não pode ser desfeita.</strong>
+                <p>Digite exatamente o nome completo da turma:</p>
+                <code className="classroom-delete-name">{classroom.name}</code>
+                <label className="field">
+                  <span>Nome completo da turma</span>
+                  <input
+                    className="input"
+                    autoComplete="off"
+                    value={deleteConfirmation}
+                    onChange={(event) => setDeleteConfirmation(event.target.value)}
+                    placeholder={classroom.name}
+                  />
+                </label>
+                <div className="confirm-actions">
+                  <button
+                    className="button ghost"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      setManagementAction(null);
+                      setDeleteConfirmation("");
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="button danger"
+                    type="button"
+                    disabled={busy || !deleteConfirmed}
+                    onClick={() => { void removeClassroom(); }}
+                  >
+                    {busy ? "Excluindo..." : "Excluir definitivamente"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        </aside>
+      </div>
+    </div>
   );
 }
 
@@ -1275,8 +1758,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   notify: (message: string) => void;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
-  const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "presence" | "groups" | "boss">("live");
-  const [interactionTool, setInteractionTool] = useState<"draw" | "wordcloud" | "poll" | "buzzer">("draw");
+  const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "presence" | "groups">("live");
+  const [interactionTool, setInteractionTool] = useState<"draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss">("draw");
   const [accessOpen, setAccessOpen] = useState(false);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
@@ -1295,6 +1778,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [timerState, setTimerState] = useState<TimerState>({ timer: null });
   const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
   const [pollState, setPollState] = useState<PollState>({ round: null });
+  const [quizState, setQuizState] = useState<QuizState>({ round: null });
   const [realtimeStatus, setRealtimeStatus] = useState<"offline" | "connecting" | "online">("offline");
   const [realtimeVersion, setRealtimeVersion] = useState(0);
   const [publicBaseUrl, setPublicBaseUrl] = useState("");
@@ -1357,6 +1841,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       setTimerState({ timer: null });
       setWordCloudState({ round: null });
       setPollState({ round: null });
+      setQuizState({ round: null });
       setRealtimeStatus("offline");
       return;
     }
@@ -1370,13 +1855,15 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       fetchBuzzerState(currentSession.id),
       fetchWordCloudState(currentSession.id),
       fetchPollState(currentSession.id),
+      fetchQuizState(currentSession.id),
     ])
-      .then(([code, buzzer, wordCloud, poll]) => {
+      .then(([code, buzzer, wordCloud, poll, quiz]) => {
         if (!active) return;
         setJoinCode(code);
         setBuzzerState(buzzer);
         setWordCloudState(wordCloud);
         setPollState(poll);
+        setQuizState(quiz);
         if (buzzer.presses[0]) setSelectedId(buzzer.presses[0].studentId);
       })
       .catch((error) => { if (active) notify(errorMessage(error)); });
@@ -1400,6 +1887,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }
       if (event.type === "POLL_STATE") {
         setPollState(event.payload as PollState);
+      }
+      if (event.type === "QUIZ_STATE") {
+        setQuizState(event.payload as QuizState);
       }
       if (event.type === "PARTICIPANT_CONNECTED" || event.type === "PARTICIPANT_DISCONNECTED") {
         void refreshRealtimeParticipants(currentSession.id);
@@ -1478,6 +1968,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
   async function endSession() {
     if (!currentSession || sessionBusy) return;
+    const confirmed = window.confirm(
+      `Encerrar a sessão "${currentSession.title}"?\n\n`
+      + "Participantes deixarão a sessão ativa. Histórico, XP e atividades permanecem salvos."
+    );
+    if (!confirmed) return;
     setSessionBusy(true);
     try {
       const finished = await finishSessionApi(currentSession.id);
@@ -1946,7 +2441,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         activeId={arenaTab}
         onChange={(id) => {
           setArenaTab(
-            id as "live" | "interactions" | "timer" | "presence" | "groups" | "boss"
+            id as "live" | "interactions" | "timer" | "presence" | "groups"
           );
         }}
         items={[
@@ -1974,7 +2469,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           },
           {
             id: "presence",
-            label: "Presença",
+            label: "Participantes",
             description: `${currentSession.presentStudentIds.length}/${sessionParticipants.length} presentes`,
           },
           {
@@ -1988,13 +2483,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                   : groupSize === 3
                     ? "Trios"
                     : `Grupos de ${groupSize}`,
-          },
-          {
-            id: "boss",
-            label: "Boss Battle",
-            description: currentSession.boss
-              ? `${currentSession.boss.currentHp}/${currentSession.boss.maxHp} HP`
-              : "Não iniciado",
           },
         ] satisfies TabItem[]}
       />
@@ -2160,6 +2648,32 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             <button
               type="button"
               role="tab"
+              aria-selected={interactionTool === "quiz"}
+              className={interactionTool === "quiz" ? "active" : ""}
+              onClick={() => setInteractionTool("quiz")}
+            >
+              <span>?</span>
+              <div>
+                <strong>Quiz</strong>
+                <small>
+                  {quizState.round
+                    ? quizState.round.status === "OPEN"
+                      ? `${quizState.round.totalAnswers} resposta(s)`
+                      : quizState.round.status === "LOCKED"
+                        ? "Respostas bloqueadas"
+                        : quizState.round.status === "REVEALED"
+                          ? "Resultado revelado"
+                          : quizState.round.status === "READY"
+                            ? "Preparado"
+                            : "Rodada encerrada"
+                    : "Questão com resposta estruturada"}
+                </small>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              role="tab"
               aria-selected={interactionTool === "buzzer"}
               className={interactionTool === "buzzer" ? "active" : ""}
               onClick={() => setInteractionTool("buzzer")}
@@ -2173,6 +2687,23 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                     : buzzerState.status === "CLOSED"
                       ? "Rodada encerrada"
                       : "Abrir rodada rápida"}
+                </small>
+              </div>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={interactionTool === "boss"}
+              className={interactionTool === "boss" ? "active" : ""}
+              onClick={() => setInteractionTool("boss")}
+            >
+              <span>◆</span>
+              <div>
+                <strong>Boss Battle</strong>
+                <small>
+                  {currentSession.boss
+                    ? `${currentSession.boss.currentHp}/${currentSession.boss.maxHp} HP`
+                    : "Objetivo coletivo com HP"}
                 </small>
               </div>
             </button>
@@ -2250,7 +2781,19 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               presentCount={sessionParticipants.filter((participant) => participant.present).length}
               showAccessCard={false}
             />
-          ) : (
+          ) : interactionTool === "quiz" ? (
+            <QuizPanel
+              sessionId={currentSession.id}
+              state={quizState}
+              onStateChange={setQuizState}
+              questions={activeActivity?.questions ?? []}
+              presentCount={sessionParticipants.filter((participant) => participant.present).length}
+              joinCode={joinCode}
+              notify={notify}
+              canAdvanceFlow={Boolean(liveFlowState?.started && liveFlowState.hasNext)}
+              onContinue={() => movePreparedFlow("next")}
+            />
+          ) : interactionTool === "buzzer" ? (
             <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">
               <div className={`teacher-buzzer-state ${buzzerState.status.toLowerCase()}`}>
                 <div className="teacher-buzzer-head">
@@ -2294,13 +2837,38 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 <MiniEmpty text={buzzerState.status === "OPEN" ? "Aguardando o primeiro clique dos alunos conectados." : "Abra uma rodada quando quiser usar o Buzzer."} />
               )}
             </Panel>
+          ) : (
+            <Panel title="Boss Battle" subtitle="Objetivo coletivo sincronizado com participantes e Projetor">
+              <div className="boss-guide">
+                <strong>Como funciona nesta versão</strong>
+                <p>
+                  Defina um Boss e seus pontos de vida. Conforme a turma cumpre desafios,
+                  aplique o dano manualmente. Todos acompanham o HP sincronizado.
+                </p>
+                <small>Dano manual nesta versão — Quiz e XP não reduzem HP automaticamente.</small>
+              </div>
+              {currentSession.boss ? (
+                <div className="boss-box">
+                  <div className="boss-head"><div><span className="eyebrow accent">BOSS</span><h3>{currentSession.boss.name}</h3></div><b>{currentSession.boss.currentHp}/{currentSession.boss.maxHp} HP</b></div>
+                  <div className="hp-track"><span style={{ width: `${(currentSession.boss.currentHp / currentSession.boss.maxHp) * 100}%` }} /></div>
+                  <div className="damage-buttons"><button onClick={() => { void damageBoss(10); }}>−10 HP</button><button onClick={() => { void damageBoss(20); }}>−20 HP</button><button onClick={() => { void damageBoss(30); }}>−30 HP</button></div>
+                  {currentSession.boss.currentHp === 0 && <div className="boss-defeated">BOSS DERROTADO · objetivo coletivo concluído</div>}
+                </div>
+              ) : (
+                <div className="boss-create">
+                  <input className="input" value={bossName} onChange={(e) => setBossName(e.target.value)} placeholder="Nome do Boss" />
+                  <input className="input" type="number" min="10" value={bossHp} onChange={(e) => setBossHp(Math.max(10, Number(e.target.value)))} />
+                  <button className="button" onClick={() => { void createBoss(); }}>Criar Boss</button>
+                </div>
+              )}
+            </Panel>
           )}
         </div>
       )}
 
       {arenaTab === "presence" && (
-        <Panel title="Presença da sessão" subtitle="Alterações são salvas imediatamente no PostgreSQL">
-          <div className="attendance-head"><strong>Participantes</strong><span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span></div>
+        <Panel title="Participantes da sessão" subtitle="Presença e conexão são salvas imediatamente no PostgreSQL">
+          <div className="attendance-head"><strong>Presença</strong><span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span></div>
           <div className="attendance-list compact-attendance">
             {sessionParticipants.map((participant) => {
               const student = data.students.find((item) => item.id === participant.studentId);
@@ -2334,24 +2902,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </Panel>
       )}
 
-      {arenaTab === "boss" && (
-        <Panel title="Boss Battle" subtitle="Transforme questões em um objetivo coletivo">
-          {currentSession.boss ? (
-            <div className="boss-box">
-              <div className="boss-head"><div><span className="eyebrow accent">BOSS</span><h3>{currentSession.boss.name}</h3></div><b>{currentSession.boss.currentHp}/{currentSession.boss.maxHp} HP</b></div>
-              <div className="hp-track"><span style={{ width: `${(currentSession.boss.currentHp / currentSession.boss.maxHp) * 100}%` }} /></div>
-              <div className="damage-buttons"><button onClick={() => { void damageBoss(10); }}>−10 HP</button><button onClick={() => { void damageBoss(20); }}>−20 HP</button><button onClick={() => { void damageBoss(30); }}>−30 HP</button></div>
-              {currentSession.boss.currentHp === 0 && <div className="boss-defeated">BOSS DERROTADO · objetivo coletivo concluído</div>}
-            </div>
-          ) : (
-            <div className="boss-create">
-              <input className="input" value={bossName} onChange={(e) => setBossName(e.target.value)} placeholder="Nome do Boss" />
-              <input className="input" type="number" min="10" value={bossHp} onChange={(e) => setBossHp(Math.max(10, Number(e.target.value)))} />
-              <button className="button" onClick={() => { void createBoss(); }}>Criar Boss</button>
-            </div>
-          )}
-        </Panel>
-      )}
     </div>
   );
 }
@@ -2758,10 +3308,17 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
           ) : (
             <button
               className="button primary"
-              disabled={!title.trim() || activityBusy}
-              onClick={() => { void saveActivity(true); }}
+              disabled={activityBusy}
+              onClick={() => {
+                if (!title.trim()) {
+                  setEditorTab("general");
+                  notify("As questões já estão no rascunho. Informe o título da atividade para salvar.");
+                  return;
+                }
+                void saveActivity(true);
+              }}
             >
-              Salvar atividade
+              {activityBusy ? "Salvando..." : title.trim() ? "Salvar atividade" : "Definir título e salvar"}
             </button>
           )}
         </div>
@@ -2947,11 +3504,12 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
   );
 }
 
-function Modal({ open, title, subtitle, size = "medium", onClose, children }: {
+function Modal({ open, title, subtitle, size = "medium", bodyClassName, onClose, children }: {
   open: boolean;
   title: string;
   subtitle?: string;
   size?: "medium" | "large";
+  bodyClassName?: string;
   onClose: () => void;
   children: React.ReactNode;
 }) {
@@ -2977,7 +3535,7 @@ function Modal({ open, title, subtitle, size = "medium", onClose, children }: {
           <div><h2 id="arena-modal-title">{title}</h2>{subtitle && <p>{subtitle}</p>}</div>
           <button className="modal-close" type="button" aria-label="Fechar" onClick={onClose}>×</button>
         </header>
-        <div className="modal-body">{children}</div>
+        <div className={bodyClassName ? `modal-body ${bodyClassName}` : "modal-body"}>{children}</div>
       </section>
     </div>
   );
