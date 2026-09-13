@@ -41,7 +41,7 @@
 
 Não reescrever documentos históricos para fabricar evidência que não foi registrada.
 
-Atualizado em 12/09/2026 no fechamento local da release candidate `v0.5.0` após 13.7A–13.7E.
+Atualizado em 13/09/2026 para o fechamento local da release candidate v0.5.0.
 
 - `INCREMENT_13_5.md` — feedback pedagógico derivado do Quiz e decisões explícitas do professor.
 - `INCREMENT_13_6.md` — Mobile/PWA, installability, shell offline e reconnect explícito.
