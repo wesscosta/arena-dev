@@ -44,3 +44,8 @@ Thumbs.db
 .project
 .settings/
 .factorypath
+
+
+
+patch/
+*.patch

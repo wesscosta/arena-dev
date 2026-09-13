@@ -1,5 +1,12 @@
 # Arena Dev v0.4.0 — Experiência de Aula ao Vivo
 
+> **Fechamento 10/09/2026:** `v0.4.0` foi publicada e está congelada.
+> PR #9 foi integrado em `main` no commit `ccfb7f9`; o CI final
+> `34428450704` concluiu com backend, frontend e Compose/E2E verdes.
+> Este roadmap passa a ser **histórico**. Checkboxes antigos preservam
+> snapshots de planejamento e não devem ser interpretados como blockers
+> atuais. O trabalho corrente está em [`ROADMAP_0_5.md`](ROADMAP_0_5.md).
+
 > **Checkpoint 08/09/2026:** `v0.3.0` está publicada. Na v0.4 estão
 > consolidados Timer, Projector, Word Cloud, ActivityStep/editor/runtime,
 > navegação contextual e 12.3D.7A–D. **12.4D.0A — Live Stage / Presentation

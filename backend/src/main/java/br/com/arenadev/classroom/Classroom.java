@@ -26,6 +26,12 @@ public class Classroom {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(name = "theme_color", nullable = false, length = 20)
+    private String themeColor = "emerald";
+
+    @Column(name = "theme_icon", nullable = false, length = 20)
+    private String themeIcon = "code";
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -53,13 +59,27 @@ public class Classroom {
         return active;
     }
 
+    public String getThemeColor() {
+        return themeColor;
+    }
+
+    public String getThemeIcon() {
+        return themeIcon;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
 
     public void update(String name, String code, boolean active) {
+        update(name, code, active, themeColor, themeIcon);
+    }
+
+    public void update(String name, String code, boolean active, String themeColor, String themeIcon) {
         this.name = name;
         this.code = code;
         this.active = active;
+        this.themeColor = themeColor;
+        this.themeIcon = themeIcon;
     }
 }

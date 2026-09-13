@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-RELEASE_VERSION="${ARENA_RELEASE_VERSION:-0.4.0}"
+RELEASE_VERSION="${ARENA_RELEASE_VERSION:-0.5.0}"
 MODE="${1:-}"
 CI_RUN_URL=""
 BACKUP_FILE=""

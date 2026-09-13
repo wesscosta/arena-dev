@@ -49,7 +49,18 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0030](ADR-0030-runtime-snapshot-publico-e-reconnect.md) | Snapshot público de runtime e política de reconnect | Aceito |
 | [ADR-0031](ADR-0031-session-event-linha-do-tempo-operacional.md) | SessionEvent como linha do tempo operacional, não como runtime | Aceito |
 | [ADR-0032](ADR-0032-hardening-e-release-gate-v0-4.md) | Hardening, E2E e fronteira de evidência para a release v0.4.0 | Aceito |
+| [ADR-0033](ADR-0033-quiz-runtime-e-respostas-estruturadas.md) | Quiz Runtime reutiliza ActivityQuestion e preserva ScoreEvent como fonte de XP | Aceito |
+| [ADR-0034](ADR-0034-maquina-de-estados-do-quiz-e-resposta-mutavel.md) | Máquina de estados do Quiz e resposta mutável antes do lock | Aceito |
+| [ADR-0035](ADR-0035-resposta-quiz-rest-e-websocket-como-projecao.md) | Resposta de Quiz via REST; WebSocket permanece como projeção | Aceito |
+| [ADR-0036](ADR-0036-reveal-do-quiz-e-fechamento-nao-implicito.md) | Reveal do Quiz é explícito; fechar não revela resultado | Aceito |
+| [ADR-0037](ADR-0037-avaliacao-no-lock-e-scoreevent-como-ledger-de-xp.md) | Avaliação no lock; ScoreEvent permanece ledger exclusivo de XP | Aceito |
 
 ## Template
 
 Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
+
+- [ADR-0038 — Feedback pedagógico derivado e decisões explícitas](ADR-0038-feedback-pedagogico-derivado-e-decisoes-explicitas.md)
+- [ADR-0039 — Cache da PWA serve ao shell, nunca à verdade do domínio](ADR-0039-pwa-cache-de-shell-nao-e-verdade-do-dominio.md)
+- [ADR-0040 — Release v0.5 exige evidência operacional no mesmo SHA](ADR-0040-release-gate-v0.5-e-evidencia-no-mesmo-sha.md)
+- [ADR-0041 — Identidade de turma por tokens semânticos](ADR-0041-identidade-da-turma-por-tokens-semanticos.md)
+- [ADR-0042 — Hard delete explícito sem cascade global](ADR-0042-hard-delete-explicito-sem-cascade-global.md)

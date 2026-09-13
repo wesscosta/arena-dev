@@ -2,6 +2,7 @@ package br.com.arenadev.realtime;
 
 import br.com.arenadev.dynamic.MechanicsService;
 import br.com.arenadev.poll.PollService;
+import br.com.arenadev.quiz.QuizService;
 import br.com.arenadev.stage.LiveStageService;
 import br.com.arenadev.timer.SessionTimerService;
 import br.com.arenadev.wordcloud.WordCloudService;
@@ -16,6 +17,7 @@ public class SessionRuntimeSnapshotService {
     private final SessionTimerService timerService;
     private final WordCloudService wordCloudService;
     private final PollService pollService;
+    private final QuizService quizService;
     private final LiveStageService liveStageService;
     private final MechanicsService mechanicsService;
 
@@ -24,6 +26,7 @@ public class SessionRuntimeSnapshotService {
             SessionTimerService timerService,
             WordCloudService wordCloudService,
             PollService pollService,
+            QuizService quizService,
             LiveStageService liveStageService,
             MechanicsService mechanicsService
     ) {
@@ -31,6 +34,7 @@ public class SessionRuntimeSnapshotService {
         this.timerService = timerService;
         this.wordCloudService = wordCloudService;
         this.pollService = pollService;
+        this.quizService = quizService;
         this.liveStageService = liveStageService;
         this.mechanicsService = mechanicsService;
     }
@@ -43,6 +47,7 @@ public class SessionRuntimeSnapshotService {
                 timerService.state(sessionId),
                 wordCloudService.state(sessionId),
                 pollService.publicState(sessionId),
+                quizService.publicState(sessionId),
                 mechanicsService.getRuntime(sessionId).boss()
         );
     }
@@ -55,6 +60,7 @@ public class SessionRuntimeSnapshotService {
                 timerService.state(sessionId),
                 wordCloudService.state(sessionId),
                 pollService.publicState(sessionId),
+                quizService.publicState(sessionId),
                 mechanicsService.getRuntime(sessionId).boss()
         );
         return new ParticipantRuntimeSnapshot(
@@ -63,10 +69,12 @@ public class SessionRuntimeSnapshotService {
                 publicSnapshot.timer(),
                 publicSnapshot.wordCloud(),
                 publicSnapshot.poll(),
+                publicSnapshot.quiz(),
                 publicSnapshot.boss(),
                 buzzerService.participantState(sessionId, participantId),
                 wordCloudService.participantState(sessionId, participantId),
-                pollService.participantState(sessionId, participantId)
+                pollService.participantState(sessionId, participantId),
+                quizService.participantState(sessionId, participantId)
         );
     }
 
@@ -76,6 +84,7 @@ public class SessionRuntimeSnapshotService {
             SessionTimerService.TimerStateView timer,
             WordCloudService.StateView wordCloud,
             PollService.StateView poll,
+            QuizService.StateView quiz,
             MechanicsService.BossState boss
     ) {
     }
@@ -86,10 +95,12 @@ public class SessionRuntimeSnapshotService {
             SessionTimerService.TimerStateView timer,
             WordCloudService.StateView wordCloud,
             PollService.StateView poll,
+            QuizService.StateView quiz,
             MechanicsService.BossState boss,
             BuzzerService.ParticipantBuzzerStateView buzzerParticipant,
             WordCloudService.ParticipantStateView wordCloudParticipant,
-            PollService.ParticipantStateView pollParticipant
+            PollService.ParticipantStateView pollParticipant,
+            QuizService.ParticipantStateView quizParticipant
     ) {
     }
 }

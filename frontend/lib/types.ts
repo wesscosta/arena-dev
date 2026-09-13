@@ -1,4 +1,4 @@
-export type ScoreSource = "ARENA" | "ACTIVITY" | "BUZZER" | "BOSS" | "MANUAL";
+export type ScoreSource = "ARENA" | "ACTIVITY" | "QUIZ" | "BUZZER" | "BOSS" | "MANUAL";
 
 export type ScoreCategory =
   | "QUESTION"
@@ -85,11 +85,33 @@ export interface QuestionPackage {
   questions: ActivityQuestion[];
 }
 
+export type ClassroomThemeColor =
+  | "emerald"
+  | "teal"
+  | "blue"
+  | "indigo"
+  | "violet"
+  | "amber"
+  | "orange"
+  | "rose";
+
+export type ClassroomThemeIcon =
+  | "code"
+  | "terminal"
+  | "database"
+  | "network"
+  | "computer"
+  | "project"
+  | "business"
+  | "math";
+
 export interface Classroom {
   id: string;
   name: string;
   code: string;
   active?: boolean;
+  themeColor?: ClassroomThemeColor;
+  themeIcon?: ClassroomThemeIcon;
   createdAt: string;
 }
 

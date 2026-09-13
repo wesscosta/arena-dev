@@ -1,5 +1,6 @@
 import type { LiveStageState } from "./live-stage-api";
 import type { PollParticipantState, PollState } from "./poll-api";
+import type { QuizParticipantState, QuizState } from "./quiz-api";
 import type { TimerState } from "./timer-api";
 import type { WordCloudParticipantState, WordCloudState } from "./word-cloud-api";
 
@@ -34,6 +35,7 @@ export type PublicRuntimeSnapshot = {
   timer: TimerState;
   wordCloud: WordCloudState;
   poll: PollState;
+  quiz: QuizState;
   boss?: PublicBossState | null;
 };
 
@@ -41,6 +43,7 @@ export type ParticipantRuntimeSnapshot = PublicRuntimeSnapshot & {
   buzzerParticipant: BuzzerParticipantState;
   wordCloudParticipant: WordCloudParticipantState;
   pollParticipant: PollParticipantState;
+  quizParticipant: QuizParticipantState;
 };
 
 export function reconnectDelayMs(attempt: number) {
