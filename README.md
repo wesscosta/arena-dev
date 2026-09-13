@@ -6,7 +6,7 @@
 >
 > **Current development line:** `v0.5.0 — Live Quiz & Structured Responses`, branch `feat/v0.5-live-quiz`.
 >
-> **Current checkpoint:** `13.7` release-candidate preparation. Quiz runtime, structured `/join` answers, results/Projector, `ScoreEvent` evaluation, pedagogical feedback and Mobile/PWA are implemented; publication still depends on local gate, CI, backup/restore and final gate on the same SHA.
+> **Current checkpoint:** `13.7E` release-candidate UX closure. Quiz Runtime, structured `/join`, Projector results, `ScoreEvent` evaluation, pedagogical feedback, Mobile/PWA and UX increments `13.7A–13.7E` are implemented; the complete local release gate is green. Publication still requires commit/push, PR/merge, CI on the final SHA, backup/restore through Flyway V17, rollback rehearsal and the final release gate.
 
 ## Product model
 
@@ -33,6 +33,11 @@ Arena Dev centralizes attendance, activities, smart draws, XP, rankings, groups,
 - Word Cloud.
 - Public Projector.
 - Student `/join`.
+- Structured Live Quiz with `MULTIPLE_CHOICE` and `TRUE_FALSE` responses.
+- Mobile/PWA shell with explicit reconnect and offline-safe boundaries.
+- Classroom visual identity with curated color/icon tokens.
+- Dedicated classroom-management page for identity, appearance, lifecycle and destructive actions.
+- Interface theme preference: Dark, Light or System.
 - Ordered live-flow authoring through `ActivityStep`.
 - Authoritative `LiveStageState` with audience-specific Projector and `/join` projections.
 
@@ -119,7 +124,7 @@ evaluation
 ScoreEvent (XP truth)
 ```
 
-The first supported response types will be `MULTIPLE_CHOICE` and `TRUE_FALSE`.
+The first supported response types are `MULTIPLE_CHOICE` and `TRUE_FALSE`.
 Open/practical answers, advanced analytics, badges/streaks and AI correction are intentionally outside the initial Quiz Runtime.
 
 ## Live Stage
@@ -248,24 +253,53 @@ The `v0.3.0` tag is frozen and must not be moved or recreated.
 
 ## v0.5.0 release candidate metadata
 
-Maven, npm and release tooling are aligned on `0.5.0` as part of 13.7. This does **not** mean the tag is published: `v0.5.0` may be created only after final CI, backup/restore through Flyway V16 and the final release gate are green on the same commit.
+Maven, npm and release tooling are aligned on `0.5.0`.
+
+The current candidate is functionally closed locally through **13.7E**:
+
+- Quiz Runtime and structured participant responses;
+- results/reveal on `/join` and Projector;
+- evaluation through `ScoreEvent`;
+- pedagogical feedback;
+- Mobile/PWA;
+- Students UX and classroom visual identity (`V17`);
+- safe explicit hard delete;
+- distinct Start/Resume Arena CTAs;
+- dedicated classroom-management page;
+- Dark/Light/System theme preference.
+
+The complete **local release gate is green**. This does **not** mean `v0.5.0` is published.
+
+Before the tag can be created, the exact final SHA must still pass:
+
+```text
+commit/push
+PR + merge
+CI green on final SHA
+real PostgreSQL backup + SHA-256
+restore-check PostgreSQL 17 / Flyway V1–V17
+rollback/restore rehearsal
+scripts/release/release-gate.sh final
+```
+
+The annotated `v0.5.0` tag is created only after those evidences are recorded.
 
 ## Documentation
 
 Current:
 
 - [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
-- [`docs/RELEASE_0_5_0.md`](docs/RELEASE_0_5_0.md) — v0.5 release-candidate checklist
+- [`docs/ROADMAP_0_5.md`](docs/ROADMAP_0_5.md)
+- [`docs/RELEASE_0_5_0.md`](docs/RELEASE_0_5_0.md)
 - [`docs/INCREMENT_13_7.md`](docs/INCREMENT_13_7.md)
-- [`docs/ROADMAP_0_4.md`](docs/ROADMAP_0_4.md)
-- [`docs/INCREMENT_12_4D_0.md`](docs/INCREMENT_12_4D_0.md)
-- [`docs/INCREMENT_12_6.md`](docs/INCREMENT_12_6.md)
-- [`docs/RELEASE_0_4_0.md`](docs/RELEASE_0_4_0.md) — release candidate checklist
-- [`docs/CHECKPOINT_PRE_12_4D.md`](docs/CHECKPOINT_PRE_12_4D.md) — historical checkpoint
+- [`docs/INCREMENT_13_7A.md`](docs/INCREMENT_13_7A.md)
+- [`docs/INCREMENT_13_7B.md`](docs/INCREMENT_13_7B.md)
+- [`docs/INCREMENT_13_7C.md`](docs/INCREMENT_13_7C.md)
+- [`docs/INCREMENT_13_7D.md`](docs/INCREMENT_13_7D.md)
+- [`docs/INCREMENT_13_7E.md`](docs/INCREMENT_13_7E.md)
 - [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md)
 - [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)
 - [`docs/ACCESSIBILITY.md`](docs/ACCESSIBILITY.md)
-- [`docs/RELEASE_0_3_0.md`](docs/RELEASE_0_3_0.md)
 - [`docs/adr/README.md`](docs/adr/README.md)
 
 Historical `INCREMENT_*.md` documents remain versioned as implementation history.

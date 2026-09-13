@@ -63,8 +63,8 @@
   background:
     linear-gradient(
       to bottom,
-      rgba(8, 16, 14, .97),
-      rgba(8, 16, 14, .92)
+      var(--ds-sticky-top),
+      var(--ds-sticky-bottom)
     );
   backdrop-filter: blur(12px);
 }
@@ -271,7 +271,7 @@
   padding: var(--space-3);
   border: var(--border-width) solid var(--ds-border);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, .018);
+  background: var(--ds-surface-interactive);
   color: var(--ds-text-primary);
   text-align: left;
   transition:
@@ -545,7 +545,7 @@
 .classroom-manage-button {
   flex: 0 0 auto;
   opacity: .72;
-  border-color: rgba(255, 255, 255, .075);
+  border-color: var(--ds-border-subtle);
   color: var(--ds-text-secondary);
   transition:
     opacity var(--motion-fast) var(--ease-standard),

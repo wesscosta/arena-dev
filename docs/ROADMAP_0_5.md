@@ -124,21 +124,62 @@ TRUE_FALSE
 - [x] shell offline limitado à interface;
 - [x] reconnect explícito;
 - [x] cache nunca é fonte de verdade do domínio.
-- [ ] `npm test`, `typecheck`, `build` e `mvn verify` verdes para fechar o incremento.
+- [x] `npm test`, `typecheck`, `build` e `mvn verify` verdes para fechar o incremento.
 
 ### 13.7 — Hardening, E2E e release gate v0.5.0
 
-- [ ] E2E de Quiz completo;
+- [x] E2E de Quiz completo;
 - [x] resposta + reconnect;
 - [x] reveal + Projetor;
 - [x] avaliação + `ScoreEvent`;
-- [ ] audit/test/typecheck/build;
-- [ ] `mvn verify`;
-- [ ] Compose;
+- [x] audit/test/typecheck/build;
+- [x] `mvn verify`;
+- [x] Compose;
 - [ ] backup/restore da maior migration;
 - [x] manifests/tooling em `0.5.0`;
 - [ ] gate final no mesmo SHA;
 - [ ] tag somente depois do gate.
+
+
+### 13.7A — UX Friction Pass
+
+- [x] ações de alunos no cabeçalho;
+- [x] cadastro/importação em modais curtos;
+- [x] nome público com edição de baixa fricção;
+- [x] identidade visual da turma;
+- [x] migration V17.
+
+### 13.7B — Finish polish + hard delete seguro
+
+- [x] arquivamento reversível;
+- [x] zona de risco explícita;
+- [x] hard delete confirmado pelo nome completo;
+- [x] `Student` global preservado;
+- [x] exclusão bloqueada durante aula em andamento.
+
+### 13.7C — Semântica de Iniciar / Continuar Arena
+
+- [x] `Iniciar Arena` verde;
+- [x] `Continuar Arena` azul;
+- [x] CTA com 90% da largura útil;
+- [x] ícones distintos;
+- [x] menu `⋯` para encerrar aula em andamento.
+
+### 13.7D — Gerenciar turma como página
+
+- [x] remover modal longo;
+- [x] remover aba Alunos redundante;
+- [x] página dedicada com Geral, Aparência, Status, Ciclo de vida e Zona de risco.
+
+### 13.7E — Tema da interface
+
+- [x] Escuro;
+- [x] Claro;
+- [x] Sistema;
+- [x] persistência local;
+- [x] integração com `prefers-color-scheme`.
+
+> **Gate local da release candidate:** concluído com sucesso em 12/09/2026 após os incrementos 13.7A–13.7E. Permanecem pendentes apenas os gates externos/finais: PR/merge, CI no SHA final, backup/restore V1–V17, rollback/restore e `release-gate.sh final`.
 
 ## Fora do escopo inicial
 

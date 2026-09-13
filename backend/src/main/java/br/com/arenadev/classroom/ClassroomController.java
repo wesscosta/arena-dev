@@ -50,8 +50,11 @@ public class ClassroomController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable UUID id) {
-        service.delete(id);
+    public void delete(
+            @PathVariable UUID id,
+            @Valid @RequestBody ClassroomHardDeleteRequest request
+    ) {
+        service.hardDelete(id, request.confirmationName());
     }
 
     @GetMapping("/{id}/students")
@@ -110,6 +113,9 @@ public class ClassroomController {
             String themeColor,
             String themeIcon
     ) {
+    }
+
+    public record ClassroomHardDeleteRequest(@NotBlank String confirmationName) {
     }
 
     public record EnrollmentStatusRequest(boolean active) {

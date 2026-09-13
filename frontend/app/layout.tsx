@@ -30,8 +30,16 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR">
-      <body><PwaRuntime />{children}</body>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=localStorage.getItem('arena-dev-theme')||'system';var l=window.matchMedia('(prefers-color-scheme: light)').matches;var r=p==='system'?(l?'light':'dark'):p;document.documentElement.dataset.theme=r;document.documentElement.dataset.themePreference=p;document.documentElement.style.colorScheme=r;}catch(e){document.documentElement.dataset.theme='dark';}})();`,
+          }}
+        />
+        <PwaRuntime />
+        {children}
+      </body>
     </html>
   );
 }

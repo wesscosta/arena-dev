@@ -5,6 +5,7 @@ import br.com.arenadev.scoring.ScoreEventRepository;
 import br.com.arenadev.session.ClassSessionRepository;
 import br.com.arenadev.session.SessionStatus;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class ClassroomService {
     private final ClassSessionRepository classSessionRepository;
     private final ActivityRepository activityRepository;
     private final ScoreEventRepository scoreEventRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public ClassroomService(
             ClassroomRepository classroomRepository,
@@ -35,7 +37,8 @@ public class ClassroomService {
             EnrollmentRepository enrollmentRepository,
             ClassSessionRepository classSessionRepository,
             ActivityRepository activityRepository,
-            ScoreEventRepository scoreEventRepository
+            ScoreEventRepository scoreEventRepository,
+            JdbcTemplate jdbcTemplate
     ) {
         this.classroomRepository = classroomRepository;
         this.studentRepository = studentRepository;
@@ -43,6 +46,7 @@ public class ClassroomService {
         this.classSessionRepository = classSessionRepository;
         this.activityRepository = activityRepository;
         this.scoreEventRepository = scoreEventRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Transactional(readOnly = true)
@@ -108,16 +112,51 @@ public class ClassroomService {
     }
 
     @Transactional
-    public void delete(UUID id) {
+    public void hardDelete(UUID id, String confirmationName) {
         Classroom classroom = getClassroom(id);
-        boolean hasOperationalHistory = classSessionRepository.existsByClassroomId(id)
-                || activityRepository.existsByClassroomId(id)
-                || scoreEventRepository.existsByClassroomId(id);
-        if (hasOperationalHistory) {
-            throw new IllegalArgumentException("Esta turma possui histórico operacional. Inative a turma para preservar sessões, atividades e XP.");
+        String confirmed = confirmationName == null ? "" : confirmationName.trim();
+        if (!classroom.getName().equals(confirmed)) {
+            throw new IllegalArgumentException("Digite o nome completo da turma exatamente como exibido para confirmar a exclusão.");
         }
-        enrollmentRepository.deleteByClassroomId(id);
-        classroomRepository.delete(classroom);
+        if (classSessionRepository.existsByClassroomIdAndStatus(id, SessionStatus.ACTIVE)) {
+            throw new IllegalArgumentException("Encerre a sessão ativa antes de excluir definitivamente a turma.");
+        }
+
+        // Hard delete explícito e fail-closed: não usamos cascade global em classrooms.
+        deleteBySession("quiz_rounds", id);
+        deleteBySession("poll_rounds", id);
+        deleteBySession("buzzer_rounds", id);
+        deleteBySession("word_cloud_rounds", id);
+        deleteBySession("session_timers", id);
+        deleteBySession("session_join_codes", id);
+        deleteBySession("session_dynamics", id);
+        deleteBySession("session_events", id);
+
+        jdbcTemplate.update("delete from group_history where classroom_id = ?", id);
+        deleteBySession("session_participants", id);
+
+        // ScoreEvent é a verdade de XP; só é removido no hard delete explicitamente confirmado.
+        jdbcTemplate.update("delete from score_events where classroom_id = ?", id);
+        jdbcTemplate.update("delete from class_sessions where classroom_id = ?", id);
+
+        jdbcTemplate.update("delete from external_result_imports where classroom_id = ?", id);
+        jdbcTemplate.update("delete from activities where classroom_id = ?", id);
+
+        // enrollment_device_claims já usa cascade a partir de enrollment.
+        jdbcTemplate.update("delete from enrollments where classroom_id = ?", id);
+
+        int deleted = jdbcTemplate.update("delete from classrooms where id = ?", id);
+        if (deleted != 1) {
+            throw new IllegalStateException("A turma não pôde ser excluída de forma consistente.");
+        }
+    }
+
+    private void deleteBySession(String table, UUID classroomId) {
+        jdbcTemplate.update(
+                "delete from " + table
+                        + " where session_id in (select id from class_sessions where classroom_id = ?)",
+                classroomId
+        );
     }
 
     @Transactional(readOnly = true)

@@ -147,3 +147,19 @@ GitHub Release v0.5.0
 - [ ] GitHub Release publicada.
 
 Nenhuma evidência operacional deve ser inferida a partir da simples existência de commits.
+
+## Fechamento local após 13.7A–13.7E
+
+Em 12/09/2026, o release candidate foi revalidado após o passe final de UX. O gate local completo está verde.
+
+O schema máximo é Flyway V17.
+
+Pendências para publicação:
+
+- PR/merge em `main`;
+- CI verde no SHA final;
+- backup real + SHA-256;
+- restore-check PostgreSQL 17 / Flyway V1–V17;
+- ensaio de rollback/restore;
+- `scripts/release/release-gate.sh final`;
+- tag anotada `v0.5.0` e GitHub Release.

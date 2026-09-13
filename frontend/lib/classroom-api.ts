@@ -172,9 +172,10 @@ export async function updateClassroom(input: {
   return mapClassroom(result);
 }
 
-export async function deleteClassroom(classroomId: string): Promise<void> {
+export async function deleteClassroom(classroomId: string, confirmationName: string): Promise<void> {
   await request<void>(`/api/classrooms/${classroomId}`, {
     method: "DELETE",
+    body: JSON.stringify({ confirmationName }),
   });
 }
 
