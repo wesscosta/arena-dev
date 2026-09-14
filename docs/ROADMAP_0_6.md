@@ -46,6 +46,9 @@ A Arena deve permitir correção individual e assistida por IA, mas o professor 
 - origem inicial `ARENA`.
 
 ### 14.2 — Fluxo de entrega do aluno
+- criar `SubmissionItem` como conteúdo genérico da entrega;
+- suportar inicialmente `QUESTION_RESPONSE`, `TEXT`, `LINK` e `CODE`;
+- preparar contrato para `FILE / ARTIFACT` sem amarrar o domínio ao storage;
 - iniciar atividade;
 - autosave;
 - restaurar progresso;

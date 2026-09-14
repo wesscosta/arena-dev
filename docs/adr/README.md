@@ -65,3 +65,4 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0041 — Identidade de turma por tokens semânticos](ADR-0041-identidade-da-turma-por-tokens-semanticos.md)
 - [ADR-0042 — Hard delete explícito sem cascade global](ADR-0042-hard-delete-explicito-sem-cascade-global.md)
 - [ADR-0043 — ActivitySubmission como fonte de verdade e IA supervisionada](ADR-0043-activitysubmission-fonte-de-verdade-e-ia-supervisionada.md)
+- [ADR-0044 — SubmissionItem representa entregas polimórficas](ADR-0044-submissionitem-entrega-polimorfica.md)
