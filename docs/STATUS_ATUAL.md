@@ -8,7 +8,7 @@
 
 **Branch de desenvolvimento:** `feat/v0.6-submissions-assessment`.
 
-**Checkpoint:** `14.0 — Bootstrap e arquitetura`.
+**Checkpoint:** `14.3 — Dashboard de entregas do professor`.
 
 Este arquivo é a referência técnica versionada do estado corrente.
 
@@ -32,7 +32,7 @@ Activity
    ↓
 ActivitySubmission
    ↓
-SubmissionAnswer
+SubmissionItem
    ↓
 Assessment
    ↓
@@ -58,7 +58,7 @@ A v0.6 acrescentará, sem substituir essas fontes:
 
 ```text
 ActivitySubmission  = verdade da entrega de uma atividade
-SubmissionAnswer    = resposta persistida dentro da entrega
+SubmissionItem    = resposta persistida dentro da entrega
 Assessment          = avaliação da entrega
 ```
 
@@ -87,9 +87,8 @@ A v0.6 não implementa ainda a integração completa.
 ```text
 14.0  Bootstrap e arquitetura                              concluído
 14.1  ActivitySubmission                                      concluído
-14.2  SubmissionItem, autosave e envio                           implementação local
-14.2  Fluxo de entrega do aluno
-14.3  Dashboard de entregas
+14.2  SubmissionItem, autosave e envio                        concluído
+14.3  Dashboard de entregas                                   implementação local
 14.4  Correção individual
 14.5  Rubricas e avaliação estruturada
 14.6  AI-assisted grading
@@ -102,11 +101,12 @@ A v0.6 não implementa ainda a integração completa.
 
 ## Schema
 
-Maior migration atual: **V17**.
+Maior migration atual: **V19**.
 
-O incremento 14.0 não cria migration.
+- `V18` — `activity_submissions`;
+- `V19` — `submission_items`.
 
-A primeira migration da v0.6 só deve surgir quando o modelo persistente de `ActivitySubmission` for fechado no 14.1.
+O 14.3 é uma projeção de leitura e não exige nova migration.
 
 ## Versionamento
 
@@ -116,14 +116,4 @@ Isso diferencia a linha ativa da tag estável `v0.5.0`.
 
 ## Próximo passo
 
-Concluir o 14.0 validando:
-
-- branch `feat/v0.6-submissions-assessment`;
-- metadata `0.6.0-SNAPSHOT` alinhada;
-- `ROADMAP_0_6.md`;
-- `INCREMENT_14_0.md`;
-- ADR do domínio de submissões;
-- índice documental/ADR atualizados;
-- gates básicos de metadata.
-
-Depois iniciar **14.1 — ActivitySubmission**.
+Concluir **14.3 — Dashboard de entregas** e então iniciar **14.4 — Correção individual**.

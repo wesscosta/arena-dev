@@ -13,4 +13,6 @@ public interface SubmissionItemRepository extends JpaRepository<SubmissionItem, 
     Optional<SubmissionItem> findByIdAndSubmissionId(UUID id, UUID submissionId);
 
     Optional<SubmissionItem> findBySubmissionIdAndQuestionId(UUID submissionId, UUID questionId);
+
+    long countBySubmissionId(UUID submissionId);
 }
