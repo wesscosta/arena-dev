@@ -96,4 +96,13 @@ public class ActivitySubmission {
         submittedAt = when;
         updatedAt = when;
     }
+
+    public void beginReview(Instant when) {
+        if (status == ActivitySubmissionStatus.UNDER_REVIEW) return;
+        if (status != ActivitySubmissionStatus.SUBMITTED) {
+            throw new IllegalStateException("Somente entregas enviadas podem entrar em correção.");
+        }
+        status = ActivitySubmissionStatus.UNDER_REVIEW;
+        updatedAt = when;
+    }
 }

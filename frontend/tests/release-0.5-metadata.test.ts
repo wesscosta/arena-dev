@@ -14,13 +14,13 @@ const metadata = readFileSync(resolve(root, "scripts/release/check-metadata.sh")
 const gate = readFileSync(resolve(root, "scripts/release/release-gate.sh"), "utf8");
 const verifier = readFileSync(resolve(root, "scripts/release/verify-backup.sh"), "utf8");
 
-test("v0.5 release manifests are aligned", () => {
-  assert.equal(pkg.version, "0.5.0");
-  assert.equal(lock.version, "0.5.0");
-  assert.equal(lock.packages[""]?.version, "0.5.0");
-  assert.match(pom, /<artifactId>arena-dev-api<\/artifactId>\s*<version>0\.5\.0<\/version>/);
-  assert.match(metadata, /ARENA_RELEASE_VERSION:-0\.5\.0/);
-  assert.match(gate, /ARENA_RELEASE_VERSION:-0\.5\.0/);
+test("v0.6 development manifests are aligned", () => {
+  assert.equal(pkg.version, "0.6.0-SNAPSHOT");
+  assert.equal(lock.version, "0.6.0-SNAPSHOT");
+  assert.equal(lock.packages[""]?.version, "0.6.0-SNAPSHOT");
+  assert.match(pom, /<artifactId>arena-dev-api<\/artifactId>\s*<version>0\.6\.0-SNAPSHOT<\/version>/);
+  assert.match(metadata, /ARENA_RELEASE_VERSION:-0\.6\.0-SNAPSHOT/);
+  assert.match(gate, /ARENA_RELEASE_VERSION:-0\.6\.0-SNAPSHOT/);
 });
 
 test("v0.5 backup verifier requires Flyway V17, Quiz persistence and classroom identity", () => {
