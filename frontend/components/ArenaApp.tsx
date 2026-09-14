@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import TeacherLogin from "@/components/TeacherLogin";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import ActivityStepEditor from "@/components/ActivityStepEditor";
+import ActivitySubmissionDashboard from "@/components/ActivitySubmissionDashboard";
 import LiveFlowConductor from "@/components/LiveFlowConductor";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
@@ -2934,6 +2935,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   const [stepsLoading, setStepsLoading] = useState(false);
   const [stepsDirty, setStepsDirty] = useState(false);
   const [deliveryActivityId, setDeliveryActivityId] = useState<string | undefined>();
+  const [dashboardActivityId, setDashboardActivityId] = useState<string | undefined>();
   const [externalResultActivityId, setExternalResultActivityId] = useState<string | undefined>();
   const [delivered, setDelivered] = useState<string[]>([]);
   const [onTime, setOnTime] = useState<string[]>([]);
@@ -2948,6 +2950,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   const otherClassrooms = data.classrooms.filter((classroom) => classroom.id !== classroomId);
   const sourceActivities = data.activities.filter((activity) => activity.classroomId === sourceClassroomId);
   const deliveryActivity = classActivities.find((activity) => activity.id === deliveryActivityId);
+  const dashboardActivity = classActivities.find((activity) => activity.id === dashboardActivityId);
   const externalResultActivity = classActivities.find((activity) => activity.id === externalResultActivityId);
   const activityEvents = data.scoreEvents.filter((event) => event.classroomId === classroomId && (event.source === "ACTIVITY" || event.category === "SUBMISSION"));
   const totalQuestions = classActivities.reduce((sum, activity) => sum + (activity.questions?.length ?? 0), 0);
@@ -3214,7 +3217,15 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
         <Metric label="Integração" value="Arena" hint="atividades podem alimentar desafios" />
       </div>
 
-      <Panel title="Atividades da turma" subtitle="Abra para editar, registrar entregas ou usar as questões diretamente na Arena">
+      {dashboardActivity && (
+        <ActivitySubmissionDashboard
+          activityId={dashboardActivity.id}
+          activityTitle={dashboardActivity.title}
+          onClose={() => setDashboardActivityId(undefined)}
+        />
+      )}
+
+      <Panel title="Atividades da turma" subtitle="Abra para editar, acompanhar entregas ou usar as questões diretamente na Arena">
         {classActivities.length ? (
           <div className="activity-catalog">
             {classActivities.map((activity) => {
@@ -3237,7 +3248,8 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
                   {activity.resource?.kind === "EXTERNAL" && activity.resource.url && <a className="activity-resource-link" href={activity.resource.url} target="_blank" rel="noreferrer">Abrir recurso externo ↗</a>}
                   <div className="activity-card-actions">
                     <button className="button ghost" onClick={() => openActivity(activity)}>Abrir / editar</button>
-                    <button className="button" onClick={() => openDelivery(activity)}>Registrar entrega</button>
+                    <button className="button" onClick={() => setDashboardActivityId(activity.id)}>Entregas</button>
+                    <button className="button" onClick={() => openDelivery(activity)}>Registrar XP manual</button>
                     {activity.resource?.kind === "EXTERNAL" && <button className="button" onClick={() => openExternalResults(activity)}>Importar resultados</button>}
                     <button className="button primary" disabled={!(activity.questions?.length)} onClick={() => onUseInArena(activity.id)}>Usar na Arena</button>
                   </div>
