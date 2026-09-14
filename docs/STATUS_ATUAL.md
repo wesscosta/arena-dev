@@ -8,7 +8,7 @@
 
 **Branch de desenvolvimento:** `feat/v0.6-submissions-assessment`.
 
-**Checkpoint:** `14.3 — Dashboard de entregas do professor`.
+**Checkpoint:** `14.4 — Correção individual`.
 
 Este arquivo é a referência técnica versionada do estado corrente.
 
@@ -88,8 +88,8 @@ A v0.6 não implementa ainda a integração completa.
 14.0  Bootstrap e arquitetura                              concluído
 14.1  ActivitySubmission                                      concluído
 14.2  SubmissionItem, autosave e envio                        concluído
-14.3  Dashboard de entregas                                   implementação local
-14.4  Correção individual
+14.3  Dashboard de entregas                                   concluído
+14.4  Correção individual                                     implementação local
 14.5  Rubricas e avaliação estruturada
 14.6  AI-assisted grading
 14.7  Feedback individual
@@ -101,10 +101,11 @@ A v0.6 não implementa ainda a integração completa.
 
 ## Schema
 
-Maior migration atual: **V19**.
+Maior migration atual: **V20**.
 
 - `V18` — `activity_submissions`;
-- `V19` — `submission_items`.
+- `V19` — `submission_items`;
+- `V20` — `submission_assessments` (shell de avaliação/rascunho privado).
 
 O 14.3 é uma projeção de leitura e não exige nova migration.
 

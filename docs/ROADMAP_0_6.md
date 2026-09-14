@@ -58,7 +58,7 @@ A Arena deve permitir correção individual e assistida por IA, mas o professor 
 - impedir mutações indevidas após submissão conforme política definida.
 
 ### 14.3 — Dashboard de entregas
-**Estado:** implementação local.
+**Estado:** concluído.
 
 - visão consolidada por atividade;
 - status por aluno;
@@ -67,6 +67,8 @@ A Arena deve permitir correção individual e assistida por IA, mas o professor 
 - acesso direto à correção.
 
 ### 14.4 — Correção individual
+**Estado:** implementação local em V20.
+
 - enunciado + resposta + expected answer/rubrica;
 - navegação anterior/próximo;
 - salvar rascunho;

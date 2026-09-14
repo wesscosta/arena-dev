@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fetchSubmissionDashboard, type SubmissionDashboard, type SubmissionDashboardStatus } from "@/lib/submission-dashboard-api";
+import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import styles from "./ActivitySubmissionDashboard.module.css";
 
 type Filter = "ALL" | SubmissionDashboardStatus;
@@ -35,6 +36,7 @@ export default function ActivitySubmissionDashboard({ activityId, activityTitle,
   const [filter, setFilter] = useState<Filter>("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reviewSubmissionId, setReviewSubmissionId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true); setError("");
@@ -55,12 +57,15 @@ export default function ActivitySubmissionDashboard({ activityId, activityTitle,
     return map;
   }, [dashboard]);
   const summary = dashboard?.summary;
+  const reviewableIds = (dashboard?.students ?? []).filter((row) => row.submissionId && ["SUBMITTED", "UNDER_REVIEW", "GRADED", "RETURNED"].includes(row.status)).map((row) => row.submissionId as string);
+
+  if (reviewSubmissionId) return <SubmissionReviewPanel activityId={activityId} submissionIds={reviewableIds} initialSubmissionId={reviewSubmissionId} onClose={() => setReviewSubmissionId(null)} onChanged={load} />;
 
   return <section className={styles.shell}>
     <header className={styles.header}><div><span className={styles.kicker}>ENTREGAS DA ATIVIDADE</span><h3>{dashboard?.activityTitle || activityTitle}</h3><p>Acompanhe a turma inteira sem depender de controle paralelo.</p></div><div className={styles.actions}><button className={styles.button} type="button" disabled={loading} onClick={() => void load()}>{loading ? "Atualizando..." : "Atualizar"}</button><button className={styles.button} type="button" onClick={onClose}>Fechar</button></div></header>
     {error && <div className={styles.error} role="alert">{error}</div>}
     {summary && <div className={styles.metrics}><div className={styles.metric}><span>Alunos</span><strong>{summary.total}</strong></div><div className={styles.metric}><span>Pendentes</span><strong>{summary.notStarted}</strong></div><div className={styles.metric}><span>Aguardando correção</span><strong>{summary.submitted}</strong></div><div className={styles.metric}><span>Finalizados</span><strong>{summary.graded + summary.returned}</strong></div></div>}
     <div className={styles.filters} role="tablist" aria-label="Filtrar entregas por status">{FILTERS.map((item) => <button key={item.id} type="button" role="tab" aria-selected={filter === item.id} className={`${styles.filter} ${filter === item.id ? styles.filterActive : ""}`} onClick={() => setFilter(item.id)}>{item.label} · {counts.get(item.id) ?? 0}</button>)}</div>
-    {loading && !dashboard ? <div className={styles.empty}>Carregando entregas...</div> : <div className={styles.table}><div className={`${styles.row} ${styles.head}`}><span>Aluno</span><span>Status</span><span>Itens</span><span>Tentativa</span><span>Última atualização</span></div>{rows.map((row) => <div className={styles.row} key={row.enrollmentId}><div className={styles.student}><strong>{row.displayName}</strong><small>{row.studentName}{row.registration ? ` · ${row.registration}` : ""}</small></div><span className={`${styles.status} ${statusClass(row.status)}`}>{STATUS_LABEL[row.status]}</span><span className={styles.meta}>{row.itemCount}</span><span className={styles.meta}>{row.attemptNumber ?? "—"}</span><span className={styles.meta}>{dateTime(row.updatedAt)}</span></div>)}{!rows.length && <div className={styles.empty}>Nenhum aluno neste filtro.</div>}</div>}
+    {loading && !dashboard ? <div className={styles.empty}>Carregando entregas...</div> : <div className={styles.table}><div className={`${styles.row} ${styles.head}`}><span>Aluno</span><span>Status</span><span>Itens</span><span>Tentativa</span><span>Última atualização</span><span>Ação</span></div>{rows.map((row) => <div className={styles.row} key={row.enrollmentId}><div className={styles.student}><strong>{row.displayName}</strong><small>{row.studentName}{row.registration ? ` · ${row.registration}` : ""}</small></div><span className={`${styles.status} ${statusClass(row.status)}`}>{STATUS_LABEL[row.status]}</span><span className={styles.meta}>{row.itemCount}</span><span className={styles.meta}>{row.attemptNumber ?? "—"}</span><span className={styles.meta}>{dateTime(row.updatedAt)}</span>{row.submissionId && ["SUBMITTED", "UNDER_REVIEW", "GRADED", "RETURNED"].includes(row.status) && <button className={styles.button} type="button" onClick={() => setReviewSubmissionId(row.submissionId)}>Corrigir</button>}</div>)}{!rows.length && <div className={styles.empty}>Nenhum aluno neste filtro.</div>}</div>}
   </section>;
 }
