@@ -85,8 +85,8 @@ A v0.6 não implementa ainda a integração completa.
 ## Escopo incremental
 
 ```text
-14.0  Bootstrap e arquitetura                              linha ativa
-14.1  ActivitySubmission
+14.0  Bootstrap e arquitetura                              concluído
+14.1  ActivitySubmission                                      implementação local
 14.2  Fluxo de entrega do aluno
 14.3  Dashboard de entregas
 14.4  Correção individual
