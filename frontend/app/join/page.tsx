@@ -26,7 +26,7 @@ import pollStyles from "./poll.module.css";
 import quizStyles from "./quiz.module.css";
 import stepStyles from "./prepared-step.module.css";
 import { emptyPollParticipantState, sendPollVote, type PollParticipantState, type PollState } from "@/lib/poll-api";
-import { emptyQuizParticipantState, sendQuizAnswer, type QuizParticipantState, type QuizState } from "@/lib/quiz-api";
+import { emptyQuizParticipantState, quizOptionMatchesAnswer, sendQuizAnswer, type QuizParticipantState, type QuizState } from "@/lib/quiz-api";
 import { reconnectDelayMs, type BuzzerParticipantState, type ParticipantRuntimeSnapshot, type PublicBossState, type PublicBuzzerState } from "@/lib/runtime-snapshot";
 
 function messageOf(error: unknown) {
@@ -51,6 +51,7 @@ export default function JoinPage() {
   const [wordCloudParticipant, setWordCloudParticipant] = useState<WordCloudParticipantState>(emptyWordCloudParticipantState());
   const [pollParticipant, setPollParticipant] = useState<PollParticipantState>(emptyPollParticipantState());
   const [quizParticipant, setQuizParticipant] = useState<QuizParticipantState>(emptyQuizParticipantState());
+  const [quizDraftAnswer, setQuizDraftAnswer] = useState<string | boolean | null>(null);
   const [quizSubmitting, setQuizSubmitting] = useState(false);
   const [wordDraft, setWordDraft] = useState("");
   const [loading, setLoading] = useState(false);
@@ -360,12 +361,16 @@ export default function JoinPage() {
 
   async function answerQuiz(answer: string | boolean) {
     if (!access || !quiz.round || !quizParticipant.canAnswer || quizSubmitting) return;
+    const previousAnswer = quizParticipant.answer;
+    setQuizDraftAnswer(answer);
     setQuizSubmitting(true);
     setError("");
     try {
       const participantState = await sendQuizAnswer(access.code, quiz.round.id, access.token, answer);
       setQuizParticipant(participantState);
+      setQuizDraftAnswer(participantState.answer);
     } catch (caught) {
+      setQuizDraftAnswer(previousAnswer);
       setError(messageOf(caught));
     } finally {
       setQuizSubmitting(false);
@@ -381,6 +386,10 @@ export default function JoinPage() {
   const winner = buzzer.presses[0];
   const activeQuizRound = quiz.round;
   const activeQuizQuestion = activeQuizRound?.question ?? null;
+
+  useEffect(() => {
+    setQuizDraftAnswer(null);
+  }, [activeQuizRound?.id]);
 
   return (
     <main className="student-join-shell">
@@ -507,19 +516,20 @@ export default function JoinPage() {
                   </div>
                 )}
 
-                <div className={quizStyles.options}>
+                <div className={quizStyles.options} role="radiogroup" aria-label="Alternativas da questão">
                   {activeQuizQuestion.options.map((option, index) => {
                     const answer: string | boolean = activeQuizQuestion.type === "TRUE_FALSE"
                       ? option.id === "true"
                       : option.id;
-                    const selected = quizParticipant.answer === answer;
+                    const selected = quizOptionMatchesAnswer(option.id, quizDraftAnswer ?? quizParticipant.answer);
                     return (
                       <button
                         type="button"
                         key={option.id}
                         className={`${quizStyles.option} ${selected ? quizStyles.selected : ""}`}
                         disabled={!quizParticipant.canAnswer || quizSubmitting || !browserOnline}
-                        aria-pressed={selected}
+                        role="radio"
+                        aria-checked={selected}
                         onClick={() => void answerQuiz(answer)}
                       >
                         <span className={quizStyles.letter}>
