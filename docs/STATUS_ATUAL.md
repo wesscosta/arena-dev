@@ -86,7 +86,8 @@ A v0.6 não implementa ainda a integração completa.
 
 ```text
 14.0  Bootstrap e arquitetura                              concluído
-14.1  ActivitySubmission                                      implementação local
+14.1  ActivitySubmission                                      concluído
+14.2  SubmissionItem, autosave e envio                           implementação local
 14.2  Fluxo de entrega do aluno
 14.3  Dashboard de entregas
 14.4  Correção individual

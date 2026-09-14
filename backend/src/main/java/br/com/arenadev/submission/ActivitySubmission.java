@@ -83,4 +83,17 @@ public class ActivitySubmission {
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public long getVersion() { return version; }
+
+    public boolean isEditable() {
+        return status == ActivitySubmissionStatus.IN_PROGRESS;
+    }
+
+    public void submit(Instant when) {
+        if (!isEditable()) {
+            throw new IllegalStateException("Somente entregas em andamento podem ser enviadas.");
+        }
+        status = ActivitySubmissionStatus.SUBMITTED;
+        submittedAt = when;
+        updatedAt = when;
+    }
 }
