@@ -37,6 +37,8 @@ A Arena deve permitir correção individual e assistida por IA, mas o professor 
 - atualizar documentação corrente.
 
 ### 14.1 — ActivitySubmission
+**Estado:** implementação local preparada em V18.
+
 - modelar entrega vinculada a `Activity` e `Enrollment`;
 - definir estados e invariantes;
 - persistência PostgreSQL/Flyway;
