@@ -45,3 +45,4 @@
 Não reescrever documentos históricos para fabricar evidência que não foi registrada.
 
 Atualizado em 13/09/2026 para o bootstrap da v0.6.0.
+- [`INCREMENT_14_2.md`](INCREMENT_14_2.md)
