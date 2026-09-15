@@ -8,7 +8,7 @@
 
 **Branch de desenvolvimento:** `feat/v0.6-submissions-assessment`.
 
-**Checkpoint:** `14.5 — Correção individual`.
+**Checkpoint:** `14.6 — Correção individual`.
 
 Este arquivo é a referência técnica versionada do estado corrente.
 
@@ -123,3 +123,8 @@ Concluir **14.3 — Dashboard de entregas** e então iniciar **14.4 — Correç�
 ## Atualização 14.5
 
 Schema atual: **V21** com rubricas e critérios de avaliação estruturada. Nota permanece separada de XP.
+
+
+## Atualização 14.6
+
+Schema atual: **V22** com sugestões de avaliação por IA persistidas e supervisionadas. Aplicar sugestão não conclui nem publica a avaliação.

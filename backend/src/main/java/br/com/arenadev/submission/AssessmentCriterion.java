@@ -42,6 +42,10 @@ public class AssessmentCriterion {
     @Column(name = "teacher_comment", columnDefinition = "text")
     private String teacherComment;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "applied_ai_suggestion_id")
+    private AiAssessmentSuggestion appliedAiSuggestion;
+
     @Column(nullable = false)
     private int position;
 
@@ -67,13 +71,30 @@ public class AssessmentCriterion {
     }
 
     public void score(BigDecimal awardedPoints, String teacherComment) {
+        validatePoints(awardedPoints);
+        this.awardedPoints = awardedPoints;
+        this.teacherComment = normalize(teacherComment);
+        this.appliedAiSuggestion = null;
+        this.updatedAt = Instant.now();
+    }
+
+    public void applyAiSuggestion(BigDecimal awardedPoints, String teacherComment, AiAssessmentSuggestion suggestion) {
+        validatePoints(awardedPoints);
+        this.awardedPoints = awardedPoints;
+        this.teacherComment = normalize(teacherComment);
+        this.appliedAiSuggestion = suggestion;
+        this.updatedAt = Instant.now();
+    }
+
+    private void validatePoints(BigDecimal awardedPoints) {
         if (awardedPoints == null) throw new IllegalArgumentException("Informe a pontuação do critério.");
         if (awardedPoints.signum() < 0 || awardedPoints.compareTo(maxPoints) > 0) {
             throw new IllegalArgumentException("Pontuação deve ficar entre 0 e o máximo do critério.");
         }
-        this.awardedPoints = awardedPoints;
-        this.teacherComment = teacherComment == null || teacherComment.isBlank() ? null : teacherComment.trim();
-        this.updatedAt = Instant.now();
+    }
+
+    private static String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     @PreUpdate
@@ -86,5 +107,6 @@ public class AssessmentCriterion {
     public BigDecimal getMaxPoints() { return maxPoints; }
     public BigDecimal getAwardedPoints() { return awardedPoints; }
     public String getTeacherComment() { return teacherComment; }
+    public AiAssessmentSuggestion getAppliedAiSuggestion() { return appliedAiSuggestion; }
     public int getPosition() { return position; }
 }

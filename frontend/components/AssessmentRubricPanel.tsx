@@ -10,6 +10,7 @@ import {
   type StructuredAssessment,
 } from "@/lib/assessment-rubric-api";
 import styles from "./AssessmentRubricPanel.module.css";
+import AiAssessmentAssistantPanel from "@/components/AiAssessmentAssistantPanel";
 
 type DraftCriterion = { title: string; description: string; maxPoints: string };
 
@@ -116,6 +117,8 @@ export default function AssessmentRubricPanel({
     </div>
 
     {error && <div className={styles.error} role="alert">{error}</div>}
+
+    {assessment && assessment.criteria.length > 0 && <AiAssessmentAssistantPanel activityId={activityId} submissionId={submissionId} disabled={assessment.submissionStatus === "GRADED" || assessment.submissionStatus === "RETURNED"} onApplied={load} />}
 
     {(!rubricExists || editing) && (!assessment || assessment.criteria.length === 0) ? <div className={styles.editor}>
       <div className={styles.hint}>Defina a rubrica antes de pontuar esta entrega. Ela será copiada como snapshot para a avaliação.</div>
