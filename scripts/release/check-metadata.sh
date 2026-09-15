@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-EXPECTED_VERSION="${ARENA_RELEASE_VERSION:-0.6.0-SNAPSHOT}"
+EXPECTED_VERSION="${ARENA_RELEASE_VERSION:-0.6.0}"
 REQUIRE_LICENSE=false
 
 fail() {

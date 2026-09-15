@@ -18,7 +18,7 @@ usage() {
 Uso: scripts/release/verify-backup.sh CAMINHO_DO_DUMP
 
 Restaura o dump em um PostgreSQL 17 temporário e isolado, confirma o histórico
-Flyway V1-V17 e as tabelas centrais da v0.5, e remove o container ao terminar.
+Flyway V1-V25 e as tabelas centrais da v0.6, e remove o container ao terminar.
 EOF
 }
 
@@ -82,17 +82,17 @@ docker exec -i "$CONTAINER_NAME" \
 migration_count="$(docker exec "$CONTAINER_NAME" \
   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
   --command "select count(*) from flyway_schema_history where success")"
-[[ "$migration_count" -eq 17 ]] || fail "histórico Flyway restaurado possui $migration_count migrations; esperado 17"
+[[ "$migration_count" -eq 25 ]] || fail "histórico Flyway restaurado possui $migration_count migrations; esperado 25"
 
 latest_version="$(docker exec "$CONTAINER_NAME" \
   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
   --command "select max(version::integer) from flyway_schema_history where success and version ~ '^[0-9]+$'")"
-[[ "$latest_version" -eq 17 ]] || fail "maior migration restaurada é V$latest_version; esperado V17"
+[[ "$latest_version" -eq 25 ]] || fail "maior migration restaurada é V$latest_version; esperado V25"
 
 core_table_count="$(docker exec "$CONTAINER_NAME" \
   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
-  --command "select count(*) from (values ('classrooms'), ('students'), ('enrollments'), ('class_sessions'), ('score_events'), ('activities'), ('activity_steps'), ('session_events'), ('session_timers'), ('buzzer_rounds'), ('word_cloud_rounds'), ('poll_rounds'), ('enrollment_device_claims'), ('quiz_rounds'), ('quiz_participant_answers')) as expected(name) where to_regclass('public.' || name) is not null")"
-[[ "$core_table_count" -eq 15 ]] || fail "nem todas as 15 tabelas centrais da v0.5 foram restauradas"
+  --command "select count(*) from (values ('classrooms'), ('students'), ('enrollments'), ('class_sessions'), ('score_events'), ('activities'), ('activity_steps'), ('session_events'), ('session_timers'), ('buzzer_rounds'), ('word_cloud_rounds'), ('poll_rounds'), ('enrollment_device_claims'), ('quiz_rounds'), ('quiz_participant_answers'), ('activity_submissions'), ('submission_items'), ('submission_assessments'), ('activity_rubric_criteria'), ('assessment_criteria'), ('ai_assessment_suggestions'), ('ai_assessment_criterion_suggestions'), ('submission_process_events'), ('activity_provider_links'), ('submission_provider_links')) as expected(name) where to_regclass('public.' || name) is not null")"
+[[ "$core_table_count" -eq 25 ]] || fail "nem todas as 25 tabelas centrais da v0.6 foram restauradas"
 
 quiz_evaluation_columns="$(docker exec "$CONTAINER_NAME" \
   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
@@ -102,4 +102,4 @@ quiz_evaluation_columns="$(docker exec "$CONTAINER_NAME" \
 classroom_theme_columns="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select count(*) from information_schema.columns where table_schema='public' and table_name='classrooms' and column_name in ('theme_color','theme_icon')")"
 [[ "$classroom_theme_columns" -eq 2 ]] || fail "V17 não restaurou integralmente a identidade visual das turmas"
 
-printf 'Backup v0.5 restaurado e validado em PostgreSQL 17: %s\n' "$backup_file"
+printf 'Backup v0.6 restaurado e validado em PostgreSQL 17: %s\n' "$backup_file"
