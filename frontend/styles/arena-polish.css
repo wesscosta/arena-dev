@@ -613,3 +613,36 @@
   }
 }
 
+/* 14.11B — typography normalization for the live workspace */
+.arena-session-workspace {
+  font-size: var(--font-size-md);
+}
+
+.arena-tabs-six [role="tab"],
+.arena-session-actions button,
+.arena-activity-strip .select,
+.arena-interaction-switch button {
+  font-size: var(--font-size-md);
+}
+
+.arena-tabs-six [role="tab"] {
+  font-weight: var(--font-semibold);
+}
+
+.arena-activity-strip .eyebrow,
+.arena-main-card > .eyebrow,
+.arena-session-workspace .ui-eyebrow {
+  font-size: var(--font-size-sm);
+}
+
+.arena-activity-strip strong,
+.arena-interaction-switch strong {
+  font-size: var(--font-size-md);
+  line-height: var(--line-snug);
+}
+
+.arena-session-workspace small,
+.arena-session-workspace .ui-meta {
+  font-size: var(--font-size-sm);
+}
+

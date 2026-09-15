@@ -561,6 +561,10 @@ export default function ArenaApp() {
                 sessionParticipants={data.sessionParticipants.filter((item) => item.sessionId === currentSession?.id)}
                 preferredActivityId={arenaActivityId}
                 onPreferredActivityChange={setArenaActivityId}
+                onSessionEnded={() => {
+                  setClassroomTab("home");
+                  setView("classroom");
+                }}
                 patch={patch}
                 notify={notify}
               />
@@ -1747,7 +1751,7 @@ function ClassroomManagementPage({
 }
 
 
-function ArenaView({ data, classroomId, students, currentSession, sessionParticipants, preferredActivityId, onPreferredActivityChange, patch, notify }: {
+function ArenaView({ data, classroomId, students, currentSession, sessionParticipants, preferredActivityId, onPreferredActivityChange, onSessionEnded, patch, notify }: {
   data: ArenaData;
   classroomId: string;
   students: Student[];
@@ -1755,6 +1759,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   sessionParticipants: SessionParticipant[];
   preferredActivityId?: string;
   onPreferredActivityChange: (activityId?: string) => void;
+  onSessionEnded: () => void;
   patch: (updater: (current: ArenaData) => ArenaData) => void;
   notify: (message: string) => void;
 }) {
@@ -1992,6 +1997,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       setLiveFlowState(null);
       onPreferredActivityChange(undefined);
       notify("Sessão encerrada e persistida.");
+      onSessionEnded();
     } catch (error) {
       notify(errorMessage(error));
     } finally {
