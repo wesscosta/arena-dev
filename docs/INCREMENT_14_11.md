@@ -23,3 +23,17 @@ O gate final não cria tag nem GitHub Release automaticamente. A tag `v0.6.0` s�
 3. backup restaurável validado até V25;
 4. gate final concluído;
 5. tag `v0.6.0` e GitHub Release publicados.
+
+## Fechamento visual 14.11A–C
+
+Após o fechamento funcional do 14.11, a validação manual consolidou um polish adicional de UI:
+
+- remoção de microcopy redundante;
+- normalização tipográfica;
+- retorno à Home ao encerrar sessão;
+- refinamento do Timer;
+- badge AO VIVO ao lado do título;
+- cards de turma com dimensões e footer uniformes;
+- CTAs Iniciar/Continuar Arena em largura total e linguagem visual coerente.
+
+Detalhes em `POLISH_14_11A_UI_DECLUTTER.md`, `POLISH_14_11B_TYPOGRAPHY_AND_SESSION_EXIT.md` e `POLISH_14_11C_UI_FINAL.md`.

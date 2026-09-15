@@ -1,130 +1,132 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 13 de setembro de 2026
+**Última sincronização documental:** 15 de setembro de 2026
 
 **Release estável:** `v0.5.0 — Live Quiz & Structured Responses`.
 
-**Linha ativa:** `v0.6.0 — Submissions, Assessment & Feedback`.
+**Linha em fechamento:** `v0.6.0 — Submissions, Assessment & Feedback`.
 
-**Branch de desenvolvimento:** `feat/v0.6-submissions-assessment`.
+**Branch:** `feat/v0.6-submissions-assessment`.
 
-**Checkpoint:** `14.6 — Correção individual`.
+**Checkpoint:** `14.11 — Hardening, E2E, release gate e polish final de UI`.
 
-Este arquivo é a referência técnica versionada do estado corrente.
+## Estado resumido
 
-## Baseline pública v0.5.0
+A implementação funcional da v0.6 está concluída até o 14.11. A branch contém o domínio de submissões, avaliação estruturada, IA supervisionada, feedback publicado, triagem, evidências de processo e preparação provider-independent para Teams/Classroom.
+
+A release **ainda não está publicada**. Antes da tag `v0.6.0` faltam:
 
 ```text
-PR final        #10
+commit final do polish/documentação
+gate local completo
+PR + merge em main
+CI verde no SHA final
+backup real + SHA-256
+restore-check PostgreSQL 17 / Flyway V1–V25
+release-gate.sh final
+tag anotada v0.6.0
+GitHub Release
+```
+
+## Baseline estável
+
+```text
+v0.5.0
 merge main      55c76e96cb3726fbe7fee0bd09f26ad8ce43ccfe
-tag             v0.5.0
 schema          Flyway V1–V17
 ```
 
-A tag `v0.5.0` está congelada e não deve ser movida.
+A tag `v0.5.0` está congelada.
 
-## Objetivo da v0.6
-
-A v0.6 resolve o fluxo completo:
+## Domínio v0.6
 
 ```text
 Activity
-   ↓
+  ↓
 ActivitySubmission
-   ↓
+  ↓
 SubmissionItem
-   ↓
-Assessment
-   ↓
-feedback supervisionado
-   ↓
-publicação ao aluno
+  ↓
+SubmissionAssessment
+  ├── AssessmentCriterion
+  ├── AI suggestion
+  ├── teacher review
+  └── publishedFeedback
 ```
 
-O gargalo prioritário é permitir ao professor identificar quem entregou, revisar cada entrega individualmente, usar IA para acelerar correção e feedback e publicar somente após revisão explícita.
-
-## Invariantes arquiteturais herdadas
+Invariantes:
 
 ```text
-ActivityQuestion    = autoria da pergunta
-QuizRound           = runtime ao vivo
-ParticipantAnswer   = resposta do Quiz
-ScoreEvent          = verdade do XP
-LiveStage           = verdade do que está apresentado
-SessionEvent        = projeção cronológica operacional
+ParticipantAnswer = resposta do Quiz ao vivo
+ActivitySubmission= entrega geral de atividade
+ScoreEvent         = fonte de verdade do XP
+nota               ≠ XP
+IA                 = sugestão, nunca autoridade
 ```
 
-A v0.6 acrescentará, sem substituir essas fontes:
+## Incrementos
 
 ```text
-ActivitySubmission  = verdade da entrega de uma atividade
-SubmissionItem    = resposta persistida dentro da entrega
-Assessment          = avaliação da entrega
-```
-
-## Regra de supervisão da IA
-
-Nenhuma nota, feedback ou devolutiva produzida por IA pode ser publicada automaticamente.
-
-Toda saída de IA nasce como sugestão/rascunho e exige ação explícita do professor antes de ficar visível ao aluno.
-
-Somente feedback publicado poderá ser sincronizado futuramente com Microsoft Teams ou Google Classroom.
-
-## Preparação para integrações institucionais
-
-Arena Dev permanece a fonte de verdade da entrega e da avaliação.
-
-Teams/Classroom serão adapters de integração para:
-
-- sincronização de turma/identidade;
-- publicação de atividade/deep link;
-- sincronização futura de nota e feedback publicado.
-
-A v0.6 não implementa ainda a integração completa.
-
-## Escopo incremental
-
-```text
-14.0  Bootstrap e arquitetura                              concluído
-14.1  ActivitySubmission                                      concluído
-14.2  SubmissionItem, autosave e envio                        concluído
-14.3  Dashboard de entregas                                   concluído
-14.4  Correção individual                                     implementação local
-14.5  Rubricas e avaliação estruturada
-14.6  AI-assisted grading
-14.7  Feedback individual ✅
-14.8  Correção em lote / triagem ✅
-14.9  Evidências de processo e integridade ✅
-14.10 Preparação para Teams/Classroom
-14.11 Hardening, E2E e release gate
+14.0  Bootstrap e arquitetura                         concluído
+14.1  ActivitySubmission                              concluído
+14.2  SubmissionItem, autosave e envio               concluído
+14.3  Dashboard de entregas                           concluído
+14.4  Correção individual                             concluído
+14.4A Visibilidade/navegação de entregas              concluído
+14.4B Fluxo visual do aluno                           concluído
+14.5  Rubricas e avaliação estruturada                concluído
+14.6  AI-assisted grading                             concluído
+14.7  Feedback individual                             concluído
+14.8  Correção em lote / triagem                      concluído
+14.9  Evidências de processo e integridade            concluído
+14.10 Preparação Teams/Classroom                      concluído
+14.11 Hardening, E2E e release gate                   fechamento
 ```
 
 ## Schema
 
-Maior migration atual: **V20**.
+Maior migration: **V25**.
 
-- `V18` — `activity_submissions`;
-- `V19` — `submission_items`;
-- `V20` — `submission_assessments` (shell de avaliação/rascunho privado).
+- V18 — `activity_submissions`;
+- V19 — `submission_items`;
+- V20 — `submission_assessments`;
+- V21 — rubricas e critérios;
+- V22 — sugestões de avaliação por IA;
+- V23 — feedback de avaliação;
+- V24 — evidências de processo;
+- V25 — vínculos provider-independent de plataformas externas.
 
-O 14.3 é uma projeção de leitura e não exige nova migration.
+## UX de fechamento
 
-## Versionamento
+Polish consolidado no 14.11:
 
-Durante desenvolvimento, os manifests e o release tooling usam `0.6.0-SNAPSHOT`.
+- sessão ao vivo com menos microcopy redundante;
+- escala tipográfica normalizada;
+- `AO VIVO` ao lado do título;
+- encerramento retorna à Home da turma;
+- Timer com melhor ocupação do espaço e presets em linha;
+- cards de turma com altura/footer padronizados;
+- badge `SESSÃO EM ANDAMENTO` no footer;
+- CTAs da Home da turma em largura total e linguagem verde consistente.
 
-Isso diferencia a linha ativa da tag estável `v0.5.0`.
+## Release
 
-## Próximo passo
+Metadata de release: `0.6.0`.
 
-Concluir **14.3 — Dashboard de entregas** e então iniciar **14.4 — Correção individual**.
+O gate local deve ser repetido após o commit final de UI/documentação.
 
+Com a branch limpa e sincronizada:
 
-## Atualização 14.5
+```bash
+scripts/release/release-gate.sh local
+```
 
-Schema atual: **V21** com rubricas e critérios de avaliação estruturada. Nota permanece separada de XP.
+Após merge em `main`, CI verde no mesmo SHA e backup real:
 
+```bash
+scripts/release/release-gate.sh final \
+  --ci-run-url <URL_DO_RUN> \
+  --backup <ARQUIVO.dump>
+```
 
-## Atualização 14.6
-
-Schema atual: **V22** com sugestões de avaliação por IA persistidas e supervisionadas. Aplicar sugestão não conclui nem publica a avaliação.
+Somente depois: tag `v0.6.0` e GitHub Release.
