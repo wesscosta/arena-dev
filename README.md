@@ -1,206 +1,168 @@
 # Arena Dev Community
 
-**Arena Dev Community** is an open-source, self-hosted platform for running and gamifying live classroom dynamics with low friction for the teacher.
+**Arena Dev Community** é uma plataforma open source e self-hosted para condução, participação e gamificação de dinâmicas de sala, com foco em baixa fricção para o professor.
 
-> **Stable release:** `v0.4.0 — Live Classroom`, published from merge commit `ccfb7f9`.
+> **Release estável:** `v0.5.0 — Live Quiz & Structured Responses`.
 >
-> **Current development line:** `v0.5.0 — Live Quiz & Structured Responses`, branch `feat/v0.5-live-quiz`.
+> **Linha em fechamento:** `v0.6.0 — Submissions, Assessment & Feedback`.
 >
-> **Current checkpoint:** `13.7A–13.7E` UX consolidation complete locally. Quiz runtime, structured `/join`, scoring, PWA, classroom identity, safe lifecycle management, dedicated classroom settings and Dark/Light/System themes are implemented. Local release gate is green; remote CI, backup/restore, rollback rehearsal and final gate are still required before `v0.5.0`.
+> **Branch:** `feat/v0.6-submissions-assessment`.
+>
+> **Estado:** implementação funcional concluída até o incremento `14.11`; a release `v0.6.0` ainda depende de commit final do polish, gate local, merge em `main`, CI no SHA final, backup/restore-check e gate final antes da tag.
 
-## Product model
+## Modelo do produto
 
 ```text
-Overview = system level
-Classroom = pedagogical context
-Arena = live classroom operation
+Visão geral = nível do sistema
+Turma       = contexto pedagógico
+Arena       = operação da aula ao vivo
+Entregas    = fluxo assíncrono de submissão, correção e feedback
 ```
 
-Arena Dev centralizes attendance, activities, smart draws, XP, rankings, groups, realtime participation and public projection without becoming a full LMS.
+Arena Dev não pretende ser um LMS completo. O produto concentra a condução da aula, participação dos estudantes, atividades, entregas, avaliação supervisionada e gamificação.
 
-## Main capabilities
+## Capacidades principais
 
-- Classroom, students, enrollment and attendance.
-- Activities and questions.
-- Smart student draw.
-- XP through auditable `ScoreEvent`.
-- Operational classroom timeline through `SessionEvent`.
-- Ranking derived from score events.
-- Individual/pairs/trios/groups.
-- Boss Battle.
-- Buzzer.
-- Synchronized Timer.
-- Word Cloud.
-- Public Projector.
-- Student `/join` with structured Quiz responses.
-- Live Quiz runtime with `MULTIPLE_CHOICE` and `TRUE_FALSE`.
-- Dark / Light / System interface themes.
-- Per-classroom color and semantic icon identity.
-- Dedicated classroom management page with archive and safe hard delete.
-- Structured Live Quiz with `MULTIPLE_CHOICE` and `TRUE_FALSE` responses.
-- Mobile/PWA shell with explicit reconnect and offline-safe boundaries.
-- Classroom visual identity with curated color/icon tokens.
-- Dedicated classroom-management page for identity, appearance, lifecycle and destructive actions.
-- Interface theme preference: Dark, Light or System.
-- Ordered live-flow authoring through `ActivityStep`.
-- Authoritative `LiveStageState` with audience-specific Projector and `/join` projections.
+### Turma e Arena
+- turmas, estudantes, matrículas e presença;
+- sessão de aula com estado autoritativo no backend;
+- Sorteio, Nuvem de Palavras, Votação, Quiz, Buzzer e Boss Battle;
+- Timer sincronizado;
+- grupos, duplas e trios;
+- Projetor público;
+- entrada do aluno por `/join`;
+- ranking e histórico;
+- XP auditável por `ScoreEvent`;
+- timeline operacional por `SessionEvent`.
 
-### Live flow
+### Atividades e entregas — v0.6
+- `ActivitySubmission` como fonte de verdade da entrega;
+- `SubmissionItem` polimórfico para `QUESTION_RESPONSE`, `TEXT`, `LINK`, `CODE` e referências de artefatos;
+- autosave, restauração e envio;
+- dashboard de entregas por atividade;
+- correção individual com navegação entre estudantes;
+- rubricas e critérios estruturados;
+- avaliação manual separada de XP;
+- correção assistida por IA sob supervisão;
+- feedback individual com publicação explícita;
+- preparação/triagem em lote sem autopublicação;
+- evidências de processo e recomendação de revisão humana;
+- fronteira provider-independent para Microsoft Teams e Google Classroom.
+
+## Invariantes de domínio
 
 ```text
-Activity
-└── ActivityStep[]
-    ├── SLIDE
-    ├── QUESTION
-    ├── WORD_CLOUD
-    └── POLL
+ActivityQuestion    = autoria da pergunta
+QuizRound           = runtime do Quiz ao vivo
+ParticipantAnswer   = verdade da resposta do Quiz
+ActivitySubmission  = verdade da entrega da atividade
+SubmissionItem      = conteúdo persistido da entrega
+SubmissionAssessment= avaliação da entrega
+ScoreEvent          = verdade do XP
+LiveStage           = estado público/apresentado
+SessionEvent        = timeline operacional
 ```
 
-`ActivityStep` is authoring data. Runtime interactions belong to the live session. The teacher controls progression manually and the backend is authoritative for the current step.
+A nota da avaliação não substitui `ScoreEvent`. XP continua sendo derivado exclusivamente de eventos de pontuação.
 
-## Architecture
+## IA supervisionada
+
+A IA pode sugerir análise, pontuação por critério e feedback, mas não é autoridade da avaliação.
+
+```text
+entrega
+  ↓
+sugestão da IA
+  ↓
+professor revisa/edita/descarta
+  ↓
+avaliação docente
+  ↓
+publicação explícita
+  ↓
+aluno recebe publishedFeedback
+```
+
+Rascunhos, notas privadas e sugestões da IA não são publicados automaticamente nem preparados para sincronização externa.
+
+## Evidências de processo
+
+A v0.6 registra sinais operacionais para apoiar revisão humana, como eventos de salvamento, colagem, envio, tempo e similaridade textual.
+
+Esses sinais **não** constituem detector de IA, plágio ou fraude. O sistema produz apenas recomendação de revisão (`LOW`, `MEDIUM`, `HIGH`).
+
+## Integrações externas
+
+A arquitetura está preparada para integrações futuras sem contaminar o domínio central:
+
+```text
+Arena Dev
+   ↓
+ActivitySubmission / Assessment
+   ↓
+LearningPlatformGateway
+   ├── Microsoft Teams
+   └── Google Classroom
+```
+
+A v0.6 cria contratos e vínculos externos, mas não ativa adapters reais de sincronização.
+
+## Arquitetura
 
 ```mermaid
 flowchart LR
-    T["Teacher"] --> F["Next.js 16.3.3 + React 19.2"]
-    S["Student /join"] --> F
-    P["Projector"] --> F
+    T["Professor"] --> F["Next.js 16 + React 19"]
+    S["Aluno /join"] --> F
+    P["Projetor"] --> F
     F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
     F <-->|"WebSocket"| B
-    B --> D["PostgreSQL 17 + Flyway"]
+    B --> D["PostgreSQL 17 + Flyway V1–V25"]
 ```
 
-Principles:
+Princípios:
 
-- modular monolith;
-- REST for durable state and administrative commands;
-- WebSocket only for immediate synchronization;
-- backend-authoritative session mechanics;
-- `localStorage` is not a domain source of truth;
-- no Redis, Kafka, Kubernetes or microservices without demonstrated need.
+- monólito modular;
+- REST para estado durável e comandos;
+- WebSocket para sincronização imediata;
+- backend autoritativo para sessão, XP e runtimes;
+- PostgreSQL/Flyway como fonte de verdade persistente;
+- evitar Redis, Kafka, Kubernetes e microserviços sem necessidade demonstrada.
 
-## Stable v0.4 baseline
-
-Completed:
-
-- **12.1** Timer;
-- **12.2** Projector;
-- **12.3** Word Cloud;
-- **12.4A/B/C foundation** ActivityStep, editor and authoritative current-step runtime;
-- **12.3D.6** contextual navigation without redundant sidebar;
-- **12.3D.7A** Design System foundation;
-- **12.3D.7B** Core UI Primitives;
-- **12.3D.7C** Accessibility Pass;
-- **12.3D.7D** Responsive & Visual Polish.
-
-Current foundation and runtime:
-
-- **12.4D.0A** authoritative Live Stage / presentation state;
-- **12.4D.0B** adapters: Draw, Word Cloud, Buzzer and Poll under `Dinâmicas`;
-- **12.4D.0C** `Enrollment.preferredName` + backend-resolved `displayName`;
-- **12.4D.0D** opaque device recognition separated from the temporary participant token;
-- **12.4D.1** Poll/Voting runtime with anonymous aggregate public projection;
-- **12.4E** Live Flow ↔ Live Stage orchestration with prepared Slide/Question projection, runtime reuse for Word Cloud/Poll and Boss stage adapter;
-- **12.4F** public `/join` + Projector consolidation and reconnect hardening;
-- **12.5** chronological `SessionEvent` / operational timeline, separated from reversible `ScoreEvent` history.
-
-Release closure:
-
-- **12.6** hardening, E2E, security/observability and `v0.4.0` release gate — completed;
-- PR #9 merged into `main`;
-- CI run `34428450704` completed successfully;
-- annotated tag `v0.4.0` points to merge commit `ccfb7f9`;
-- GitHub Release `Arena Dev Community v0.4.0` published.
-
-## Current v0.5 direction
-
-`v0.5.0` closes the remaining structured-response gap without turning Arena Dev into a generic quiz platform:
+## Linha v0.6.0
 
 ```text
-ActivityQuestion (authoring)
-        ↓
-QuizRound (live runtime)
-        ↓
-ParticipantAnswer (answer truth)
-        ↓
-evaluation
-        ↓
-ScoreEvent (XP truth)
+14.0  Bootstrap e arquitetura                         concluído
+14.1  ActivitySubmission                              concluído
+14.2  SubmissionItem + autosave + envio              concluído
+14.3  Dashboard de entregas                           concluído
+14.4  Correção individual                             concluído
+14.4A Visibilidade/navegação de entregas              concluído
+14.4B Fluxo visual do aluno                           concluído
+14.5  Rubricas e avaliação estruturada                concluído
+14.6  AI-assisted grading                             concluído
+14.7  Feedback individual                             concluído
+14.8  Correção em lote / triagem                      concluído
+14.9  Evidências de processo e integridade            concluído
+14.10 Preparação Teams/Classroom                      concluído
+14.11 Hardening, E2E e release gate                   em fechamento
 ```
 
-The first supported response types are `MULTIPLE_CHOICE` and `TRUE_FALSE`.
-Open/practical answers, advanced analytics, badges/streaks and AI correction are intentionally outside the initial Quiz Runtime.
+Schema atual da linha: **Flyway V1–V25**.
 
-## Live Stage
+## UX polish do fechamento
 
-```text
-Teacher ──controls──► LiveStageState
-                        ├── primary
-                        ├── audience
-                        └── timer overlay
-                         ↙          ↘
-                  /projector       /join
-```
+O fechamento da v0.6 também consolidou a interface:
 
-Projector and participant UI are different projections of the same authoritative session state. Public clients receive only the data needed for their audience; for example, a projected draw receives `displayName` rather than the student UUID. Specialized events such as `WORD_CLOUD_STATE`, `BUZZER_STATE` and `TIMER_STATE` still own detailed module runtime.
+- remoção de microcopy redundante na sessão ao vivo;
+- escala tipográfica mais consistente;
+- navegação para Home da turma ao encerrar sessão;
+- Timer com layout e presets refinados;
+- badge `AO VIVO` junto ao título da sessão;
+- cards de turmas com altura/footer uniformes;
+- status de sessão no footer do card;
+- CTA `Iniciar Arena` / `Continuar Arena` com largura total e linguagem visual unificada.
 
-See [`docs/INCREMENT_12_4D_0.md`](docs/INCREMENT_12_4D_0.md), [`docs/INCREMENT_12_4D_1.md`](docs/INCREMENT_12_4D_1.md), [`docs/INCREMENT_12_4E.md`](docs/INCREMENT_12_4E.md), [`docs/INCREMENT_12_4F.md`](docs/INCREMENT_12_4F.md), ADR-0027, ADR-0028, ADR-0029 and ADR-0030.
-
-## Operational timeline
-
-`SessionEvent` records high-level classroom facts without replacing their authoritative domains:
-
-```text
-ScoreEvent        → XP truth
-Poll/WordCloud    → response truth
-Buzzer/Timer/Boss → runtime truth
-SessionEvent      → chronological operational projection
-```
-
-The History view separates `Linha do tempo` from `Histórico de XP`. Individual votes, words, Buzzer presses, reconnects and timer ticks are deliberately excluded from the operational timeline. See [`docs/INCREMENT_12_5.md`](docs/INCREMENT_12_5.md) and ADR-0031.
-
-## Poll semantics
-
-```text
-POLL       = opinion / diagnostic / collective single-choice
-QUESTION   = evaluated question / correctness / XP
-WORD_CLOUD = free-text collective response
-```
-
-Poll public results are aggregated and anonymous. Identity is used only for uniqueness/audit rules.
-
-## Design System and accessibility
-
-New UI must reuse the existing primitives:
-
-```text
-Button
-IconButton
-Badge
-Tabs
-Menu
-Breadcrumb
-Field
-Card
-EmptyState
-LiveRegion
-```
-
-Style layers:
-
-```text
-frontend/styles/
-├── tokens.css
-├── base.css
-├── accessibility.css
-└── arena-polish.css
-```
-
-Requirements include keyboard operation, visible focus, semantic hierarchy, contrast, reduced motion, zoom/reflow and controlled `aria-live`.
-
-See [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) and [`docs/ACCESSIBILITY.md`](docs/ACCESSIBILITY.md).
-
-## Running locally
+## Executando localmente
 
 ```bash
 git clone https://github.com/wesscosta/arena-dev.git
@@ -214,11 +176,18 @@ Frontend: `http://localhost:3000`
 
 Backend: `http://localhost:8080`
 
-Health readiness: `http://localhost:8080/api/health/ready`
+Readiness: `http://localhost:8080/api/health/ready`
 
-Health liveness: `http://localhost:8080/api/health/live`
+Liveness: `http://localhost:8080/api/health/live`
 
-## Development gates
+## Gates de desenvolvimento
+
+Backend:
+
+```bash
+cd backend
+mvn -B -ntp verify
+```
 
 Frontend:
 
@@ -229,85 +198,43 @@ npm run typecheck
 npm run build
 ```
 
-Backend changes:
+Gate completo da release:
 
 ```bash
-cd backend
-mvn -B -ntp verify
+scripts/release/release-gate.sh local
 ```
 
-Compose:
+Após merge em `main`, CI verde no mesmo SHA e backup real:
 
 ```bash
-docker compose up -d --build
-sleep 5
-docker compose ps
+scripts/release/release-gate.sh final \
+  --ci-run-url <URL_DO_RUN> \
+  --backup <ARQUIVO.dump>
 ```
 
-## Stable release v0.3.0
+A tag `v0.6.0` só deve ser criada após o gate final verde.
 
-- commit: `6015d6d416edc26bfb8295c2aa6af141b9d6b9ad`;
-- final recorded CI: `33964844054`;
-- release: <https://github.com/wesscosta/arena-dev/releases/tag/v0.3.0>;
-- MIT licensed.
-
-`v0.1-legacy`, `v0.2.0` and `v0.2.1` belong to the old desktop application and are not web rollback targets.
-
-The `v0.3.0` tag is frozen and must not be moved or recreated.
-
-## v0.5.0 release candidate metadata
-
-Maven, npm and release tooling are aligned on `0.5.0`.
-
-The current candidate is functionally closed locally through **13.7E**:
-
-- Quiz Runtime and structured participant responses;
-- results/reveal on `/join` and Projector;
-- evaluation through `ScoreEvent`;
-- pedagogical feedback;
-- Mobile/PWA;
-- Students UX and classroom visual identity (`V17`);
-- safe explicit hard delete;
-- distinct Start/Resume Arena CTAs;
-- dedicated classroom-management page;
-- Dark/Light/System theme preference.
-
-The complete **local release gate is green**. This does **not** mean `v0.5.0` is published.
-
-Before the tag can be created, the exact final SHA must still pass:
-
-```text
-commit/push
-PR + merge
-CI green on final SHA
-real PostgreSQL backup + SHA-256
-restore-check PostgreSQL 17 / Flyway V1–V17
-rollback/restore rehearsal
-scripts/release/release-gate.sh final
-```
-
-The annotated `v0.5.0` tag is created only after those evidences are recorded.
-
-## Documentation
-
-Current:
+## Documentação corrente
 
 - [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
-- [`docs/ROADMAP_0_5.md`](docs/ROADMAP_0_5.md)
-- [`docs/RELEASE_0_5_0.md`](docs/RELEASE_0_5_0.md)
-- [`docs/INCREMENT_13_7.md`](docs/INCREMENT_13_7.md)
-- [`docs/INCREMENT_13_7A.md`](docs/INCREMENT_13_7A.md)
-- [`docs/INCREMENT_13_7B.md`](docs/INCREMENT_13_7B.md)
-- [`docs/INCREMENT_13_7C.md`](docs/INCREMENT_13_7C.md)
-- [`docs/INCREMENT_13_7D.md`](docs/INCREMENT_13_7D.md)
-- [`docs/INCREMENT_13_7E.md`](docs/INCREMENT_13_7E.md)
+- [`docs/ROADMAP_0_6.md`](docs/ROADMAP_0_6.md)
+- [`docs/RELEASE_0_6.md`](docs/RELEASE_0_6.md)
+- [`docs/INCREMENT_14_0.md`](docs/INCREMENT_14_0.md) até [`docs/INCREMENT_14_11.md`](docs/INCREMENT_14_11.md)
+- [`docs/POLISH_14_11C_UI_FINAL.md`](docs/POLISH_14_11C_UI_FINAL.md)
 - [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md)
 - [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)
 - [`docs/ACCESSIBILITY.md`](docs/ACCESSIBILITY.md)
 - [`docs/adr/README.md`](docs/adr/README.md)
 
-Historical `INCREMENT_*.md` documents remain versioned as implementation history.
+Documentos das linhas v0.3, v0.4 e v0.5 permanecem versionados como histórico.
 
-## License
+## Releases
+
+- `v0.3.0` — histórica;
+- `v0.4.0` — histórica;
+- `v0.5.0` — estável publicada;
+- `v0.6.0` — candidata em fechamento, ainda não tagueada.
+
+## Licença
 
 MIT.
