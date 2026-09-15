@@ -2459,14 +2459,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             <div>
               <span className="eyebrow accent">FONTE DA ARENA</span>
               <strong>{activeActivity?.title ?? "Modo livre"}</strong>
-              <small>
-                {activeActivity
-                  ? liveFlowState?.activityId === activeActivity.id
-                    && liveFlowState.steps.length > 0
-                    ? `${liveFlowState.steps.length} blocos no Roteiro ao Vivo`
-                    : `${activeActivity.questions?.length ?? 0} questões disponíveis`
-                  : "Pergunte oralmente ou utilize qualquer recurso da aula"}
-              </small>
             </div>
             <select className="select" value={currentSession.activityId ?? ""} onChange={(e) => { void changeArenaActivity(e.target.value); }}>
               <option value="">Modo livre</option>
