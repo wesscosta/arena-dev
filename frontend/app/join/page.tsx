@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import StudentActivitiesPanel from "@/components/StudentActivitiesPanel";
 import {
   connectSessionSocket,
   fetchPublicSession,
@@ -449,6 +450,8 @@ export default function JoinPage() {
                 <button type="button" onClick={reconnectNow}>Tentar agora</button>
               </div>
             )}
+
+            <StudentActivitiesPanel access={access} disabled={sessionFinished || !browserOnline} />
 
             {!sessionFinished && liveStage.primary.type === "QUESTION" && liveStage.primary.step?.question && (
               <section className={stepStyles.card}>
