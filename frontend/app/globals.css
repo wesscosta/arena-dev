@@ -2138,3 +2138,23 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
     width: 100%;
   }
 }
+
+
+/* 14.11A — pequeno reforço tipográfico na Fonte da Arena */
+.arena-activity-strip h3{
+  font-size: 1rem;
+  line-height: 1.15;
+}
+.arena-activity-strip p{
+  font-size: 1rem;
+  line-height: 1.25;
+}
+.arena-activity-strip small{
+  font-size: 0.875rem;
+}
+.arena-activity-strip select,
+.arena-activity-strip button,
+.arena-activity-strip [role="combobox"],
+.arena-activity-strip [data-slot="trigger"]{
+  font-size: 1rem;
+}
