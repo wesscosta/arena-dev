@@ -1,127 +1,132 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 13 de setembro de 2026
+**Última sincronização documental:** 15 de setembro de 2026
 
-**Release estável:** `v0.4.0 — Live Classroom`.
+**Release estável:** `v0.5.0 — Live Quiz & Structured Responses`.
 
-**Linha ativa:** `v0.5.0 — Live Quiz & Structured Responses`.
+**Linha em fechamento:** `v0.6.0 — Submissions, Assessment & Feedback`.
 
-**Branch de desenvolvimento:** `feat/v0.5-live-quiz`.
+**Branch:** `feat/v0.6-submissions-assessment`.
 
-**Checkpoint:** `13.7A–13.7E concluídos localmente; release-gate local verde; fechamento remoto/backup pendente`.
+**Checkpoint:** `14.11 — Hardening, E2E, release gate e polish final de UI`.
 
-Este arquivo é a referência técnica versionada do estado corrente.
+## Estado resumido
 
-## Baseline pública v0.4.0
+A implementação funcional da v0.6 está concluída até o 14.11. A branch contém o domínio de submissões, avaliação estruturada, IA supervisionada, feedback publicado, triagem, evidências de processo e preparação provider-independent para Teams/Classroom.
+
+A release **ainda não está publicada**. Antes da tag `v0.6.0` faltam:
 
 ```text
-PR final        #9
-head do PR      23526d9fdd37e72311272a5c4c29876552e98ccc
-merge main      ccfb7f937e7ac7db330cfa5e54c3e3816b69962f
-CI final        34428450704 — SUCCESS
-tag             v0.4.0
-schema          Flyway V1–V14
+commit final do polish/documentação
+gate local completo
+PR + merge em main
+CI verde no SHA final
+backup real + SHA-256
+restore-check PostgreSQL 17 / Flyway V1–V25
+release-gate.sh final
+tag anotada v0.6.0
+GitHub Release
 ```
 
-A tag `v0.4.0` está congelada.
-
-## Stack
-
-| Camada | Estado |
-| --- | --- |
-| Frontend | Next.js 16.3.3, React 19.2, TypeScript 5.9 |
-| Backend | Java 21, Spring Boot 4.1 |
-| Persistência | PostgreSQL 17, JPA/Hibernate, Flyway |
-| Realtime | Spring WebSocket |
-| Infra local | Docker Compose |
-| Arquitetura | monólito modular |
-
-## Baseline funcional herdada da v0.4
-
-- Timer, Projector e `/join`;
-- Word Cloud, Poll, Buzzer, Sorteio e Boss Battle;
-- `ActivityStep`, Live Flow e `LiveStageState`;
-- reconnect com `RUNTIME_SNAPSHOT`;
-- `preferredName` e device claim opaco;
-- `SessionEvent` como timeline operacional;
-- `ScoreEvent` como fonte de verdade do XP;
-- hardening de login, request correlation e health live/ready;
-- navegação contextual sem sidebar redundante.
-
-## v0.5 — objetivo
+## Baseline estável
 
 ```text
-Professor apresenta questão
-        ↓
-Aluno responde no /join
-        ↓
-Backend registra resposta
-        ↓
-Professor acompanha participação
-        ↓
-Resultado é revelado
-        ↓
-Avaliação pode gerar ScoreEvent
+v0.5.0
+merge main      55c76e96cb3726fbe7fee0bd09f26ad8ce43ccfe
+schema          Flyway V1–V17
 ```
 
-## Invariantes arquiteturais
+A tag `v0.5.0` está congelada.
+
+## Domínio v0.6
 
 ```text
-ActivityQuestion    = autoria da pergunta
-QuizRound           = runtime da rodada ao vivo
-ParticipantAnswer   = verdade da resposta enviada
-ScoreEvent          = verdade do XP
-LiveStage           = verdade do que está apresentado
-SessionEvent        = projeção cronológica operacional
+Activity
+  ↓
+ActivitySubmission
+  ↓
+SubmissionItem
+  ↓
+SubmissionAssessment
+  ├── AssessmentCriterion
+  ├── AI suggestion
+  ├── teacher review
+  └── publishedFeedback
 ```
 
-Não criar `QuizScore` como fonte paralela de XP.
-
-Não duplicar `ActivityQuestion` dentro do runtime.
-
-## Escopo incremental
+Invariantes:
 
 ```text
-13.0  Bootstrap documental                         concluído
-13.1  Quiz Runtime                                 concluído
-13.2  Respostas estruturadas no /join              concluído
-13.3  Resultados + Projetor                        concluído
-13.4  Avaliação + integração com ScoreEvent        concluído
-13.5  Feedback pedagógico                          concluído
-13.6  Mobile/PWA                                   concluído
-13.7  Hardening/E2E + gate v0.5.0                  gate local completo verde
-13.7A Students UX + identidade visual + V17        concluído
-13.7B Finish polish + hard delete seguro           concluído
-13.7C Iniciar/Continuar Arena distintos            concluído
-13.7D Gerenciar turma como página dedicada         concluído
-13.7E Tema Escuro/Claro/Sistema                    concluído
+ParticipantAnswer = resposta do Quiz ao vivo
+ActivitySubmission= entrega geral de atividade
+ScoreEvent         = fonte de verdade do XP
+nota               ≠ XP
+IA                 = sugestão, nunca autoridade
+```
+
+## Incrementos
+
+```text
+14.0  Bootstrap e arquitetura                         concluído
+14.1  ActivitySubmission                              concluído
+14.2  SubmissionItem, autosave e envio               concluído
+14.3  Dashboard de entregas                           concluído
+14.4  Correção individual                             concluído
+14.4A Visibilidade/navegação de entregas              concluído
+14.4B Fluxo visual do aluno                           concluído
+14.5  Rubricas e avaliação estruturada                concluído
+14.6  AI-assisted grading                             concluído
+14.7  Feedback individual                             concluído
+14.8  Correção em lote / triagem                      concluído
+14.9  Evidências de processo e integridade            concluído
+14.10 Preparação Teams/Classroom                      concluído
+14.11 Hardening, E2E e release gate                   fechamento
 ```
 
 ## Schema
 
-Maior migration atual: **V17**.
+Maior migration: **V25**.
 
-`V15__quiz_runtime.sql` adiciona `quiz_rounds` e `quiz_participant_answers`.
+- V18 — `activity_submissions`;
+- V19 — `submission_items`;
+- V20 — `submission_assessments`;
+- V21 — rubricas e critérios;
+- V22 — sugestões de avaliação por IA;
+- V23 — feedback de avaliação;
+- V24 — evidências de processo;
+- V25 — vínculos provider-independent de plataformas externas.
 
-`V16__quiz_evaluation_score_event.sql` adiciona avaliação persistida e vínculo idempotente com `ScoreEvent`.
+## UX de fechamento
 
-`V17__classroom_theme_identity.sql` adiciona `theme_color` e `theme_icon` à turma.
+Polish consolidado no 14.11:
 
-## Versionamento
+- sessão ao vivo com menos microcopy redundante;
+- escala tipográfica normalizada;
+- `AO VIVO` ao lado do título;
+- encerramento retorna à Home da turma;
+- Timer com melhor ocupação do espaço e presets em linha;
+- cards de turma com altura/footer padronizados;
+- badge `SESSÃO EM ANDAMENTO` no footer;
+- CTAs da Home da turma em largura total e linguagem verde consistente.
 
-Os manifests e o release tooling estão alinhados em `0.5.0` para o release candidate. Isso não autoriza a tag antes dos gates final e de backup/restore.
+## Release
 
-## Próximo passo
+Metadata de release: `0.6.0`.
 
-O gate local do release candidate está verde. O próximo passo é versionar o mesmo estado validado, fazer push da branch `feat/v0.5-live-quiz`, abrir PR para `main` e exigir CI verde no SHA final.
+O gate local deve ser repetido após o commit final de UI/documentação.
 
-Depois do merge/CI ainda são obrigatórios:
+Com a branch limpa e sincronizada:
 
-- backup real;
-- SHA-256 do backup;
-- restore-check PostgreSQL 17 / Flyway V1–V17;
-- ensaio de rollback/restore;
-- `scripts/release/release-gate.sh final` no mesmo SHA;
-- somente então tag anotada `v0.5.0` e GitHub Release.
+```bash
+scripts/release/release-gate.sh local
+```
 
-Nenhuma evidência de CI remoto, backup/restore ou gate final deve ser inferida a partir do gate local.
+Após merge em `main`, CI verde no mesmo SHA e backup real:
+
+```bash
+scripts/release/release-gate.sh final \
+  --ci-run-url <URL_DO_RUN> \
+  --backup <ARQUIVO.dump>
+```
+
+Somente depois: tag `v0.6.0` e GitHub Release.

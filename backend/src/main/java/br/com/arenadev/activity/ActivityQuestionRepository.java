@@ -2,7 +2,9 @@ package br.com.arenadev.activity;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface ActivityQuestionRepository extends JpaRepository<ActivityQuestion, UUID> {
+    List<ActivityQuestion> findByActivityIdOrderByPositionAsc(UUID activityId);
 }

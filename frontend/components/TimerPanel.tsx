@@ -360,10 +360,6 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
             <div>
               <span className="eyebrow accent">NOVO TEMPORIZADOR</span>
               <h3>{timer ? "Preparar o próximo tempo" : "Defina o tempo da atividade"}</h3>
-              <p>
-                Configure horas, minutos e segundos ou escolha um atalho. O Timer continua
-                vinculado à sessão atual.
-              </p>
             </div>
             <div className="timer-selected-duration">
               <small>DURAÇÃO</small>
@@ -449,7 +445,6 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
                 />
                 <div>
                   <strong>Abrir em tela cheia ao iniciar</strong>
-                  <small>O professor pode minimizar sem interromper o Timer.</small>
                 </div>
               </label>
             </div>
