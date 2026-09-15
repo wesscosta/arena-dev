@@ -208,6 +208,29 @@ public class SessionJoinService {
     }
 
     @Transactional(readOnly = true)
+    public JoinAccessView validateJoinAccess(String rawCode, String token) {
+        SessionJoinCode joinCode = getUsableCode(rawCode);
+        SessionParticipant participant = validateParticipantToken(joinCode.getSession().getId(), token);
+        ClassSession session = joinCode.getSession();
+        Student student = participant.getStudent();
+        return new JoinAccessView(
+                token,
+                joinCode.getCode(),
+                session.getId(),
+                session.getClassroom().getName(),
+                session.getTitle(),
+                participant.getId(),
+                student.getId(),
+                student.getRegistration(),
+                student.getName(),
+                student.getNickname(),
+                displayNameService.resolve(session.getClassroom().getId(), student, DisplayNamePolicy.PREFERRED_NAME),
+                participant.isPresent(),
+                joinCode.getExpiresAt()
+        );
+    }
+
+    @Transactional(readOnly = true)
     public SessionParticipant validateParticipantToken(UUID sessionId, String token) {
         if (token == null || token.isBlank()) {
             throw new IllegalArgumentException("Token de participante ausente.");

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test, { afterEach } from "node:test";
-import { emptyQuizParticipantState, sendQuizAnswer } from "../lib/quiz-api";
+import { emptyQuizParticipantState, quizOptionMatchesAnswer, sendQuizAnswer } from "../lib/quiz-api";
 
 const originalFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = originalFetch; });
@@ -67,4 +67,11 @@ test("empty participant quiz state never exposes a correction", () => {
     submittedAt: null,
     updatedAt: null,
   });
+});
+
+test("matches multiple-choice and true-false answers without leaking correction state", () => {
+  assert.equal(quizOptionMatchesAnswer("A", "A"), true);
+  assert.equal(quizOptionMatchesAnswer("A", "B"), false);
+  assert.equal(quizOptionMatchesAnswer("true", true), true);
+  assert.equal(quizOptionMatchesAnswer("false", false), true);
 });

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import TeacherLogin from "@/components/TeacherLogin";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import ActivityStepEditor from "@/components/ActivityStepEditor";
+import ActivitySubmissionDashboard from "@/components/ActivitySubmissionDashboard";
 import LiveFlowConductor from "@/components/LiveFlowConductor";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
@@ -560,6 +561,9 @@ export default function ArenaApp() {
                 sessionParticipants={data.sessionParticipants.filter((item) => item.sessionId === currentSession?.id)}
                 preferredActivityId={arenaActivityId}
                 onPreferredActivityChange={setArenaActivityId}
+                onSessionEnded={() => {
+                  openClassroom("home");
+                }}
                 patch={patch}
                 notify={notify}
               />
@@ -831,13 +835,9 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
                   <div className="overview-class-identity">
                     <div className="classroom-monogram">{classroom.name.trim().charAt(0).toUpperCase()}</div>
                     <div>
-                      {(session || !classroom.active) && (
+                      {!classroom.active && (
                         <div className="status-line">
-                          {session ? (
-                            <span className="live-pill compact"><span /> SESSÃO EM ANDAMENTO</span>
-                          ) : (
-                            <span className="status">Inativa</span>
-                          )}
+                          <span className="status">Inativa</span>
                         </div>
                       )}
                       <h3>{classroom.name}</h3>
@@ -914,8 +914,14 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
                   <div><strong>{eventCount}</strong><span>eventos XP</span></div>
                 </div>
                 <div className="overview-class-card-foot">
-                  <span>{session ? `Em aula · ${session.title}` : classroom.active ? "Clique para abrir a turma" : "Arquivada do fluxo ativo"}</span>
-                  <strong>Abrir →</strong>
+                  <span>
+                    {session ? (
+                      <span className="live-pill compact"><span /> SESSÃO EM ANDAMENTO</span>
+                    ) : classroom.active ? null : (
+                      "Arquivada do fluxo ativo"
+                    )}
+                  </span>
+                  <strong>Abrir</strong>
                 </div>
               </article>
             );
@@ -1746,7 +1752,7 @@ function ClassroomManagementPage({
 }
 
 
-function ArenaView({ data, classroomId, students, currentSession, sessionParticipants, preferredActivityId, onPreferredActivityChange, patch, notify }: {
+function ArenaView({ data, classroomId, students, currentSession, sessionParticipants, preferredActivityId, onPreferredActivityChange, onSessionEnded, patch, notify }: {
   data: ArenaData;
   classroomId: string;
   students: Student[];
@@ -1754,6 +1760,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   sessionParticipants: SessionParticipant[];
   preferredActivityId?: string;
   onPreferredActivityChange: (activityId?: string) => void;
+  onSessionEnded: () => void;
   patch: (updater: (current: ArenaData) => ArenaData) => void;
   notify: (message: string) => void;
 }) {
@@ -1991,6 +1998,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       setLiveFlowState(null);
       onPreferredActivityChange(undefined);
       notify("Sessão encerrada e persistida.");
+
+      // Navega em uma nova task depois que o estado da sessão foi limpo.
+      window.setTimeout(() => {
+        onSessionEnded();
+      }, 0);
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -2388,9 +2400,10 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     <div className="stack-lg arena-session-workspace">
       <div className="arena-header compact">
         <div>
-          <Badge variant="live" dot>AO VIVO</Badge>
-          <h2>{currentSession.title}</h2>
-          <p>{currentSession.presentStudentIds.length} presentes · iniciada {dateTime(currentSession.startedAt)}</p>
+          <div className="arena-session-title-row">
+            <h2>{currentSession.title}</h2>
+            <Badge variant="live" dot>AO VIVO</Badge>
+          </div>
         </div>
         <div className="topbar-actions arena-session-actions">
           <Button
@@ -2445,45 +2458,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           );
         }}
         items={[
-          {
-            id: "live",
-            label: "Condução",
-            description: activeActivity?.title ?? "Modo livre",
-          },
-          {
-            id: "interactions",
-            label: "Dinâmicas",
-            description:
-              buzzerState.status === "OPEN"
-                ? "Buzzer aberto"
-                : wordCloudState.round?.status === "COLLECTING"
-                  ? "Nuvem coletando"
-                  : selected
-                    ? `Sorteio · ${selected.nickname || selected.name}`
-                    : "Sorteio · Nuvem · Buzzer",
-          },
-          {
-            id: "timer",
-            label: "Tempo",
-            description: timerState.timer?.title ?? "Controle de tempo",
-          },
-          {
-            id: "presence",
-            label: "Participantes",
-            description: `${currentSession.presentStudentIds.length}/${sessionParticipants.length} presentes`,
-          },
-          {
-            id: "groups",
-            label: "Organização",
-            description:
-              groupSize === 1
-                ? "Individual"
-                : groupSize === 2
-                  ? "Duplas"
-                  : groupSize === 3
-                    ? "Trios"
-                    : `Grupos de ${groupSize}`,
-          },
+          { id: "live", label: "Condução" },
+          { id: "interactions", label: "Dinâmicas" },
+          { id: "timer", label: "Tempo" },
+          { id: "presence", label: "Participantes" },
+          { id: "groups", label: "Organização" },
         ] satisfies TabItem[]}
       />
 
@@ -2493,14 +2472,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             <div>
               <span className="eyebrow accent">FONTE DA ARENA</span>
               <strong>{activeActivity?.title ?? "Modo livre"}</strong>
-              <small>
-                {activeActivity
-                  ? liveFlowState?.activityId === activeActivity.id
-                    && liveFlowState.steps.length > 0
-                    ? `${liveFlowState.steps.length} blocos no Roteiro ao Vivo`
-                    : `${activeActivity.questions?.length ?? 0} questões disponíveis`
-                  : "Pergunte oralmente ou utilize qualquer recurso da aula"}
-              </small>
             </div>
             <select className="select" value={currentSession.activityId ?? ""} onChange={(e) => { void changeArenaActivity(e.target.value); }}>
               <option value="">Modo livre</option>
@@ -2597,7 +2568,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span>◎</span>
               <div>
                 <strong>Sorteio</strong>
-                <small>{selected ? `Último: ${selected.nickname || selected.name}` : "Sorteio inteligente da turma"}</small>
               </div>
             </button>
 
@@ -2611,15 +2581,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span>☁</span>
               <div>
                 <strong>Nuvem de Palavras</strong>
-                <small>
-                  {wordCloudState.round
-                    ? wordCloudState.round.status === "COLLECTING"
-                      ? "Coletando respostas"
-                      : wordCloudState.round.status === "REVEALED"
-                        ? "Respostas reveladas"
-                        : "Rodada encerrada"
-                    : "Criar dinâmica aberta"}
-                </small>
               </div>
             </button>
 
@@ -2633,15 +2594,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span>◉</span>
               <div>
                 <strong>Votação</strong>
-                <small>
-                  {pollState.round
-                    ? pollState.round.status === "OPEN"
-                      ? `${pollState.round.totalVotes} voto(s)`
-                      : pollState.round.status === "REVEALED"
-                        ? "Resultados revelados"
-                        : "Rodada encerrada"
-                    : "Criar votação rápida"}
-                </small>
               </div>
             </button>
 
@@ -2655,19 +2607,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span>?</span>
               <div>
                 <strong>Quiz</strong>
-                <small>
-                  {quizState.round
-                    ? quizState.round.status === "OPEN"
-                      ? `${quizState.round.totalAnswers} resposta(s)`
-                      : quizState.round.status === "LOCKED"
-                        ? "Respostas bloqueadas"
-                        : quizState.round.status === "REVEALED"
-                          ? "Resultado revelado"
-                          : quizState.round.status === "READY"
-                            ? "Preparado"
-                            : "Rodada encerrada"
-                    : "Questão com resposta estruturada"}
-                </small>
               </div>
             </button>
 
@@ -2681,13 +2620,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span>⚡</span>
               <div>
                 <strong>Buzzer</strong>
-                <small>
-                  {buzzerState.status === "OPEN"
-                    ? "Rodada valendo"
-                    : buzzerState.status === "CLOSED"
-                      ? "Rodada encerrada"
-                      : "Abrir rodada rápida"}
-                </small>
               </div>
             </button>
             <button
@@ -2700,11 +2632,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span>◆</span>
               <div>
                 <strong>Boss Battle</strong>
-                <small>
-                  {currentSession.boss
-                    ? `${currentSession.boss.currentHp}/${currentSession.boss.maxHp} HP`
-                    : "Objetivo coletivo com HP"}
-                </small>
               </div>
             </button>
           </div>
@@ -2934,6 +2861,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   const [stepsLoading, setStepsLoading] = useState(false);
   const [stepsDirty, setStepsDirty] = useState(false);
   const [deliveryActivityId, setDeliveryActivityId] = useState<string | undefined>();
+  const [dashboardActivityId, setDashboardActivityId] = useState<string | undefined>();
   const [externalResultActivityId, setExternalResultActivityId] = useState<string | undefined>();
   const [delivered, setDelivered] = useState<string[]>([]);
   const [onTime, setOnTime] = useState<string[]>([]);
@@ -2948,6 +2876,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   const otherClassrooms = data.classrooms.filter((classroom) => classroom.id !== classroomId);
   const sourceActivities = data.activities.filter((activity) => activity.classroomId === sourceClassroomId);
   const deliveryActivity = classActivities.find((activity) => activity.id === deliveryActivityId);
+  const dashboardActivity = classActivities.find((activity) => activity.id === dashboardActivityId);
   const externalResultActivity = classActivities.find((activity) => activity.id === externalResultActivityId);
   const activityEvents = data.scoreEvents.filter((event) => event.classroomId === classroomId && (event.source === "ACTIVITY" || event.category === "SUBMISSION"));
   const totalQuestions = classActivities.reduce((sum, activity) => sum + (activity.questions?.length ?? 0), 0);
@@ -3214,7 +3143,15 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
         <Metric label="Integração" value="Arena" hint="atividades podem alimentar desafios" />
       </div>
 
-      <Panel title="Atividades da turma" subtitle="Abra para editar, registrar entregas ou usar as questões diretamente na Arena">
+      {dashboardActivity && (
+        <ActivitySubmissionDashboard
+          activityId={dashboardActivity.id}
+          activityTitle={dashboardActivity.title}
+          onClose={() => setDashboardActivityId(undefined)}
+        />
+      )}
+
+      <Panel title="Atividades da turma" subtitle="Abra para editar, acompanhar entregas ou usar as questões diretamente na Arena">
         {classActivities.length ? (
           <div className="activity-catalog">
             {classActivities.map((activity) => {
@@ -3237,7 +3174,8 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
                   {activity.resource?.kind === "EXTERNAL" && activity.resource.url && <a className="activity-resource-link" href={activity.resource.url} target="_blank" rel="noreferrer">Abrir recurso externo ↗</a>}
                   <div className="activity-card-actions">
                     <button className="button ghost" onClick={() => openActivity(activity)}>Abrir / editar</button>
-                    <button className="button" onClick={() => openDelivery(activity)}>Registrar entrega</button>
+                    <button className="button" onClick={() => setDashboardActivityId(activity.id)}>Entregas</button>
+                    <button className="button" onClick={() => openDelivery(activity)}>Registrar XP manual</button>
                     {activity.resource?.kind === "EXTERNAL" && <button className="button" onClick={() => openExternalResults(activity)}>Importar resultados</button>}
                     <button className="button primary" disabled={!(activity.questions?.length)} onClick={() => onUseInArena(activity.id)}>Usar na Arena</button>
                   </div>
