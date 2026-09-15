@@ -83,6 +83,8 @@ A Arena deve permitir correção individual e assistida por IA, mas o professor 
 - separar nota de XP.
 
 ### 14.6 — AI-assisted grading
+**Estado:** implementação local.
+
 - provider-agnostic;
 - contexto mínimo necessário;
 - nota/feedback sugeridos;

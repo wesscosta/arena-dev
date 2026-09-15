@@ -52,3 +52,4 @@ Atualizado em 13/09/2026 para o bootstrap da v0.6.0.
 - [`INCREMENT_14_4.md`](INCREMENT_14_4.md)
 
 - [`INCREMENT_14_5.md`](INCREMENT_14_5.md)
+- `INCREMENT_14_6.md` — AI-assisted grading supervisionado.
