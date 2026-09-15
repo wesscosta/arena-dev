@@ -94,7 +94,7 @@ A v0.6 não implementa ainda a integração completa.
 14.6  AI-assisted grading
 14.7  Feedback individual ✅
 14.8  Correção em lote / triagem ✅
-14.9  Evidências de processo e integridade
+14.9  Evidências de processo e integridade ✅
 14.10 Preparação para Teams/Classroom
 14.11 Hardening, E2E e release gate
 ```
