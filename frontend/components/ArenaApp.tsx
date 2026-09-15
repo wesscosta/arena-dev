@@ -2391,7 +2391,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         <div>
           <Badge variant="live" dot>AO VIVO</Badge>
           <h2>{currentSession.title}</h2>
-          <p>{currentSession.presentStudentIds.length} presentes · iniciada {dateTime(currentSession.startedAt)}</p>
         </div>
         <div className="topbar-actions arena-session-actions">
           <Button
@@ -2446,45 +2445,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           );
         }}
         items={[
-          {
-            id: "live",
-            label: "Condução",
-            description: activeActivity?.title ?? "Modo livre",
-          },
-          {
-            id: "interactions",
-            label: "Dinâmicas",
-            description:
-              buzzerState.status === "OPEN"
-                ? "Buzzer aberto"
-                : wordCloudState.round?.status === "COLLECTING"
-                  ? "Nuvem coletando"
-                  : selected
-                    ? `Sorteio · ${selected.nickname || selected.name}`
-                    : "Sorteio · Nuvem · Buzzer",
-          },
-          {
-            id: "timer",
-            label: "Tempo",
-            description: timerState.timer?.title ?? "Controle de tempo",
-          },
-          {
-            id: "presence",
-            label: "Participantes",
-            description: `${currentSession.presentStudentIds.length}/${sessionParticipants.length} presentes`,
-          },
-          {
-            id: "groups",
-            label: "Organização",
-            description:
-              groupSize === 1
-                ? "Individual"
-                : groupSize === 2
-                  ? "Duplas"
-                  : groupSize === 3
-                    ? "Trios"
-                    : `Grupos de ${groupSize}`,
-          },
+          { id: "live", label: "Condução" },
+          { id: "interactions", label: "Dinâmicas" },
+          { id: "timer", label: "Tempo" },
+          { id: "presence", label: "Participantes" },
+          { id: "groups", label: "Organização" },
         ] satisfies TabItem[]}
       />
 
@@ -2598,7 +2563,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span>◎</span>
               <div>
                 <strong>Sorteio</strong>
-                <small>{selected ? `Último: ${selected.nickname || selected.name}` : "Sorteio inteligente da turma"}</small>
               </div>
             </button>
 
@@ -2612,15 +2576,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span>☁</span>
               <div>
                 <strong>Nuvem de Palavras</strong>
-                <small>
-                  {wordCloudState.round
-                    ? wordCloudState.round.status === "COLLECTING"
-                      ? "Coletando respostas"
-                      : wordCloudState.round.status === "REVEALED"
-                        ? "Respostas reveladas"
-                        : "Rodada encerrada"
-                    : "Criar dinâmica aberta"}
-                </small>
               </div>
             </button>
 
@@ -2634,15 +2589,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span>◉</span>
               <div>
                 <strong>Votação</strong>
-                <small>
-                  {pollState.round
-                    ? pollState.round.status === "OPEN"
-                      ? `${pollState.round.totalVotes} voto(s)`
-                      : pollState.round.status === "REVEALED"
-                        ? "Resultados revelados"
-                        : "Rodada encerrada"
-                    : "Criar votação rápida"}
-                </small>
               </div>
             </button>
 
@@ -2656,19 +2602,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span>?</span>
               <div>
                 <strong>Quiz</strong>
-                <small>
-                  {quizState.round
-                    ? quizState.round.status === "OPEN"
-                      ? `${quizState.round.totalAnswers} resposta(s)`
-                      : quizState.round.status === "LOCKED"
-                        ? "Respostas bloqueadas"
-                        : quizState.round.status === "REVEALED"
-                          ? "Resultado revelado"
-                          : quizState.round.status === "READY"
-                            ? "Preparado"
-                            : "Rodada encerrada"
-                    : "Questão com resposta estruturada"}
-                </small>
               </div>
             </button>
 
@@ -2682,13 +2615,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span>⚡</span>
               <div>
                 <strong>Buzzer</strong>
-                <small>
-                  {buzzerState.status === "OPEN"
-                    ? "Rodada valendo"
-                    : buzzerState.status === "CLOSED"
-                      ? "Rodada encerrada"
-                      : "Abrir rodada rápida"}
-                </small>
               </div>
             </button>
             <button
@@ -2701,11 +2627,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span>◆</span>
               <div>
                 <strong>Boss Battle</strong>
-                <small>
-                  {currentSession.boss
-                    ? `${currentSession.boss.currentHp}/${currentSession.boss.maxHp} HP`
-                    : "Objetivo coletivo com HP"}
-                </small>
               </div>
             </button>
           </div>
