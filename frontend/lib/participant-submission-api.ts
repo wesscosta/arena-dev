@@ -34,6 +34,8 @@ export type ParticipantActivity = {
   startedAt: string | null;
   submittedAt: string | null;
   items: ParticipantSubmissionItem[];
+  publishedFeedback: string | null;
+  feedbackPublishedAt: string | null;
 };
 
 type ApiErrorBody = { message?: string };

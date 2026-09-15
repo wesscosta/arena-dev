@@ -180,6 +180,12 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
             <label className={styles.field}><span>Conteúdo</span><textarea className={styles.textarea} value={drafts.generic ?? ""} disabled={open.submissionStatus !== "IN_PROGRESS" || busy} onChange={(event) => setDrafts((current) => ({ ...current, generic: event.target.value }))} onBlur={() => void saveGeneric()} placeholder={genericKind === "CODE" ? "Cole seu código ou descreva o repositório..." : genericKind === "LINK" ? "https://..." : "Digite ou descreva sua entrega..."} /></label>
           </div>
 
+          {open.publishedFeedback && <div className={styles.feedback}>
+            <strong>Feedback do professor</strong>
+            <p>{open.publishedFeedback}</p>
+            {open.feedbackPublishedAt && <small>Publicado em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(open.feedbackPublishedAt))}</small>}
+          </div>}
+
           <div className={styles.foot}>
             <span className={styles.saved}>{savedAt ? `Salvo às ${savedAt}` : open.submissionStatus === "IN_PROGRESS" ? "As respostas são salvas ao sair de cada campo." : `Status: ${statusLabel(open.submissionStatus)}`}</span>
             {open.submissionStatus === "IN_PROGRESS" && <button type="button" className={`${styles.action} ${styles.primary}`} disabled={busy} onClick={() => void submit()}>{busy ? "Salvando..." : "Enviar atividade"}</button>}

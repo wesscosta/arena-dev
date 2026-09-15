@@ -91,7 +91,7 @@ A Arena deve permitir correção individual e assistida por IA, mas o professor 
 - confiança/sinais para revisão;
 - nenhuma publicação automática.
 
-### 14.7 — Feedback individual
+### 14.7 — Feedback individual ✅
 - feedback por questão;
 - feedback consolidado;
 - estados de revisão/publicação;
