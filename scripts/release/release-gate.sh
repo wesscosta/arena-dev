@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-RELEASE_VERSION="${ARENA_RELEASE_VERSION:-0.6.0-SNAPSHOT}"
+RELEASE_VERSION="${ARENA_RELEASE_VERSION:-0.6.0}"
 MODE="${1:-}"
 CI_RUN_URL=""
 BACKUP_FILE=""
@@ -82,6 +82,7 @@ node_line="$(node --version)"
 [[ "$node_line" == v22.* ]] || fail "Node.js 22 é obrigatório; encontrado: $node_line"
 
 "$SCRIPT_DIR/check-metadata.sh"
+"$SCRIPT_DIR/verify-v0.6-contract.sh"
 
 head_sha="$(git rev-parse HEAD)"
 branch="$(git branch --show-current)"

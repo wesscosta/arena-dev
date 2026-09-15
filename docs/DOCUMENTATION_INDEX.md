@@ -61,3 +61,6 @@ Atualizado em 13/09/2026 para o bootstrap da v0.6.0.
 - `INCREMENT_14_9.md` — evidências de processo e recomendação de revisão humana.
 
 - `INCREMENT_14_10.md` — fronteira provider-independent para Teams/Classroom.
+
+- `INCREMENT_14_11.md` — hardening, E2E e release gate da v0.6.0.
+- `RELEASE_0_6.md` — checklist operacional da release v0.6.0.

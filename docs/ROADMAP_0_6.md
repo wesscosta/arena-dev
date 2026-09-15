@@ -119,7 +119,7 @@ A Arena deve permitir correção individual e assistida por IA, mas o professor 
 - ids externos sem contaminar domínio central;
 - apenas `PUBLISHED` é elegível para sync externo.
 
-### 14.11 — Hardening, E2E e release gate
+### 14.11 — Hardening, E2E e release gate ✅
 - testes de integração;
 - fluxo crítico E2E;
 - metadata final 0.6.0;
