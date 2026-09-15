@@ -97,7 +97,7 @@ A Arena deve permitir correção individual e assistida por IA, mas o professor 
 - estados de revisão/publicação;
 - aluno vê somente conteúdo publicado.
 
-### 14.8 — Correção em lote / triagem
+### 14.8 — Correção em lote / triagem ✅
 - geração de sugestões para múltiplas entregas;
 - fila priorizada;
 - revisão humana obrigatória;
