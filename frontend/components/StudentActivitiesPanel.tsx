@@ -7,6 +7,7 @@ import {
   saveParticipantSubmissionItem,
   startParticipantActivity,
   submitParticipantActivity,
+  recordParticipantPaste,
   type ParticipantActivity,
   type ParticipantQuestion,
   type ParticipantSubmissionKind,
@@ -131,6 +132,18 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
     finally { setBusy(false); }
   }
 
+  function registerPaste(itemId: string | null, characterCount: number) {
+    if (!open?.submissionId || open.submissionStatus !== "IN_PROGRESS" || characterCount <= 0) return;
+    void recordParticipantPaste(
+      access.code,
+      access.token,
+      open.id,
+      open.submissionId,
+      itemId,
+      characterCount,
+    ).catch(() => undefined);
+  }
+
   async function submit() {
     if (!open?.submissionId || open.submissionStatus !== "IN_PROGRESS") return;
     if (!window.confirm("Enviar esta atividade? Depois do envio, esta tentativa deixa de aceitar alterações.")) return;
@@ -169,7 +182,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
             return <div className={styles.question} key={question.id}>
               <strong>{question.position + 1}. {question.statement}</strong>
               {question.code && <pre className={styles.code}><code>{question.code}</code></pre>}
-              {options.length ? <div className={styles.options}>{options.map((option) => <label className={styles.option} key={option.id}><input type="radio" name={key} value={option.id} checked={(drafts[key] ?? "") === option.id} disabled={!editable || busy} onChange={(event) => { const value = event.target.value; setDrafts((current) => ({ ...current, [key]: value })); void saveQuestion(question, value); }} /><span>{option.text}</span></label>)}</div> : <label className={styles.field}><span>Sua resposta</span><textarea className={styles.textarea} value={drafts[key] ?? ""} disabled={!editable || busy} onChange={(event) => setDrafts((current) => ({ ...current, [key]: event.target.value }))} onBlur={() => void saveQuestion(question, drafts[key] ?? "")} /></label>}
+              {options.length ? <div className={styles.options}>{options.map((option) => <label className={styles.option} key={option.id}><input type="radio" name={key} value={option.id} checked={(drafts[key] ?? "") === option.id} disabled={!editable || busy} onChange={(event) => { const value = event.target.value; setDrafts((current) => ({ ...current, [key]: value })); void saveQuestion(question, value); }} /><span>{option.text}</span></label>)}</div> : <label className={styles.field}><span>Sua resposta</span><textarea className={styles.textarea} value={drafts[key] ?? ""} disabled={!editable || busy} onChange={(event) => setDrafts((current) => ({ ...current, [key]: event.target.value }))} onPaste={(event) => registerPaste(open.items.find((item) => item.questionId === question.id)?.id ?? null, event.clipboardData.getData("text").length)} onBlur={() => void saveQuestion(question, drafts[key] ?? "")} /></label>}
             </div>;
           })}
 
@@ -177,7 +190,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
             <strong>Entrega complementar</strong>
             <div className={styles.meta}><span>Use quando a atividade pedir pesquisa, texto, link ou código além das questões.</span></div>
             <label className={styles.field}><span>Tipo de conteúdo</span><select className={styles.select} value={genericKind} disabled={open.submissionStatus !== "IN_PROGRESS" || busy} onChange={(event) => setGenericKind(event.target.value as ParticipantSubmissionKind)}><option value="TEXT">Texto / pesquisa</option><option value="CODE">Código</option><option value="LINK">Link</option><option value="ARTIFACT">Referência de artefato</option></select></label>
-            <label className={styles.field}><span>Conteúdo</span><textarea className={styles.textarea} value={drafts.generic ?? ""} disabled={open.submissionStatus !== "IN_PROGRESS" || busy} onChange={(event) => setDrafts((current) => ({ ...current, generic: event.target.value }))} onBlur={() => void saveGeneric()} placeholder={genericKind === "CODE" ? "Cole seu código ou descreva o repositório..." : genericKind === "LINK" ? "https://..." : "Digite ou descreva sua entrega..."} /></label>
+            <label className={styles.field}><span>Conteúdo</span><textarea className={styles.textarea} value={drafts.generic ?? ""} disabled={open.submissionStatus !== "IN_PROGRESS" || busy} onChange={(event) => setDrafts((current) => ({ ...current, generic: event.target.value }))} onPaste={(event) => registerPaste(genericItem(open)?.id ?? null, event.clipboardData.getData("text").length)} onBlur={() => void saveGeneric()} placeholder={genericKind === "CODE" ? "Cole seu código ou descreva o repositório..." : genericKind === "LINK" ? "https://..." : "Digite ou descreva sua entrega..."} /></label>
           </div>
 
           {open.publishedFeedback && <div className={styles.feedback}>

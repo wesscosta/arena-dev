@@ -81,6 +81,30 @@ export function saveParticipantSubmissionItem(
   );
 }
 
+
+export async function recordParticipantPaste(
+  code: string,
+  token: string,
+  activityId: string,
+  submissionId: string,
+  itemId: string | null,
+  characterCount: number,
+) {
+  const response = await apiFetch(
+    `/api/join/${encodeURIComponent(code)}/activities/${activityId}/submissions/${submissionId}/evidence/paste`,
+    {
+      method: "POST",
+      headers: {
+        "X-Participant-Token": token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ itemId, characterCount }),
+    },
+    "omit",
+  );
+  if (!response.ok) throw new Error(`Falha ao registrar evento de processo (${response.status}).`);
+}
+
 export function submitParticipantActivity(code: string, token: string, activityId: string, submissionId: string) {
   return request<ParticipantActivity>(
     code,

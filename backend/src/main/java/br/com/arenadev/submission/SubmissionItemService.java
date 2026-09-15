@@ -18,16 +18,19 @@ public class SubmissionItemService {
     private final ActivitySubmissionRepository submissionRepository;
     private final SubmissionItemRepository itemRepository;
     private final ActivityQuestionRepository questionRepository;
+    private final SubmissionProcessEvidenceService processEvidenceService;
     private final JsonMapper json = JsonMapper.builder().build();
 
     public SubmissionItemService(
             ActivitySubmissionRepository submissionRepository,
             SubmissionItemRepository itemRepository,
-            ActivityQuestionRepository questionRepository
+            ActivityQuestionRepository questionRepository,
+            SubmissionProcessEvidenceService processEvidenceService
     ) {
         this.submissionRepository = submissionRepository;
         this.itemRepository = itemRepository;
         this.questionRepository = questionRepository;
+        this.processEvidenceService = processEvidenceService;
     }
 
     @Transactional
@@ -83,7 +86,9 @@ public class SubmissionItemService {
             );
         }
 
-        return itemRepository.save(item);
+        SubmissionItem saved = itemRepository.save(item);
+        processEvidenceService.recordItemSaved(submission, saved);
+        return saved;
     }
 
     @Transactional
@@ -127,7 +132,9 @@ public class SubmissionItemService {
             );
         }
 
-        return submissionRepository.save(submission);
+        ActivitySubmission saved = submissionRepository.save(submission);
+        processEvidenceService.recordSubmitted(saved);
+        return saved;
     }
 
     private ActivitySubmission getSubmission(

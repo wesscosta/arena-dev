@@ -57,3 +57,5 @@ Atualizado em 13/09/2026 para o bootstrap da v0.6.0.
 - `INCREMENT_14_7.md` — feedback individual supervisionado e publicação explícita.
 
 - `INCREMENT_14_8.md` — fila de correção, triagem e preparação supervisionada de IA em lote.
+
+- `INCREMENT_14_9.md` — evidências de processo e recomendação de revisão humana.

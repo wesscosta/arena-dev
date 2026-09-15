@@ -103,7 +103,7 @@ A Arena deve permitir correção individual e assistida por IA, mas o professor 
 - revisão humana obrigatória;
 - publicação em lote apenas de itens explicitamente revisados/selecionados.
 
-### 14.9 — Evidências de processo e integridade
+### 14.9 — Evidências de processo e integridade ✅
 - tempo;
 - revisões;
 - paste events;
