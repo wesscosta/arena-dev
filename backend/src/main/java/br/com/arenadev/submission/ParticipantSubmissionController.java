@@ -28,6 +28,7 @@ public class ParticipantSubmissionController {
     private final ActivitySubmissionRepository submissionRepository;
     private final ActivitySubmissionService submissionService;
     private final SubmissionItemService itemService;
+    private final SubmissionAssessmentRepository assessmentRepository;
     private final JsonMapper json = JsonMapper.builder().build();
 
     public ParticipantSubmissionController(
@@ -37,7 +38,8 @@ public class ParticipantSubmissionController {
             EnrollmentRepository enrollmentRepository,
             ActivitySubmissionRepository submissionRepository,
             ActivitySubmissionService submissionService,
-            SubmissionItemService itemService
+            SubmissionItemService itemService,
+            SubmissionAssessmentRepository assessmentRepository
     ) {
         this.joinService = joinService;
         this.activityRepository = activityRepository;
@@ -46,6 +48,7 @@ public class ParticipantSubmissionController {
         this.submissionRepository = submissionRepository;
         this.submissionService = submissionService;
         this.itemService = itemService;
+        this.assessmentRepository = assessmentRepository;
     }
 
     @GetMapping
@@ -116,6 +119,10 @@ public class ParticipantSubmissionController {
                 ? List.of()
                 : itemService.list(activity.getId(), submission.getId()).stream().map(this::item).toList();
 
+        SubmissionAssessment assessment = submission == null
+                ? null
+                : assessmentRepository.findBySubmissionId(submission.getId()).orElse(null);
+
         return new ActivityCard(
                 activity.getId(),
                 activity.getTitle(),
@@ -127,7 +134,9 @@ public class ParticipantSubmissionController {
                 submission == null ? "NOT_STARTED" : submission.getStatus().name(),
                 submission == null ? null : submission.getStartedAt(),
                 submission == null ? null : submission.getSubmittedAt(),
-                items
+                items,
+                assessment == null ? null : assessment.getPublishedFeedback(),
+                assessment == null ? null : assessment.getFeedbackPublishedAt()
         );
     }
 
@@ -204,7 +213,9 @@ public class ParticipantSubmissionController {
             String submissionStatus,
             Instant startedAt,
             Instant submittedAt,
-            List<SubmissionItemView> items
+            List<SubmissionItemView> items,
+            String publishedFeedback,
+            Instant feedbackPublishedAt
     ) {}
 
     public record QuestionView(

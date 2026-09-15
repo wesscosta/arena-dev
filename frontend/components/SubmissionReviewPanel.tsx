@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { openSubmissionReview, saveSubmissionReviewNotes, type SubmissionReview } from "@/lib/submission-review-api";
 import AssessmentRubricPanel from "@/components/AssessmentRubricPanel";
+import AssessmentFeedbackPanel from "@/components/AssessmentFeedbackPanel";
 
 function renderContent(content: unknown) {
   if (content == null) return "—";
@@ -86,6 +87,7 @@ export default function SubmissionReviewPanel({
       {!review.items.length && <div className="mini-empty">Esta entrega não possui itens persistidos.</div>}
     </div>
     <AssessmentRubricPanel activityId={activityId} submissionId={review.submissionId} onGraded={async () => { await onChanged(); await load(review.submissionId); }} />
+    <AssessmentFeedbackPanel activityId={activityId} submissionId={review.submissionId} />
     <label className="field"><span>Anotações privadas da correção</span><textarea className="textarea" rows={6} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Registre observações para continuar a correção. Ainda não é feedback publicado ao aluno." /></label>
     <div className="modal-footer"><button className="button ghost" disabled={busy} onClick={() => void save(false)}>{busy ? "Salvando..." : "Salvar rascunho"}</button><button className="button primary" disabled={busy || !nextId} onClick={() => void save(true)}>Salvar e revisar próxima</button></div>
   </section>;
