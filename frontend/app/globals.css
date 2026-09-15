@@ -2158,3 +2158,332 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 .arena-activity-strip [data-slot="trigger"]{
   font-size: 1rem;
 }
+
+/* 14.11C — Timer simplification */
+.timer-setup-grid {
+  grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr) !important;
+  gap: 1rem !important;
+}
+
+.timer-duration-box,
+.timer-details-box {
+  width: 100%;
+  max-width: none;
+}
+
+.timer-duration-box {
+  padding: 1.25rem !important;
+}
+
+.timer-duration-editor {
+  width: 100%;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto
+    minmax(0, 1fr)
+    auto
+    minmax(0, 1fr) !important;
+  gap: 0.75rem !important;
+  align-items: end;
+}
+
+.timer-duration-segment {
+  min-width: 0;
+}
+
+.timer-duration-segment label,
+.timer-duration-segment > span,
+.timer-duration-box .field-label {
+  font-size: 0.9375rem !important;
+}
+
+.timer-duration-segment input,
+.timer-duration-segment button {
+  min-height: 3rem !important;
+  font-size: 1.125rem !important;
+}
+
+.timer-duration-segment input {
+  font-weight: 700;
+}
+
+.timer-duration-colon {
+  align-self: center;
+  padding-bottom: 0.6rem;
+  font-size: 1.5rem !important;
+}
+
+.timer-preset-chips {
+  width: 100%;
+  display: grid !important;
+  grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  gap: 0.625rem !important;
+  margin-top: 1rem;
+}
+
+.timer-preset-chips button {
+  width: 100%;
+  min-height: 2.75rem;
+  padding-inline: 0.5rem !important;
+  font-size: 0.9375rem !important;
+  font-weight: 650;
+}
+
+.timer-details-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem !important;
+  padding: 1.25rem !important;
+}
+
+.timer-details-box .timer-option-row {
+  grid-column: auto;
+}
+
+.timer-details-box .field > span,
+.timer-option-row strong {
+  font-size: 0.9375rem !important;
+}
+
+.timer-option-row {
+  min-height: 3.25rem;
+  align-items: center;
+}
+
+.timer-option-row input {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.timer-setup-heading {
+  align-items: end;
+}
+
+.timer-setup-heading > div:first-child {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.timer-setup-heading h3 {
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 70rem) {
+  .timer-setup-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .timer-preset-chips {
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  }
+
+  .timer-details-box {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 42rem) {
+  .timer-duration-editor {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .timer-duration-colon {
+    display: none;
+  }
+
+  .timer-preset-chips {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* 14.11C.1 — Timer presets single row */
+.timer-preset-chips {
+  width: 100%;
+  display: grid !important;
+  grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  gap: 0.5rem !important;
+}
+
+.timer-preset-chips button {
+  min-width: 0;
+  white-space: nowrap;
+  padding-inline: 0.35rem !important;
+  font-size: 0.875rem !important;
+}
+
+@media (max-width: 42rem) {
+  .timer-preset-chips {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* 14.11C.2 — Session live badge beside title */
+.arena-session-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.arena-session-title-row h2 {
+  margin: var(--space-2) 0 var(--space-1);
+}
+
+.arena-session-title-row .live-pill,
+.arena-session-title-row [class*="badge"] {
+  flex: 0 0 auto;
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 42rem) {
+  .arena-session-title-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+/* 14.11C.3 — Home card footer alignment and emphasis */
+.overview-class-card-foot {
+  min-height: 3rem;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.overview-class-card-foot > span,
+.overview-class-card-foot > strong {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+}
+
+.overview-class-card-foot > strong {
+  font-size: 1rem !important;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.overview-class-card-foot .live-pill.compact {
+  min-height: 2rem;
+  padding: 0.35rem 0.7rem !important;
+  border-color: rgba(88, 243, 167, 0.38) !important;
+  background: rgba(88, 243, 167, 0.12) !important;
+  color: #8fffc3 !important;
+  opacity: 1 !important;
+  font-size: 0.8125rem !important;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+}
+
+.overview-class-card-foot .live-pill.compact > span {
+  background: #58f3a7 !important;
+  box-shadow: 0 0 0 0.2rem rgba(88, 243, 167, 0.12);
+}
+
+/* 14.11C.4 — Home cards equal height */
+.classroom-card-grid {
+  align-items: stretch;
+}
+
+.overview-class-card {
+  height: 16rem;
+  min-height: 16rem;
+  display: grid !important;
+  grid-template-rows: minmax(4.5rem, auto) minmax(4rem, auto) 3rem;
+  align-content: stretch;
+}
+
+.overview-class-card-head {
+  min-height: 4.5rem;
+  align-items: flex-start;
+}
+
+.overview-class-identity {
+  min-width: 0;
+}
+
+.overview-class-identity h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.25;
+  min-height: 2.5em;
+}
+
+.overview-class-stats {
+  align-self: stretch;
+}
+
+.overview-class-card-foot {
+  height: 3rem;
+  min-height: 3rem;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  align-self: end;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.overview-class-card-foot > span,
+.overview-class-card-foot > strong {
+  height: 100%;
+  min-height: 0 !important;
+  display: inline-flex;
+  align-items: center;
+}
+
+.overview-class-card-foot > strong {
+  font-size: 1rem !important;
+  line-height: 1;
+}
+
+@media (max-width: 42rem) {
+  .overview-class-card {
+    height: auto;
+    min-height: 15rem;
+    grid-template-rows: auto auto 3rem;
+  }
+}
+
+/* 14.11C.5b — Full-width Arena CTA + unified green states */
+.classroom-home-hero-cta {
+  width: 100%;
+}
+
+.arena-launch-shell {
+  width: 100% !important;
+  max-width: none !important;
+  margin-inline: 0 !important;
+}
+
+.arena-launch-button-centered {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* Continue remains visually distinct, but stays inside Arena's green language. */
+.arena-launch-button-centered.arena-launch-button-resume {
+  background: linear-gradient(180deg, #47dda0 0%, #2fbf83 100%) !important;
+  border-color: rgba(91, 241, 169, .58) !important;
+  color: #07110d !important;
+  box-shadow: 0 16px 38px rgba(66, 211, 149, .16) !important;
+  opacity: 1 !important;
+}
+
+.arena-launch-button-centered.arena-launch-button-resume .arena-launch-icon {
+  background: rgba(7, 17, 13, .13) !important;
+  color: #07110d !important;
+}
+
+.arena-launch-button-centered.arena-launch-button-resume .arena-launch-content strong,
+.arena-launch-button-centered.arena-launch-button-resume .arena-launch-content small {
+  color: #07110d !important;
+}
+
+.arena-launch-button-centered.arena-launch-button-resume:hover:not(:disabled) {
+  background: linear-gradient(180deg, #58ebb0 0%, #39cc8e 100%) !important;
+  border-color: rgba(115, 255, 191, .72) !important;
+  box-shadow: 0 20px 46px rgba(66, 211, 149, .24) !important;
+}

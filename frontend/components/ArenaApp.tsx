@@ -562,8 +562,7 @@ export default function ArenaApp() {
                 preferredActivityId={arenaActivityId}
                 onPreferredActivityChange={setArenaActivityId}
                 onSessionEnded={() => {
-                  setClassroomTab("home");
-                  setView("classroom");
+                  openClassroom("home");
                 }}
                 patch={patch}
                 notify={notify}
@@ -836,13 +835,9 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
                   <div className="overview-class-identity">
                     <div className="classroom-monogram">{classroom.name.trim().charAt(0).toUpperCase()}</div>
                     <div>
-                      {(session || !classroom.active) && (
+                      {!classroom.active && (
                         <div className="status-line">
-                          {session ? (
-                            <span className="live-pill compact"><span /> SESSÃO EM ANDAMENTO</span>
-                          ) : (
-                            <span className="status">Inativa</span>
-                          )}
+                          <span className="status">Inativa</span>
                         </div>
                       )}
                       <h3>{classroom.name}</h3>
@@ -919,8 +914,14 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
                   <div><strong>{eventCount}</strong><span>eventos XP</span></div>
                 </div>
                 <div className="overview-class-card-foot">
-                  <span>{session ? `Em aula · ${session.title}` : classroom.active ? "Clique para abrir a turma" : "Arquivada do fluxo ativo"}</span>
-                  <strong>Abrir →</strong>
+                  <span>
+                    {session ? (
+                      <span className="live-pill compact"><span /> SESSÃO EM ANDAMENTO</span>
+                    ) : classroom.active ? null : (
+                      "Arquivada do fluxo ativo"
+                    )}
+                  </span>
+                  <strong>Abrir</strong>
                 </div>
               </article>
             );
@@ -1997,7 +1998,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       setLiveFlowState(null);
       onPreferredActivityChange(undefined);
       notify("Sessão encerrada e persistida.");
-      onSessionEnded();
+
+      // Navega em uma nova task depois que o estado da sessão foi limpo.
+      window.setTimeout(() => {
+        onSessionEnded();
+      }, 0);
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -2395,8 +2400,10 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     <div className="stack-lg arena-session-workspace">
       <div className="arena-header compact">
         <div>
-          <Badge variant="live" dot>AO VIVO</Badge>
-          <h2>{currentSession.title}</h2>
+          <div className="arena-session-title-row">
+            <h2>{currentSession.title}</h2>
+            <Badge variant="live" dot>AO VIVO</Badge>
+          </div>
         </div>
         <div className="topbar-actions arena-session-actions">
           <Button
