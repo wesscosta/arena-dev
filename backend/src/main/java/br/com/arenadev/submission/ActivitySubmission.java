@@ -105,4 +105,13 @@ public class ActivitySubmission {
         status = ActivitySubmissionStatus.UNDER_REVIEW;
         updatedAt = when;
     }
+
+    public void grade(Instant when) {
+        if (status == ActivitySubmissionStatus.GRADED) return;
+        if (status != ActivitySubmissionStatus.UNDER_REVIEW) {
+            throw new IllegalStateException("Somente entregas em correção podem ser concluídas.");
+        }
+        status = ActivitySubmissionStatus.GRADED;
+        updatedAt = when;
+    }
 }

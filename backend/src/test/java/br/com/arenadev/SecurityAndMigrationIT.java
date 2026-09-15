@@ -105,17 +105,19 @@ class SecurityAndMigrationIT {
                     'quiz_participant_answers',
                     'activity_submissions',
                     'submission_items',
-                    'submission_assessments'
+                    'submission_assessments',
+                    'activity_rubric_criteria',
+                    'assessment_criteria'
                   )
                 """, Integer.class);
 
         assertThat(versions).containsExactly(
                 "1", "2", "3", "4", "5", "6", "7", "8", "9",
                 "10", "11", "12", "13", "14", "15", "16", "17",
-                "18", "19", "20"
+                "18", "19", "20", "21"
         );
 
-        assertThat(expectedTables).isEqualTo(29);
+        assertThat(expectedTables).isEqualTo(31);
 
     }
 

@@ -75,6 +75,8 @@ A Arena deve permitir correção individual e assistida por IA, mas o professor 
 - salvar e revisar próxima.
 
 ### 14.5 — Rubricas e avaliação estruturada
+**Estado:** implementação local.
+
 - critérios explícitos;
 - pontuação por critério;
 - avaliação manual auditável;

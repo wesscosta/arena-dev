@@ -8,7 +8,7 @@
 
 **Branch de desenvolvimento:** `feat/v0.6-submissions-assessment`.
 
-**Checkpoint:** `14.4 — Correção individual`.
+**Checkpoint:** `14.5 — Correção individual`.
 
 Este arquivo é a referência técnica versionada do estado corrente.
 
@@ -118,3 +118,8 @@ Isso diferencia a linha ativa da tag estável `v0.5.0`.
 ## Próximo passo
 
 Concluir **14.3 — Dashboard de entregas** e então iniciar **14.4 — Correção individual**.
+
+
+## Atualização 14.5
+
+Schema atual: **V21** com rubricas e critérios de avaliação estruturada. Nota permanece separada de XP.
