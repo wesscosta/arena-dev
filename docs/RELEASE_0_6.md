@@ -1,14 +1,18 @@
-# Arena Dev Community v0.6.0 — Release Checklist
+# Arena Dev Community v0.6.0 — Registro de fechamento
 
 ## Estado
 
-Implementação funcional concluída até o incremento 14.11, com polish final de UI em fechamento.
+A implementação funcional e o fechamento técnico da linha `14.x` estão concluídos e integrados à `main`.
 
-**A release ainda não foi publicada.**
+**Baseline técnica oficial:** `v0.6.0 — Submissions, Assessment & Feedback`.
+
+**HEAD documental de fechamento:** `789e6fb5599641192fa87933c45d4317dc53490d`.
+
+Este arquivo diferencia **fechamento técnico da baseline** de **evidência de publicação externa**. Não marcar tag, GitHub Release, backup/restore ou CI final como concluídos sem evidência verificável.
 
 ## Entregas principais
 
-- `ActivitySubmission` como fonte de verdade das entregas;
+- `ActivitySubmission` como entrega interna autoritativa;
 - `SubmissionItem` polimórfico e autosave;
 - fluxo visual do aluno;
 - dashboard de entregas;
@@ -34,33 +38,29 @@ Implementação funcional concluída até o incremento 14.11, com polish final d
 
 Flyway **V1–V25**.
 
-## Pré-merge
+## Fechamento de código
 
-- [ ] commit final de UI + documentação;
-- [ ] `git diff --check`;
-- [ ] backend `mvn -B -ntp verify`;
-- [ ] frontend `npm test`;
-- [ ] frontend `npm run typecheck`;
-- [ ] frontend `npm run build`;
-- [ ] `scripts/release/release-gate.sh local`;
-- [ ] branch limpa e sincronizada;
-- [ ] PR para `main`;
-- [ ] CI do PR verde.
+- [x] linha 14.0–14.11 concluída;
+- [x] polish final integrado;
+- [x] PR principal da v0.6 mergeada;
+- [x] ajustes finais pós-merge incorporados;
+- [x] `main` contém o fechamento documental no SHA de referência informado acima.
 
-## Pós-merge
+## Evidências de publicação
 
-- [ ] `main` limpa e atualizada;
-- [ ] CI verde no mesmo SHA;
-- [ ] backup real PostgreSQL 17;
-- [ ] checksum `.sha256`;
-- [ ] restore-check Flyway V1–V25;
-- [ ] `scripts/release/release-gate.sh final --ci-run-url ... --backup ...`;
-- [ ] tag anotada `v0.6.0`;
-- [ ] GitHub Release `Arena Dev Community v0.6.0`.
+Os itens abaixo permanecem explicitamente dependentes de verificação:
+
+- [ ] CI final confirmado no mesmo SHA;
+- [ ] backup real PostgreSQL 17 identificado;
+- [ ] checksum `.sha256` validado;
+- [ ] restore-check Flyway V1–V25 registrado;
+- [ ] `release-gate.sh final` registrado;
+- [ ] tag anotada `v0.6.0` confirmada;
+- [ ] GitHub Release `Arena Dev Community v0.6.0` confirmada.
 
 ## Regra
 
-Não criar/mover a tag antes do gate final.
+O fechamento funcional/técnico da v0.6 não autoriza fabricar evidência operacional retroativa. Se os gates externos forem executados ou recuperados posteriormente, registrar aqui URL, SHA, arquivo de backup e resultado correspondente.
 
 ## Evidência de fechamento visual
 
@@ -75,3 +75,7 @@ O polish final inclui:
 - cards de turma com dimensões/footer uniformes;
 - badge de sessão ativa no footer;
 - CTAs `Iniciar Arena` e `Continuar Arena` em largura total e linguagem visual coerente.
+
+## Continuidade
+
+A evolução funcional passa para `v0.7 — Educational Integrations`. Consulte [`ROADMAP_0_7.md`](ROADMAP_0_7.md).
