@@ -9,7 +9,8 @@ function read(relativePath: string): string {
 
 test("design tokens define shared typography and interaction scale", () => {
   const tokens = read("styles/tokens.css");
-  assert.match(tokens, /--font-size-xs:\s*0\.75rem/);
+  assert.match(tokens, /--font-size-xs:\s*0\.8125rem/);
+  assert.match(tokens, /--font-size-sm:\s*0\.9375rem/);
   assert.match(tokens, /--font-size-md:\s*1rem/);
   assert.match(tokens, /--font-size-2xl:\s*1\.5rem/);
   assert.match(tokens, /--target-comfortable:\s*2\.75rem/);
@@ -29,7 +30,9 @@ test("globals imports design system files before legacy styles", () => {
   const globals = read("app/globals.css");
   const tokens = globals.indexOf('@import "../styles/tokens.css";');
   const base = globals.indexOf('@import "../styles/base.css";');
-  const accessibility = globals.indexOf('@import "../styles/accessibility.css";');
+  const accessibility = globals.indexOf(
+    '@import "../styles/accessibility.css";',
+  );
   assert.ok(tokens >= 0);
   assert.ok(base > tokens);
   assert.ok(accessibility > base);
