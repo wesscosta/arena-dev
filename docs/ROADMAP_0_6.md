@@ -1,16 +1,20 @@
-# Roadmap — Arena Dev v0.6.0
+# Roadmap histórico — Arena Dev v0.6.0
 
-## Linha
+## Estado
 
 **v0.6.0 — Submissions, Assessment & Feedback**
 
-## Objetivo
+**Linha encerrada em 17/09/2026.**
+
+A linha `14.x` está congelada. Novas funcionalidades pertencem à v0.7.
+
+## Objetivo alcançado
 
 Permitir que o professor acompanhe uma atividade do início à devolutiva sem controles paralelos, preservando a autoridade docente e sem transformar a Arena Dev em LMS.
 
-## Princípios
+## Princípios consolidados
 
-1. Arena Dev é a fonte de verdade da entrega e da avaliação.
+1. Arena Dev mantém a autoridade do domínio pedagógico interno.
 2. `ScoreEvent` continua sendo a fonte de verdade do XP.
 3. Nota e XP são domínios independentes.
 4. IA gera sugestões; professor revisa e publica.
@@ -19,7 +23,7 @@ Permitir que o professor acompanhe uma atividade do início à devolutiva sem co
 7. Teams/Classroom entram por adapters provider-independent.
 8. `ParticipantAnswer` do Quiz não é reutilizado como entrega geral.
 
-## Incrementos
+## Incrementos concluídos
 
 - [x] **14.0 — Bootstrap e arquitetura**
 - [x] **14.1 — ActivitySubmission**
@@ -34,7 +38,7 @@ Permitir que o professor acompanhe uma atividade do início à devolutiva sem co
 - [x] **14.8 — Correção em lote / triagem**
 - [x] **14.9 — Evidências de processo e integridade**
 - [x] **14.10 — Preparação Teams/Classroom**
-- [x] **14.11 — Hardening, E2E e preparação de release**
+- [x] **14.11 — Hardening, E2E e release gate**
 - [x] **14.11A–C — polish visual final da sessão, Timer, Home e cards**
 
 ## Entregas consolidadas
@@ -54,7 +58,7 @@ Permitir que o professor acompanhe uma atividade do início à devolutiva sem co
 - feedback em rascunho/publicado.
 
 ### IA
-- provider abstraction;
+- abstração de provider;
 - sugestões persistidas;
 - aplicação supervisionada;
 - nenhuma autopublicação.
@@ -69,8 +73,8 @@ Permitir que o professor acompanhe uma atividade do início à devolutiva sem co
 ### Integrações
 - `SubmissionSource`;
 - `LearningPlatformGateway`;
-- vínculos de atividade/submissão externos;
-- somente conteúdo publicado é elegível para sync futuro.
+- vínculos externos provider-independent;
+- somente conteúdo publicado é elegível para sincronização futura.
 
 ### UX final
 - redução de descrições redundantes;
@@ -80,7 +84,7 @@ Permitir que o professor acompanhe uma atividade do início à devolutiva sem co
 - cards e footers uniformes;
 - CTAs Iniciar/Continuar Arena refinados.
 
-## Schema
+## Schema final da linha
 
 ```text
 V18 activity_submissions
@@ -93,22 +97,17 @@ V24 submission_process_evidence
 V25 learning_platform_links
 ```
 
-## Critério de conclusão funcional
+## Fechamento técnico
 
-A implementação funcional da v0.6 está concluída.
+```text
+main HEAD documental:
+789e6fb5599641192fa87933c45d4317dc53490d
+```
 
-## Critério de publicação
+O merge principal da v0.6 e os ajustes finais posteriores estão incorporados à `main`.
 
-A release só será considerada publicada quando:
+Este documento registra o fechamento funcional/técnico da linha. Evidências específicas de tag, CI final, backup/restore e GitHub Release devem permanecer em `RELEASE_0_6.md` e só podem ser marcadas como concluídas quando verificadas.
 
-- [ ] commit final do polish/documentação;
-- [ ] `release-gate.sh local` verde;
-- [ ] PR mergeado em `main`;
-- [ ] CI verde no SHA final;
-- [ ] backup real + SHA-256;
-- [ ] restore-check V1–V25;
-- [ ] `release-gate.sh final` verde;
-- [ ] tag anotada `v0.6.0`;
-- [ ] GitHub Release publicada.
+## Continuidade
 
-Até lá, `v0.5.0` permanece como release estável.
+A próxima linha é [`ROADMAP_0_7.md`](ROADMAP_0_7.md).
