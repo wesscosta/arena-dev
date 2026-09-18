@@ -2,6 +2,7 @@ package br.com.arenadev.integration.persistence;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -17,5 +18,27 @@ public class ExternalStudentLinkEntity {
     @Version @Column(nullable = false) private long version;
 
     protected ExternalStudentLinkEntity() {}
+
+    public ExternalStudentLinkEntity(UUID id, UUID connectionId, UUID externalClassroomLinkId, UUID enrollmentId, String externalUserId, Instant now) {
+        this.id = Objects.requireNonNull(id);
+        this.connectionId = Objects.requireNonNull(connectionId);
+        this.externalClassroomLinkId = Objects.requireNonNull(externalClassroomLinkId);
+        this.enrollmentId = Objects.requireNonNull(enrollmentId);
+        this.externalUserId = required(externalUserId);
+        this.createdAt = Objects.requireNonNull(now);
+        this.updatedAt = now;
+    }
+
+    private static String clean(String v) { return v == null || v.isBlank() ? null : v.trim(); }
+    private static String required(String v) {
+        String clean = clean(v);
+        if (clean == null) throw new IllegalArgumentException("Valor obrigatório.");
+        return clean;
+    }
+
     public UUID getId() { return id; }
+    public UUID getConnectionId() { return connectionId; }
+    public UUID getExternalClassroomLinkId() { return externalClassroomLinkId; }
+    public UUID getEnrollmentId() { return enrollmentId; }
+    public String getExternalUserId() { return externalUserId; }
 }
