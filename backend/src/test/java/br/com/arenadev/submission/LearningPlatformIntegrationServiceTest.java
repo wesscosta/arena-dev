@@ -12,6 +12,12 @@ class LearningPlatformIntegrationServiceTest {
         assertThat(service).isNotNull();
     }
     @Test void submissionSourceAlreadySupportsExternalOrigins() {
-        assertThat(SubmissionSource.values()).contains(SubmissionSource.ARENA, SubmissionSource.TEAMS, SubmissionSource.GOOGLE_CLASSROOM, SubmissionSource.IMPORT);
+        assertThat(SubmissionSource.values()).contains(
+                SubmissionSource.ARENA,
+                SubmissionSource.EXTERNAL,
+                SubmissionSource.IMPORT,
+                SubmissionSource.TEAMS,
+                SubmissionSource.GOOGLE_CLASSROOM
+        );
     }
 }
