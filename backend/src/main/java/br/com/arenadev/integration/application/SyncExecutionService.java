@@ -120,6 +120,16 @@ public class SyncExecutionService {
         return executions.save(entity);
     }
 
+    @Transactional(readOnly = true)
+    public SyncExecutionEntity get(UUID id) {
+        return required(id);
+    }
+
+    @Transactional(readOnly = true)
+    public SyncItemEntity getItem(UUID id) {
+        return requiredItem(id);
+    }
+
     private SyncExecutionEntity required(UUID id) {
         return executions.findById(id)
                 .orElseThrow(() -> new IntegrationNotFoundException("Execução não encontrada: " + id));

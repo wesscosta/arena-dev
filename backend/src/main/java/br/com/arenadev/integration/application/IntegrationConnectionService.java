@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -66,6 +67,11 @@ public class IntegrationConnectionService {
         var entity = required(connectionId);
         entity.disable(clock.instant());
         return repository.save(entity);
+    }
+
+    @Transactional(readOnly = true)
+    public List<IntegrationConnectionEntity> list() {
+        return repository.findAll();
     }
 
     @Transactional(readOnly = true)
