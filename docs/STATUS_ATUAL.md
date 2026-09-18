@@ -1,44 +1,35 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 15 de setembro de 2026
+**Última sincronização documental:** 17 de setembro de 2026
 
-**Release estável:** `v0.5.0 — Live Quiz & Structured Responses`.
+**Baseline técnica corrente:** `v0.6.0 — Submissions, Assessment & Feedback`.
 
-**Linha em fechamento:** `v0.6.0 — Submissions, Assessment & Feedback`.
+**Estado da linha:** encerrada e congelada para evolução funcional.
 
-**Branch:** `feat/v0.6-submissions-assessment`.
+**HEAD documental de fechamento:** `789e6fb5599641192fa87933c45d4317dc53490d`.
 
-**Checkpoint:** `14.11 — Hardening, E2E, release gate e polish final de UI`.
+**Próxima linha:** `v0.7 — Educational Integrations`.
+
+**Próximo incremento:** `15.0 — Integration Core Consolidation`.
 
 ## Estado resumido
 
-A implementação funcional da v0.6 está concluída até o 14.11. A branch contém o domínio de submissões, avaliação estruturada, IA supervisionada, feedback publicado, triagem, evidências de processo e preparação provider-independent para Teams/Classroom.
+A linha `14.x` está encerrada. O domínio de submissões, avaliação estruturada, IA supervisionada, feedback publicado, triagem, evidências de processo e preparação provider-independent para Teams/Classroom está integrado à `main`.
 
-A release **ainda não está publicada**. Antes da tag `v0.6.0` faltam:
+Foram incorporados o merge principal da v0.6 (PR #14) e os ajustes finais das PRs #15 e #16.
 
-```text
-commit final do polish/documentação
-gate local completo
-PR + merge em main
-CI verde no SHA final
-backup real + SHA-256
-restore-check PostgreSQL 17 / Flyway V1–V25
-release-gate.sh final
-tag anotada v0.6.0
-GitHub Release
-```
+A documentação considera a v0.6 **baseline técnica oficial**. Tag/GitHub Release não devem ser afirmadas como publicadas sem evidência verificável no mesmo SHA.
 
-## Baseline estável
+## Baseline v0.6
 
 ```text
-v0.5.0
-merge main      55c76e96cb3726fbe7fee0bd09f26ad8ce43ccfe
-schema          Flyway V1–V17
+v0.6.0
+main HEAD documental  789e6fb5599641192fa87933c45d4317dc53490d
+schema                 Flyway V1–V25
+linha                  14.x encerrada
 ```
 
-A tag `v0.5.0` está congelada.
-
-## Domínio v0.6
+## Domínio consolidado
 
 ```text
 Activity
@@ -58,13 +49,13 @@ Invariantes:
 
 ```text
 ParticipantAnswer = resposta do Quiz ao vivo
-ActivitySubmission= entrega geral de atividade
+ActivitySubmission= entrega interna da atividade
 ScoreEvent         = fonte de verdade do XP
 nota               ≠ XP
 IA                 = sugestão, nunca autoridade
 ```
 
-## Incrementos
+## Incrementos v0.6
 
 ```text
 14.0  Bootstrap e arquitetura                         concluído
@@ -80,12 +71,13 @@ IA                 = sugestão, nunca autoridade
 14.8  Correção em lote / triagem                      concluído
 14.9  Evidências de processo e integridade            concluído
 14.10 Preparação Teams/Classroom                      concluído
-14.11 Hardening, E2E e release gate                   fechamento
+14.11 Hardening, E2E e release gate                   concluído
+14.11A–C Polish final de UI                           concluído
 ```
 
 ## Schema
 
-Maior migration: **V25**.
+Maior migration da baseline: **V25**.
 
 - V18 — `activity_submissions`;
 - V19 — `submission_items`;
@@ -96,37 +88,42 @@ Maior migration: **V25**.
 - V24 — evidências de processo;
 - V25 — vínculos provider-independent de plataformas externas.
 
-## UX de fechamento
+## UX consolidada
 
-Polish consolidado no 14.11:
+O fechamento da v0.6 inclui:
 
 - sessão ao vivo com menos microcopy redundante;
 - escala tipográfica normalizada;
 - `AO VIVO` ao lado do título;
-- encerramento retorna à Home da turma;
-- Timer com melhor ocupação do espaço e presets em linha;
+- encerramento retornando à Home da turma;
+- Timer com melhor ocupação do espaço;
 - cards de turma com altura/footer padronizados;
-- badge `SESSÃO EM ANDAMENTO` no footer;
-- CTAs da Home da turma em largura total e linguagem verde consistente.
+- badge de sessão em andamento;
+- CTAs da Home em largura total e linguagem visual consistente.
 
-## Release
+## Continuidade — v0.7
 
-Metadata de release: `0.6.0`.
+A v0.7 não recria o Integration Core do zero. O primeiro passo é auditar o que já foi preparado no `14.10 / V25` e consolidar contratos provider-independent antes de OAuth ou APIs externas.
 
-O gate local deve ser repetido após o commit final de UI/documentação.
-
-Com a branch limpa e sincronizada:
-
-```bash
-scripts/release/release-gate.sh local
+```text
+15.0A Audit & Contract Freeze
+15.0B Integration Domain
+15.0C Persistence / V26
+15.0D Application Services
+15.0E Administrative API
+15.0F Tests & Documentation
 ```
 
-Após merge em `main`, CI verde no mesmo SHA e backup real:
+Após o 15.0, a sequência planejada é:
 
-```bash
-scripts/release/release-gate.sh final \
-  --ci-run-url <URL_DO_RUN> \
-  --backup <ARQUIVO.dump>
+```text
+15.1 Microsoft Identity + Graph Connection
+15.2 Teams Classrooms & Students
+15.3 Activity Mapping
+15.4 Submission Import
+15.5 Grade & Feedback Sync
+15.6 Google Classroom Adapter
+15.7 Integration Operations UI
+15.8 Conflict Resolution & Observability
+15.9 Hardening, E2E & Release Gate
 ```
-
-Somente depois: tag `v0.6.0` e GitHub Release.
