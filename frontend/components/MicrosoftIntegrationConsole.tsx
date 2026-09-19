@@ -14,12 +14,15 @@ import {
   fetchRosterReconciliation,
   fetchStudentMatchPreview,
   applyRosterReconciliation,
+  fetchActivityMapping,
+  linkMicrosoftAssignment,
   linkMicrosoftClass,
   type ClassroomLink,
   type IntegrationConnection,
   type MicrosoftClassDiscovery,
   type MicrosoftReadiness,
   type MicrosoftRoster,
+  type MicrosoftActivityMapping,
   type RosterReconciliation,
   type RosterReconciliationItem,
   type StudentMatchItem,
@@ -68,6 +71,8 @@ export default function MicrosoftIntegrationConsole({
   const [roster, setRoster] = useState<MicrosoftRoster | null>(null);
   const [preview, setPreview] = useState<StudentMatchPreview | null>(null);
   const [reconciliation, setReconciliation] = useState<RosterReconciliation | null>(null);
+  const [activityMapping, setActivityMapping] = useState<MicrosoftActivityMapping | null>(null);
+  const [activitySelection, setActivitySelection] = useState<Record<string, string>>({});
   const [explicitStudent, setExplicitStudent] = useState<Record<string, string>>({});
   const [inspectedLinkId, setInspectedLinkId] = useState("");
   const [busy, setBusy] = useState("");
@@ -177,18 +182,21 @@ export default function MicrosoftIntegrationConsole({
     setError("");
     setInspectedLinkId(link.id);
     try {
-      const [rosterResult, previewResult, reconciliationResult] = await Promise.all([
+      const [rosterResult, previewResult, reconciliationResult, activityMappingResult] = await Promise.all([
         fetchMicrosoftRoster(connectionId, link.id),
         fetchStudentMatchPreview(connectionId, link.id),
         fetchRosterReconciliation(connectionId, link.id),
+        fetchActivityMapping(connectionId, link.id),
       ]);
       setRoster(rosterResult);
       setPreview(previewResult);
       setReconciliation(reconciliationResult);
+      setActivityMapping(activityMappingResult);
     } catch (cause) {
       setRoster(null);
       setPreview(null);
       setReconciliation(null);
+      setActivityMapping(null);
       setError(errorMessage(cause));
     } finally {
       setBusy("");
@@ -275,6 +283,31 @@ export default function MicrosoftIntegrationConsole({
     }
   }
 
+  async function mapAssignment(microsoftAssignmentId: string) {
+    if (!connectionId || !inspectedLinkId) return;
+    const activityId = activitySelection[microsoftAssignmentId];
+    if (!activityId) return;
+
+    setBusy(`map-assignment:${microsoftAssignmentId}`);
+    setError("");
+    setNotice("");
+
+    try {
+      await linkMicrosoftAssignment(
+        connectionId,
+        inspectedLinkId,
+        { activityId, microsoftAssignmentId },
+      );
+      const refreshed = await fetchActivityMapping(connectionId, inspectedLinkId);
+      setActivityMapping(refreshed);
+      setNotice("Atividade Arena vinculada à tarefa do Teams.");
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+
   const linkByRemoteId = useMemo(
     () => new Map(links.map((link) => [link.externalClassroomId, link])),
     [links],
@@ -326,6 +359,7 @@ export default function MicrosoftIntegrationConsole({
                 setRoster(null);
                 setPreview(null);
                 setReconciliation(null);
+                setActivityMapping(null);
               }}>
                 {microsoftConnections.map((connection) => (
                   <option key={connection.id} value={connection.id}>
@@ -509,6 +543,85 @@ export default function MicrosoftIntegrationConsole({
                 )}
               </div>
             </>
+          )}
+        </Card>
+
+        <Card className={styles.stepCard}>
+          <div className={styles.cardHeader}>
+            <div><span className={styles.stepNumber}>07</span><h3>Atividades e tarefas</h3></div>
+            {activityMapping && (
+              <Badge variant="success">{activityMapping.mappings.length} vínculo(s)</Badge>
+            )}
+          </div>
+
+          {!activityMapping ? (
+            <div className={styles.empty}>Selecione uma turma vinculada para consultar as tarefas do Teams.</div>
+          ) : (
+            <div className={styles.classList}>
+              {activityMapping.assignments.length === 0 && (
+                <div className={styles.empty}>Nenhuma assignment encontrada no Microsoft Teams.</div>
+              )}
+
+              {activityMapping.assignments.map((assignment) => {
+                const mapping = activityMapping.mappings.find(
+                  (item) => item.microsoftAssignmentId === assignment.id,
+                );
+                const local = mapping
+                  ? activityMapping.localActivities.find((item) => item.id === mapping.activityId)
+                  : undefined;
+
+                return (
+                  <div key={assignment.id} className={styles.classRow}>
+                    <div className={styles.classIdentity}>
+                      <strong>{assignment.displayName}</strong>
+                      <span>
+                        {assignment.status || "sem status"}
+                        {assignment.dueDateTime
+                          ? ` · prazo ${new Date(assignment.dueDateTime).toLocaleDateString("pt-BR")}`
+                          : " · sem prazo"}
+                      </span>
+                      {assignment.webUrl && (
+                        <a href={assignment.webUrl} target="_blank" rel="noreferrer">
+                          Abrir no Teams ↗
+                        </a>
+                      )}
+                    </div>
+
+                    {mapping ? (
+                      <div className={styles.linkedState}>
+                        <Badge variant="success">Vinculada</Badge>
+                        <span>{local?.title ?? mapping.activityId}</span>
+                      </div>
+                    ) : (
+                      <div className={styles.linkControls}>
+                        <select
+                          value={activitySelection[assignment.id] ?? ""}
+                          onChange={(event) => setActivitySelection((current) => ({
+                            ...current,
+                            [assignment.id]: event.target.value,
+                          }))}
+                        >
+                          <option value="">Selecionar atividade Arena...</option>
+                          {activityMapping.localActivities.map((activity) => (
+                            <option key={activity.id} value={activity.id}>
+                              {activity.title}{activity.topic ? ` · ${activity.topic}` : ""}
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          size="sm"
+                          disabled={!activitySelection[assignment.id]}
+                          loading={busy === `map-assignment:${assignment.id}`}
+                          onClick={() => void mapAssignment(assignment.id)}
+                        >
+                          Vincular atividade
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </Card>
       </div>

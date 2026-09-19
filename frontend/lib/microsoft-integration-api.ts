@@ -260,3 +260,62 @@ export const applyRosterReconciliation = (
       body: JSON.stringify({ action }),
     },
   );
+
+
+export type MicrosoftEducationAssignment = {
+  id: string;
+  classId: string | null;
+  displayName: string;
+  status: string | null;
+  assignedDateTime: string | null;
+  dueDateTime: string | null;
+  webUrl: string | null;
+};
+
+export type MicrosoftLocalActivity = {
+  id: string;
+  title: string;
+  topic: string | null;
+  updatedAt: string;
+};
+
+export type MicrosoftActivityLinkMapping = {
+  id: string;
+  activityId: string;
+  microsoftAssignmentId: string;
+  externalWebUrl: string | null;
+};
+
+export type MicrosoftActivityMapping = {
+  connectionId: string;
+  classroomLinkId: string;
+  classroomId: string;
+  microsoftClassId: string;
+  assignments: MicrosoftEducationAssignment[];
+  localActivities: MicrosoftLocalActivity[];
+  mappings: MicrosoftActivityLinkMapping[];
+};
+
+export const fetchActivityMapping = (
+  connectionId: string,
+  classroomLinkId: string,
+) =>
+  request<MicrosoftActivityMapping>(
+    `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-mapping`,
+  );
+
+export const linkMicrosoftAssignment = (
+  connectionId: string,
+  classroomLinkId: string,
+  input: {
+    activityId: string;
+    microsoftAssignmentId: string;
+  },
+) =>
+  request<MicrosoftActivityLinkMapping>(
+    `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-mapping`,
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );

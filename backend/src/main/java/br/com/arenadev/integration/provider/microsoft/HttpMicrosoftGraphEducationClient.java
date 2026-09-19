@@ -69,6 +69,31 @@ public class HttpMicrosoftGraphEducationClient implements MicrosoftGraphEducatio
         return List.copyOf(result);
     }
 
+    @Override
+    public List<MicrosoftEducationAssignment> listClassAssignments(
+            String accessToken,
+            String microsoftClassId
+    ) {
+        requireToken(accessToken);
+        String classId = required(microsoftClassId, "microsoftClassId");
+
+        var result = new ArrayList<MicrosoftEducationAssignment>();
+        String next = "/education/classes/" + classId
+                + "/assignments?$select=id,classId,displayName,status,assignedDateTime,dueDateTime,webUrl";
+
+        while (next != null && !next.isBlank()) {
+            var page = getAssignmentPage(accessToken, next);
+            if (page.value() != null) {
+                page.value().stream()
+                        .map(AssignmentPayload::toDomain)
+                        .forEach(result::add);
+            }
+            next = page.nextLink();
+        }
+
+        return List.copyOf(result);
+    }
+
     private ClassPage getClassPage(String accessToken, String location) {
         try {
             var page = request(accessToken, location).body(ClassPage.class);
@@ -94,6 +119,20 @@ public class HttpMicrosoftGraphEducationClient implements MicrosoftGraphEducatio
             return page;
         } catch (RestClientResponseException error) {
             throw graphFailure("listar membros da turma", error);
+        }
+    }
+
+    private AssignmentPage getAssignmentPage(String accessToken, String location) {
+        try {
+            var page = request(accessToken, location).body(AssignmentPage.class);
+            if (page == null) {
+                throw new MicrosoftGraphConnectionException(
+                        "Microsoft Graph retornou resposta vazia ao listar assignments."
+                );
+            }
+            return page;
+        } catch (RestClientResponseException error) {
+            throw graphFailure("listar assignments da turma", error);
         }
     }
 
@@ -136,6 +175,11 @@ public class HttpMicrosoftGraphEducationClient implements MicrosoftGraphEducatio
 
     record MemberPage(
             List<UserPayload> value,
+            @JsonProperty("@odata.nextLink") String nextLink
+    ) {}
+
+    record AssignmentPage(
+            List<AssignmentPayload> value,
             @JsonProperty("@odata.nextLink") String nextLink
     ) {}
 
@@ -194,6 +238,28 @@ public class HttpMicrosoftGraphEducationClient implements MicrosoftGraphEducatio
                 return student.externalId();
             }
             return teacher == null ? null : teacher.externalId();
+        }
+    }
+
+    record AssignmentPayload(
+            String id,
+            String classId,
+            String displayName,
+            String status,
+            java.time.OffsetDateTime assignedDateTime,
+            java.time.OffsetDateTime dueDateTime,
+            String webUrl
+    ) {
+        MicrosoftEducationAssignment toDomain() {
+            return new MicrosoftEducationAssignment(
+                    id,
+                    classId,
+                    displayName,
+                    status,
+                    assignedDateTime,
+                    dueDateTime,
+                    webUrl
+            );
         }
     }
 

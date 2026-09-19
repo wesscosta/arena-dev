@@ -131,11 +131,44 @@ public class ExternalLinkService {
     ) {
         requireConnection(connectionId);
         requireClassroom(connectionId, externalClassroomLinkId);
-        return activities.findByConnectionIdAndActivityId(connectionId, activityId)
-                .orElseGet(() -> activities.save(new ExternalActivityLinkEntity(
-                        UUID.randomUUID(), connectionId, externalClassroomLinkId, activityId,
-                        externalActivityId, externalWebUrl, now()
-                )));
+        String externalId = required(externalActivityId, "externalActivityId");
+
+        var byLocal = activities.findByConnectionIdAndActivityId(connectionId, activityId);
+        if (byLocal.isPresent()) {
+            var existing = byLocal.get();
+            if (!existing.getExternalClassroomLinkId().equals(externalClassroomLinkId)
+                    || !existing.getExternalActivityId().equals(externalId)) {
+                throw new IntegrationConflictException(
+                        "A atividade local já está vinculada a outra atividade externa nesta conexão."
+                );
+            }
+            return existing;
+        }
+
+        var byExternal = activities.findByConnectionIdAndExternalActivityId(
+                connectionId,
+                externalId
+        );
+
+        if (byExternal.isPresent()) {
+            var existing = byExternal.get();
+            if (!existing.getActivityId().equals(activityId)) {
+                throw new IntegrationConflictException(
+                        "A atividade externa já está vinculada a outra atividade local nesta conexão."
+                );
+            }
+            return existing;
+        }
+
+        return activities.save(new ExternalActivityLinkEntity(
+                UUID.randomUUID(),
+                connectionId,
+                externalClassroomLinkId,
+                activityId,
+                externalId,
+                externalWebUrl,
+                now()
+        ));
     }
 
     public ExternalSubmissionLinkEntity linkSubmission(
