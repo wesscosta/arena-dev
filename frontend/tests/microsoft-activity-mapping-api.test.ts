@@ -24,6 +24,12 @@ test("loads activity mapping discovery",async()=>{
 
 test("links local activity to Microsoft assignment",async()=>{
   globalThis.fetch=async(input,init)=>{
+    if(String(input).endsWith("/api/auth/csrf")){
+      return new Response(JSON.stringify({token:"test-csrf-token"}),{
+        status:200,
+        headers:{"Content-Type":"application/json"}
+      });
+    }
     assert.ok(String(input).endsWith("/activity-mapping"));
     assert.equal(init?.method,"POST");
     const body=JSON.parse(String(init?.body));

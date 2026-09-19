@@ -21,6 +21,7 @@ public class MicrosoftIntegrationController {
     public MicrosoftReadinessResponse readiness() {
         return new MicrosoftReadinessResponse(
                 LearningPlatformProvider.MICROSOFT_TEAMS,
+                service.configured(),
                 service.configured()
         );
     }
@@ -36,7 +37,8 @@ public class MicrosoftIntegrationController {
 
     public record MicrosoftReadinessResponse(
             LearningPlatformProvider provider,
-            boolean applicationCredentialsConfigured
+            boolean applicationCredentialsConfigured,
+            boolean delegatedOAuthConfigured
     ) {}
 
     public record MicrosoftConnectionResponse(

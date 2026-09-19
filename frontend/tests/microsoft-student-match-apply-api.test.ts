@@ -7,6 +7,12 @@ afterEach(()=>{globalThis.fetch=originalFetch});
 
 test("posts supervised student match action",async()=>{
   globalThis.fetch=async(input,init)=>{
+    if(String(input).endsWith("/api/auth/csrf")){
+      return new Response(JSON.stringify({token:"test-csrf-token"}),{
+        status:200,
+        headers:{"Content-Type":"application/json"}
+      });
+    }
     assert.ok(String(input).endsWith("/student-match-apply"));
     assert.equal(init?.method,"POST");
     const body=JSON.parse(String(init?.body));

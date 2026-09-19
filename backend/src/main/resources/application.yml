@@ -25,6 +25,12 @@ app:
   teacher:
     username: ${APP_TEACHER_USERNAME:professor}
     password: ${APP_TEACHER_PASSWORD:arena-dev-change-me}
+  integrations:
+    credential-encryption-key: ${APP_INTEGRATIONS_CREDENTIAL_ENCRYPTION_KEY:}
+    microsoft:
+      client-id: ${APP_INTEGRATIONS_MICROSOFT_CLIENT_ID:}
+      client-secret: ${APP_INTEGRATIONS_MICROSOFT_CLIENT_SECRET:}
+      redirect-uri: ${APP_INTEGRATIONS_MICROSOFT_REDIRECT_URI:http://localhost:8080/api/integrations/microsoft/oauth/callback}
   security:
     login-rate-limit:
       max-failures: ${APP_LOGIN_RATE_LIMIT_MAX_FAILURES:5}

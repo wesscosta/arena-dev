@@ -7,6 +7,7 @@ import {
   applyStudentMatch,
   connectMicrosoft,
   discoverMicrosoftClasses,
+  startMicrosoftOAuth,
   fetchClassroomLinks,
   fetchIntegrationConnections,
   fetchMicrosoftReadiness,
@@ -397,19 +398,27 @@ export default function MicrosoftIntegrationConsole({
             </label>
           )}
 
-          <form className={styles.formGrid} onSubmit={handleConnect}>
-            <label className={styles.field}>
-              <span>Nome da conexão</span>
-              <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} required />
-            </label>
-            <label className={styles.field}>
-              <span>Tenant ID</span>
-              <input value={tenantId} onChange={(event) => setTenantId(event.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required />
-            </label>
-            <Button variant="primary" type="submit" loading={busy === "connect"} disabled={!readiness?.applicationCredentialsConfigured}>
-              Conectar Microsoft
+          <div className={styles.actionRow}>
+            <Button
+              variant="primary"
+              type="button"
+              disabled={!readiness?.delegatedOAuthConfigured}
+              onClick={() => {
+                setBusy("oauth");
+                setError("");
+                void startMicrosoftOAuth()
+                  .then(({ authorizationUrl }) => window.location.assign(authorizationUrl))
+                  .catch((cause) => {
+                    setError(errorMessage(cause));
+                    setBusy("");
+                  });
+              }}
+              loading={busy === "oauth"}
+            >
+              Entrar com Microsoft 365
             </Button>
-          </form>
+            <span>O tenant e a conta são identificados automaticamente após o login.</span>
+          </div>
         </Card>
 
         <Card className={styles.stepCard}>

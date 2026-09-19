@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge, Button } from "@/components/ui";
 import {
   fetchMicrosoftReadiness,
+  startMicrosoftOAuth,
   type IntegrationConnection,
   type MicrosoftReadiness,
 } from "@/lib/microsoft-integration-api";
@@ -75,8 +76,22 @@ export default function IntegrationSettingsSummary({
 
         {error && <small className="integration-provider-error">{error}</small>}
 
-        <Button size="sm" onClick={onManage}>
-          {activeTeams ? "Gerenciar integração" : "Configurar Teams"}
+        <Button
+          size="sm"
+          onClick={() => {
+            if (activeTeams) {
+              onManage();
+              return;
+            }
+            void startMicrosoftOAuth()
+              .then(({ authorizationUrl }) => window.location.assign(authorizationUrl))
+              .catch((cause) => setError(
+                cause instanceof Error ? cause.message : "Falha ao iniciar login Microsoft."
+              ));
+          }}
+          disabled={!activeTeams && !readiness?.delegatedOAuthConfigured}
+        >
+          {activeTeams ? "Gerenciar integração" : "Entrar com Microsoft 365"}
         </Button>
       </article>
 

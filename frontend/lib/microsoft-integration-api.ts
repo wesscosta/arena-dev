@@ -3,6 +3,7 @@ import { apiFetch } from "./auth-api";
 export type MicrosoftReadiness = {
   provider: "MICROSOFT_TEAMS";
   applicationCredentialsConfigured: boolean;
+  delegatedOAuthConfigured: boolean;
 };
 
 export type IntegrationConnection = {
@@ -361,4 +362,10 @@ export const fetchSubmissionTracking = (
 ) =>
   request<MicrosoftSubmissionTracking>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-links/${activityLinkId}/submissions`,
+  );
+
+
+export const startMicrosoftOAuth = () =>
+  request<{ authorizationUrl: string }>(
+    "/api/integrations/microsoft/oauth/start",
   );
