@@ -14,6 +14,7 @@ import QuizPanel from "@/components/QuizPanel";
 import SessionAccessCard from "@/components/SessionAccessCard";
 import SessionTimeline from "@/components/SessionTimeline";
 import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
+import MicrosoftIntegrationConsole from "@/components/MicrosoftIntegrationConsole";
 import {
   Badge,
   Breadcrumb,
@@ -71,7 +72,7 @@ import {
   classroomThemePresentation,
 } from "@/lib/classroom-theme";
 
-type View = "dashboard" | "classroom" | "classroom-settings" | "arena" | "settings";
+type View = "dashboard" | "classroom" | "classroom-settings" | "arena" | "integrations" | "settings";
 type ClassroomTab = "home" | "students" | "activities" | "ranking" | "history";
 
 const VIEW_LABEL: Record<View, string> = {
@@ -79,6 +80,7 @@ const VIEW_LABEL: Record<View, string> = {
   classroom: "Turma",
   "classroom-settings": "Gerenciar turma",
   arena: "Arena",
+  integrations: "Integrações",
   settings: "Configurações",
 };
 
@@ -378,6 +380,13 @@ export default function ArenaApp() {
                     current: true,
                   } satisfies BreadcrumbItem]
                 : []),
+              ...(view === "integrations"
+                ? [{
+                    id: "integrations",
+                    label: "Integrações",
+                    current: true,
+                  } satisfies BreadcrumbItem]
+                : []),
               ...(view === "settings"
                 ? [{
                     id: "settings",
@@ -408,6 +417,15 @@ export default function ArenaApp() {
                 </button>
               )}
             >
+              <MenuItem
+                icon="⇄"
+                description="Microsoft Teams e plataformas educacionais"
+                onSelect={() => {
+                  setView("integrations");
+                }}
+              >
+                Integrações
+              </MenuItem>
               <MenuItem
                 icon="⚙"
                 description="Perfil, sistema e backup"
@@ -575,6 +593,13 @@ export default function ArenaApp() {
                 onAction={() => setView("dashboard")}
               />
             )
+          )}
+
+          {view === "integrations" && (
+            <MicrosoftIntegrationConsole
+              classrooms={data.classrooms}
+              onBack={() => setView("dashboard")}
+            />
           )}
 
           {view === "settings" && (

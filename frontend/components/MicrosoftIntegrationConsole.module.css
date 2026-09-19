@@ -1,0 +1,40 @@
+.page{display:grid;gap:var(--space-6)}
+.heading{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4)}
+.heading h2{margin:var(--space-1) 0 var(--space-2);font-size:var(--font-size-3xl)}
+.heading p{margin:0;max-width:52rem;color:var(--ds-text-secondary)}
+.eyebrow{color:var(--ds-accent);font-size:var(--font-size-xs);font-weight:var(--font-bold);letter-spacing:.12em}
+.steps,.stepCard,.classList,.linkList{display:grid;gap:var(--space-4)}
+.cardHeader,.actionRow,.linkControls,.linkedState{display:flex;align-items:center;gap:var(--space-3)}
+.cardHeader{align-items:flex-start;justify-content:space-between}
+.cardHeader h3{margin:0;font-size:var(--font-size-xl)}
+.stepNumber{display:block;margin-bottom:var(--space-1);color:var(--ds-text-tertiary);font-family:var(--font-family-mono);font-size:var(--font-size-xs)}
+.error,.notice{padding:var(--space-3) var(--space-4);border:1px solid var(--ds-border);border-radius:var(--radius-md)}
+.error{border-color:var(--ds-danger);color:var(--ds-danger-text);background:var(--ds-danger-fill)}
+.notice{border-color:var(--ds-accent);background:var(--ds-surface-subtle)}
+.codeBox{display:grid;gap:var(--space-2);padding:var(--space-3);border:1px solid var(--ds-border);border-radius:var(--radius-md);background:var(--ds-surface-inset);overflow-wrap:anywhere}
+.codeBox code{font-family:var(--font-family-mono);font-size:var(--font-size-sm)}
+.formGrid{display:grid;grid-template-columns:1fr 1fr auto;gap:var(--space-3);align-items:end}
+.field{display:grid;gap:var(--space-2)}
+.field span{font-size:var(--font-size-sm);font-weight:var(--font-semibold)}
+.field input,.field select,.linkControls select{width:100%;min-height:var(--control-md);padding:0 var(--space-3);border:1px solid var(--ds-border);border-radius:var(--radius-sm);color:var(--ds-text-primary);background:var(--ds-surface-control);font:inherit}
+.field input:focus,.field select:focus,.linkControls select:focus{outline:var(--focus-width) solid var(--ds-accent);outline-offset:var(--focus-offset)}
+.classRow{display:grid;grid-template-columns:minmax(12rem,1fr) minmax(18rem,1.4fr);gap:var(--space-4);align-items:center;padding:var(--space-3);border:1px solid var(--ds-border-subtle);border-radius:var(--radius-md);background:var(--ds-surface-subtle)}
+.classIdentity strong,.classIdentity span,.linkItem strong,.linkItem small,.table td small{display:block}
+.classIdentity span,.linkedState span,.linkItem small,.actionRow span,.table td small{color:var(--ds-text-secondary);font-size:var(--font-size-sm)}
+.classIdentity span,.linkedState span,.linkItem small{overflow-wrap:anywhere}
+.linkControls,.linkedState{justify-content:flex-end}
+.linkControls select{max-width:22rem}
+.linkItem{display:flex;width:100%;align-items:center;justify-content:space-between;gap:var(--space-3);padding:var(--space-3);border:1px solid var(--ds-border-subtle);border-radius:var(--radius-md);color:var(--ds-text-primary);background:var(--ds-surface-subtle);text-align:left;cursor:pointer}
+.linkItem:hover{border-color:var(--ds-border-strong);background:var(--ds-surface-hover)}
+.linkItemActive{border-color:var(--ds-accent);background:var(--ds-surface-interactive)}
+.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--space-2)}
+.metric{display:grid;gap:var(--space-1);padding:var(--space-3);border:1px solid var(--ds-border-subtle);border-radius:var(--radius-md);background:var(--ds-surface-stat)}
+.metric span{color:var(--ds-text-secondary);font-size:var(--font-size-xs)}
+.metric strong{font-size:var(--font-size-xl)}
+.tableWrap{overflow-x:auto}
+.table{width:100%;min-width:52rem;border-collapse:collapse}
+.table th,.table td{padding:var(--space-3);border-bottom:1px solid var(--ds-border-subtle);text-align:left;vertical-align:top}
+.table th{color:var(--ds-text-secondary);font-size:var(--font-size-xs);text-transform:uppercase;letter-spacing:.05em}
+.empty{padding:var(--space-5);border:1px dashed var(--ds-border);border-radius:var(--radius-md);color:var(--ds-text-secondary);text-align:center}
+@media(max-width:960px){.formGrid{grid-template-columns:1fr 1fr}.formGrid>button{grid-column:1/-1}.classRow{grid-template-columns:1fr}.linkControls,.linkedState{justify-content:flex-start;flex-wrap:wrap}.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:640px){.heading{display:grid}.formGrid,.metrics{grid-template-columns:1fr}.linkControls{display:grid}.linkControls select{max-width:none}.linkItem{align-items:flex-start;flex-direction:column}}
