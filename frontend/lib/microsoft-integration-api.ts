@@ -366,6 +366,30 @@ export const fetchSubmissionTracking = (
   );
 
 
+export type MicrosoftSubmissionOutcomePreview = {
+  connectionId: string;
+  classroomLinkId: string;
+  activityLinkId: string;
+  localSubmissionId: string;
+  microsoftSubmissionId: string;
+  points: number | null;
+  publishedPoints: number | null;
+  feedback: string | null;
+  publishedFeedback: string | null;
+  lastModifiedDateTime: string | null;
+  empty: boolean;
+};
+
+export const fetchMicrosoftSubmissionOutcome = (
+  connectionId: string,
+  classroomLinkId: string,
+  activityLinkId: string,
+  microsoftSubmissionId: string,
+) =>
+  request<MicrosoftSubmissionOutcomePreview>(
+    `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-links/${activityLinkId}/submissions/${encodeURIComponent(microsoftSubmissionId)}/outcomes`,
+  );
+
 export const startMicrosoftOAuth = () =>
   request<{ authorizationUrl: string }>(
     "/api/integrations/microsoft/oauth/start",

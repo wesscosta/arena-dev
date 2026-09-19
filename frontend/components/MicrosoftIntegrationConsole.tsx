@@ -17,6 +17,7 @@ import {
   applyRosterReconciliation,
   fetchActivityMapping,
   fetchSubmissionTracking,
+  fetchMicrosoftSubmissionOutcome,
   importMicrosoftSubmission,
   linkMicrosoftAssignment,
   linkMicrosoftClass,
@@ -27,6 +28,7 @@ import {
   type MicrosoftRoster,
   type MicrosoftActivityMapping,
   type MicrosoftSubmissionTracking,
+  type MicrosoftSubmissionOutcomePreview,
   type RosterReconciliation,
   type RosterReconciliationItem,
   type StudentMatchItem,
@@ -77,6 +79,7 @@ export default function MicrosoftIntegrationConsole({
   const [reconciliation, setReconciliation] = useState<RosterReconciliation | null>(null);
   const [activityMapping, setActivityMapping] = useState<MicrosoftActivityMapping | null>(null);
   const [submissionTracking, setSubmissionTracking] = useState<MicrosoftSubmissionTracking | null>(null);
+  const [outcomePreview, setOutcomePreview] = useState<MicrosoftSubmissionOutcomePreview | null>(null);
   const [activitySelection, setActivitySelection] = useState<Record<string, string>>({});
   const [explicitStudent, setExplicitStudent] = useState<Record<string, string>>({});
   const [inspectedLinkId, setInspectedLinkId] = useState("");
@@ -343,6 +346,29 @@ export default function MicrosoftIntegrationConsole({
     }
   }
 
+  async function inspectOutcome(microsoftSubmissionId: string) {
+    if (!connectionId || !inspectedLinkId || !submissionTracking) return;
+
+    setBusy(`outcomes:${microsoftSubmissionId}`);
+    setError("");
+    setNotice("");
+
+    try {
+      const result = await fetchMicrosoftSubmissionOutcome(
+        connectionId,
+        inspectedLinkId,
+        submissionTracking.activityLinkId,
+        microsoftSubmissionId,
+      );
+      setOutcomePreview(result);
+    } catch (cause) {
+      setOutcomePreview(null);
+      setError(errorMessage(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function inspectSubmissions(activityLinkId: string) {
     if (!connectionId || !inspectedLinkId) return;
 
@@ -357,6 +383,7 @@ export default function MicrosoftIntegrationConsole({
         activityLinkId,
       );
       setSubmissionTracking(result);
+      setOutcomePreview(null);
       setNotice(`Entregas carregadas para ${result.activityTitle}.`);
     } catch (cause) {
       setSubmissionTracking(null);
@@ -738,6 +765,7 @@ export default function MicrosoftIntegrationConsole({
                       <th>Situação</th>
                       <th>Data da entrega</th>
                       <th>Arena</th>
+                      <th>Avaliação</th>
                       <th>Acesso</th>
                     </tr>
                   </thead>
@@ -786,6 +814,20 @@ export default function MicrosoftIntegrationConsole({
                           )}
                         </td>
                         <td>
+                          {item.localSubmissionId ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              loading={busy === `outcomes:${item.microsoftSubmissionId}`}
+                              onClick={() => void inspectOutcome(item.microsoftSubmissionId)}
+                            >
+                              Ver avaliação Teams
+                            </Button>
+                          ) : (
+                            <span className={styles.blockedAction}>Importe primeiro</span>
+                          )}
+                        </td>
+                        <td>
                           {item.webUrl ? (
                             <a href={item.webUrl} target="_blank" rel="noreferrer">
                               Abrir ↗
@@ -797,6 +839,46 @@ export default function MicrosoftIntegrationConsole({
                   </tbody>
                 </table>
               </div>
+
+              {outcomePreview && (
+                <div className={styles.outcomePreview}>
+                  <div className={styles.cardHeader}>
+                    <div>
+                      <span className={styles.stepNumber}>09</span>
+                      <h3>Avaliação no Microsoft Teams</h3>
+                    </div>
+                    <Badge variant={outcomePreview.empty ? "neutral" : "success"}>
+                      Somente leitura
+                    </Badge>
+                  </div>
+
+                  {outcomePreview.empty ? (
+                    <div className={styles.empty}>
+                      O Teams ainda não possui nota ou feedback para esta entrega.
+                    </div>
+                  ) : (
+                    <>
+                      <div className={styles.metrics}>
+                        <Metric label="Nota atual Teams" value={outcomePreview.points ?? "—"} />
+                        <Metric label="Nota publicada" value={outcomePreview.publishedPoints ?? "—"} />
+                      </div>
+                      <div className={styles.outcomeFeedbackGrid}>
+                        <div>
+                          <span>Feedback atual</span>
+                          <p>{outcomePreview.feedback || "Sem feedback atual."}</p>
+                        </div>
+                        <div>
+                          <span>Feedback publicado ao aluno</span>
+                          <p>{outcomePreview.publishedFeedback || "Ainda não publicado."}</p>
+                        </div>
+                      </div>
+                      <p className={styles.mutedText}>
+                        Nenhuma nota ou feedback foi aplicado ao Arena. A próxima etapa permitirá revisar antes de copiar.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
             </>
           )}
         </Card>
@@ -805,7 +887,7 @@ export default function MicrosoftIntegrationConsole({
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({ label, value }: { label: string; value: number | string }) {
   return <div className={styles.metric}><span>{label}</span><strong>{value}</strong></div>;
 }
 

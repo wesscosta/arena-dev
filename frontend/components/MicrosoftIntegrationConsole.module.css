@@ -70,3 +70,49 @@
   color:var(--ds-text-secondary);
   font-size:var(--font-size-sm);
 }
+
+
+.outcomePreview {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.outcomeFeedbackGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.outcomeFeedbackGrid > div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--ds-surface-stat);
+}
+
+.outcomeFeedbackGrid span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.outcomeFeedbackGrid p {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .outcomeFeedbackGrid {
+    grid-template-columns: 1fr;
+  }
+}

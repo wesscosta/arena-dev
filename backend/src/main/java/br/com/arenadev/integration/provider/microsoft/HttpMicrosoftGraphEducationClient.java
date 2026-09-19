@@ -167,6 +167,37 @@ public class HttpMicrosoftGraphEducationClient implements MicrosoftGraphEducatio
         }
     }
 
+    @Override
+    public List<MicrosoftEducationOutcome> listSubmissionOutcomes(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId
+    ) {
+        requireToken(accessToken);
+        String classId = required(microsoftClassId, "microsoftClassId");
+        String assignmentId = required(microsoftAssignmentId, "microsoftAssignmentId");
+        String submissionId = required(microsoftSubmissionId, "microsoftSubmissionId");
+
+        var result = new ArrayList<MicrosoftEducationOutcome>();
+        String next = "/education/classes/" + classId
+                + "/assignments/" + assignmentId
+                + "/submissions/" + submissionId
+                + "/outcomes";
+
+        while (next != null && !next.isBlank()) {
+            var page = getOutcomePage(accessToken, next);
+            if (page.value() != null) {
+                page.value().stream()
+                        .map(OutcomePayload::toDomain)
+                        .forEach(result::add);
+            }
+            next = page.nextLink();
+        }
+
+        return List.copyOf(result);
+    }
+
     private SubmissionPage getSubmissionPage(String accessToken, String location) {
         try {
             var page = request(accessToken, location).body(SubmissionPage.class);
@@ -178,6 +209,20 @@ public class HttpMicrosoftGraphEducationClient implements MicrosoftGraphEducatio
             return page;
         } catch (RestClientResponseException error) {
             throw graphFailure("listar submissions da assignment", error);
+        }
+    }
+
+    private OutcomePage getOutcomePage(String accessToken, String location) {
+        try {
+            var page = request(accessToken, location).body(OutcomePage.class);
+            if (page == null) {
+                throw new MicrosoftGraphConnectionException(
+                        "Microsoft Graph retornou resposta vazia ao listar outcomes."
+                );
+            }
+            return page;
+        } catch (RestClientResponseException error) {
+            throw graphFailure("listar avaliação da submission", error);
         }
     }
 
@@ -230,6 +275,11 @@ public class HttpMicrosoftGraphEducationClient implements MicrosoftGraphEducatio
 
     record SubmissionPage(
             List<SubmissionPayload> value,
+            @JsonProperty("@odata.nextLink") String nextLink
+    ) {}
+
+    record OutcomePage(
+            List<OutcomePayload> value,
             @JsonProperty("@odata.nextLink") String nextLink
     ) {}
 
@@ -336,6 +386,38 @@ public class HttpMicrosoftGraphEducationClient implements MicrosoftGraphEducatio
             );
         }
     }
+
+    record OutcomePayload(
+            String id,
+            @JsonProperty("@odata.type") String odataType,
+            PointsGradePayload points,
+            PointsGradePayload publishedPoints,
+            FeedbackPayload feedback,
+            FeedbackPayload publishedFeedback,
+            java.time.OffsetDateTime lastModifiedDateTime
+    ) {
+        MicrosoftEducationOutcome toDomain() {
+            return new MicrosoftEducationOutcome(
+                    id,
+                    odataType,
+                    points == null ? null : points.points(),
+                    publishedPoints == null ? null : publishedPoints.points(),
+                    feedback == null ? null : feedback.content(),
+                    publishedFeedback == null ? null : publishedFeedback.content(),
+                    lastModifiedDateTime
+            );
+        }
+    }
+
+    record PointsGradePayload(java.math.BigDecimal points) {}
+
+    record FeedbackPayload(TextPayload text) {
+        String content() {
+            return text == null ? null : text.content();
+        }
+    }
+
+    record TextPayload(String content, String contentType) {}
 
     record SubmissionRecipientPayload(String userId) {}
 

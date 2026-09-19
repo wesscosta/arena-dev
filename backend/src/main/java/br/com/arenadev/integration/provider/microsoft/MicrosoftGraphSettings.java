@@ -53,7 +53,7 @@ public class MicrosoftGraphSettings {
     public String delegatedScopes() {
         return "openid profile offline_access "
                 + "https://graph.microsoft.com/EduRoster.ReadBasic "
-                + "https://graph.microsoft.com/EduAssignments.ReadBasic";
+                + "https://graph.microsoft.com/EduAssignments.Read";
     }
 
     private static String clean(String value) {

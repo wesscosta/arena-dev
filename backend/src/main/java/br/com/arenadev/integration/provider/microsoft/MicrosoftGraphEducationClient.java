@@ -11,4 +11,10 @@ public interface MicrosoftGraphEducationClient {
             String microsoftClassId,
             String microsoftAssignmentId
     );
+    List<MicrosoftEducationOutcome> listSubmissionOutcomes(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId
+    );
 }
