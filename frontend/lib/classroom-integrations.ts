@@ -42,3 +42,35 @@ export async function fetchClassroomIntegrationState(): Promise<ClassroomIntegra
 
   return { platformsByClassroomId, connections };
 }
+
+
+export type ClassroomIntegrationSummaryItem = {
+  classroomLinkId: string;
+  connectionId: string;
+  provider: ClassroomIntegrationPlatform | null;
+  connectionName: string;
+  connectionStatus: string | null;
+  externalClassroomId: string;
+  externalWebUrl: string | null;
+  linkedStudents: number;
+  mappedActivities: number;
+};
+
+export type ClassroomIntegrationSummary = {
+  classroomId: string;
+  integrations: ClassroomIntegrationSummaryItem[];
+};
+
+export async function fetchClassroomIntegrationSummary(
+  classroomId: string,
+): Promise<ClassroomIntegrationSummary> {
+  const response = await fetch(`/api/integrations/classrooms/${classroomId}/summary`, {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Falha ao consultar integração da turma (${response.status}).`);
+  }
+
+  return (await response.json()) as ClassroomIntegrationSummary;
+}

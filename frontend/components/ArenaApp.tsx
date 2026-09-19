@@ -16,6 +16,7 @@ import SessionTimeline from "@/components/SessionTimeline";
 import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
 import MicrosoftIntegrationConsole from "@/components/MicrosoftIntegrationConsole";
 import IntegrationSettingsSummary from "@/components/IntegrationSettingsSummary";
+import ClassroomIntegrationWorkspace from "@/components/ClassroomIntegrationWorkspace";
 import {
   Badge,
   Breadcrumb,
@@ -479,6 +480,7 @@ export default function ArenaApp() {
                     currentSession={currentSession}
                     onOpenArena={() => setView("arena")}
                     onManageClassroom={() => openClassroomSettings(activeClassroom.id)}
+                    onManageIntegration={() => setView("integrations")}
                     notify={notify}
                     refreshClassroomDomain={refreshClassroomDomain}
                   />
@@ -1044,7 +1046,7 @@ function ClassroomWorkspaceTabs({ tab, onTabChange, studentCount, activityCount,
   );
 }
 
-function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, onManageClassroom, notify, refreshClassroomDomain }: {
+function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, onManageClassroom, onManageIntegration, notify, refreshClassroomDomain }: {
   classroom: Classroom;
   data: ArenaData;
   students: Student[];
@@ -1053,6 +1055,7 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
   currentSession?: ArenaData["sessions"][number];
   onOpenArena: () => void;
   onManageClassroom: () => void;
+  onManageIntegration: () => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
@@ -1119,6 +1122,13 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
           hint={currentSession ? currentSession.title : `${todayEvents.length} evento(s) hoje`}
         />
       </div>
+
+      <ClassroomIntegrationWorkspace
+        classroomId={classroom.id}
+        studentCount={students.length}
+        activityCount={activityCount}
+        onManage={onManageIntegration}
+      />
 
     </div>
   );

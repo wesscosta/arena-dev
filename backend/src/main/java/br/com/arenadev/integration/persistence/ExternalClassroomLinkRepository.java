@@ -9,4 +9,5 @@ public interface ExternalClassroomLinkRepository extends JpaRepository<ExternalC
     Optional<ExternalClassroomLinkEntity> findByConnectionIdAndClassroomId(UUID connectionId, UUID classroomId);
     Optional<ExternalClassroomLinkEntity> findByConnectionIdAndExternalClassroomId(UUID connectionId, String externalClassroomId);
     List<ExternalClassroomLinkEntity> findByConnectionId(UUID connectionId);
+    List<ExternalClassroomLinkEntity> findByClassroomId(UUID classroomId);
 }
