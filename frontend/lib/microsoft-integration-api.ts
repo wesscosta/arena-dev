@@ -390,6 +390,37 @@ export const fetchMicrosoftSubmissionOutcome = (
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-links/${activityLinkId}/submissions/${encodeURIComponent(microsoftSubmissionId)}/outcomes`,
   );
 
+export type MicrosoftOutcomeApplyAction =
+  | "APPLY_FEEDBACK_DRAFT"
+  | "APPLY_POINTS_SINGLE_CRITERION";
+
+export type MicrosoftOutcomeApplyResult = {
+  localSubmissionId: string;
+  assessmentId: string;
+  microsoftSubmissionId: string;
+  action: MicrosoftOutcomeApplyAction;
+  submissionStatus: "SUBMITTED" | "UNDER_REVIEW" | "GRADED" | "RETURNED";
+  feedbackDraft: string | null;
+  awardedPoints: number | null;
+  maxPoints: number | null;
+  changed: boolean;
+};
+
+export const applyMicrosoftSubmissionOutcome = (
+  connectionId: string,
+  classroomLinkId: string,
+  activityLinkId: string,
+  microsoftSubmissionId: string,
+  action: MicrosoftOutcomeApplyAction,
+) =>
+  request<MicrosoftOutcomeApplyResult>(
+    `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-links/${activityLinkId}/submissions/${encodeURIComponent(microsoftSubmissionId)}/outcomes/apply`,
+    {
+      method: "POST",
+      body: JSON.stringify({ action }),
+    },
+  );
+
 export const startMicrosoftOAuth = () =>
   request<{ authorizationUrl: string }>(
     "/api/integrations/microsoft/oauth/start",

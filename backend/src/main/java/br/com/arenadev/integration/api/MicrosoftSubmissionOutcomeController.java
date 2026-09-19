@@ -9,11 +9,14 @@ import java.util.UUID;
 @RequestMapping("/api/integrations/microsoft")
 public class MicrosoftSubmissionOutcomeController {
     private final MicrosoftSubmissionOutcomePreviewService service;
+    private final br.com.arenadev.integration.provider.microsoft.MicrosoftSubmissionOutcomeApplyService applyService;
 
     public MicrosoftSubmissionOutcomeController(
-            MicrosoftSubmissionOutcomePreviewService service
+            MicrosoftSubmissionOutcomePreviewService service,
+            br.com.arenadev.integration.provider.microsoft.MicrosoftSubmissionOutcomeApplyService applyService
     ) {
         this.service = service;
+        this.applyService = applyService;
     }
 
     @GetMapping(
@@ -32,4 +35,27 @@ public class MicrosoftSubmissionOutcomeController {
                 microsoftSubmissionId
         );
     }
+
+    @PostMapping(
+            "/connections/{connectionId}/class-links/{classroomLinkId}/activity-links/{activityLinkId}/submissions/{microsoftSubmissionId}/outcomes/apply"
+    )
+    public br.com.arenadev.integration.provider.microsoft.MicrosoftSubmissionOutcomeApplyService.ApplyResult apply(
+            @PathVariable UUID connectionId,
+            @PathVariable UUID classroomLinkId,
+            @PathVariable UUID activityLinkId,
+            @PathVariable String microsoftSubmissionId,
+            @RequestBody ApplyOutcomeRequest request
+    ) {
+        return applyService.apply(
+                connectionId,
+                classroomLinkId,
+                activityLinkId,
+                microsoftSubmissionId,
+                request.action()
+        );
+    }
+
+    public record ApplyOutcomeRequest(
+            br.com.arenadev.integration.provider.microsoft.MicrosoftSubmissionOutcomeApplyService.ApplyAction action
+    ) {}
 }

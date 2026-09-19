@@ -18,6 +18,7 @@ import {
   fetchActivityMapping,
   fetchSubmissionTracking,
   fetchMicrosoftSubmissionOutcome,
+  applyMicrosoftSubmissionOutcome,
   importMicrosoftSubmission,
   linkMicrosoftAssignment,
   linkMicrosoftClass,
@@ -363,6 +364,44 @@ export default function MicrosoftIntegrationConsole({
       setOutcomePreview(result);
     } catch (cause) {
       setOutcomePreview(null);
+      setError(errorMessage(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function applyOutcome(
+    action: "APPLY_FEEDBACK_DRAFT" | "APPLY_POINTS_SINGLE_CRITERION",
+  ) {
+    if (!connectionId || !inspectedLinkId || !submissionTracking || !outcomePreview) return;
+
+    setBusy(`apply-outcome:${action}`);
+    setError("");
+    setNotice("");
+
+    try {
+      const result = await applyMicrosoftSubmissionOutcome(
+        connectionId,
+        inspectedLinkId,
+        submissionTracking.activityLinkId,
+        outcomePreview.microsoftSubmissionId,
+        action,
+      );
+
+      if (action === "APPLY_FEEDBACK_DRAFT") {
+        setNotice(
+          result.changed
+            ? "Feedback do Teams copiado para o rascunho da avaliação Arena."
+            : "O rascunho Arena já possui esse feedback.",
+        );
+      } else {
+        setNotice(
+          result.changed
+            ? `Pontuação ${result.awardedPoints ?? "—"}/${result.maxPoints ?? "—"} aplicada ao critério local.`
+            : "A avaliação Arena já possui essa pontuação.",
+        );
+      }
+    } catch (cause) {
       setError(errorMessage(cause));
     } finally {
       setBusy("");
@@ -872,8 +911,27 @@ export default function MicrosoftIntegrationConsole({
                           <p>{outcomePreview.publishedFeedback || "Ainda não publicado."}</p>
                         </div>
                       </div>
+                      <div className={styles.actionRow}>
+                        <Button
+                          size="sm"
+                          disabled={!outcomePreview.feedback && !outcomePreview.publishedFeedback}
+                          loading={busy === "apply-outcome:APPLY_FEEDBACK_DRAFT"}
+                          onClick={() => void applyOutcome("APPLY_FEEDBACK_DRAFT")}
+                        >
+                          Copiar feedback para rascunho
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={outcomePreview.points == null && outcomePreview.publishedPoints == null}
+                          loading={busy === "apply-outcome:APPLY_POINTS_SINGLE_CRITERION"}
+                          onClick={() => void applyOutcome("APPLY_POINTS_SINGLE_CRITERION")}
+                        >
+                          Aplicar pontuação no Arena
+                        </Button>
+                      </div>
                       <p className={styles.mutedText}>
-                        Nenhuma nota ou feedback foi aplicado ao Arena. A próxima etapa permitirá revisar antes de copiar.
+                        A aplicação é supervisionada. O feedback permanece em rascunho e a pontuação não conclui a correção.
                       </p>
                     </>
                   )}
