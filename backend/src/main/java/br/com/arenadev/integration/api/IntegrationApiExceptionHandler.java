@@ -1,5 +1,6 @@
 package br.com.arenadev.integration.api;
 
+import br.com.arenadev.integration.application.IntegrationConflictException;
 import br.com.arenadev.integration.application.IntegrationNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -21,6 +22,14 @@ public class IntegrationApiExceptionHandler {
     ProblemDetail badRequest(IllegalArgumentException error) {
         var problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setTitle("Invalid integration request");
+        problem.setDetail(error.getMessage());
+        return problem;
+    }
+
+    @ExceptionHandler(IntegrationConflictException.class)
+    ProblemDetail integrationConflict(IntegrationConflictException error) {
+        var problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setTitle("Integration link conflict");
         problem.setDetail(error.getMessage());
         return problem;
     }

@@ -50,10 +50,33 @@ public class ExternalLinkService {
             UUID connectionId, UUID classroomId, String externalClassroomId, String externalWebUrl
     ) {
         requireConnection(connectionId);
-        return classrooms.findByConnectionIdAndClassroomId(connectionId, classroomId)
-                .orElseGet(() -> classrooms.save(new ExternalClassroomLinkEntity(
-                        UUID.randomUUID(), connectionId, classroomId, externalClassroomId, externalWebUrl, now()
-                )));
+        String externalId = required(externalClassroomId, "externalClassroomId");
+
+        var byLocal = classrooms.findByConnectionIdAndClassroomId(connectionId, classroomId);
+        if (byLocal.isPresent()) {
+            var existing = byLocal.get();
+            if (!existing.getExternalClassroomId().equals(externalId)) {
+                throw new IntegrationConflictException(
+                        "A turma local já está vinculada a outra turma externa nesta conexão."
+                );
+            }
+            return existing;
+        }
+
+        var byExternal = classrooms.findByConnectionIdAndExternalClassroomId(connectionId, externalId);
+        if (byExternal.isPresent()) {
+            var existing = byExternal.get();
+            if (!existing.getClassroomId().equals(classroomId)) {
+                throw new IntegrationConflictException(
+                        "A turma externa já está vinculada a outra turma local nesta conexão."
+                );
+            }
+            return existing;
+        }
+
+        return classrooms.save(new ExternalClassroomLinkEntity(
+                UUID.randomUUID(), connectionId, classroomId, externalId, externalWebUrl, now()
+        ));
     }
 
     public ExternalStudentLinkEntity linkStudent(
@@ -110,6 +133,13 @@ public class ExternalLinkService {
         return classrooms.findById(linkId)
                 .filter(it -> it.getConnectionId().equals(connectionId))
                 .orElseThrow(() -> new IntegrationNotFoundException("Vínculo externo de turma inválido."));
+    }
+
+    private static String required(String value, String field) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(field + " é obrigatório.");
+        }
+        return value.trim();
     }
 
     private Instant now() { return clock.instant(); }
