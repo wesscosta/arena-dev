@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card } from "@/components/ui";
 import type { Classroom } from "@/lib/types";
 import {
+  applyStudentMatch,
   connectMicrosoft,
   discoverMicrosoftClasses,
   fetchClassroomLinks,
@@ -183,6 +184,47 @@ export default function MicrosoftIntegrationConsole({
     }
   }
 
+  async function applyMatch(item: StudentMatchItem) {
+    if (!connectionId || !inspectedLinkId) return;
+
+    const action =
+      item.status === "NEW_STUDENT"
+        ? "CREATE_NEW_STUDENT"
+        : "APPLY_SUGGESTED";
+
+    setBusy(`apply:${item.microsoftUserId}`);
+    setError("");
+    setNotice("");
+
+    try {
+      const result = await applyStudentMatch(
+        connectionId,
+        inspectedLinkId,
+        {
+          microsoftUserId: item.microsoftUserId,
+          action,
+        },
+      );
+
+      setNotice(
+        result.changed
+          ? `${result.studentName} vinculado ao Microsoft Teams.`
+          : `${result.studentName} já estava vinculado.`,
+      );
+
+      const [rosterResult, previewResult] = await Promise.all([
+        fetchMicrosoftRoster(connectionId, inspectedLinkId),
+        fetchStudentMatchPreview(connectionId, inspectedLinkId),
+      ]);
+      setRoster(rosterResult);
+      setPreview(previewResult);
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+
   const linkByRemoteId = useMemo(
     () => new Map(links.map((link) => [link.externalClassroomId, link])),
     [links],
@@ -343,8 +385,15 @@ export default function MicrosoftIntegrationConsole({
             </div>
             <div className={styles.tableWrap}>
               <table className={styles.table}>
-                <thead><tr><th>Microsoft</th><th>Identificador</th><th>Status</th><th>Aluno local</th><th>Motivo</th></tr></thead>
-                <tbody>{preview.items.map((item) => <MatchRow key={item.microsoftUserId} item={item} />)}</tbody>
+                <thead><tr><th>Microsoft</th><th>Identificador</th><th>Status</th><th>Aluno local</th><th>Motivo</th><th>Ação</th></tr></thead>
+                <tbody>{preview.items.map((item) => (
+                  <MatchRow
+                    key={item.microsoftUserId}
+                    item={item}
+                    busy={busy === `apply:${item.microsoftUserId}`}
+                    onApply={() => void applyMatch(item)}
+                  />
+                ))}</tbody>
               </table>
             </div>
           </>}
@@ -358,12 +407,41 @@ function Metric({ label, value }: { label: string; value: number }) {
   return <div className={styles.metric}><span>{label}</span><strong>{value}</strong></div>;
 }
 
-function MatchRow({ item }: { item: StudentMatchItem }) {
+function MatchRow({
+  item,
+  busy,
+  onApply,
+}: {
+  item: StudentMatchItem;
+  busy: boolean;
+  onApply: () => void;
+}) {
+  const actionable =
+    item.status === "SAFE_MATCH"
+    || item.status === "REVIEW_REQUIRED"
+    || item.status === "NEW_STUDENT";
+
+  const label =
+    item.status === "NEW_STUDENT"
+      ? "Criar e vincular"
+      : item.status === "REVIEW_REQUIRED"
+        ? "Confirmar vínculo"
+        : "Aprovar vínculo";
+
   return <tr>
     <td><strong>{item.displayName}</strong><small>{item.userPrincipalName ?? "sem UPN"}</small></td>
     <td>{item.externalId ?? "—"}</td>
     <td><Badge variant={badgeVariant(item.status)}>{MATCH_LABEL[item.status]}</Badge></td>
     <td>{item.localStudentName ?? "—"}</td>
     <td>{item.reason}</td>
+    <td>
+      {actionable ? (
+        <Button size="sm" loading={busy} onClick={onApply}>{label}</Button>
+      ) : item.status === "ALREADY_LINKED" ? (
+        <Badge variant="success">Concluído</Badge>
+      ) : (
+        <span className={styles.blockedAction}>Requer revisão</span>
+      )}
+    </td>
   </tr>;
 }

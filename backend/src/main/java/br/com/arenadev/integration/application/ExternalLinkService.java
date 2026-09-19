@@ -84,10 +84,45 @@ public class ExternalLinkService {
     ) {
         requireConnection(connectionId);
         requireClassroom(connectionId, externalClassroomLinkId);
-        return students.findByConnectionIdAndEnrollmentId(connectionId, enrollmentId)
-                .orElseGet(() -> students.save(new ExternalStudentLinkEntity(
-                        UUID.randomUUID(), connectionId, externalClassroomLinkId, enrollmentId, externalUserId, now()
-                )));
+        String externalId = required(externalUserId, "externalUserId");
+
+        var byEnrollment = students.findByConnectionIdAndEnrollmentId(connectionId, enrollmentId);
+        if (byEnrollment.isPresent()) {
+            var existing = byEnrollment.get();
+            if (!existing.getExternalClassroomLinkId().equals(externalClassroomLinkId)
+                    || !existing.getExternalUserId().equals(externalId)) {
+                throw new IntegrationConflictException(
+                        "A matrícula local já está vinculada a outro usuário externo nesta conexão."
+                );
+            }
+            return existing;
+        }
+
+        var byExternal = students
+                .findByConnectionIdAndExternalClassroomLinkIdAndExternalUserId(
+                        connectionId,
+                        externalClassroomLinkId,
+                        externalId
+                );
+
+        if (byExternal.isPresent()) {
+            var existing = byExternal.get();
+            if (!existing.getEnrollmentId().equals(enrollmentId)) {
+                throw new IntegrationConflictException(
+                        "O usuário externo já está vinculado a outra matrícula local nesta turma."
+                );
+            }
+            return existing;
+        }
+
+        return students.save(new ExternalStudentLinkEntity(
+                UUID.randomUUID(),
+                connectionId,
+                externalClassroomLinkId,
+                enrollmentId,
+                externalId,
+                now()
+        ));
     }
 
     public ExternalActivityLinkEntity linkActivity(

@@ -160,3 +160,39 @@ export const fetchStudentMatchPreview = (connectionId: string, classroomLinkId: 
   request<StudentMatchPreview>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/student-match-preview`,
   );
+
+export type StudentMatchApplyAction =
+  | "APPLY_SUGGESTED"
+  | "CREATE_NEW_STUDENT"
+  | "LINK_EXISTING_STUDENT";
+
+export type StudentMatchApplyResult = {
+  microsoftUserId: string;
+  studentId: string;
+  enrollmentId: string;
+  externalStudentLinkId: string;
+  studentName: string;
+  action: StudentMatchApplyAction;
+  changed: boolean;
+};
+
+export const applyStudentMatch = (
+  connectionId: string,
+  classroomLinkId: string,
+  input: {
+    microsoftUserId: string;
+    action: StudentMatchApplyAction;
+    localStudentId?: string | null;
+  },
+) =>
+  request<StudentMatchApplyResult>(
+    `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/student-match-apply`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        microsoftUserId: input.microsoftUserId,
+        action: input.action,
+        localStudentId: input.localStudentId ?? null,
+      }),
+    },
+  );

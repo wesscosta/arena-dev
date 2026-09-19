@@ -38,3 +38,10 @@
 .empty{padding:var(--space-5);border:1px dashed var(--ds-border);border-radius:var(--radius-md);color:var(--ds-text-secondary);text-align:center}
 @media(max-width:960px){.formGrid{grid-template-columns:1fr 1fr}.formGrid>button{grid-column:1/-1}.classRow{grid-template-columns:1fr}.linkControls,.linkedState{justify-content:flex-start;flex-wrap:wrap}.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:640px){.heading{display:grid}.formGrid,.metrics{grid-template-columns:1fr}.linkControls{display:grid}.linkControls select{max-width:none}.linkItem{align-items:flex-start;flex-direction:column}}
+
+
+.blockedAction{
+  color:var(--ds-text-secondary);
+  font-size:var(--font-size-sm);
+  white-space:nowrap;
+}
