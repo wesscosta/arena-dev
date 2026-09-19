@@ -2487,3 +2487,24 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
   border-color: rgba(115, 255, 191, .72) !important;
   box-shadow: 0 20px 46px rgba(66, 211, 149, .24) !important;
 }
+
+
+/* Incremento 15.UI1 — Integrações como configuração; badge discreto na turma */
+.settings-integrations-section{display:grid;gap:14px;padding-top:4px}
+.integration-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.integration-provider-card{display:flex;flex-direction:column;align-items:flex-start;gap:14px;border:1px solid var(--border);border-radius:14px;padding:16px;background:var(--surface)}
+.integration-provider-card-muted{opacity:.75}
+.integration-provider-head{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px}
+.integration-provider-head strong,.integration-provider-head small{display:block}
+.integration-provider-head strong{font-size:12px}
+.integration-provider-head small{margin-top:3px;color:var(--muted);font-size:9px;line-height:1.4}
+.integration-provider-icon{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--border);border-radius:10px;background:var(--ds-surface-stat);font-size:12px;font-weight:900}
+.integration-provider-meta{display:flex;flex-direction:column;gap:3px}
+.integration-provider-meta span{font-size:10px;font-weight:800}
+.integration-provider-meta small,.integration-provider-note,.integration-provider-error{color:var(--muted);font-size:9px}
+.integration-provider-error{color:var(--ds-danger-text)}
+.overview-toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.classroom-integration-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:9px}
+.classroom-integration-badges span{font-size:8px}
+@media(max-width:820px){.integration-settings-grid{grid-template-columns:1fr}}
+@media(max-width:640px){.overview-toolbar{align-items:stretch;flex-direction:column}.overview-toolbar-actions{width:100%}.overview-toolbar-actions .button{flex:1}}

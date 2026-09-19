@@ -15,6 +15,7 @@ import SessionAccessCard from "@/components/SessionAccessCard";
 import SessionTimeline from "@/components/SessionTimeline";
 import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
 import MicrosoftIntegrationConsole from "@/components/MicrosoftIntegrationConsole";
+import IntegrationSettingsSummary from "@/components/IntegrationSettingsSummary";
 import {
   Badge,
   Breadcrumb,
@@ -418,15 +419,6 @@ export default function ArenaApp() {
               )}
             >
               <MenuItem
-                icon="⇄"
-                description="Microsoft Teams e plataformas educacionais"
-                onSelect={() => {
-                  setView("integrations");
-                }}
-              >
-                Integrações
-              </MenuItem>
-              <MenuItem
                 icon="⚙"
                 description="Perfil, sistema e backup"
                 onSelect={() => {
@@ -461,6 +453,7 @@ export default function ArenaApp() {
               data={data}
               onSelectClassroom={(classroomId) => { setActiveClassroom(classroomId); openClassroom("home"); }}
               onManageClassroom={(classroomId, intent) => openClassroomSettings(classroomId, intent)}
+              onOpenIntegrations={() => setView("integrations")}
               notify={notify}
               refreshClassroomDomain={refreshClassroomDomain}
             />
@@ -653,6 +646,17 @@ export default function ArenaApp() {
                 </Panel>
               </div>
 
+              <section className="settings-integrations-section">
+                <div className="settings-section-heading">
+                  <span className="eyebrow accent">INTEGRAÇÕES</span>
+                  <h3>Plataformas educacionais</h3>
+                  <p>
+                    Conecte o Arena Dev às plataformas usadas pela instituição. As turmas continuam únicas no Arena e recebem apenas um indicador quando existe vínculo externo.
+                  </p>
+                </div>
+                <IntegrationSettingsSummary onManage={() => setView("integrations")} />
+              </section>
+
               <section className="settings-appearance-section">
                 <div className="settings-section-heading">
                   <span className="eyebrow accent">APARÊNCIA</span>
@@ -716,10 +720,11 @@ export default function ArenaApp() {
   );
 }
 
-function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refreshClassroomDomain }: {
+function OverviewView({ data, onSelectClassroom, onManageClassroom, onOpenIntegrations, notify, refreshClassroomDomain }: {
   data: ArenaData;
   onSelectClassroom: (classroomId: string) => void;
   onManageClassroom: (classroomId: string, intent: "general" | "delete") => void;
+  onOpenIntegrations: () => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
@@ -729,6 +734,22 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
   const [recentClassroomIds] = useState<string[]>(() => loadRecentClassroomIds());
   const [createOpen, setCreateOpen] = useState(false);
   const [openCardMenuId, setOpenCardMenuId] = useState<string | null>(null);
+  const [platformsByClassroomId, setPlatformsByClassroomId] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    let active = true;
+    import("@/lib/classroom-integrations")
+      .then(({ fetchClassroomIntegrationState }) => fetchClassroomIntegrationState())
+      .then((state) => {
+        if (active) setPlatformsByClassroomId(state.platformsByClassroomId);
+      })
+      .catch(() => {
+        if (active) setPlatformsByClassroomId({});
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const activeSessions = data.sessions.filter((session) => session.status === "ACTIVE" && !session.endedAt);
   const filteredClassrooms = data.classrooms.filter((classroom) => {
@@ -824,7 +845,10 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
           </select>
         </div>
 
-        <button className="button primary overview-new-classroom" onClick={() => setCreateOpen(true)}>+ Nova turma</button>
+        <div className="overview-toolbar-actions">
+          <button className="button ghost" onClick={onOpenIntegrations}>⇄ Vincular plataforma</button>
+          <button className="button primary overview-new-classroom" onClick={() => setCreateOpen(true)}>+ Nova turma</button>
+        </div>
       </div>
 
       {!data.classrooms.length ? (
@@ -868,6 +892,19 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
                       )}
                       <h3>{classroom.name}</h3>
                       <p>{classroom.code || "Sem código"}</p>
+                      {platformsByClassroomId[classroom.id]?.length ? (
+                        <div className="classroom-integration-badges">
+                          {platformsByClassroomId[classroom.id].map((platform) => (
+                            <Badge key={platform} variant="success" dot>
+                              {platform === "MICROSOFT_TEAMS"
+                                ? "Microsoft Teams"
+                                : platform === "GOOGLE_CLASSROOM"
+                                  ? "Google Classroom"
+                                  : platform}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                   <div className="overview-card-actions">
