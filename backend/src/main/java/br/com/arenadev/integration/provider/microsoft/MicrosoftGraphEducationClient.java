@@ -6,4 +6,9 @@ public interface MicrosoftGraphEducationClient {
     List<MicrosoftEducationClass> listClasses(String accessToken);
     List<MicrosoftEducationUser> listClassMembers(String accessToken, String microsoftClassId);
     List<MicrosoftEducationAssignment> listClassAssignments(String accessToken, String microsoftClassId);
+    List<MicrosoftEducationSubmission> listAssignmentSubmissions(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId
+    );
 }

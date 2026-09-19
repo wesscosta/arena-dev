@@ -63,3 +63,10 @@
   text-decoration:none;
 }
 .classIdentity a:hover{text-decoration:underline}
+
+
+.mutedText{
+  margin:var(--space-1) 0 0;
+  color:var(--ds-text-secondary);
+  font-size:var(--font-size-sm);
+}

@@ -319,3 +319,46 @@ export const linkMicrosoftAssignment = (
       body: JSON.stringify(input),
     },
   );
+
+
+export type MicrosoftSubmissionDeliveryStatus =
+  | "DELIVERED"
+  | "PENDING"
+  | "EXCUSED"
+  | "UNMATCHED";
+
+export type MicrosoftSubmissionTrackingItem = {
+  microsoftSubmissionId: string;
+  microsoftUserId: string | null;
+  externalStudentLinkId: string | null;
+  enrollmentId: string | null;
+  studentName: string | null;
+  microsoftStatus: string | null;
+  deliveryStatus: MicrosoftSubmissionDeliveryStatus;
+  submittedDateTime: string | null;
+  returnedDateTime: string | null;
+  webUrl: string | null;
+};
+
+export type MicrosoftSubmissionTracking = {
+  connectionId: string;
+  classroomLinkId: string;
+  activityLinkId: string;
+  activityId: string;
+  activityTitle: string;
+  microsoftAssignmentId: string;
+  items: MicrosoftSubmissionTrackingItem[];
+  delivered: number;
+  pending: number;
+  excused: number;
+  unmatched: number;
+};
+
+export const fetchSubmissionTracking = (
+  connectionId: string,
+  classroomLinkId: string,
+  activityLinkId: string,
+) =>
+  request<MicrosoftSubmissionTracking>(
+    `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-links/${activityLinkId}/submissions`,
+  );

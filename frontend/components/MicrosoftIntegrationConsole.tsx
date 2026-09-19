@@ -15,6 +15,7 @@ import {
   fetchStudentMatchPreview,
   applyRosterReconciliation,
   fetchActivityMapping,
+  fetchSubmissionTracking,
   linkMicrosoftAssignment,
   linkMicrosoftClass,
   type ClassroomLink,
@@ -23,6 +24,7 @@ import {
   type MicrosoftReadiness,
   type MicrosoftRoster,
   type MicrosoftActivityMapping,
+  type MicrosoftSubmissionTracking,
   type RosterReconciliation,
   type RosterReconciliationItem,
   type StudentMatchItem,
@@ -72,6 +74,7 @@ export default function MicrosoftIntegrationConsole({
   const [preview, setPreview] = useState<StudentMatchPreview | null>(null);
   const [reconciliation, setReconciliation] = useState<RosterReconciliation | null>(null);
   const [activityMapping, setActivityMapping] = useState<MicrosoftActivityMapping | null>(null);
+  const [submissionTracking, setSubmissionTracking] = useState<MicrosoftSubmissionTracking | null>(null);
   const [activitySelection, setActivitySelection] = useState<Record<string, string>>({});
   const [explicitStudent, setExplicitStudent] = useState<Record<string, string>>({});
   const [inspectedLinkId, setInspectedLinkId] = useState("");
@@ -308,6 +311,29 @@ export default function MicrosoftIntegrationConsole({
     }
   }
 
+  async function inspectSubmissions(activityLinkId: string) {
+    if (!connectionId || !inspectedLinkId) return;
+
+    setBusy(`submissions:${activityLinkId}`);
+    setError("");
+    setNotice("");
+
+    try {
+      const result = await fetchSubmissionTracking(
+        connectionId,
+        inspectedLinkId,
+        activityLinkId,
+      );
+      setSubmissionTracking(result);
+      setNotice(`Entregas carregadas para ${result.activityTitle}.`);
+    } catch (cause) {
+      setSubmissionTracking(null);
+      setError(errorMessage(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+
   const linkByRemoteId = useMemo(
     () => new Map(links.map((link) => [link.externalClassroomId, link])),
     [links],
@@ -360,6 +386,7 @@ export default function MicrosoftIntegrationConsole({
                 setPreview(null);
                 setReconciliation(null);
                 setActivityMapping(null);
+                setSubmissionTracking(null);
               }}>
                 {microsoftConnections.map((connection) => (
                   <option key={connection.id} value={connection.id}>
@@ -591,6 +618,13 @@ export default function MicrosoftIntegrationConsole({
                       <div className={styles.linkedState}>
                         <Badge variant="success">Vinculada</Badge>
                         <span>{local?.title ?? mapping.activityId}</span>
+                        <Button
+                          size="sm"
+                          loading={busy === `submissions:${mapping.id}`}
+                          onClick={() => void inspectSubmissions(mapping.id)}
+                        >
+                          Ver entregas
+                        </Button>
                       </div>
                     ) : (
                       <div className={styles.linkControls}>
@@ -622,6 +656,92 @@ export default function MicrosoftIntegrationConsole({
                 );
               })}
             </div>
+          )}
+        </Card>
+
+        <Card className={styles.stepCard}>
+          <div className={styles.cardHeader}>
+            <div><span className={styles.stepNumber}>08</span><h3>Entregas individuais</h3></div>
+            {submissionTracking && (
+              <Badge variant="success">
+                {submissionTracking.delivered}/{submissionTracking.items.length} entregues
+              </Badge>
+            )}
+          </div>
+
+          {!submissionTracking ? (
+            <div className={styles.empty}>
+              Em uma atividade já vinculada, clique em “Ver entregas”.
+            </div>
+          ) : (
+            <>
+              <div>
+                <strong>{submissionTracking.activityTitle}</strong>
+                <p className={styles.mutedText}>
+                  Status lidos diretamente da assignment vinculada no Microsoft Teams.
+                </p>
+              </div>
+
+              <div className={styles.metrics}>
+                <Metric label="Entregues" value={submissionTracking.delivered} />
+                <Metric label="Pendentes" value={submissionTracking.pending} />
+                <Metric label="Dispensados" value={submissionTracking.excused} />
+                <Metric label="Não associados" value={submissionTracking.unmatched} />
+              </div>
+
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Aluno</th>
+                      <th>Teams</th>
+                      <th>Situação</th>
+                      <th>Data da entrega</th>
+                      <th>Acesso</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {submissionTracking.items.map((item) => (
+                      <tr key={item.microsoftSubmissionId}>
+                        <td>{item.studentName ?? "Aluno não associado"}</td>
+                        <td>{item.microsoftStatus ?? "—"}</td>
+                        <td>
+                          <Badge
+                            variant={
+                              item.deliveryStatus === "DELIVERED"
+                                ? "success"
+                                : item.deliveryStatus === "UNMATCHED"
+                                  ? "danger"
+                                  : "warning"
+                            }
+                          >
+                            {item.deliveryStatus === "DELIVERED"
+                              ? "Entregue"
+                              : item.deliveryStatus === "PENDING"
+                                ? "Pendente"
+                                : item.deliveryStatus === "EXCUSED"
+                                  ? "Dispensado"
+                                  : "Não associado"}
+                          </Badge>
+                        </td>
+                        <td>
+                          {item.submittedDateTime
+                            ? new Date(item.submittedDateTime).toLocaleString("pt-BR")
+                            : "—"}
+                        </td>
+                        <td>
+                          {item.webUrl ? (
+                            <a href={item.webUrl} target="_blank" rel="noreferrer">
+                              Abrir ↗
+                            </a>
+                          ) : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </Card>
       </div>
