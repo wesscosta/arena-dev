@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card } from "@/components/ui";
-import type { Classroom } from "@/lib/types";
+import type { Classroom, Student } from "@/lib/types";
 import {
   applyStudentMatch,
   connectMicrosoft,
@@ -11,13 +11,17 @@ import {
   fetchIntegrationConnections,
   fetchMicrosoftReadiness,
   fetchMicrosoftRoster,
+  fetchRosterReconciliation,
   fetchStudentMatchPreview,
+  applyRosterReconciliation,
   linkMicrosoftClass,
   type ClassroomLink,
   type IntegrationConnection,
   type MicrosoftClassDiscovery,
   type MicrosoftReadiness,
   type MicrosoftRoster,
+  type RosterReconciliation,
+  type RosterReconciliationItem,
   type StudentMatchItem,
   type StudentMatchPreview,
   type StudentMatchStatus,
@@ -46,9 +50,11 @@ const errorMessage = (error: unknown) =>
 
 export default function MicrosoftIntegrationConsole({
   classrooms,
+  students,
   onBack,
 }: {
   classrooms: Classroom[];
+  students: Student[];
   onBack: () => void;
 }) {
   const [readiness, setReadiness] = useState<MicrosoftReadiness | null>(null);
@@ -61,6 +67,8 @@ export default function MicrosoftIntegrationConsole({
   const [localSelection, setLocalSelection] = useState<Record<string, string>>({});
   const [roster, setRoster] = useState<MicrosoftRoster | null>(null);
   const [preview, setPreview] = useState<StudentMatchPreview | null>(null);
+  const [reconciliation, setReconciliation] = useState<RosterReconciliation | null>(null);
+  const [explicitStudent, setExplicitStudent] = useState<Record<string, string>>({});
   const [inspectedLinkId, setInspectedLinkId] = useState("");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -169,15 +177,18 @@ export default function MicrosoftIntegrationConsole({
     setError("");
     setInspectedLinkId(link.id);
     try {
-      const [rosterResult, previewResult] = await Promise.all([
+      const [rosterResult, previewResult, reconciliationResult] = await Promise.all([
         fetchMicrosoftRoster(connectionId, link.id),
         fetchStudentMatchPreview(connectionId, link.id),
+        fetchRosterReconciliation(connectionId, link.id),
       ]);
       setRoster(rosterResult);
       setPreview(previewResult);
+      setReconciliation(reconciliationResult);
     } catch (cause) {
       setRoster(null);
       setPreview(null);
+      setReconciliation(null);
       setError(errorMessage(cause));
     } finally {
       setBusy("");
@@ -187,10 +198,13 @@ export default function MicrosoftIntegrationConsole({
   async function applyMatch(item: StudentMatchItem) {
     if (!connectionId || !inspectedLinkId) return;
 
+    const explicitId = explicitStudent[item.microsoftUserId];
     const action =
-      item.status === "NEW_STUDENT"
-        ? "CREATE_NEW_STUDENT"
-        : "APPLY_SUGGESTED";
+      item.status === "AMBIGUOUS" && explicitId
+        ? "LINK_EXISTING_STUDENT"
+        : item.status === "NEW_STUDENT"
+          ? "CREATE_NEW_STUDENT"
+          : "APPLY_SUGGESTED";
 
     setBusy(`apply:${item.microsoftUserId}`);
     setError("");
@@ -203,6 +217,7 @@ export default function MicrosoftIntegrationConsole({
         {
           microsoftUserId: item.microsoftUserId,
           action,
+          localStudentId: action === "LINK_EXISTING_STUDENT" ? explicitId : null,
         },
       );
 
@@ -212,12 +227,47 @@ export default function MicrosoftIntegrationConsole({
           : `${result.studentName} já estava vinculado.`,
       );
 
-      const [rosterResult, previewResult] = await Promise.all([
+      const [rosterResult, previewResult, reconciliationResult] = await Promise.all([
         fetchMicrosoftRoster(connectionId, inspectedLinkId),
         fetchStudentMatchPreview(connectionId, inspectedLinkId),
+        fetchRosterReconciliation(connectionId, inspectedLinkId),
       ]);
       setRoster(rosterResult);
       setPreview(previewResult);
+      setReconciliation(reconciliationResult);
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function applyReconciliation(item: RosterReconciliationItem) {
+    if (!connectionId || !inspectedLinkId) return;
+
+    const action =
+      item.status === "REMOTE_MISSING"
+        ? "DEACTIVATE_ENROLLMENT"
+        : "REACTIVATE_ENROLLMENT";
+
+    setBusy(`reconcile:${item.externalStudentLinkId}`);
+    setError("");
+    setNotice("");
+
+    try {
+      const result = await applyRosterReconciliation(
+        connectionId,
+        inspectedLinkId,
+        item.externalStudentLinkId,
+        action,
+      );
+      setNotice(
+        result.enrollmentActive
+          ? `${result.studentName} reativado na turma local.`
+          : `${result.studentName} desativado da turma local sem apagar o vínculo histórico.`,
+      );
+      const refreshed = await fetchRosterReconciliation(connectionId, inspectedLinkId);
+      setReconciliation(refreshed);
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -275,6 +325,7 @@ export default function MicrosoftIntegrationConsole({
                 setDiscovery(null);
                 setRoster(null);
                 setPreview(null);
+                setReconciliation(null);
               }}>
                 {microsoftConnections.map((connection) => (
                   <option key={connection.id} value={connection.id}>
@@ -391,12 +442,74 @@ export default function MicrosoftIntegrationConsole({
                     key={item.microsoftUserId}
                     item={item}
                     busy={busy === `apply:${item.microsoftUserId}`}
+                    students={students}
+                    explicitStudentId={explicitStudent[item.microsoftUserId] ?? ""}
+                    onExplicitStudentChange={(studentId) => setExplicitStudent((current) => ({
+                      ...current,
+                      [item.microsoftUserId]: studentId,
+                    }))}
                     onApply={() => void applyMatch(item)}
                   />
                 ))}</tbody>
               </table>
             </div>
           </>}
+        </Card>
+
+        <Card className={styles.stepCard}>
+          <div className={styles.cardHeader}>
+            <div><span className={styles.stepNumber}>06</span><h3>Reconciliação do roster</h3></div>
+            {reconciliation && (
+              <Badge variant={reconciliation.remoteMissing || reconciliation.brokenLinks ? "warning" : "success"}>
+                {reconciliation.remoteMissing + reconciliation.localInactive + reconciliation.brokenLinks} divergência(s)
+              </Badge>
+            )}
+          </div>
+
+          {!reconciliation ? (
+            <div className={styles.empty}>Selecione uma turma vinculada para analisar divergências.</div>
+          ) : (
+            <>
+              <div className={styles.metrics}>
+                <Metric label="Em sincronia" value={reconciliation.inSync} />
+                <Metric label="Ausentes no Teams" value={reconciliation.remoteMissing} />
+                <Metric label="Inativos locais" value={reconciliation.localInactive} />
+                <Metric label="Vínculos quebrados" value={reconciliation.brokenLinks} />
+              </div>
+
+              <div className={styles.reconciliationList}>
+                {reconciliation.items
+                  .filter((item) => item.status !== "IN_SYNC")
+                  .map((item) => (
+                    <div key={item.externalStudentLinkId} className={styles.reconciliationItem}>
+                      <div>
+                        <strong>{item.studentName ?? item.microsoftUserId}</strong>
+                        <small>{item.reason}</small>
+                      </div>
+                      <div className={styles.linkedState}>
+                        <Badge variant={item.status === "BROKEN_LINK" ? "danger" : "warning"}>
+                          {item.status}
+                        </Badge>
+                        {(item.status === "REMOTE_MISSING" || item.status === "LOCAL_INACTIVE") && (
+                          <Button
+                            size="sm"
+                            loading={busy === `reconcile:${item.externalStudentLinkId}`}
+                            onClick={() => void applyReconciliation(item)}
+                          >
+                            {item.status === "REMOTE_MISSING"
+                              ? "Desativar matrícula"
+                              : "Reativar matrícula"}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                {reconciliation.items.every((item) => item.status === "IN_SYNC") && (
+                  <div className={styles.empty}>Todos os vínculos estão coerentes com o roster atual.</div>
+                )}
+              </div>
+            </>
+          )}
         </Card>
       </div>
     </div>
@@ -410,30 +523,55 @@ function Metric({ label, value }: { label: string; value: number }) {
 function MatchRow({
   item,
   busy,
+  students,
+  explicitStudentId,
+  onExplicitStudentChange,
   onApply,
 }: {
   item: StudentMatchItem;
   busy: boolean;
+  students: Student[];
+  explicitStudentId: string;
+  onExplicitStudentChange: (studentId: string) => void;
   onApply: () => void;
 }) {
   const actionable =
     item.status === "SAFE_MATCH"
     || item.status === "REVIEW_REQUIRED"
-    || item.status === "NEW_STUDENT";
+    || item.status === "NEW_STUDENT"
+    || (item.status === "AMBIGUOUS" && Boolean(explicitStudentId));
 
   const label =
     item.status === "NEW_STUDENT"
       ? "Criar e vincular"
-      : item.status === "REVIEW_REQUIRED"
-        ? "Confirmar vínculo"
-        : "Aprovar vínculo";
+      : item.status === "AMBIGUOUS"
+        ? "Vincular selecionado"
+        : item.status === "REVIEW_REQUIRED"
+          ? "Confirmar vínculo"
+          : "Aprovar vínculo";
 
   return <tr>
     <td><strong>{item.displayName}</strong><small>{item.userPrincipalName ?? "sem UPN"}</small></td>
     <td>{item.externalId ?? "—"}</td>
     <td><Badge variant={badgeVariant(item.status)}>{MATCH_LABEL[item.status]}</Badge></td>
     <td>{item.localStudentName ?? "—"}</td>
-    <td>{item.reason}</td>
+    <td>
+      {item.reason}
+      {item.status === "AMBIGUOUS" && (
+        <select
+          className={styles.inlineSelect}
+          value={explicitStudentId}
+          onChange={(event) => onExplicitStudentChange(event.target.value)}
+        >
+          <option value="">Selecionar aluno local...</option>
+          {students.filter((student) => student.active).map((student) => (
+            <option key={student.id} value={student.id}>
+              {student.name}{student.registration ? ` · ${student.registration}` : ""}
+            </option>
+          ))}
+        </select>
+      )}
+    </td>
     <td>
       {actionable ? (
         <Button size="sm" loading={busy} onClick={onApply}>{label}</Button>

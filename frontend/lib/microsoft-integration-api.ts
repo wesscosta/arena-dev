@@ -196,3 +196,67 @@ export const applyStudentMatch = (
       }),
     },
   );
+
+
+export type RosterReconciliationStatus =
+  | "IN_SYNC"
+  | "REMOTE_MISSING"
+  | "LOCAL_INACTIVE"
+  | "BROKEN_LINK";
+
+export type RosterReconciliationItem = {
+  externalStudentLinkId: string;
+  microsoftUserId: string;
+  enrollmentId: string;
+  studentId: string | null;
+  studentName: string | null;
+  status: RosterReconciliationStatus;
+  reason: string;
+};
+
+export type RosterReconciliation = {
+  connectionId: string;
+  classroomLinkId: string;
+  classroomId: string;
+  microsoftClassId: string;
+  items: RosterReconciliationItem[];
+  inSync: number;
+  remoteMissing: number;
+  localInactive: number;
+  brokenLinks: number;
+};
+
+export type RosterReconciliationAction =
+  | "DEACTIVATE_ENROLLMENT"
+  | "REACTIVATE_ENROLLMENT";
+
+export type RosterReconciliationApplyResult = {
+  externalStudentLinkId: string;
+  enrollmentId: string;
+  studentId: string;
+  studentName: string;
+  action: RosterReconciliationAction;
+  enrollmentActive: boolean;
+};
+
+export const fetchRosterReconciliation = (
+  connectionId: string,
+  classroomLinkId: string,
+) =>
+  request<RosterReconciliation>(
+    `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/reconciliation`,
+  );
+
+export const applyRosterReconciliation = (
+  connectionId: string,
+  classroomLinkId: string,
+  externalStudentLinkId: string,
+  action: RosterReconciliationAction,
+) =>
+  request<RosterReconciliationApplyResult>(
+    `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/reconciliation/${externalStudentLinkId}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ action }),
+    },
+  );

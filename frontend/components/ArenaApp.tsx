@@ -598,6 +598,7 @@ export default function ArenaApp() {
           {view === "integrations" && (
             <MicrosoftIntegrationConsole
               classrooms={data.classrooms}
+              students={data.students}
               onBack={() => setView("dashboard")}
             />
           )}
