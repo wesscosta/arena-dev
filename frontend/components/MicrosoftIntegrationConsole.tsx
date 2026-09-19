@@ -17,6 +17,7 @@ import {
   applyRosterReconciliation,
   fetchActivityMapping,
   fetchSubmissionTracking,
+  importMicrosoftSubmission,
   linkMicrosoftAssignment,
   linkMicrosoftClass,
   type ClassroomLink,
@@ -305,6 +306,36 @@ export default function MicrosoftIntegrationConsole({
       const refreshed = await fetchActivityMapping(connectionId, inspectedLinkId);
       setActivityMapping(refreshed);
       setNotice("Atividade Arena vinculada à tarefa do Teams.");
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function importSubmission(microsoftSubmissionId: string) {
+    if (!connectionId || !inspectedLinkId || !submissionTracking) return;
+    setBusy(`import-submission:${microsoftSubmissionId}`);
+    setError("");
+    setNotice("");
+    try {
+      const result = await importMicrosoftSubmission(
+        connectionId,
+        inspectedLinkId,
+        submissionTracking.activityLinkId,
+        microsoftSubmissionId,
+      );
+      setNotice(
+        result.changed
+          ? "Entrega importada para o Arena."
+          : "Esta entrega já estava importada.",
+      );
+      const refreshed = await fetchSubmissionTracking(
+        connectionId,
+        inspectedLinkId,
+        submissionTracking.activityLinkId,
+      );
+      setSubmissionTracking(refreshed);
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -706,6 +737,7 @@ export default function MicrosoftIntegrationConsole({
                       <th>Teams</th>
                       <th>Situação</th>
                       <th>Data da entrega</th>
+                      <th>Arena</th>
                       <th>Acesso</th>
                     </tr>
                   </thead>
@@ -737,6 +769,21 @@ export default function MicrosoftIntegrationConsole({
                           {item.submittedDateTime
                             ? new Date(item.submittedDateTime).toLocaleString("pt-BR")
                             : "—"}
+                        </td>
+                        <td>
+                          {item.localSubmissionId ? (
+                            <Badge variant="success">Importada</Badge>
+                          ) : item.deliveryStatus === "DELIVERED" && item.externalStudentLinkId ? (
+                            <Button
+                              size="sm"
+                              loading={busy === `import-submission:${item.microsoftSubmissionId}`}
+                              onClick={() => void importSubmission(item.microsoftSubmissionId)}
+                            >
+                              Importar entrega
+                            </Button>
+                          ) : (
+                            <span className={styles.blockedAction}>—</span>
+                          )}
                         </td>
                         <td>
                           {item.webUrl ? (

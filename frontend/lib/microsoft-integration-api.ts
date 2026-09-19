@@ -339,6 +339,7 @@ export type MicrosoftSubmissionTrackingItem = {
   submittedDateTime: string | null;
   returnedDateTime: string | null;
   webUrl: string | null;
+  localSubmissionId: string | null;
 };
 
 export type MicrosoftSubmissionTracking = {
@@ -368,4 +369,32 @@ export const fetchSubmissionTracking = (
 export const startMicrosoftOAuth = () =>
   request<{ authorizationUrl: string }>(
     "/api/integrations/microsoft/oauth/start",
+  );
+
+
+export type MicrosoftSubmissionImportResult = {
+  submissionId: string;
+  externalSubmissionLinkId: string;
+  microsoftSubmissionId: string;
+  activityId: string;
+  enrollmentId: string;
+  attemptNumber: number;
+  source: "EXTERNAL";
+  status: "SUBMITTED";
+  submittedAt: string;
+  changed: boolean;
+};
+
+export const importMicrosoftSubmission = (
+  connectionId: string,
+  classroomLinkId: string,
+  activityLinkId: string,
+  microsoftSubmissionId: string,
+) =>
+  request<MicrosoftSubmissionImportResult>(
+    `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-links/${activityLinkId}/submissions/import`,
+    {
+      method: "POST",
+      body: JSON.stringify({ microsoftSubmissionId }),
+    },
   );

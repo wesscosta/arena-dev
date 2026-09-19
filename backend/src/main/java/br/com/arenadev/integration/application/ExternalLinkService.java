@@ -184,11 +184,44 @@ public class ExternalLinkService {
                     .filter(it -> it.getConnectionId().equals(connectionId))
                     .orElseThrow(() -> new IntegrationNotFoundException("Vínculo externo de estudante inválido."));
         }
-        return submissions.findByConnectionIdAndSubmissionId(connectionId, submissionId)
-                .orElseGet(() -> submissions.save(new ExternalSubmissionLinkEntity(
-                        UUID.randomUUID(), connectionId, activity.getId(), externalStudentLinkId,
-                        submissionId, externalSubmissionId, now()
-                )));
+        String externalId = required(externalSubmissionId, "externalSubmissionId");
+
+        var byLocal = submissions.findByConnectionIdAndSubmissionId(connectionId, submissionId);
+        if (byLocal.isPresent()) {
+            var existing = byLocal.get();
+            if (!existing.getExternalActivityLinkId().equals(activity.getId())
+                    || !existing.getExternalSubmissionId().equals(externalId)) {
+                throw new IntegrationConflictException(
+                        "A entrega local já está vinculada a outra submissão externa nesta conexão."
+                );
+            }
+            return existing;
+        }
+
+        var byExternal = submissions.findByConnectionIdAndExternalSubmissionId(
+                connectionId,
+                externalId
+        );
+        if (byExternal.isPresent()) {
+            var existing = byExternal.get();
+            if (!existing.getSubmissionId().equals(submissionId)
+                    || !existing.getExternalActivityLinkId().equals(activity.getId())) {
+                throw new IntegrationConflictException(
+                        "A submissão externa já está vinculada a outra entrega local."
+                );
+            }
+            return existing;
+        }
+
+        return submissions.save(new ExternalSubmissionLinkEntity(
+                UUID.randomUUID(),
+                connectionId,
+                activity.getId(),
+                externalStudentLinkId,
+                submissionId,
+                externalId,
+                now()
+        ));
     }
 
     private void requireConnection(UUID connectionId) {

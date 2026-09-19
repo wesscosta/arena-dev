@@ -10,6 +10,7 @@ import br.com.arenadev.integration.persistence.ExternalActivityLinkRepository;
 import br.com.arenadev.integration.persistence.ExternalClassroomLinkRepository;
 import br.com.arenadev.integration.persistence.ExternalStudentLinkEntity;
 import br.com.arenadev.integration.persistence.ExternalStudentLinkRepository;
+import br.com.arenadev.integration.persistence.ExternalSubmissionLinkRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ public class MicrosoftSubmissionTrackingService {
     private final ExternalClassroomLinkRepository classroomLinks;
     private final ExternalActivityLinkRepository activityLinks;
     private final ExternalStudentLinkRepository studentLinks;
+    private final ExternalSubmissionLinkRepository submissionLinks;
     private final ActivityRepository activities;
     private final EnrollmentRepository enrollments;
     private final MicrosoftGraphTokenProvider tokenProvider;
@@ -37,6 +39,7 @@ public class MicrosoftSubmissionTrackingService {
             ExternalClassroomLinkRepository classroomLinks,
             ExternalActivityLinkRepository activityLinks,
             ExternalStudentLinkRepository studentLinks,
+            ExternalSubmissionLinkRepository submissionLinks,
             ActivityRepository activities,
             EnrollmentRepository enrollments,
             MicrosoftGraphTokenProvider tokenProvider,
@@ -46,6 +49,7 @@ public class MicrosoftSubmissionTrackingService {
         this.classroomLinks = classroomLinks;
         this.activityLinks = activityLinks;
         this.studentLinks = studentLinks;
+        this.submissionLinks = submissionLinks;
         this.activities = activities;
         this.enrollments = enrollments;
         this.tokenProvider = tokenProvider;
@@ -115,6 +119,7 @@ public class MicrosoftSubmissionTrackingService {
 
         var items = submissions.stream()
                 .map(submission -> toItem(
+                        connectionId,
                         submission,
                         studentByExternalId.get(submission.recipientUserId())
                 ))
@@ -140,9 +145,17 @@ public class MicrosoftSubmissionTrackingService {
     }
 
     private TrackingItem toItem(
+            UUID connectionId,
             MicrosoftEducationSubmission submission,
             ExternalStudentLinkEntity studentLink
     ) {
+        var imported = submissionLinks
+                .findByConnectionIdAndExternalSubmissionId(
+                        connectionId,
+                        submission.id()
+                )
+                .orElse(null);
+
         if (studentLink == null) {
             return new TrackingItem(
                     submission.id(),
@@ -154,7 +167,8 @@ public class MicrosoftSubmissionTrackingService {
                     MicrosoftSubmissionDeliveryStatus.UNMATCHED,
                     submission.submittedDateTime(),
                     submission.returnedDateTime(),
-                    submission.webUrl()
+                    submission.webUrl(),
+                    imported == null ? null : imported.getSubmissionId()
             );
         }
 
@@ -173,7 +187,8 @@ public class MicrosoftSubmissionTrackingService {
                 classify(submission.status()),
                 submission.submittedDateTime(),
                 submission.returnedDateTime(),
-                submission.webUrl()
+                submission.webUrl(),
+                imported == null ? null : imported.getSubmissionId()
         );
     }
 
@@ -215,7 +230,8 @@ public class MicrosoftSubmissionTrackingService {
             MicrosoftSubmissionDeliveryStatus deliveryStatus,
             OffsetDateTime submittedDateTime,
             OffsetDateTime returnedDateTime,
-            String webUrl
+            String webUrl,
+            UUID localSubmissionId
     ) {}
 
     public record TrackingResult(

@@ -28,6 +28,7 @@ class MicrosoftSubmissionTrackingServiceTest {
         var classroomLinks = mock(ExternalClassroomLinkRepository.class);
         var activityLinks = mock(ExternalActivityLinkRepository.class);
         var studentLinks = mock(ExternalStudentLinkRepository.class);
+        var submissionLinks = mock(ExternalSubmissionLinkRepository.class);
         var activities = mock(ActivityRepository.class);
         var enrollments = mock(EnrollmentRepository.class);
         var tokens = mock(MicrosoftGraphTokenProvider.class);
@@ -136,6 +137,7 @@ class MicrosoftSubmissionTrackingServiceTest {
                 classroomLinks,
                 activityLinks,
                 studentLinks,
+                submissionLinks,
                 activities,
                 enrollments,
                 tokens,
