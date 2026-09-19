@@ -11,52 +11,191 @@ import java.util.List;
 
 @Component
 public class HttpMicrosoftGraphEducationClient implements MicrosoftGraphEducationClient {
-    private static final String FIRST_PAGE = "/education/classes";
+    private static final String CLASSES_FIRST_PAGE = "/education/classes";
+
     private final RestClient client;
 
     public HttpMicrosoftGraphEducationClient() {
-        this(RestClient.builder().baseUrl("https://graph.microsoft.com/v1.0").build());
+        this(RestClient.builder()
+                .baseUrl("https://graph.microsoft.com/v1.0")
+                .build());
     }
 
-    HttpMicrosoftGraphEducationClient(RestClient client) { this.client = client; }
+    HttpMicrosoftGraphEducationClient(RestClient client) {
+        this.client = client;
+    }
 
     @Override
     public List<MicrosoftEducationClass> listClasses(String accessToken) {
-        if (accessToken == null || accessToken.isBlank()) throw new IllegalArgumentException("accessToken é obrigatório.");
+        requireToken(accessToken);
+
         var result = new ArrayList<MicrosoftEducationClass>();
-        String next = FIRST_PAGE;
+        String next = CLASSES_FIRST_PAGE;
+
         while (next != null && !next.isBlank()) {
-            var page = getPage(accessToken, next);
-            if (page.value() != null) page.value().stream().map(ClassPayload::toDomain).forEach(result::add);
+            var page = getClassPage(accessToken, next);
+            if (page.value() != null) {
+                page.value().stream()
+                        .map(ClassPayload::toDomain)
+                        .forEach(result::add);
+            }
             next = page.nextLink();
         }
+
         return List.copyOf(result);
     }
 
-    private ClassPage getPage(String accessToken, String location) {
+    @Override
+    public List<MicrosoftEducationUser> listClassMembers(
+            String accessToken,
+            String microsoftClassId
+    ) {
+        requireToken(accessToken);
+        String classId = required(microsoftClassId, "microsoftClassId");
+
+        var result = new ArrayList<MicrosoftEducationUser>();
+        String next = "/education/classes/" + classId + "/members";
+
+        while (next != null && !next.isBlank()) {
+            var page = getMemberPage(accessToken, next);
+            if (page.value() != null) {
+                page.value().stream()
+                        .map(UserPayload::toDomain)
+                        .forEach(result::add);
+            }
+            next = page.nextLink();
+        }
+
+        return List.copyOf(result);
+    }
+
+    private ClassPage getClassPage(String accessToken, String location) {
         try {
-            var request = client.get();
-            var response = location.startsWith("http://") || location.startsWith("https://")
-                    ? request.uri(URI.create(location))
-                    : request.uri(location);
-            var page = response.headers(h -> h.setBearerAuth(accessToken)).retrieve().body(ClassPage.class);
-            if (page == null) throw new MicrosoftGraphConnectionException("Microsoft Graph retornou resposta vazia ao listar turmas.");
+            var page = request(accessToken, location).body(ClassPage.class);
+            if (page == null) {
+                throw new MicrosoftGraphConnectionException(
+                        "Microsoft Graph retornou resposta vazia ao listar turmas."
+                );
+            }
             return page;
         } catch (RestClientResponseException error) {
-            throw new MicrosoftGraphConnectionException(
-                    "Falha ao listar turmas no Microsoft Graph. HTTP " + error.getStatusCode().value()
+            throw graphFailure("listar turmas", error);
+        }
+    }
+
+    private MemberPage getMemberPage(String accessToken, String location) {
+        try {
+            var page = request(accessToken, location).body(MemberPage.class);
+            if (page == null) {
+                throw new MicrosoftGraphConnectionException(
+                        "Microsoft Graph retornou resposta vazia ao listar membros da turma."
+                );
+            }
+            return page;
+        } catch (RestClientResponseException error) {
+            throw graphFailure("listar membros da turma", error);
+        }
+    }
+
+    private RestClient.ResponseSpec request(String accessToken, String location) {
+        var request = client.get();
+        var response = location.startsWith("http://") || location.startsWith("https://")
+                ? request.uri(URI.create(location))
+                : request.uri(location);
+
+        return response
+                .headers(headers -> headers.setBearerAuth(accessToken))
+                .retrieve();
+    }
+
+    private MicrosoftGraphConnectionException graphFailure(
+            String action,
+            RestClientResponseException error
+    ) {
+        return new MicrosoftGraphConnectionException(
+                "Falha ao " + action + " no Microsoft Graph. HTTP "
+                        + error.getStatusCode().value()
+        );
+    }
+
+    private static void requireToken(String accessToken) {
+        required(accessToken, "accessToken");
+    }
+
+    private static String required(String value, String field) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(field + " é obrigatório.");
+        }
+        return value.trim();
+    }
+
+    record ClassPage(
+            List<ClassPayload> value,
+            @JsonProperty("@odata.nextLink") String nextLink
+    ) {}
+
+    record MemberPage(
+            List<UserPayload> value,
+            @JsonProperty("@odata.nextLink") String nextLink
+    ) {}
+
+    record ClassPayload(
+            String id,
+            String displayName,
+            String classCode,
+            String externalId,
+            String externalName,
+            String description,
+            String grade
+    ) {
+        MicrosoftEducationClass toDomain() {
+            return new MicrosoftEducationClass(
+                    id,
+                    displayName,
+                    classCode,
+                    externalId,
+                    externalName,
+                    description,
+                    grade
             );
         }
     }
 
-    record ClassPage(List<ClassPayload> value, @JsonProperty("@odata.nextLink") String nextLink) {}
-
-    record ClassPayload(
-            String id, String displayName, String classCode, String externalId,
-            String externalName, String description, String grade
+    record UserPayload(
+            String id,
+            String displayName,
+            String givenName,
+            String surname,
+            String userPrincipalName,
+            String primaryRole,
+            EducationRolePayload student,
+            EducationRolePayload teacher
     ) {
-        MicrosoftEducationClass toDomain() {
-            return new MicrosoftEducationClass(id, displayName, classCode, externalId, externalName, description, grade);
+        MicrosoftEducationUser toDomain() {
+            return new MicrosoftEducationUser(
+                    id,
+                    displayName,
+                    givenName,
+                    surname,
+                    userPrincipalName,
+                    primaryRole,
+                    resolveExternalId()
+            );
+        }
+
+        private String resolveExternalId() {
+            if ("student".equalsIgnoreCase(primaryRole) && student != null) {
+                return student.externalId();
+            }
+            if ("teacher".equalsIgnoreCase(primaryRole) && teacher != null) {
+                return teacher.externalId();
+            }
+            if (student != null && student.externalId() != null) {
+                return student.externalId();
+            }
+            return teacher == null ? null : teacher.externalId();
         }
     }
+
+    record EducationRolePayload(String externalId) {}
 }
