@@ -17,4 +17,29 @@ public interface MicrosoftGraphEducationClient {
             String microsoftAssignmentId,
             String microsoftSubmissionId
     );
+
+    void updatePointsOutcome(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId,
+            String outcomeId,
+            java.math.BigDecimal points
+    );
+
+    void updateFeedbackOutcome(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId,
+            String outcomeId,
+            String feedback
+    );
+
+    void returnSubmission(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId
+    );
 }

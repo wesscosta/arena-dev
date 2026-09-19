@@ -8,6 +8,7 @@ import org.springframework.web.client.RestClientResponseException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class HttpMicrosoftGraphEducationClient implements MicrosoftGraphEducationClient {
@@ -196,6 +197,123 @@ public class HttpMicrosoftGraphEducationClient implements MicrosoftGraphEducatio
         }
 
         return List.copyOf(result);
+    }
+
+    @Override
+    public void updatePointsOutcome(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId,
+            String outcomeId,
+            java.math.BigDecimal points
+    ) {
+        requireToken(accessToken);
+        String location = outcomeLocation(
+                microsoftClassId,
+                microsoftAssignmentId,
+                microsoftSubmissionId,
+                outcomeId
+        );
+
+        try {
+            client.patch()
+                    .uri(location)
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .body(Map.of(
+                            "@odata.type", "#microsoft.graph.educationPointsOutcome",
+                            "points", Map.of(
+                                    "@odata.type", "#microsoft.graph.educationAssignmentPointsGrade",
+                                    "points", points
+                            )
+                    ))
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException error) {
+            throw graphFailure("atualizar pontuação da submission", error);
+        }
+    }
+
+    @Override
+    public void updateFeedbackOutcome(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId,
+            String outcomeId,
+            String feedback
+    ) {
+        requireToken(accessToken);
+        String location = outcomeLocation(
+                microsoftClassId,
+                microsoftAssignmentId,
+                microsoftSubmissionId,
+                outcomeId
+        );
+
+        try {
+            client.patch()
+                    .uri(location)
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .body(Map.of(
+                            "@odata.type", "#microsoft.graph.educationFeedbackOutcome",
+                            "feedback", Map.of(
+                                    "text", Map.of(
+                                            "content", required(feedback, "feedback"),
+                                            "contentType", "text"
+                                    )
+                            )
+                    ))
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException error) {
+            throw graphFailure("atualizar feedback da submission", error);
+        }
+    }
+
+    @Override
+    public void returnSubmission(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId
+    ) {
+        requireToken(accessToken);
+        String classId = required(microsoftClassId, "microsoftClassId");
+        String assignmentId = required(microsoftAssignmentId, "microsoftAssignmentId");
+        String submissionId = required(microsoftSubmissionId, "microsoftSubmissionId");
+
+        String location = "/education/classes/" + classId
+                + "/assignments/" + assignmentId
+                + "/submissions/" + submissionId
+                + "/return";
+
+        try {
+            client.post()
+                    .uri(location)
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException error) {
+            throw graphFailure("devolver submission ao aluno", error);
+        }
+    }
+
+    private String outcomeLocation(
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId,
+            String outcomeId
+    ) {
+        String classId = required(microsoftClassId, "microsoftClassId");
+        String assignmentId = required(microsoftAssignmentId, "microsoftAssignmentId");
+        String submissionId = required(microsoftSubmissionId, "microsoftSubmissionId");
+        String outcome = required(outcomeId, "outcomeId");
+
+        return "/education/classes/" + classId
+                + "/assignments/" + assignmentId
+                + "/submissions/" + submissionId
+                + "/outcomes/" + outcome;
     }
 
     private SubmissionPage getSubmissionPage(String accessToken, String location) {

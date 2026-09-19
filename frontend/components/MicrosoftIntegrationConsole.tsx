@@ -19,6 +19,7 @@ import {
   fetchSubmissionTracking,
   fetchMicrosoftSubmissionOutcome,
   applyMicrosoftSubmissionOutcome,
+  publishMicrosoftSubmissionOutcome,
   importMicrosoftSubmission,
   linkMicrosoftAssignment,
   linkMicrosoftClass,
@@ -401,6 +402,46 @@ export default function MicrosoftIntegrationConsole({
             : "A avaliação Arena já possui essa pontuação.",
         );
       }
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function publishOutcome(
+    action: "PUSH_ASSESSMENT" | "RETURN_TO_STUDENT",
+  ) {
+    if (!connectionId || !inspectedLinkId || !submissionTracking || !outcomePreview) return;
+
+    setBusy(`publish-outcome:${action}`);
+    setError("");
+    setNotice("");
+
+    try {
+      const result = await publishMicrosoftSubmissionOutcome(
+        connectionId,
+        inspectedLinkId,
+        submissionTracking.activityLinkId,
+        outcomePreview.microsoftSubmissionId,
+        action,
+      );
+
+      if (action === "PUSH_ASSESSMENT") {
+        setNotice(
+          `Avaliação enviada ao Teams${result.pointsSent == null ? "" : ` · ${result.pointsSent} ponto(s)`}${result.feedbackSent ? " · feedback incluído" : ""}.`,
+        );
+      } else {
+        setNotice("Entrega devolvida no Teams. Nota e feedback passam a ficar disponíveis ao aluno.");
+      }
+
+      const refreshed = await fetchMicrosoftSubmissionOutcome(
+        connectionId,
+        inspectedLinkId,
+        submissionTracking.activityLinkId,
+        outcomePreview.microsoftSubmissionId,
+      );
+      setOutcomePreview(refreshed);
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -932,6 +973,28 @@ export default function MicrosoftIntegrationConsole({
                       </div>
                       <p className={styles.mutedText}>
                         A aplicação é supervisionada. O feedback permanece em rascunho e a pontuação não conclui a correção.
+                      </p>
+
+                      <div className={styles.actionRow}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          loading={busy === "publish-outcome:PUSH_ASSESSMENT"}
+                          onClick={() => void publishOutcome("PUSH_ASSESSMENT")}
+                        >
+                          Enviar avaliação ao Teams
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          loading={busy === "publish-outcome:RETURN_TO_STUDENT"}
+                          onClick={() => void publishOutcome("RETURN_TO_STUDENT")}
+                        >
+                          Devolver ao aluno no Teams
+                        </Button>
+                      </div>
+                      <p className={styles.mutedText}>
+                        Enviar atualiza nota/feedback no Teams. Devolver é uma ação separada que libera esses dados ao aluno.
                       </p>
                     </>
                   )}

@@ -421,6 +421,34 @@ export const applyMicrosoftSubmissionOutcome = (
     },
   );
 
+export type MicrosoftOutcomePublishAction =
+  | "PUSH_ASSESSMENT"
+  | "RETURN_TO_STUDENT";
+
+export type MicrosoftOutcomePublishResult = {
+  localSubmissionId: string;
+  microsoftSubmissionId: string;
+  action: MicrosoftOutcomePublishAction;
+  pointsSent: number | null;
+  feedbackSent: boolean;
+  returnedToStudent: boolean;
+};
+
+export const publishMicrosoftSubmissionOutcome = (
+  connectionId: string,
+  classroomLinkId: string,
+  activityLinkId: string,
+  microsoftSubmissionId: string,
+  action: MicrosoftOutcomePublishAction,
+) =>
+  request<MicrosoftOutcomePublishResult>(
+    `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-links/${activityLinkId}/submissions/${encodeURIComponent(microsoftSubmissionId)}/outcomes/publish`,
+    {
+      method: "POST",
+      body: JSON.stringify({ action }),
+    },
+  );
+
 export const startMicrosoftOAuth = () =>
   request<{ authorizationUrl: string }>(
     "/api/integrations/microsoft/oauth/start",
