@@ -31,6 +31,10 @@ app:
       client-id: ${APP_INTEGRATIONS_MICROSOFT_CLIENT_ID:}
       client-secret: ${APP_INTEGRATIONS_MICROSOFT_CLIENT_SECRET:}
       redirect-uri: ${APP_INTEGRATIONS_MICROSOFT_REDIRECT_URI:http://localhost:8080/api/integrations/microsoft/oauth/callback}
+    google:
+      client-id: ${APP_INTEGRATIONS_GOOGLE_CLIENT_ID:}
+      client-secret: ${APP_INTEGRATIONS_GOOGLE_CLIENT_SECRET:}
+      redirect-uri: ${APP_INTEGRATIONS_GOOGLE_REDIRECT_URI:http://localhost:8080/api/integrations/google/oauth/callback}
   security:
     login-rate-limit:
       max-failures: ${APP_LOGIN_RATE_LIMIT_MAX_FAILURES:5}

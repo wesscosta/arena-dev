@@ -9,6 +9,7 @@ import {
   type MicrosoftReadiness,
 } from "@/lib/microsoft-integration-api";
 import { fetchClassroomIntegrationState } from "@/lib/classroom-integrations";
+import { fetchGoogleReadiness, startGoogleOAuth, type GoogleReadiness } from "@/lib/google-integration-api";
 
 export default function IntegrationSettingsSummary({
   onManage,
@@ -16,6 +17,7 @@ export default function IntegrationSettingsSummary({
   onManage: () => void;
 }) {
   const [readiness, setReadiness] = useState<MicrosoftReadiness | null>(null);
+  const [googleReadiness, setGoogleReadiness] = useState<GoogleReadiness | null>(null);
   const [connections, setConnections] = useState<IntegrationConnection[]>([]);
   const [error, setError] = useState("");
 
@@ -23,11 +25,13 @@ export default function IntegrationSettingsSummary({
     let active = true;
     Promise.all([
       fetchMicrosoftReadiness(),
+      fetchGoogleReadiness(),
       fetchClassroomIntegrationState(),
     ])
-      .then(([ready, state]) => {
+      .then(([ready, googleReady, state]) => {
         if (!active) return;
         setReadiness(ready);
+        setGoogleReadiness(googleReady);
         setConnections(state.connections);
       })
       .catch((cause) => {
@@ -45,6 +49,11 @@ export default function IntegrationSettingsSummary({
     [connections],
   );
   const activeTeams = teams.find((item) => item.status === "ACTIVE");
+  const googleConnections = useMemo(
+    () => connections.filter((item) => item.provider === "GOOGLE_CLASSROOM"),
+    [connections],
+  );
+  const activeGoogle = googleConnections.find((item) => item.status === "ACTIVE");
 
   return (
     <div className="integration-settings-grid">
@@ -95,18 +104,27 @@ export default function IntegrationSettingsSummary({
         </Button>
       </article>
 
-      <article className="integration-provider-card integration-provider-card-muted">
+      <article className="integration-provider-card">
         <div className="integration-provider-head">
           <div className="integration-provider-icon">G</div>
           <div>
             <strong>Google Classroom</strong>
-            <small>Arquitetura preparada para novo provider.</small>
+            <small>Turmas do Classroom conectadas ao mesmo modelo Arena.</small>
           </div>
-          <Badge>Em breve</Badge>
+          <Badge variant={activeGoogle ? "success" : googleReadiness?.delegatedOAuthConfigured ? "warning" : "neutral"} dot={Boolean(activeGoogle)}>
+            {activeGoogle ? "Conectado" : googleReadiness?.delegatedOAuthConfigured ? "Pronto para conectar" : "Não configurado"}
+          </Badge>
         </div>
-        <p className="integration-provider-note">
-          A conexão será adicionada sem alterar o modelo principal de turmas do Arena.
-        </p>
+        {activeGoogle && <div className="integration-provider-meta"><span>{activeGoogle.displayName}</span><small>OAuth Google ativo</small></div>}
+        <Button
+          size="sm"
+          disabled={Boolean(activeGoogle) || !googleReadiness?.delegatedOAuthConfigured}
+          onClick={() => void startGoogleOAuth()
+            .then(({ authorizationUrl }) => window.location.assign(authorizationUrl))
+            .catch((cause) => setError(cause instanceof Error ? cause.message : "Falha ao iniciar login Google."))}
+        >
+          {activeGoogle ? "Google conectado" : "Entrar com Google"}
+        </Button>
       </article>
     </div>
   );
