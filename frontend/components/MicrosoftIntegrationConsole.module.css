@@ -116,3 +116,21 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* 15.7 — Integration Operations UI */
+.operationsPanel{display:grid;gap:var(--space-4);padding:var(--space-5);border:1px solid var(--ds-border);border-radius:var(--radius-lg);background:var(--ds-surface-subtle)}
+.operationsHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4)}
+.operationsHeader h3{margin:var(--space-1) 0 0;font-size:var(--font-size-xl)}
+.operationMetrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--space-2)}
+.nextAction{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);padding:var(--space-4);border:1px solid var(--ds-border-subtle);border-radius:var(--radius-md);background:var(--ds-surface)}
+.nextAction div{display:grid;gap:var(--space-1)}
+.nextAction span{color:var(--ds-accent);font-size:var(--font-size-xs);font-weight:var(--font-bold);letter-spacing:.08em;text-transform:uppercase}
+.nextAction strong{font-size:var(--font-size-lg)}
+.nextAction p{margin:0;color:var(--ds-text-secondary);font-size:var(--font-size-sm)}
+.operationNav{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.operationNav button{min-height:var(--control-sm);padding:0 var(--space-3);border:1px solid var(--ds-border);border-radius:999px;color:var(--ds-text-secondary);background:var(--ds-surface-control);font:inherit;font-size:var(--font-size-sm);cursor:pointer}
+.operationNav button:hover{border-color:var(--ds-accent);color:var(--ds-text-primary);background:var(--ds-surface-hover)}
+.stepCard{scroll-margin-top:var(--space-5)}
+@media(max-width:960px){.operationMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.operationsHeader,.nextAction{align-items:flex-start;flex-direction:column}.operationMetrics{grid-template-columns:1fr}.nextAction>button{width:100%}}

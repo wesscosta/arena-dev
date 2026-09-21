@@ -38,6 +38,7 @@ import {
   type StudentMatchStatus,
 } from "@/lib/microsoft-integration-api";
 import styles from "./MicrosoftIntegrationConsole.module.css";
+import { deriveIntegrationOperationState } from "@/lib/integration-operations";
 
 const MATCH_LABEL: Record<StudentMatchStatus, string> = {
   ALREADY_LINKED: "Já vinculado",
@@ -94,6 +95,28 @@ export default function MicrosoftIntegrationConsole({
     [connections],
   );
   const selectedConnection = microsoftConnections.find((item) => item.id === connectionId);
+
+  const pendingStudentMatches = preview
+    ? preview.safeMatches + preview.newStudents + preview.reviewRequired + preview.ambiguous + preview.conflicts
+    : null;
+  const unmappedActivities = activityMapping
+    ? Math.max(0, activityMapping.assignments.length - activityMapping.mappings.length)
+    : null;
+  const importedSubmissions = submissionTracking
+    ? submissionTracking.items.filter((item) => Boolean(item.localSubmissionId)).length
+    : null;
+  const operationState = deriveIntegrationOperationState({
+    connectionActive: selectedConnection?.status === "ACTIVE",
+    linkedClassrooms: links.length,
+    classroomInspected: Boolean(inspectedLinkId),
+    pendingStudentMatches,
+    unmappedActivities,
+    deliveredSubmissions: submissionTracking?.delivered ?? null,
+    importedSubmissions,
+  });
+  const jumpTo = (targetId: string) => {
+    document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   useEffect(() => {
     let active = true;
@@ -482,9 +505,9 @@ export default function MicrosoftIntegrationConsole({
     <div className={styles.page}>
       <div className={styles.heading}>
         <div>
-          <span className={styles.eyebrow}>INTEGRAÇÕES</span>
-          <h2>Microsoft Teams</h2>
-          <p>Conecte o tenant, descubra turmas, associe-as ao Arena Dev e valide o roster antes de sincronizar alunos.</p>
+          <span className={styles.eyebrow}>PLATAFORMA EDUCACIONAL</span>
+          <h2>Operação Microsoft Teams</h2>
+          <p>Acompanhe a conexão, organize os vínculos da turma e trate somente o que precisa da sua atenção.</p>
         </div>
         <Button variant="ghost" onClick={onBack}>← Visão geral</Button>
       </div>
@@ -492,10 +515,36 @@ export default function MicrosoftIntegrationConsole({
       {error && <div className={styles.error} role="alert">{error}</div>}
       {notice && <div className={styles.notice} role="status">{notice}</div>}
 
+      <section className={styles.operationsPanel}>
+        <div className={styles.operationsHeader}>
+          <div><span className={styles.eyebrow}>CENTRAL DE OPERAÇÃO</span><h3>Visão geral da integração</h3></div>
+          <Badge variant={operationState.stage === "HEALTHY" ? "success" : "warning"} dot>
+            {operationState.stage === "HEALTHY" ? "Em dia" : "Ação necessária"}
+          </Badge>
+        </div>
+        <div className={styles.operationMetrics}>
+          <Metric label="Conexão" value={selectedConnection?.status === "ACTIVE" ? "Ativa" : "Pendente"} />
+          <Metric label="Turmas vinculadas" value={links.length} />
+          <Metric label="Alunos vinculados" value={preview ? `${preview.alreadyLinked}/${preview.items.length}` : "—"} />
+          <Metric label="Atividades mapeadas" value={activityMapping ? `${activityMapping.mappings.length}/${activityMapping.assignments.length}` : "—"} />
+          <Metric label="Entregas importadas" value={submissionTracking && importedSubmissions != null ? `${importedSubmissions}/${submissionTracking.delivered}` : "—"} />
+        </div>
+        <div className={styles.nextAction}>
+          <div><span>Próxima ação</span><strong>{operationState.title}</strong><p>{operationState.detail}</p></div>
+          <Button size="sm" onClick={() => jumpTo(operationState.targetId)}>Ir para ação</Button>
+        </div>
+        <nav className={styles.operationNav} aria-label="Atalhos da integração">
+          <button type="button" onClick={() => jumpTo("integration-classrooms")}>Turmas</button>
+          <button type="button" onClick={() => jumpTo("integration-students")}>Alunos</button>
+          <button type="button" onClick={() => jumpTo("integration-activities")}>Atividades</button>
+          <button type="button" onClick={() => jumpTo("integration-submissions")}>Entregas</button>
+        </nav>
+      </section>
+
       <div className={styles.steps}>
-        <Card className={styles.stepCard}>
+        <Card id="integration-connection" className={styles.stepCard}>
           <div className={styles.cardHeader}>
-            <div><span className={styles.stepNumber}>01</span><h3>Prontidão Microsoft</h3></div>
+            <div><span className={styles.stepNumber}>CONEXÃO</span><h3>Prontidão Microsoft</h3></div>
             <Badge variant={readiness?.applicationCredentialsConfigured ? "success" : "warning"} dot>
               {readiness?.applicationCredentialsConfigured ? "Servidor configurado" : "Configuração pendente"}
             </Badge>
@@ -511,7 +560,7 @@ export default function MicrosoftIntegrationConsole({
 
         <Card className={styles.stepCard}>
           <div className={styles.cardHeader}>
-            <div><span className={styles.stepNumber}>02</span><h3>Conexão do tenant</h3></div>
+            <div><span className={styles.stepNumber}>CONTA</span><h3>Conta Microsoft 365</h3></div>
             {selectedConnection && <Badge variant={selectedConnection.status === "ACTIVE" ? "success" : "warning"}>{selectedConnection.status}</Badge>}
           </div>
 
@@ -559,9 +608,9 @@ export default function MicrosoftIntegrationConsole({
           </div>
         </Card>
 
-        <Card className={styles.stepCard}>
+        <Card id="integration-classrooms" className={styles.stepCard}>
           <div className={styles.cardHeader}>
-            <div><span className={styles.stepNumber}>03</span><h3>Turmas do Teams</h3></div>
+            <div><span className={styles.stepNumber}>TURMAS</span><h3>Turmas disponíveis no Teams</h3></div>
             {discovery && <Badge>{discovery.count} encontrada(s)</Badge>}
           </div>
           <div className={styles.actionRow}>
@@ -607,9 +656,9 @@ export default function MicrosoftIntegrationConsole({
           </div>}
         </Card>
 
-        <Card className={styles.stepCard}>
+        <Card id="integration-linked-classrooms" className={styles.stepCard}>
           <div className={styles.cardHeader}>
-            <div><span className={styles.stepNumber}>04</span><h3>Turmas vinculadas</h3></div>
+            <div><span className={styles.stepNumber}>TURMA ATIVA</span><h3>Turmas vinculadas</h3></div>
             <Badge>{links.length}</Badge>
           </div>
           {links.length === 0 ? <div className={styles.empty}>Ainda não há turma Arena vinculada ao Teams.</div> : <div className={styles.linkList}>
@@ -628,9 +677,9 @@ export default function MicrosoftIntegrationConsole({
           </div>}
         </Card>
 
-        <Card className={styles.stepCard}>
+        <Card id="integration-students" className={styles.stepCard}>
           <div className={styles.cardHeader}>
-            <div><span className={styles.stepNumber}>05</span><h3>Roster e correspondência</h3></div>
+            <div><span className={styles.stepNumber}>ALUNOS</span><h3>Alunos da turma</h3></div>
             {roster && <Badge variant="success">{roster.studentCount} aluno(s)</Badge>}
           </div>
           {!roster || !preview ? <div className={styles.empty}>Selecione uma turma vinculada para consultar roster e matching.</div> : <>
@@ -666,7 +715,7 @@ export default function MicrosoftIntegrationConsole({
 
         <Card className={styles.stepCard}>
           <div className={styles.cardHeader}>
-            <div><span className={styles.stepNumber}>06</span><h3>Reconciliação do roster</h3></div>
+            <div><span className={styles.stepNumber}>PENDÊNCIAS</span><h3>Pendências de matrícula</h3></div>
             {reconciliation && (
               <Badge variant={reconciliation.remoteMissing || reconciliation.brokenLinks ? "warning" : "success"}>
                 {reconciliation.remoteMissing + reconciliation.localInactive + reconciliation.brokenLinks} divergência(s)
@@ -720,9 +769,9 @@ export default function MicrosoftIntegrationConsole({
           )}
         </Card>
 
-        <Card className={styles.stepCard}>
+        <Card id="integration-activities" className={styles.stepCard}>
           <div className={styles.cardHeader}>
-            <div><span className={styles.stepNumber}>07</span><h3>Atividades e tarefas</h3></div>
+            <div><span className={styles.stepNumber}>ATIVIDADES</span><h3>Atividades e tarefas</h3></div>
             {activityMapping && (
               <Badge variant="success">{activityMapping.mappings.length} vínculo(s)</Badge>
             )}
@@ -806,9 +855,9 @@ export default function MicrosoftIntegrationConsole({
           )}
         </Card>
 
-        <Card className={styles.stepCard}>
+        <Card id="integration-submissions" className={styles.stepCard}>
           <div className={styles.cardHeader}>
-            <div><span className={styles.stepNumber}>08</span><h3>Entregas individuais</h3></div>
+            <div><span className={styles.stepNumber}>ENTREGAS</span><h3>Entregas e avaliações</h3></div>
             {submissionTracking && (
               <Badge variant="success">
                 {submissionTracking.delivered}/{submissionTracking.items.length} entregues
