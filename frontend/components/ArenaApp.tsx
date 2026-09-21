@@ -1838,9 +1838,10 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   notify: (message: string) => void;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
-  const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "presence" | "groups">("live");
+  const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "groups">("live");
   const [interactionTool, setInteractionTool] = useState<"draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss">("draw");
   const [accessOpen, setAccessOpen] = useState(false);
+  const [checkinRosterExpanded, setCheckinRosterExpanded] = useState(true);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
   const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
@@ -2484,7 +2485,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             onClick={() => setAccessOpen((open) => !open)}
             disabled={!joinCode}
           >
-            {accessOpen ? "Fechar acesso" : "Acesso dos alunos"}
+            {accessOpen ? "Fechar check-in" : "Check-in"}
           </Button>
           <Button
             variant="secondary"
@@ -2505,19 +2506,121 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       </div>
 
       {accessOpen && (
-        <div className="arena-session-access-wrap">
-          <SessionAccessCard
-            sessionId={currentSession.id}
-            joinCode={joinCode}
-            publicBaseUrl={publicBaseUrl}
-            notify={notify}
-            realtimeStatus={realtimeStatus}
-            connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
-            onRotate={rotateSessionCode}
-            rotateBusy={realtimeBusy}
-            title="Entrada dos alunos"
-            subtitle="Este é o acesso único da sessão para todas as dinâmicas."
-          />
+        <div className={`arena-checkin-workspace ${checkinRosterExpanded ? "" : "roster-collapsed"}`}>
+          <div className="arena-checkin-access">
+            <SessionAccessCard
+              sessionId={currentSession.id}
+              joinCode={joinCode}
+              publicBaseUrl={publicBaseUrl}
+              notify={notify}
+              realtimeStatus={realtimeStatus}
+              connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+              presentCount={sessionParticipants.filter((participant) => participant.present).length}
+              onRotate={rotateSessionCode}
+              rotateBusy={realtimeBusy}
+              title="Check-in dos alunos"
+              subtitle="O login realiza o check-in automaticamente. Você pode ajustar a presença manualmente."
+            />
+          </div>
+
+          <aside
+            className={`arena-checkin-roster ${checkinRosterExpanded ? "" : "is-collapsed"}`}
+            aria-label="Check-in da turma"
+          >
+            {checkinRosterExpanded ? (
+              <>
+                <div className="arena-checkin-roster-head">
+                  <div>
+                    <strong>Participantes</strong>
+                    <small>
+                      {currentSession.presentStudentIds.length} de {sessionParticipants.length} presentes
+                    </small>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="arena-checkin-roster-toggle"
+                    onClick={() => setCheckinRosterExpanded(false)}
+                    aria-expanded="true"
+                    aria-label="Recolher lista de alunos"
+                    title="Recolher"
+                  >
+                    ›
+                  </button>
+                </div>
+
+                <div className="arena-checkin-roster-list">
+                  {sessionParticipants.map((participant) => {
+                    const student = data.students.find((item) => item.id === participant.studentId);
+                    if (!student) return null;
+
+                    const statusLabel = participant.connected
+                      ? "online"
+                      : "offline";
+
+                    const statusClass = participant.connected
+                      ? "is-online"
+                      : "is-offline";
+
+                    return (
+                      <div key={participant.id} className="arena-checkin-row">
+                        <Avatar student={student} />
+
+                        <div className="arena-checkin-student-copy">
+                          <strong>{student.name}</strong>
+                          <small className={statusClass}>
+                            <i />
+                            {statusLabel}
+                          </small>
+                        </div>
+
+                        <label
+                          className="arena-checkin-presence-control"
+                          title={participant.present ? "Desmarcar presença" : "Marcar presença"}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={participant.present}
+                            disabled={presenceBusyId === participant.id}
+                            onChange={(event) => {
+                              void changePresence(participant, event.target.checked);
+                            }}
+                          />
+                          <span aria-hidden="true" />
+                          <small>{participant.present ? "Presente" : "Ausente"}</small>
+                        </label>
+
+                        {participant.connected && (
+                          <button
+                            type="button"
+                            className="arena-checkin-release"
+                            onClick={() => { void releaseDevice(participant); }}
+                            title="Liberar dispositivo deste aluno"
+                            aria-label={`Liberar dispositivo de ${student.name}`}
+                          >
+                            ⋯
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="arena-checkin-rail"
+                onClick={() => setCheckinRosterExpanded(true)}
+                aria-label={`Expandir participantes. ${currentSession.presentStudentIds.length} presentes`}
+                title="Expandir participantes"
+              >
+                <span className="arena-checkin-rail-icon">◎</span>
+                <strong>{currentSession.presentStudentIds.length}</strong>
+                <small>presentes</small>
+                <span className="arena-checkin-rail-arrow">‹</span>
+              </button>
+            )}
+          </aside>
         </div>
       )}
 
@@ -2527,14 +2630,13 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         activeId={arenaTab}
         onChange={(id) => {
           setArenaTab(
-            id as "live" | "interactions" | "timer" | "presence" | "groups"
+            id as "live" | "interactions" | "timer" | "groups"
           );
         }}
         items={[
           { id: "live", label: "Condução" },
           { id: "interactions", label: "Dinâmicas" },
           { id: "timer", label: "Tempo" },
-          { id: "presence", label: "Participantes" },
           { id: "groups", label: "Organização" },
         ] satisfies TabItem[]}
       />
@@ -2866,31 +2968,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </div>
       )}
 
-      {arenaTab === "presence" && (
-        <Panel title="Participantes da sessão" subtitle="Presença e conexão são salvas imediatamente no PostgreSQL">
-          <div className="attendance-head"><strong>Presença</strong><span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span></div>
-          <div className="attendance-list compact-attendance">
-            {sessionParticipants.map((participant) => {
-              const student = data.students.find((item) => item.id === participant.studentId);
-              if (!student) return null;
-              return (
-                <label key={participant.id} className="check-row">
-                  <input
-                    type="checkbox"
-                    checked={participant.present}
-                    disabled={presenceBusyId === participant.id}
-                    onChange={(event) => { void changePresence(participant, event.target.checked); }}
-                  />
-                  <Avatar student={student} />
-                  <span>{student.name}</span>
-                  {participant.connected && <small className="connected-label">conectado</small>}
-                  {participant.connected && <button type="button" className="text-button release-device" onClick={(event) => { event.preventDefault(); void releaseDevice(participant); }}>Liberar dispositivo</button>}
-                </label>
-              );
-            })}
-          </div>
-        </Panel>
-      )}
 
       {arenaTab === "groups" && (
         <Panel title="Organização da turma" subtitle="Alterne entre individual, duplas e grupos sem encerrar a sessão">

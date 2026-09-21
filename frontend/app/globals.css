@@ -2544,3 +2544,656 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
   .classroom-integration-kpis{grid-template-columns:1fr}
   .classroom-integration-kpis>div{border-left:0;border-top:1px solid var(--border);padding:9px 0 0}
 }
+
+/* Check-in unificado — acesso + presença */
+.arena-checkin-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(20rem, .72fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.arena-checkin-workspace.roster-collapsed {
+  grid-template-columns: minmax(0, 1fr) 8.5rem;
+}
+
+.arena-checkin-access {
+  min-width: 0;
+}
+
+.arena-checkin-roster {
+  position: sticky;
+  top: 1rem;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.arena-checkin-roster-head {
+  min-height: 4.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .9rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.arena-checkin-roster-head > div {
+  min-width: 0;
+  display: grid;
+  gap: .2rem;
+}
+
+.arena-checkin-roster-head strong {
+  font-size: .95rem;
+}
+
+.arena-checkin-roster-head small {
+  color: var(--muted);
+  font-size: .75rem;
+}
+
+.arena-checkin-roster-toggle {
+  flex: 0 0 auto;
+  min-height: 2.25rem;
+  padding-inline: .7rem !important;
+}
+
+.arena-checkin-roster-list {
+  max-height: 34rem;
+  overflow: auto;
+  padding: .55rem;
+  background: transparent;
+}
+
+.arena-checkin-row {
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  gap: .55rem;
+  min-height: 3.25rem;
+  padding: .55rem .65rem;
+}
+
+.arena-checkin-student-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .82rem;
+  font-weight: 650;
+}
+
+.arena-checkin-student-state {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+.arena-checkin-present-label {
+  padding: .2rem .4rem;
+  border: 1px solid rgba(88, 243, 167, .24);
+  border-radius: 999px;
+  background: rgba(88, 243, 167, .08);
+  color: var(--accent);
+  font-size: .62rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.arena-checkin-roster-collapsed {
+  width: 100%;
+  min-height: 8.5rem;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: .25rem;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.arena-checkin-roster-collapsed strong {
+  color: var(--accent);
+  font-size: 1.65rem;
+}
+
+.arena-checkin-roster-collapsed span {
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+@media (max-width: 68rem) {
+  .arena-checkin-workspace,
+  .arena-checkin-workspace.roster-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .arena-checkin-roster {
+    position: static;
+  }
+
+  .arena-checkin-roster-list {
+    max-height: 24rem;
+  }
+}
+
+@media (max-width: 42rem) {
+  .arena-checkin-roster-head {
+    align-items: flex-start;
+  }
+
+  .arena-checkin-row {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+  }
+
+  .arena-checkin-row .release-device {
+    grid-column: 3 / -1;
+    justify-self: start;
+  }
+
+  .arena-checkin-student-state {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}
+
+/* Check-in polish v3 */
+.arena-checkin-workspace {
+  grid-template-columns: minmax(0, 1.6fr) minmax(19rem, .62fr);
+}
+
+.arena-checkin-workspace.roster-collapsed {
+  grid-template-columns: minmax(0, 1fr) 5rem;
+}
+
+.arena-checkin-roster {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.arena-checkin-roster.is-collapsed {
+  min-width: 0;
+}
+
+.arena-checkin-roster-head {
+  min-height: 4.25rem;
+  padding: .8rem .9rem;
+}
+
+.arena-checkin-roster-head > div {
+  flex: 1;
+}
+
+.arena-checkin-roster-head strong {
+  font-size: .9rem;
+}
+
+.arena-checkin-roster-head small {
+  font-size: .7rem;
+}
+
+.arena-checkin-roster-toggle {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.arena-checkin-roster-toggle:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: var(--surface-2);
+}
+
+.arena-checkin-roster-collapsed-copy {
+  display: grid !important;
+  place-items: center;
+  gap: .05rem !important;
+}
+
+.arena-checkin-roster-collapsed-copy strong {
+  color: var(--accent);
+  font-size: 1.25rem;
+}
+
+.arena-checkin-roster-collapsed-copy small {
+  font-size: .6rem !important;
+  text-align: center;
+}
+
+.arena-checkin-roster-list {
+  max-height: 34rem;
+  overflow-y: auto;
+  padding: .4rem .55rem .55rem;
+}
+
+.arena-checkin-row {
+  min-height: 3.65rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: .65rem;
+  padding: .55rem .45rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+}
+
+.arena-checkin-row:last-child {
+  border-bottom: 0;
+}
+
+.arena-checkin-row:hover {
+  background: color-mix(in srgb, var(--accent) 3.5%, transparent);
+}
+
+.arena-checkin-student-copy {
+  min-width: 0;
+  display: grid;
+  gap: .12rem;
+}
+
+.arena-checkin-student-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .8rem;
+  font-weight: 650;
+}
+
+.arena-checkin-student-copy small {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .68rem;
+}
+
+.arena-checkin-student-copy small i {
+  width: .38rem;
+  height: .38rem;
+  flex: 0 0 .38rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.arena-checkin-student-copy .is-online {
+  color: var(--accent);
+}
+
+.arena-checkin-student-copy .is-present {
+  color: #e7b84b;
+}
+
+.arena-checkin-student-copy .is-waiting {
+  color: var(--muted);
+}
+
+.arena-checkin-presence-control {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  cursor: pointer;
+}
+
+.arena-checkin-presence-control input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.arena-checkin-presence-control > span {
+  position: relative;
+  width: 2rem;
+  height: 1.12rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  transition: .16s ease;
+}
+
+.arena-checkin-presence-control > span::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: .72rem;
+  height: .72rem;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: .16s ease;
+}
+
+.arena-checkin-presence-control input:checked + span {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
+}
+
+.arena-checkin-presence-control input:checked + span::after {
+  transform: translateX(.83rem);
+  background: var(--accent);
+}
+
+.arena-checkin-presence-control input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.arena-checkin-presence-control small {
+  width: 3.35rem;
+  color: var(--muted);
+  font-size: .62rem;
+}
+
+.arena-checkin-release {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.arena-checkin-release:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+@media (max-width: 68rem) {
+  .arena-checkin-workspace,
+  .arena-checkin-workspace.roster-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .arena-checkin-roster.is-collapsed {
+    min-height: 4.25rem;
+  }
+}
+
+@media (max-width: 42rem) {
+  .arena-checkin-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .arena-checkin-release {
+    display: none;
+  }
+
+  .arena-checkin-presence-control small {
+    display: none;
+  }
+}
+
+/* Check-in polish v5 — composição final */
+.arena-checkin-workspace {
+  grid-template-columns: minmax(0, 1.72fr) minmax(18.5rem, .58fr);
+  gap: .875rem;
+}
+
+.arena-checkin-workspace.roster-collapsed {
+  grid-template-columns: minmax(0, 1fr) 3.75rem;
+}
+
+.arena-checkin-roster.is-collapsed {
+  min-width: 3.75rem;
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.arena-checkin-rail {
+  width: 100%;
+  min-height: 10rem;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: .22rem;
+  padding: .65rem .25rem;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.arena-checkin-rail:hover {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
+.arena-checkin-rail-icon {
+  color: var(--accent);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.arena-checkin-rail strong {
+  color: var(--accent);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.arena-checkin-rail small {
+  max-width: 3rem;
+  color: var(--muted);
+  font-size: .52rem;
+  line-height: 1.05;
+  text-align: center;
+}
+
+.arena-checkin-rail-arrow {
+  margin-top: .2rem;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.arena-checkin-roster-head {
+  min-height: 4rem;
+  padding: .72rem .8rem;
+}
+
+.arena-checkin-roster-list {
+  max-height: 31rem;
+  padding: .32rem .45rem .45rem;
+}
+
+.arena-checkin-row {
+  min-height: 3.35rem;
+  gap: .55rem;
+  padding: .45rem .35rem;
+}
+
+.arena-checkin-student-copy strong {
+  font-size: .78rem;
+}
+
+.arena-checkin-student-copy small {
+  font-size: .64rem;
+}
+
+@media (max-width: 68rem) {
+  .arena-checkin-workspace,
+  .arena-checkin-workspace.roster-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .arena-checkin-roster.is-collapsed {
+    min-height: auto;
+  }
+
+  .arena-checkin-rail {
+    min-height: 3.5rem;
+    grid-template-columns: auto auto auto auto;
+    justify-content: center;
+    gap: .5rem;
+  }
+
+  .arena-checkin-rail small {
+    max-width: none;
+  }
+}
+
+/* Check-in polish v6 — largura padrão e rail horizontal */
+.arena-session-workspace {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.arena-checkin-workspace {
+  grid-template-columns: minmax(0, 1fr) minmax(19rem, 22rem);
+  width: 100%;
+}
+
+.arena-checkin-workspace.roster-collapsed {
+  grid-template-columns: minmax(0, 1fr) 9.5rem;
+}
+
+.arena-checkin-roster.is-collapsed {
+  min-width: 9.5rem;
+  align-self: start;
+}
+
+.arena-checkin-rail {
+  min-height: 3.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .42rem;
+  padding: .45rem .6rem;
+  white-space: nowrap;
+}
+
+.arena-checkin-rail-icon {
+  flex: 0 0 auto;
+  font-size: .85rem;
+}
+
+.arena-checkin-rail strong {
+  flex: 0 0 auto;
+  font-size: 1.05rem;
+}
+
+.arena-checkin-rail small {
+  max-width: none;
+  flex: 0 0 auto;
+  font-size: .58rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.arena-checkin-rail-arrow {
+  flex: 0 0 auto;
+  margin: 0 0 0 .1rem;
+  font-size: .9rem;
+}
+
+@media (max-width: 68rem) {
+  .arena-checkin-workspace,
+  .arena-checkin-workspace.roster-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .arena-checkin-roster.is-collapsed {
+    min-width: 0;
+    width: max-content;
+    max-width: 100%;
+    justify-self: end;
+  }
+
+  .arena-checkin-rail {
+    min-height: 3rem;
+  }
+}
+
+/* Check-in polish v8 — participantes e microhierarquia */
+.arena-checkin-workspace {
+  grid-template-columns: minmax(0, 1fr) minmax(21rem, 24rem);
+  gap: .75rem;
+}
+
+.arena-checkin-workspace.roster-collapsed {
+  grid-template-columns: minmax(0, 1fr) 9.25rem;
+}
+
+.arena-checkin-roster-head {
+  min-height: 3.8rem;
+  padding: .72rem .85rem;
+}
+
+.arena-checkin-roster-head > div {
+  gap: .18rem;
+}
+
+.arena-checkin-roster-head strong {
+  font-size: .92rem;
+  font-weight: 750;
+}
+
+.arena-checkin-roster-head small {
+  font-size: .7rem;
+}
+
+.arena-checkin-roster-list {
+  max-height: 33rem;
+  padding: .4rem .55rem .55rem;
+}
+
+.arena-checkin-row {
+  min-height: 3.6rem;
+  gap: .65rem;
+  padding: .52rem .4rem;
+}
+
+.arena-checkin-student-copy {
+  gap: .16rem;
+}
+
+.arena-checkin-student-copy strong {
+  font-size: .8rem;
+}
+
+.arena-checkin-student-copy small {
+  font-size: .67rem;
+}
+
+.arena-checkin-student-copy .is-offline {
+  color: var(--muted);
+}
+
+.arena-checkin-presence-control {
+  min-height: 2.25rem;
+  padding: .35rem .15rem .35rem .35rem;
+  border-radius: 9px;
+}
+
+.arena-checkin-presence-control:hover {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
+.arena-checkin-presence-control small {
+  width: 3.4rem;
+  font-size: .65rem;
+}
+
+.arena-checkin-rail {
+  min-height: 3.5rem;
+}
+
+@media (max-width: 68rem) {
+  .arena-checkin-workspace,
+  .arena-checkin-workspace.roster-collapsed {
+    grid-template-columns: 1fr;
+  }
+}
