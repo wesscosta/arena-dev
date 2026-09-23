@@ -129,7 +129,18 @@ export default function MicrosoftIntegrationConsole({
     ? (matchConflicts ?? 0) + (rosterConflicts ?? 0)
     : null;
 
-  const healthLabel: Record<\n    NonNullable<IntegrationObservability>["health"],\n    string\n  > = {\n    NO_HISTORY: "Sem histórico",\n    HEALTHY: "Saudável",\n    ATTENTION: "Atenção",\n    ERROR: "Falha",\n    SYNCING: "Sincronizando",\n  };\n\n  const jumpTo = (targetId: string) => {
+  const healthLabel: Record<
+    NonNullable<IntegrationObservability>["health"],
+    string
+  > = {
+    NO_HISTORY: "Sem histórico",
+    HEALTHY: "Saudável",
+    ATTENTION: "Atenção",
+    ERROR: "Falha",
+    SYNCING: "Sincronizando",
+  };
+
+  const jumpTo = (targetId: string) => {
     document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 

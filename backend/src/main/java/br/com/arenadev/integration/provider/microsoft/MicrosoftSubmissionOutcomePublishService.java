@@ -2,13 +2,16 @@ package br.com.arenadev.integration.provider.microsoft;
 
 import br.com.arenadev.integration.application.IntegrationConnectionService;
 import br.com.arenadev.integration.application.IntegrationNotFoundException;
+import br.com.arenadev.integration.application.SyncTelemetryRunner;
 import br.com.arenadev.integration.domain.IntegrationConnectionStatus;
 import br.com.arenadev.integration.domain.LearningPlatformProvider;
+import br.com.arenadev.integration.domain.SyncDirection;
 import br.com.arenadev.integration.persistence.ExternalActivityLinkRepository;
 import br.com.arenadev.integration.persistence.ExternalClassroomLinkRepository;
 import br.com.arenadev.integration.persistence.ExternalSubmissionLinkRepository;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import br.com.arenadev.submission.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +21,7 @@ import java.util.UUID;
 
 @Service
 public class MicrosoftSubmissionOutcomePublishService {
+    private SyncTelemetryRunner telemetry;
     private final IntegrationConnectionService connections;
     private final ExternalClassroomLinkRepository classroomLinks;
     private final ExternalActivityLinkRepository activityLinks;
@@ -50,8 +54,46 @@ public class MicrosoftSubmissionOutcomePublishService {
         this.graph = graph;
     }
 
+    @Autowired(required = false)
+    void setTelemetry(SyncTelemetryRunner telemetry) {
+        this.telemetry = telemetry;
+    }
+
     @Transactional(readOnly = true)
     public PublishResult execute(
+            UUID connectionId,
+            UUID classroomLinkId,
+            UUID activityLinkId,
+            String microsoftSubmissionId,
+            PublishAction action
+    ) {
+        if (telemetry != null) {
+            return telemetry.run(
+                    connectionId,
+                    "ASSESSMENT_PUBLISH",
+                    SyncDirection.EXPORT,
+                    "SUBMISSION",
+                    microsoftSubmissionId,
+                    () -> executeWithoutTelemetry(
+                            connectionId,
+                            classroomLinkId,
+                            activityLinkId,
+                            microsoftSubmissionId,
+                            action
+                    )
+            );
+        }
+
+        return executeWithoutTelemetry(
+                connectionId,
+                classroomLinkId,
+                activityLinkId,
+                microsoftSubmissionId,
+                action
+        );
+    }
+
+    private PublishResult executeWithoutTelemetry(
             UUID connectionId,
             UUID classroomLinkId,
             UUID activityLinkId,

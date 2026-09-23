@@ -59,6 +59,24 @@ public class SyncExecutionService {
                 )));
     }
 
+    public SyncExecutionEntity beginNew(
+            UUID connectionId,
+            String scope,
+            SyncDirection direction
+    ) {
+        if (!connections.existsById(connectionId)) {
+            throw new IntegrationNotFoundException("Conexão não encontrada: " + connectionId);
+        }
+
+        return executions.save(new SyncExecutionEntity(
+                UUID.randomUUID(),
+                connectionId,
+                scope,
+                direction,
+                now()
+        ));
+    }
+
     public SyncExecutionEntity start(UUID executionId) {
         var entity = required(executionId);
         if (entity.getStatus() == SyncExecutionStatus.RUNNING) return entity;

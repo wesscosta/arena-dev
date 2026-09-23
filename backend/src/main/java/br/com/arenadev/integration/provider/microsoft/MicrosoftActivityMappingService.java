@@ -4,11 +4,14 @@ import br.com.arenadev.activity.ActivityRepository;
 import br.com.arenadev.integration.application.ExternalLinkService;
 import br.com.arenadev.integration.application.IntegrationConnectionService;
 import br.com.arenadev.integration.application.IntegrationNotFoundException;
+import br.com.arenadev.integration.application.SyncTelemetryRunner;
 import br.com.arenadev.integration.domain.IntegrationConnectionStatus;
 import br.com.arenadev.integration.domain.LearningPlatformProvider;
+import br.com.arenadev.integration.domain.SyncDirection;
 import br.com.arenadev.integration.persistence.ExternalActivityLinkEntity;
 import br.com.arenadev.integration.persistence.ExternalActivityLinkRepository;
 import br.com.arenadev.integration.persistence.ExternalClassroomLinkRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +21,7 @@ import java.util.UUID;
 
 @Service
 public class MicrosoftActivityMappingService {
+    private SyncTelemetryRunner telemetry;
     private final IntegrationConnectionService connections;
     private final ExternalClassroomLinkRepository classroomLinks;
     private final ExternalActivityLinkRepository activityLinks;
@@ -44,8 +48,27 @@ public class MicrosoftActivityMappingService {
         this.externalLinks = externalLinks;
     }
 
+    @Autowired(required = false)
+    void setTelemetry(SyncTelemetryRunner telemetry) {
+        this.telemetry = telemetry;
+    }
+
     @Transactional(readOnly = true)
     public DiscoveryResult discover(UUID connectionId, UUID classroomLinkId) {
+        if (telemetry != null) {
+            return telemetry.run(
+                    connectionId,
+                    "ACTIVITIES",
+                    SyncDirection.IMPORT,
+                    "CLASSROOM",
+                    classroomLinkId.toString(),
+                    () -> discoverWithoutTelemetry(connectionId, classroomLinkId)
+            );
+        }
+        return discoverWithoutTelemetry(connectionId, classroomLinkId);
+    }
+
+    private DiscoveryResult discoverWithoutTelemetry(UUID connectionId, UUID classroomLinkId) {
         var context = context(connectionId, classroomLinkId);
         var token = tokenProvider.acquire(context.tenantId());
         var remote = graph.listClassAssignments(

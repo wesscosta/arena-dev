@@ -4,13 +4,16 @@ import br.com.arenadev.activity.ActivityRepository;
 import br.com.arenadev.classroom.EnrollmentRepository;
 import br.com.arenadev.integration.application.IntegrationConnectionService;
 import br.com.arenadev.integration.application.IntegrationNotFoundException;
+import br.com.arenadev.integration.application.SyncTelemetryRunner;
 import br.com.arenadev.integration.domain.IntegrationConnectionStatus;
 import br.com.arenadev.integration.domain.LearningPlatformProvider;
+import br.com.arenadev.integration.domain.SyncDirection;
 import br.com.arenadev.integration.persistence.ExternalActivityLinkRepository;
 import br.com.arenadev.integration.persistence.ExternalClassroomLinkRepository;
 import br.com.arenadev.integration.persistence.ExternalStudentLinkEntity;
 import br.com.arenadev.integration.persistence.ExternalStudentLinkRepository;
 import br.com.arenadev.integration.persistence.ExternalSubmissionLinkRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class MicrosoftSubmissionTrackingService {
+    private SyncTelemetryRunner telemetry;
     private final IntegrationConnectionService connections;
     private final ExternalClassroomLinkRepository classroomLinks;
     private final ExternalActivityLinkRepository activityLinks;
@@ -56,8 +60,40 @@ public class MicrosoftSubmissionTrackingService {
         this.graph = graph;
     }
 
+    @Autowired(required = false)
+    void setTelemetry(SyncTelemetryRunner telemetry) {
+        this.telemetry = telemetry;
+    }
+
     @Transactional(readOnly = true)
     public TrackingResult track(
+            UUID connectionId,
+            UUID classroomLinkId,
+            UUID activityLinkId
+    ) {
+        if (telemetry != null) {
+            return telemetry.run(
+                    connectionId,
+                    "SUBMISSIONS",
+                    SyncDirection.IMPORT,
+                    "ACTIVITY",
+                    activityLinkId.toString(),
+                    () -> trackWithoutTelemetry(
+                            connectionId,
+                            classroomLinkId,
+                            activityLinkId
+                    )
+            );
+        }
+
+        return trackWithoutTelemetry(
+                connectionId,
+                classroomLinkId,
+                activityLinkId
+        );
+    }
+
+    private TrackingResult trackWithoutTelemetry(
             UUID connectionId,
             UUID classroomLinkId,
             UUID activityLinkId

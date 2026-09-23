@@ -2,9 +2,12 @@ package br.com.arenadev.integration.provider.microsoft;
 
 import br.com.arenadev.integration.application.IntegrationConnectionService;
 import br.com.arenadev.integration.application.IntegrationNotFoundException;
+import br.com.arenadev.integration.application.SyncTelemetryRunner;
 import br.com.arenadev.integration.domain.IntegrationConnectionStatus;
 import br.com.arenadev.integration.domain.LearningPlatformProvider;
+import br.com.arenadev.integration.domain.SyncDirection;
 import br.com.arenadev.integration.persistence.ExternalClassroomLinkRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +16,7 @@ import java.util.UUID;
 
 @Service
 public class MicrosoftRosterDiscoveryService {
+    private SyncTelemetryRunner telemetry;
     private final IntegrationConnectionService connections;
     private final ExternalClassroomLinkRepository classroomLinks;
     private final MicrosoftGraphTokenProvider tokenProvider;
@@ -30,8 +34,27 @@ public class MicrosoftRosterDiscoveryService {
         this.graph = graph;
     }
 
+    @Autowired(required = false)
+    void setTelemetry(SyncTelemetryRunner telemetry) {
+        this.telemetry = telemetry;
+    }
+
     @Transactional(readOnly = true)
     public RosterResult discover(UUID connectionId, UUID classroomLinkId) {
+        if (telemetry != null) {
+            return telemetry.run(
+                    connectionId,
+                    "ROSTER",
+                    SyncDirection.IMPORT,
+                    "CLASSROOM",
+                    classroomLinkId.toString(),
+                    () -> discoverWithoutTelemetry(connectionId, classroomLinkId)
+            );
+        }
+        return discoverWithoutTelemetry(connectionId, classroomLinkId);
+    }
+
+    private RosterResult discoverWithoutTelemetry(UUID connectionId, UUID classroomLinkId) {
         var connection = connections.required(connectionId);
 
         if (connection.getProvider() != LearningPlatformProvider.MICROSOFT_TEAMS) {
