@@ -38,16 +38,16 @@ O Arena Dev permanece autoridade sobre:
 ## Sequência
 
 ```text
-15.0  Integration Core Consolidation
-15.1  Microsoft Identity + Graph Connection
-15.2  Teams Classrooms & Students
-15.3  Activity Mapping
-15.4  Submission Import
-15.5  Grade & Feedback Sync
-15.6  Google Classroom Adapter
-15.7  Integration Operations UI
-15.8  Conflict Resolution & Observability
-15.9  Hardening, E2E & Release Gate
+15.0  Integration Core Consolidation                  concluído
+15.1  Microsoft Identity + Graph Connection             concluído
+15.2  Teams Classrooms & Students                       concluído
+15.3  Activity Mapping                                  concluído
+15.4  Submission Import                                 concluído
+15.5  Grade & Feedback Sync                             concluído
+15.6  Google Classroom Adapter                          standby
+15.7  Integration Operations UI                         concluído
+15.8  Conflict Resolution & Observability               concluído
+15.9  Hardening, E2E & Release Gate                     concluído
 ```
 
 ## 15.0 — Integration Core Consolidation
@@ -171,13 +171,15 @@ PUBLISHED       pode sincronizar
 
 ## Gate da v0.7
 
-A linha só fecha após:
+A linha fecha tecnicamente após:
 
-- adapters Microsoft e Google cobertos por testes de contrato;
+- Microsoft coberto por testes de contrato;
 - E2E dos fluxos críticos;
 - resolução de conflitos;
-- observabilidade/retry;
-- migrations e restore-check;
+- observabilidade e telemetria;
+- migrations V1–V27 e restore-check;
 - CI;
-- release gate;
-- evidências de publicação registradas.
+- release gate.
+
+Google Classroom permanece em standby e não é bloqueante para a v0.7.0. Evidência
+de tag/GitHub Release é registrada somente após publicação verificável no mesmo SHA.

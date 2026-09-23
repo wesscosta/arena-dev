@@ -70,7 +70,7 @@ jobs:
         run: npm run build
 
   e2e:
-    name: Compose and E2E — Chromium v0.4 critical flows
+    name: Compose and E2E — Chromium v0.7 critical flows
     runs-on: ubuntu-latest
     timeout-minutes: 35
     needs: [backend, frontend]

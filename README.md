@@ -2,13 +2,11 @@
 
 **Arena Dev Community** é uma plataforma open source e self-hosted para condução, participação e gamificação de dinâmicas de sala, com foco em baixa fricção para o professor.
 
-> **Baseline técnica corrente:** `v0.6.0 — Submissions, Assessment & Feedback`.
+> **Baseline técnica corrente:** `v0.7.0 — Educational Integrations`.
 >
-> **Estado:** linha `14.x` encerrada e congelada em `main`.
+> **Estado:** linha `15.x` concluída para a release `v0.7.0`.
 >
-> **HEAD documental de fechamento:** `789e6fb5599641192fa87933c45d4317dc53490d`.
->
-> **Próxima linha:** `v0.7 — Educational Integrations`, iniciando pelo `15.0 — Integration Core Consolidation`.
+> **Provider operacional da release:** Microsoft Teams. Google Classroom permanece em standby.
 
 ## Modelo do produto
 
@@ -92,9 +90,9 @@ A v0.6 registra sinais operacionais para apoiar revisão humana, como eventos de
 
 Esses sinais **não** constituem detector de IA, plágio ou fraude. O sistema produz apenas recomendação de revisão (`LOW`, `MEDIUM`, `HIGH`).
 
-## Integrações externas — próxima linha
+## Integrações externas — v0.7
 
-A v0.6 encerrou a preparação provider-independent. A v0.7 transforma essa fundação em uma camada operacional de integrações:
+A v0.7 transforma a fundação provider-independent da v0.6 em uma camada operacional de integrações:
 
 ```text
 Teams / Classroom
@@ -154,22 +152,22 @@ Princípios:
 
 Schema consolidado da linha: **Flyway V1–V25**.
 
-## v0.7 — continuidade
+## v0.7.0 — linha tecnicamente concluída
 
 ```text
-15.0  Integration Core Consolidation
-15.1  Microsoft Identity + Graph Connection
-15.2  Teams Classrooms & Students
-15.3  Activity Mapping
-15.4  Submission Import
-15.5  Grade & Feedback Sync
-15.6  Google Classroom Adapter
-15.7  Integration Operations UI
-15.8  Conflict Resolution & Observability
-15.9  Hardening, E2E & Release Gate
+15.0  Integration Core Consolidation                  concluído
+15.1  Microsoft Identity + Graph Connection           concluído
+15.2  Teams Classrooms & Students                     concluído
+15.3  Activity Mapping                                concluído
+15.4  Submission Import                               concluído
+15.5  Grade & Feedback Sync                           concluído
+15.6  Google Classroom Adapter                        standby
+15.7  Integration Operations UI                       concluído
+15.8  Conflict Resolution & Observability             concluído
+15.9  Hardening, E2E & Release Gate                   concluído
 ```
 
-A execução começa pelo `15.0A — Audit & Contract Freeze`: auditar o que já existe em `14.10 / V25` e classificar contratos como `KEEP`, `EXTEND`, `RENAME`, `DEPRECATE` ou `REMOVE`.
+Detalhes de fechamento em `docs/RELEASE_0_7.md`.
 
 ## Executando localmente
 
@@ -237,7 +235,7 @@ Histórico da v0.6:
 - `v0.4.x` — histórica;
 - `v0.5.0` — histórica;
 - `v0.6.0` — baseline técnica encerrada e congelada;
-- `v0.7` — próxima linha de desenvolvimento.
+- `v0.7.0` — Educational Integrations; linha `15.x` concluída.
 
 ## Licença
 
