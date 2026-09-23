@@ -39,7 +39,11 @@ import {
 } from "@/lib/microsoft-integration-api";
 import styles from "./MicrosoftIntegrationConsole.module.css";
 import { deriveIntegrationOperationState } from "@/lib/integration-operations";
-import { fetchIntegrationObservability, type IntegrationObservability } from "@/lib/integration-observability-api";
+import {
+  fetchIntegrationObservability,
+  type IntegrationObservability,
+  type SyncExecutionObservation,
+} from "@/lib/integration-observability-api";
 
 const MATCH_LABEL: Record<StudentMatchStatus, string> = {
   ALREADY_LINKED: "Já vinculado",
@@ -56,6 +60,36 @@ function badgeVariant(status: StudentMatchStatus): "neutral" | "success" | "warn
   if (status === "CONFLICT" || status === "AMBIGUOUS") return "danger";
   if (status === "REVIEW_REQUIRED" || status === "NEW_STUDENT") return "warning";
   return "neutral";
+}
+
+const EXECUTION_STATUS_LABEL: Record<SyncExecutionObservation["status"], string> = {
+  PENDING: "Pendente",
+  RUNNING: "Em execução",
+  PARTIALLY_SUCCEEDED: "Parcial",
+  SUCCEEDED: "Concluída",
+  FAILED: "Falhou",
+  CANCELLED: "Cancelada",
+};
+
+const SCOPE_LABEL: Record<string, string> = {
+  ROSTER: "Alunos da turma",
+  ACTIVITIES: "Atividades",
+  SUBMISSIONS: "Entregas",
+  ASSESSMENT_PUBLISH: "Publicação de avaliação",
+};
+
+function executionBadgeVariant(
+  status: SyncExecutionObservation["status"],
+): "neutral" | "success" | "warning" | "danger" {
+  if (status === "SUCCEEDED") return "success";
+  if (status === "FAILED") return "danger";
+  if (status === "RUNNING" || status === "PENDING" || status === "PARTIALLY_SUCCEEDED") return "warning";
+  return "neutral";
+}
+
+function executionWhen(execution: SyncExecutionObservation) {
+  const value = execution.finishedAt ?? execution.startedAt ?? execution.createdAt;
+  return new Date(value).toLocaleString("pt-BR");
 }
 
 const errorMessage = (error: unknown) =>
@@ -164,10 +198,36 @@ export default function MicrosoftIntegrationConsole({
       setLinks([]);
       return;
     }
+
     let active = true;
-    Promise.all([fetchClassroomLinks(connectionId), fetchIntegrationObservability(connectionId)])
-      .then(([items, health]) => { if (!active) return; setLinks(items); setObservability(health); })
-      .catch((cause) => active && setError(errorMessage(cause)));
+    fetchClassroomLinks(connectionId)
+      .then((items) => {
+        if (active) setLinks(items);
+      })
+      .catch((cause) => {
+        if (active) setError(errorMessage(cause));
+      });
+
+    return () => { active = false; };
+  }, [connectionId]);
+
+  useEffect(() => {
+    if (!connectionId) {
+      setObservability(null);
+      return;
+    }
+
+    setObservability(null);
+    let active = true;
+
+    fetchIntegrationObservability(connectionId)
+      .then((health) => {
+        if (active) setObservability(health);
+      })
+      .catch(() => {
+        if (active) setObservability(null);
+      });
+
     return () => { active = false; };
   }, [connectionId]);
 
@@ -182,6 +242,15 @@ export default function MicrosoftIntegrationConsole({
     const result = await fetchClassroomLinks(connectionId);
     setLinks(result);
     if (preferredId) setInspectedLinkId(preferredId);
+  }
+
+  async function refreshObservability() {
+    if (!connectionId) return;
+    try {
+      setObservability(await fetchIntegrationObservability(connectionId));
+    } catch {
+      // Observabilidade é auxiliar e nunca deve bloquear a operação principal.
+    }
   }
 
   async function handleConnect(event: React.FormEvent<HTMLFormElement>) {
@@ -258,6 +327,7 @@ export default function MicrosoftIntegrationConsole({
       setActivityMapping(null);
       setError(errorMessage(cause));
     } finally {
+      void refreshObservability();
       setBusy("");
     }
   }
@@ -305,6 +375,7 @@ export default function MicrosoftIntegrationConsole({
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
+      void refreshObservability();
       setBusy("");
     }
   }
@@ -363,6 +434,7 @@ export default function MicrosoftIntegrationConsole({
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
+      void refreshObservability();
       setBusy("");
     }
   }
@@ -393,6 +465,7 @@ export default function MicrosoftIntegrationConsole({
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
+      void refreshObservability();
       setBusy("");
     }
   }
@@ -494,6 +567,7 @@ export default function MicrosoftIntegrationConsole({
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
+      void refreshObservability();
       setBusy("");
     }
   }
@@ -518,6 +592,7 @@ export default function MicrosoftIntegrationConsole({
       setSubmissionTracking(null);
       setError(errorMessage(cause));
     } finally {
+      void refreshObservability();
       setBusy("");
     }
   }
@@ -569,6 +644,11 @@ export default function MicrosoftIntegrationConsole({
             </div>
             <strong>{observability?.recentExecutions ? `${observability.recentExecutions} execução(ões) recente(s)` : "Nenhuma execução registrada"}</strong>
             <p>{observability?.lastSuccessAt ? `Último sucesso: ${new Date(observability.lastSuccessAt).toLocaleString("pt-BR")}.` : "Ainda não há sucesso registrado no histórico disponível."}</p>
+            {observability && observability.executions.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={() => jumpTo("integration-observability-history")}>
+                Ver histórico
+              </Button>
+            )}
           </div>
           <div className={styles.healthCard}>
             <div className={styles.healthCardHead}>
@@ -620,6 +700,85 @@ export default function MicrosoftIntegrationConsole({
             )}
           </div>
         </div>
+
+        {observability && observability.executions.length > 0 && (
+          <section
+            id="integration-observability-history"
+            className={styles.observabilityHistory}
+            aria-labelledby="integration-observability-title"
+          >
+            <div className={styles.observabilityHeader}>
+              <div>
+                <span className={styles.eyebrow}>OBSERVABILIDADE</span>
+                <h3 id="integration-observability-title">Execuções recentes</h3>
+                <p>Histórico técnico das últimas sincronizações desta conexão.</p>
+              </div>
+              <Button size="sm" variant="ghost" onClick={() => void refreshObservability()}>
+                Atualizar
+              </Button>
+            </div>
+
+            <div className={styles.executionList}>
+              {observability.executions.map((execution) => (
+                <details
+                  key={execution.id}
+                  className={styles.executionItem}
+                  open={execution.status === "FAILED"}
+                >
+                  <summary>
+                    <div className={styles.executionIdentity}>
+                      <strong>{SCOPE_LABEL[execution.scope] ?? execution.scope}</strong>
+                      <span>
+                        {execution.direction === "IMPORT" ? "Microsoft → Arena" : "Arena → Microsoft"}
+                        {" · "}
+                        {executionWhen(execution)}
+                      </span>
+                    </div>
+                    <Badge variant={executionBadgeVariant(execution.status)}>
+                      {EXECUTION_STATUS_LABEL[execution.status]}
+                    </Badge>
+                  </summary>
+
+                  <div className={styles.executionDetails}>
+                    <div className={styles.executionMetrics}>
+                      <Metric label="Itens" value={execution.totalItems} />
+                      <Metric label="Sucesso" value={execution.succeededItems} />
+                      <Metric label="Falhas" value={execution.failedItems} />
+                      <Metric label="Ignorados" value={execution.skippedItems} />
+                    </div>
+
+                    {execution.errorSummary && (
+                      <div className={styles.executionError}>
+                        <strong>Resumo da falha</strong>
+                        <p>{execution.errorSummary}</p>
+                      </div>
+                    )}
+
+                    {execution.failures.length > 0 && (
+                      <div className={styles.failureList}>
+                        {execution.failures.map((failure) => (
+                          <div key={failure.id} className={styles.failureItem}>
+                            <div>
+                              <strong>{failure.itemType}</strong>
+                              <code>{failure.itemKey}</code>
+                            </div>
+                            <p>{failure.errorMessage ?? "Falha sem mensagem detalhada."}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {!execution.errorSummary && execution.failures.length === 0 && (
+                      <p className={styles.mutedText}>
+                        Esta execução não possui falhas registradas.
+                      </p>
+                    )}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
 
         <nav className={styles.operationNav} aria-label="Atalhos da integração">
           <button type="button" onClick={() => jumpTo("integration-classrooms")}>Turmas</button>
