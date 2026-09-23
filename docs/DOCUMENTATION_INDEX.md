@@ -4,10 +4,11 @@
 
 1. [`../README.md`](../README.md) — visão pública e operacional do projeto.
 2. [`STATUS_ATUAL.md`](STATUS_ATUAL.md) — estado técnico corrente.
-3. [`ROADMAP_0_7.md`](ROADMAP_0_7.md) — linha ativa e sequência das integrações educacionais.
-4. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
-5. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
-6. [`adr/README.md`](adr/README.md).
+3. [`ROADMAP_0_7.md`](ROADMAP_0_7.md) — fechamento da linha de integrações educacionais.
+4. [`RELEASE_0_7.md`](RELEASE_0_7.md) — candidata técnica e gate de release.
+5. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+6. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
+7. [`adr/README.md`](adr/README.md).
 
 ## Baseline encerrada — v0.6
 
@@ -55,4 +56,4 @@ A primeira fatia é `15.0A — Audit & Contract Freeze`, auditando o que foi cri
 
 Não reescrever documentação histórica para fabricar evidência retroativa. Quando houver divergência entre fechamento técnico e publicação externa, registrar explicitamente a evidência disponível.
 
-**Atualizado em 17/09/2026 para o fechamento da baseline v0.6 e abertura documental da v0.7.**
+**Atualizado em 23/09/2026 para o fechamento técnico da v0.7.0.**

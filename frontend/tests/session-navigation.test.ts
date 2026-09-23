@@ -17,9 +17,12 @@ test("ending a session requires explicit confirmation inside Arena", () => {
   assert.match(arena, /Histórico, XP e atividades permanecem salvos/);
 });
 
-test("session navigation uses Participantes instead of Presença as top-level tool", () => {
-  assert.match(arena, /id:\s*"presence",[\s\S]*?label:\s*"Participantes"/);
-  assert.match(arena, /title="Participantes da sessão"/);
+test("session navigation keeps participants inside unified Check-in instead of a top-level tab", () => {
+  assert.doesNotMatch(arena, /id:\s*"presence",[\s\S]*?label:\s*"Participantes"/);
+  assert.doesNotMatch(arena, /title="Participantes da sessão"/);
+  assert.match(arena, /Fechar check-in/);
+  assert.match(arena, /Check-in/);
+  assert.match(arena, /arena-checkin-roster/);
 });
 
 test("Boss Battle belongs to Dinâmicas instead of a top-level session tab", () => {

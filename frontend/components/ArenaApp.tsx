@@ -14,6 +14,9 @@ import QuizPanel from "@/components/QuizPanel";
 import SessionAccessCard from "@/components/SessionAccessCard";
 import SessionTimeline from "@/components/SessionTimeline";
 import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
+import MicrosoftIntegrationConsole from "@/components/MicrosoftIntegrationConsole";
+import IntegrationSettingsSummary from "@/components/IntegrationSettingsSummary";
+import ClassroomIntegrationWorkspace from "@/components/ClassroomIntegrationWorkspace";
 import {
   Badge,
   Breadcrumb,
@@ -71,7 +74,7 @@ import {
   classroomThemePresentation,
 } from "@/lib/classroom-theme";
 
-type View = "dashboard" | "classroom" | "classroom-settings" | "arena" | "settings";
+type View = "dashboard" | "classroom" | "classroom-settings" | "arena" | "integrations" | "settings";
 type ClassroomTab = "home" | "students" | "activities" | "ranking" | "history";
 
 const VIEW_LABEL: Record<View, string> = {
@@ -79,6 +82,7 @@ const VIEW_LABEL: Record<View, string> = {
   classroom: "Turma",
   "classroom-settings": "Gerenciar turma",
   arena: "Arena",
+  integrations: "Integrações",
   settings: "Configurações",
 };
 
@@ -378,6 +382,13 @@ export default function ArenaApp() {
                     current: true,
                   } satisfies BreadcrumbItem]
                 : []),
+              ...(view === "integrations"
+                ? [{
+                    id: "integrations",
+                    label: "Integrações",
+                    current: true,
+                  } satisfies BreadcrumbItem]
+                : []),
               ...(view === "settings"
                 ? [{
                     id: "settings",
@@ -443,6 +454,7 @@ export default function ArenaApp() {
               data={data}
               onSelectClassroom={(classroomId) => { setActiveClassroom(classroomId); openClassroom("home"); }}
               onManageClassroom={(classroomId, intent) => openClassroomSettings(classroomId, intent)}
+              onOpenIntegrations={() => setView("integrations")}
               notify={notify}
               refreshClassroomDomain={refreshClassroomDomain}
             />
@@ -468,6 +480,7 @@ export default function ArenaApp() {
                     currentSession={currentSession}
                     onOpenArena={() => setView("arena")}
                     onManageClassroom={() => openClassroomSettings(activeClassroom.id)}
+                    onManageIntegration={() => setView("integrations")}
                     notify={notify}
                     refreshClassroomDomain={refreshClassroomDomain}
                   />
@@ -577,6 +590,14 @@ export default function ArenaApp() {
             )
           )}
 
+          {view === "integrations" && (
+            <MicrosoftIntegrationConsole
+              classrooms={data.classrooms}
+              students={data.students}
+              onBack={() => setView("dashboard")}
+            />
+          )}
+
           {view === "settings" && (
             <div className="settings-page stack-lg">
               <div className="settings-heading">
@@ -626,6 +647,17 @@ export default function ArenaApp() {
                   )}
                 </Panel>
               </div>
+
+              <section className="settings-integrations-section">
+                <div className="settings-section-heading">
+                  <span className="eyebrow accent">INTEGRAÇÕES</span>
+                  <h3>Plataformas educacionais</h3>
+                  <p>
+                    Conecte o Arena Dev às plataformas usadas pela instituição. As turmas continuam únicas no Arena e recebem apenas um indicador quando existe vínculo externo.
+                  </p>
+                </div>
+                <IntegrationSettingsSummary onManage={() => setView("integrations")} />
+              </section>
 
               <section className="settings-appearance-section">
                 <div className="settings-section-heading">
@@ -690,10 +722,11 @@ export default function ArenaApp() {
   );
 }
 
-function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refreshClassroomDomain }: {
+function OverviewView({ data, onSelectClassroom, onManageClassroom, onOpenIntegrations, notify, refreshClassroomDomain }: {
   data: ArenaData;
   onSelectClassroom: (classroomId: string) => void;
   onManageClassroom: (classroomId: string, intent: "general" | "delete") => void;
+  onOpenIntegrations: () => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
@@ -703,6 +736,22 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
   const [recentClassroomIds] = useState<string[]>(() => loadRecentClassroomIds());
   const [createOpen, setCreateOpen] = useState(false);
   const [openCardMenuId, setOpenCardMenuId] = useState<string | null>(null);
+  const [platformsByClassroomId, setPlatformsByClassroomId] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    let active = true;
+    import("@/lib/classroom-integrations")
+      .then(({ fetchClassroomIntegrationState }) => fetchClassroomIntegrationState())
+      .then((state) => {
+        if (active) setPlatformsByClassroomId(state.platformsByClassroomId);
+      })
+      .catch(() => {
+        if (active) setPlatformsByClassroomId({});
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const activeSessions = data.sessions.filter((session) => session.status === "ACTIVE" && !session.endedAt);
   const filteredClassrooms = data.classrooms.filter((classroom) => {
@@ -798,7 +847,10 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
           </select>
         </div>
 
-        <button className="button primary overview-new-classroom" onClick={() => setCreateOpen(true)}>+ Nova turma</button>
+        <div className="overview-toolbar-actions">
+          <button className="button ghost" onClick={onOpenIntegrations}>⇄ Vincular plataforma</button>
+          <button className="button primary overview-new-classroom" onClick={() => setCreateOpen(true)}>+ Nova turma</button>
+        </div>
       </div>
 
       {!data.classrooms.length ? (
@@ -842,6 +894,19 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
                       )}
                       <h3>{classroom.name}</h3>
                       <p>{classroom.code || "Sem código"}</p>
+                      {platformsByClassroomId[classroom.id]?.length ? (
+                        <div className="classroom-integration-badges">
+                          {platformsByClassroomId[classroom.id].map((platform) => (
+                            <Badge key={platform} variant="success" dot>
+                              {platform === "MICROSOFT_TEAMS"
+                                ? "Microsoft Teams"
+                                : platform === "GOOGLE_CLASSROOM"
+                                  ? "Google Classroom"
+                                  : platform}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                   <div className="overview-card-actions">
@@ -981,7 +1046,7 @@ function ClassroomWorkspaceTabs({ tab, onTabChange, studentCount, activityCount,
   );
 }
 
-function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, onManageClassroom, notify, refreshClassroomDomain }: {
+function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, onManageClassroom, onManageIntegration, notify, refreshClassroomDomain }: {
   classroom: Classroom;
   data: ArenaData;
   students: Student[];
@@ -990,6 +1055,7 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
   currentSession?: ArenaData["sessions"][number];
   onOpenArena: () => void;
   onManageClassroom: () => void;
+  onManageIntegration: () => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
@@ -1056,6 +1122,13 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
           hint={currentSession ? currentSession.title : `${todayEvents.length} evento(s) hoje`}
         />
       </div>
+
+      <ClassroomIntegrationWorkspace
+        classroomId={classroom.id}
+        studentCount={students.length}
+        activityCount={activityCount}
+        onManage={onManageIntegration}
+      />
 
     </div>
   );
@@ -1765,9 +1838,10 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   notify: (message: string) => void;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
-  const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "presence" | "groups">("live");
+  const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "groups">("live");
   const [interactionTool, setInteractionTool] = useState<"draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss">("draw");
   const [accessOpen, setAccessOpen] = useState(false);
+  const [checkinRosterExpanded, setCheckinRosterExpanded] = useState(true);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
   const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
@@ -2411,7 +2485,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             onClick={() => setAccessOpen((open) => !open)}
             disabled={!joinCode}
           >
-            {accessOpen ? "Fechar acesso" : "Acesso dos alunos"}
+            {accessOpen ? "Fechar check-in" : "Check-in"}
           </Button>
           <Button
             variant="secondary"
@@ -2432,19 +2506,121 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       </div>
 
       {accessOpen && (
-        <div className="arena-session-access-wrap">
-          <SessionAccessCard
-            sessionId={currentSession.id}
-            joinCode={joinCode}
-            publicBaseUrl={publicBaseUrl}
-            notify={notify}
-            realtimeStatus={realtimeStatus}
-            connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
-            onRotate={rotateSessionCode}
-            rotateBusy={realtimeBusy}
-            title="Entrada dos alunos"
-            subtitle="Este é o acesso único da sessão para todas as dinâmicas."
-          />
+        <div className={`arena-checkin-workspace ${checkinRosterExpanded ? "" : "roster-collapsed"}`}>
+          <div className="arena-checkin-access">
+            <SessionAccessCard
+              sessionId={currentSession.id}
+              joinCode={joinCode}
+              publicBaseUrl={publicBaseUrl}
+              notify={notify}
+              realtimeStatus={realtimeStatus}
+              connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+              presentCount={sessionParticipants.filter((participant) => participant.present).length}
+              onRotate={rotateSessionCode}
+              rotateBusy={realtimeBusy}
+              title="Check-in dos alunos"
+              subtitle="O login realiza o check-in automaticamente. Você pode ajustar a presença manualmente."
+            />
+          </div>
+
+          <aside
+            className={`arena-checkin-roster ${checkinRosterExpanded ? "" : "is-collapsed"}`}
+            aria-label="Check-in da turma"
+          >
+            {checkinRosterExpanded ? (
+              <>
+                <div className="arena-checkin-roster-head">
+                  <div>
+                    <strong>Participantes</strong>
+                    <small>
+                      {currentSession.presentStudentIds.length} de {sessionParticipants.length} presentes
+                    </small>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="arena-checkin-roster-toggle"
+                    onClick={() => setCheckinRosterExpanded(false)}
+                    aria-expanded="true"
+                    aria-label="Recolher lista de alunos"
+                    title="Recolher"
+                  >
+                    ›
+                  </button>
+                </div>
+
+                <div className="arena-checkin-roster-list">
+                  {sessionParticipants.map((participant) => {
+                    const student = data.students.find((item) => item.id === participant.studentId);
+                    if (!student) return null;
+
+                    const statusLabel = participant.connected
+                      ? "online"
+                      : "offline";
+
+                    const statusClass = participant.connected
+                      ? "is-online"
+                      : "is-offline";
+
+                    return (
+                      <div key={participant.id} className="arena-checkin-row">
+                        <Avatar student={student} />
+
+                        <div className="arena-checkin-student-copy">
+                          <strong>{student.name}</strong>
+                          <small className={statusClass}>
+                            <i />
+                            {statusLabel}
+                          </small>
+                        </div>
+
+                        <label
+                          className="arena-checkin-presence-control"
+                          title={participant.present ? "Desmarcar presença" : "Marcar presença"}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={participant.present}
+                            disabled={presenceBusyId === participant.id}
+                            onChange={(event) => {
+                              void changePresence(participant, event.target.checked);
+                            }}
+                          />
+                          <span aria-hidden="true" />
+                          <small>{participant.present ? "Presente" : "Ausente"}</small>
+                        </label>
+
+                        {participant.connected && (
+                          <button
+                            type="button"
+                            className="arena-checkin-release"
+                            onClick={() => { void releaseDevice(participant); }}
+                            title="Liberar dispositivo deste aluno"
+                            aria-label={`Liberar dispositivo de ${student.name}`}
+                          >
+                            ⋯
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="arena-checkin-rail"
+                onClick={() => setCheckinRosterExpanded(true)}
+                aria-label={`Expandir participantes. ${currentSession.presentStudentIds.length} presentes`}
+                title="Expandir participantes"
+              >
+                <span className="arena-checkin-rail-icon">◎</span>
+                <strong>{currentSession.presentStudentIds.length}</strong>
+                <small>presentes</small>
+                <span className="arena-checkin-rail-arrow">‹</span>
+              </button>
+            )}
+          </aside>
         </div>
       )}
 
@@ -2454,14 +2630,13 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         activeId={arenaTab}
         onChange={(id) => {
           setArenaTab(
-            id as "live" | "interactions" | "timer" | "presence" | "groups"
+            id as "live" | "interactions" | "timer" | "groups"
           );
         }}
         items={[
           { id: "live", label: "Condução" },
           { id: "interactions", label: "Dinâmicas" },
           { id: "timer", label: "Tempo" },
-          { id: "presence", label: "Participantes" },
           { id: "groups", label: "Organização" },
         ] satisfies TabItem[]}
       />
@@ -2793,31 +2968,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </div>
       )}
 
-      {arenaTab === "presence" && (
-        <Panel title="Participantes da sessão" subtitle="Presença e conexão são salvas imediatamente no PostgreSQL">
-          <div className="attendance-head"><strong>Presença</strong><span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span></div>
-          <div className="attendance-list compact-attendance">
-            {sessionParticipants.map((participant) => {
-              const student = data.students.find((item) => item.id === participant.studentId);
-              if (!student) return null;
-              return (
-                <label key={participant.id} className="check-row">
-                  <input
-                    type="checkbox"
-                    checked={participant.present}
-                    disabled={presenceBusyId === participant.id}
-                    onChange={(event) => { void changePresence(participant, event.target.checked); }}
-                  />
-                  <Avatar student={student} />
-                  <span>{student.name}</span>
-                  {participant.connected && <small className="connected-label">conectado</small>}
-                  {participant.connected && <button type="button" className="text-button release-device" onClick={(event) => { event.preventDefault(); void releaseDevice(participant); }}>Liberar dispositivo</button>}
-                </label>
-              );
-            })}
-          </div>
-        </Panel>
-      )}
 
       {arenaTab === "groups" && (
         <Panel title="Organização da turma" subtitle="Alterne entre individual, duplas e grupos sem encerrar a sessão">
