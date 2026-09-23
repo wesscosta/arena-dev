@@ -46,4 +46,7 @@ public class SyncItemEntity {
     public String getItemType() { return itemType; }
     public String getItemKey() { return itemKey; }
     public SyncItemStatus getStatus() { return status; }
+    public String getErrorMessage() { return errorMessage; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
 }

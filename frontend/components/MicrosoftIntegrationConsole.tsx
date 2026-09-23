@@ -39,6 +39,7 @@ import {
 } from "@/lib/microsoft-integration-api";
 import styles from "./MicrosoftIntegrationConsole.module.css";
 import { deriveIntegrationOperationState } from "@/lib/integration-operations";
+import { fetchIntegrationObservability, type IntegrationObservability } from "@/lib/integration-observability-api";
 
 const MATCH_LABEL: Record<StudentMatchStatus, string> = {
   ALREADY_LINKED: "Já vinculado",
@@ -83,6 +84,7 @@ export default function MicrosoftIntegrationConsole({
   const [activityMapping, setActivityMapping] = useState<MicrosoftActivityMapping | null>(null);
   const [submissionTracking, setSubmissionTracking] = useState<MicrosoftSubmissionTracking | null>(null);
   const [outcomePreview, setOutcomePreview] = useState<MicrosoftSubmissionOutcomePreview | null>(null);
+  const [observability, setObservability] = useState<IntegrationObservability | null>(null);
   const [activitySelection, setActivitySelection] = useState<Record<string, string>>({});
   const [explicitStudent, setExplicitStudent] = useState<Record<string, string>>({});
   const [inspectedLinkId, setInspectedLinkId] = useState("");
@@ -114,7 +116,20 @@ export default function MicrosoftIntegrationConsole({
     deliveredSubmissions: submissionTracking?.delivered ?? null,
     importedSubmissions,
   });
-  const jumpTo = (targetId: string) => {
+  const matchConflicts = preview
+    ? preview.conflicts + preview.ambiguous + preview.reviewRequired
+    : null;
+  const rosterConflicts = reconciliation
+    ? reconciliation.remoteMissing
+      + reconciliation.localInactive
+      + reconciliation.brokenLinks
+    : null;
+  const conflictsEvaluated = preview !== null || reconciliation !== null;
+  const conflictCount = conflictsEvaluated
+    ? (matchConflicts ?? 0) + (rosterConflicts ?? 0)
+    : null;
+
+  const healthLabel: Record<\n    NonNullable<IntegrationObservability>["health"],\n    string\n  > = {\n    NO_HISTORY: "Sem histórico",\n    HEALTHY: "Saudável",\n    ATTENTION: "Atenção",\n    ERROR: "Falha",\n    SYNCING: "Sincronizando",\n  };\n\n  const jumpTo = (targetId: string) => {
     document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -139,8 +154,8 @@ export default function MicrosoftIntegrationConsole({
       return;
     }
     let active = true;
-    fetchClassroomLinks(connectionId)
-      .then((items) => active && setLinks(items))
+    Promise.all([fetchClassroomLinks(connectionId), fetchIntegrationObservability(connectionId)])
+      .then(([items, health]) => { if (!active) return; setLinks(items); setObservability(health); })
       .catch((cause) => active && setError(errorMessage(cause)));
     return () => { active = false; };
   }, [connectionId]);
@@ -533,6 +548,68 @@ export default function MicrosoftIntegrationConsole({
           <div><span>Próxima ação</span><strong>{operationState.title}</strong><p>{operationState.detail}</p></div>
           <Button size="sm" onClick={() => jumpTo(operationState.targetId)}>Ir para ação</Button>
         </div>
+        <div className={styles.healthGrid}>
+          <div className={styles.healthCard}>
+            <div className={styles.healthCardHead}>
+              <span>Saúde da sincronização</span>
+              <Badge variant={observability?.health === "HEALTHY" ? "success" : observability?.health === "ERROR" ? "danger" : observability?.health === "NO_HISTORY" ? "neutral" : "warning"}>
+                {observability ? healthLabel[observability.health] : "Carregando"}
+              </Badge>
+            </div>
+            <strong>{observability?.recentExecutions ? `${observability.recentExecutions} execução(ões) recente(s)` : "Nenhuma execução registrada"}</strong>
+            <p>{observability?.lastSuccessAt ? `Último sucesso: ${new Date(observability.lastSuccessAt).toLocaleString("pt-BR")}.` : "Ainda não há sucesso registrado no histórico disponível."}</p>
+          </div>
+          <div className={styles.healthCard}>
+            <div className={styles.healthCardHead}>
+              <span>Conflitos para revisar</span>
+              <Badge
+                variant={
+                  conflictCount == null
+                    ? "neutral"
+                    : conflictCount > 0
+                      ? "warning"
+                      : "success"
+                }
+              >
+                {conflictCount == null ? "—" : conflictCount}
+              </Badge>
+            </div>
+
+            {conflictCount == null ? (
+              <>
+                <strong>Ainda não avaliado</strong>
+                <p>
+                  Selecione uma turma vinculada para analisar correspondências de alunos e divergências de matrícula.
+                </p>
+              </>
+            ) : (
+              <>
+                <strong>
+                  {conflictCount > 0
+                    ? "Existem decisões pendentes"
+                    : "Nenhum conflito encontrado"}
+                </strong>
+                <p>
+                  {matchConflicts ?? 0} correspondência(s) de aluno e {rosterConflicts ?? 0} divergência(s) de matrícula.
+                </p>
+                {conflictCount > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => jumpTo(
+                      (matchConflicts ?? 0) > 0
+                        ? "integration-students"
+                        : "integration-conflicts"
+                    )}
+                  >
+                    Revisar conflitos
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
         <nav className={styles.operationNav} aria-label="Atalhos da integração">
           <button type="button" onClick={() => jumpTo("integration-classrooms")}>Turmas</button>
           <button type="button" onClick={() => jumpTo("integration-students")}>Alunos</button>
@@ -713,7 +790,7 @@ export default function MicrosoftIntegrationConsole({
           </>}
         </Card>
 
-        <Card className={styles.stepCard}>
+        <Card id="integration-conflicts" className={styles.stepCard}>
           <div className={styles.cardHeader}>
             <div><span className={styles.stepNumber}>PENDÊNCIAS</span><h3>Pendências de matrícula</h3></div>
             {reconciliation && (

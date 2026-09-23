@@ -134,3 +134,14 @@
 .stepCard{scroll-margin-top:var(--space-5)}
 @media(max-width:960px){.operationMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.operationsHeader,.nextAction{align-items:flex-start;flex-direction:column}.operationMetrics{grid-template-columns:1fr}.nextAction>button{width:100%}}
+
+
+/* 15.8A — Integration Health & Conflict Queue */
+.healthGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
+.healthCard{display:grid;gap:var(--space-2);min-width:0;padding:var(--space-4);border:1px solid var(--ds-border-subtle);border-radius:var(--radius-md);background:var(--ds-surface)}
+.healthCardHead{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3)}
+.healthCardHead>span{color:var(--ds-text-secondary);font-size:var(--font-size-xs);font-weight:var(--font-bold);letter-spacing:.06em;text-transform:uppercase}
+.healthCard>strong{font-size:var(--font-size-lg)}
+.healthCard>p{margin:0;color:var(--ds-text-secondary);font-size:var(--font-size-sm);line-height:1.45}
+.healthCard>button{justify-self:start}
+@media(max-width:760px){.healthGrid{grid-template-columns:1fr}}

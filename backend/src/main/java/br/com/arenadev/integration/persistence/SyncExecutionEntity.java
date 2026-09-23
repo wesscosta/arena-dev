@@ -52,4 +52,8 @@ public class SyncExecutionEntity {
     public String getScope() { return scope; }
     public SyncDirection getDirection() { return direction; }
     public SyncExecutionStatus getStatus() { return status; }
+    public String getErrorSummary() { return errorSummary; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getStartedAt() { return startedAt; }
+    public Instant getFinishedAt() { return finishedAt; }
 }
