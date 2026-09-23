@@ -13,6 +13,7 @@ type Props = {
   notify: (message: string) => void;
   realtimeStatus?: RealtimeStatus;
   connectedCount?: number;
+  presentCount?: number;
   onRotate?: () => void | Promise<void>;
   rotateBusy?: boolean;
   compact?: boolean;
@@ -20,23 +21,24 @@ type Props = {
   subtitle?: string;
 };
 
-function dateTime(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
-function connectionLabel(status: RealtimeStatus, connectedCount?: number) {
-  const state = status === "online"
-    ? "Tempo real conectado"
-    : status === "connecting"
-      ? "Conectando..."
-      : "Tempo real offline";
+function connectionLabel(
+  status: RealtimeStatus,
+  connectedCount?: number,
+  presentCount?: number,
+) {
+  if (status === "connecting") return "Conectando...";
+  if (status === "offline") return "Sessão offline";
 
-  return connectedCount === undefined
-    ? state
-    : `${state} · ${connectedCount} conectado(s)`;
+  if (connectedCount !== undefined && presentCount !== undefined) {
+    return `${connectedCount} online · ${presentCount} presentes`;
+  }
+
+  if (connectedCount !== undefined) {
+    return `${connectedCount} aluno(s) online`;
+  }
+
+  return "Sessão online";
 }
 
 export default function SessionAccessCard({
@@ -46,6 +48,7 @@ export default function SessionAccessCard({
   notify,
   realtimeStatus,
   connectedCount,
+  presentCount,
   onRotate,
   rotateBusy = false,
   compact = false,
@@ -83,20 +86,18 @@ export default function SessionAccessCard({
         {realtimeStatus && (
           <span className={`${styles.connection} ${styles[realtimeStatus]}`}>
             <i />
-            {connectionLabel(realtimeStatus, connectedCount)}
+            {connectionLabel(realtimeStatus, connectedCount, presentCount)}
           </span>
         )}
       </div>
 
       <div className={styles.content}>
         <div className={styles.details}>
-          <div className={styles.codeRow}>
-            <strong>{joinCode?.code ?? "------"}</strong>
-            <span>
-              {joinCode
-                ? `Válido até ${dateTime(joinCode.expiresAt)}`
-                : "Gerando código da sessão..."}
-            </span>
+          <div className={styles.codeBlock}>
+            <span className={styles.codeLabel}>CÓDIGO DA SESSÃO</span>
+            <div className={styles.codeRow}>
+              <strong>{joinCode?.code ?? "------"}</strong>
+            </div>
           </div>
 
           <div className={styles.urlBlock}>
@@ -143,7 +144,7 @@ export default function SessionAccessCard({
                 sessionId,
                 publicBaseUrl,
                 joinCode.code,
-                compact ? 220 : 280,
+                compact ? 260 : 380,
               )}
               alt={`QR Code da sessão ${joinCode.code}`}
             />
@@ -156,11 +157,7 @@ export default function SessionAccessCard({
 
       {isLoopbackBaseUrl(publicBaseUrl) && (
         <div className={styles.warning}>
-          <strong>URL não acessível pelo celular</strong>
-          <span>
-            O endereço atual usa localhost/loopback. Abra o Arena Dev pelo IP da
-            máquina na rede local antes de exibir ou compartilhar este QR Code.
-          </span>
+          <strong>URL local — use o IP da máquina para acesso pelo celular.</strong>
         </div>
       )}
     </section>

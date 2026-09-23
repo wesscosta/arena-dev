@@ -112,17 +112,26 @@ class SecurityAndMigrationIT {
                     'ai_assessment_criterion_suggestions',
                     'submission_process_events',
                     'activity_provider_links',
-                    'submission_provider_links'
+                    'submission_provider_links',
+                    'integration_connections',
+                    'external_classroom_links',
+                    'external_student_links',
+                    'external_activity_links',
+                    'external_submission_links',
+                    'sync_executions',
+                    'sync_items',
+                    'sync_checkpoints',
+                    'integration_credentials'
                   )
                 """, Integer.class);
 
         assertThat(versions).containsExactly(
                 "1", "2", "3", "4", "5", "6", "7", "8", "9",
                 "10", "11", "12", "13", "14", "15", "16", "17",
-                "18", "19", "20", "21", "22", "23", "24", "25"
+                "18", "19", "20", "21", "22", "23", "24", "25", "26", "27"
         );
 
-        assertThat(expectedTables).isEqualTo(36);
+        assertThat(expectedTables).isEqualTo(45);
 
     }
 

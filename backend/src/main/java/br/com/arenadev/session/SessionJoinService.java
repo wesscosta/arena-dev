@@ -304,6 +304,7 @@ public class SessionJoinService {
     private JoinAccessView issueParticipantAccess(SessionJoinCode joinCode, SessionParticipant participant) {
         String token = generateToken();
         participant.issueAccessToken(hashToken(token));
+        participant.setPresent(true);
         ClassSession session = joinCode.getSession();
         Student student = participant.getStudent();
         return new JoinAccessView(

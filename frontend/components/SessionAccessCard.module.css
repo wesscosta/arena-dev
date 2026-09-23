@@ -231,3 +231,732 @@
     min-width: 0;
   }
 }
+
+/* Check-in emphasis */
+.card {
+  gap: 22px;
+  padding: 24px;
+}
+
+.header h3 {
+  font-size: 24px;
+}
+
+.header p {
+  max-width: 56rem;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.content {
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 290px);
+  gap: 24px;
+}
+
+.details {
+  gap: 18px;
+}
+
+.codeRow strong {
+  font-size: clamp(40px, 5vw, 56px);
+  letter-spacing: .14em;
+}
+
+.codeRow span {
+  font-size: 13px;
+}
+
+.urlBlock > span {
+  font-size: 12px;
+}
+
+.url {
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.qr {
+  min-width: 250px;
+  padding: 18px;
+}
+
+.qr img,
+.placeholder {
+  width: 248px;
+  height: 248px;
+}
+
+.qr small {
+  max-width: 230px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+
+  .qr {
+    min-width: 0;
+  }
+}
+
+/* Check-in polish v3 */
+.codeRow {
+  gap: 0;
+}
+
+.url {
+  padding: 10px 12px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+/* Check-in polish v4 — densidade e hierarquia visual */
+.card {
+  gap: 18px;
+  padding: 20px;
+}
+
+.content {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  gap: 20px;
+}
+
+.details {
+  gap: 14px;
+}
+
+.urlBlock {
+  gap: 5px;
+}
+
+.urlBlock > span {
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.url {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.25;
+}
+
+.actions {
+  gap: 0.5rem;
+}
+
+.primary,
+.secondary,
+.ghost {
+  min-height: 2.625rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.875rem;
+  font-weight: 750;
+  line-height: 1.1;
+}
+
+.qr {
+  min-width: 280px;
+  padding: 16px;
+}
+
+.qr img,
+.placeholder {
+  width: 280px;
+  height: 280px;
+}
+
+.qr small {
+  max-width: 250px;
+  font-size: 0.6875rem;
+  line-height: 1.35;
+}
+
+@media (min-width: 1180px) {
+  .content {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+  }
+
+  .qr {
+    min-width: 300px;
+  }
+
+  .qr img,
+  .placeholder {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+@media (max-width: 900px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+
+  .qr {
+    min-width: 0;
+  }
+}
+
+/* Check-in polish v5 — densidade, proporção e hierarquia */
+.card {
+  gap: 16px;
+  padding: 18px;
+}
+
+.header {
+  gap: 12px;
+}
+
+.header h3 {
+  margin: 3px 0 4px;
+  font-size: 22px;
+}
+
+.header p {
+  max-width: 52rem;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.connection {
+  padding: 5px 8px;
+  font-size: 10px;
+}
+
+.content {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 285px);
+  gap: 18px;
+}
+
+.details {
+  gap: 12px;
+}
+
+.codeRow strong {
+  font-size: clamp(46px, 4.5vw, 52px);
+  letter-spacing: .13em;
+}
+
+.urlBlock {
+  gap: 4px;
+}
+
+.urlBlock > span {
+  font-size: 11px;
+}
+
+.url {
+  min-height: 42px;
+  padding: 7px 11px;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.actions {
+  gap: 7px;
+}
+
+.primary,
+.secondary,
+.ghost {
+  min-height: 40px;
+  padding: 7px 11px;
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.qr {
+  min-width: 260px;
+  padding: 14px;
+}
+
+.qr img,
+.placeholder {
+  width: 264px;
+  height: 264px;
+}
+
+.qr small {
+  max-width: 220px;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.warning {
+  gap: 2px;
+  padding: 8px 11px;
+}
+
+.warning strong {
+  font-size: 10px;
+}
+
+.warning span {
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+@media (min-width: 1180px) {
+  .content {
+    grid-template-columns: minmax(0, 1fr) minmax(270px, 295px);
+  }
+
+  .qr {
+    min-width: 270px;
+  }
+
+  .qr img,
+  .placeholder {
+    width: 272px;
+    height: 272px;
+  }
+}
+
+@media (max-width: 900px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+
+  .qr {
+    min-width: 0;
+  }
+}
+
+/* Check-in polish v6 — QR real, controles compactos */
+.card {
+  padding: 18px;
+}
+
+.content {
+  grid-template-columns: minmax(0, 1fr) 292px;
+  align-items: start;
+  gap: 18px;
+}
+
+.details {
+  align-content: start;
+  grid-auto-rows: max-content;
+  gap: 12px;
+}
+
+.url {
+  min-height: 0;
+  height: 40px;
+  padding: 0 11px;
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.actions {
+  align-items: center;
+  align-content: center;
+  gap: 7px;
+}
+
+.primary,
+.secondary,
+.ghost {
+  min-height: 0;
+  height: 38px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.qr {
+  min-width: 0;
+  width: 292px;
+  padding: 7px 7px 10px;
+  gap: 5px;
+  align-content: start;
+}
+
+.qr img,
+.placeholder {
+  width: 278px;
+  height: 278px;
+}
+
+.qr small {
+  max-width: 250px;
+  margin-top: 1px;
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.warning {
+  padding: 7px 10px;
+}
+
+@media (min-width: 1180px) {
+  .content {
+    grid-template-columns: minmax(0, 1fr) 306px;
+  }
+
+  .qr {
+    width: 306px;
+  }
+
+  .qr img,
+  .placeholder {
+    width: 292px;
+    height: 292px;
+  }
+}
+
+@media (max-width: 900px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+
+  .qr {
+    width: min(100%, 306px);
+    justify-self: center;
+  }
+}
+
+/* Check-in polish v7 — hierarquia central e sem redundância */
+.eyebrow {
+  display: none;
+}
+
+.card {
+  gap: 14px;
+}
+
+.header {
+  position: relative;
+  display: block;
+  min-height: 4.5rem;
+  text-align: center;
+}
+
+.header > div {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding-inline: 5.75rem;
+}
+
+.header h3 {
+  margin: 0;
+  color: var(--accent);
+  font-size: clamp(1.6rem, 2vw, 1.95rem);
+  line-height: 1.1;
+  font-weight: 800;
+}
+
+.header p {
+  margin: 0;
+  max-width: 44rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.connection {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0;
+}
+
+.content {
+  grid-template-columns: minmax(0, 1fr) 306px;
+  gap: 16px;
+  align-items: start;
+}
+
+.details {
+  align-content: start;
+  grid-auto-rows: max-content;
+  gap: 10px;
+}
+
+.codeRow {
+  gap: 0;
+  margin-top: 2px;
+}
+
+.codeRow strong {
+  font-size: clamp(48px, 4.8vw, 54px);
+  letter-spacing: 0.12em;
+}
+
+.urlBlock {
+  gap: 4px;
+}
+
+.urlBlock > span {
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.url {
+  height: 40px;
+}
+
+.actions {
+  gap: 6px;
+}
+
+.primary,
+.secondary,
+.ghost {
+  height: 36px;
+  min-height: 0;
+  padding: 0 12px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 750;
+}
+
+.qr {
+  width: 306px;
+  padding: 6px 6px 9px;
+  gap: 5px;
+  justify-self: end;
+}
+
+.qr img,
+.placeholder {
+  width: 294px;
+  height: 294px;
+}
+
+.qr small {
+  max-width: 252px;
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.warning {
+  margin-top: 2px;
+}
+
+@media (max-width: 900px) {
+  .header {
+    min-height: auto;
+  }
+
+  .header > div {
+    padding-inline: 0;
+  }
+
+  .connection {
+    position: static;
+    margin-top: 0.4rem;
+    justify-self: center;
+  }
+
+  .content {
+    grid-template-columns: 1fr;
+  }
+
+  .qr {
+    width: min(100%, 306px);
+    justify-self: center;
+  }
+}
+
+/* Check-in polish v8 — código, status e aviso */
+.header {
+  min-height: 4.15rem;
+}
+
+.header > div {
+  gap: .3rem;
+}
+
+.header p {
+  font-size: .84rem;
+}
+
+.codeBlock {
+  display: grid;
+  gap: .18rem;
+}
+
+.codeLabel {
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.codeRow {
+  margin: 0;
+}
+
+.details {
+  gap: 9px;
+}
+
+.url {
+  background: color-mix(in srgb, var(--surface) 86%, black);
+  border-color: color-mix(in srgb, var(--border) 88%, transparent);
+}
+
+.actions {
+  margin-top: -1px;
+}
+
+.qr small {
+  margin-top: 0;
+}
+
+.warning {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  margin-top: 0;
+  padding: 6px 10px;
+  background: rgba(229, 185, 77, .045);
+}
+
+.warning strong {
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.warning span {
+  display: none;
+}
+
+/* Check-in polish v9 — fechamento URL + bloco esquerdo */
+.card {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.content {
+  gap: 14px;
+}
+
+.details {
+  gap: 8px;
+  align-content: start;
+  grid-auto-rows: max-content;
+}
+
+.codeBlock {
+  gap: 0.08rem;
+}
+
+.codeRow {
+  margin-top: -1px;
+}
+
+.urlBlock {
+  gap: 3px;
+  margin-top: -1px;
+}
+
+.url {
+  position: relative;
+  min-height: 0;
+  height: 36px;
+  padding: 0 36px 0 10px;
+  display: flex;
+  align-items: center;
+  background: color-mix(in srgb, var(--surface) 82%, black);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 9px;
+  box-shadow: none;
+  color: color-mix(in srgb, var(--text) 94%, white);
+  font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
+.url::after {
+  content: "⧉";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.actions {
+  gap: 8px;
+  margin-top: -1px;
+}
+
+.primary,
+.secondary,
+.ghost {
+  height: 34px;
+  min-height: 0;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.qr small {
+  margin-top: -1px;
+}
+
+.warning {
+  margin-top: 1px;
+}
+
+@media (max-width: 900px) {
+  .card {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+/* Check-in polish v10 — spacing fino */
+.codeBlock {
+  gap: 0.32rem;
+  margin-bottom: 0.35rem;
+}
+
+.urlBlock {
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+  margin-bottom: 0.4rem;
+}
+
+.url {
+  padding-left: 13px;
+  padding-right: 39px;
+}
+
+.actions {
+  margin-top: 0.15rem;
+  gap: 9px;
+}
+
+.primary,
+.secondary,
+.ghost {
+  padding-left: 17px;
+  padding-right: 17px;
+}

@@ -1,0 +1,45 @@
+package br.com.arenadev.integration.provider.microsoft;
+
+import java.util.List;
+
+public interface MicrosoftGraphEducationClient {
+    List<MicrosoftEducationClass> listClasses(String accessToken);
+    List<MicrosoftEducationUser> listClassMembers(String accessToken, String microsoftClassId);
+    List<MicrosoftEducationAssignment> listClassAssignments(String accessToken, String microsoftClassId);
+    List<MicrosoftEducationSubmission> listAssignmentSubmissions(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId
+    );
+    List<MicrosoftEducationOutcome> listSubmissionOutcomes(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId
+    );
+
+    void updatePointsOutcome(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId,
+            String outcomeId,
+            java.math.BigDecimal points
+    );
+
+    void updateFeedbackOutcome(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId,
+            String outcomeId,
+            String feedback
+    );
+
+    void returnSubmission(
+            String accessToken,
+            String microsoftClassId,
+            String microsoftAssignmentId,
+            String microsoftSubmissionId
+    );
+}
