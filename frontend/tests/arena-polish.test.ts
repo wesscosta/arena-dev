@@ -354,3 +354,23 @@ test("Presence drawer uses the dedicated compact SessionAccessCard variant", () 
   assert.match(css, /grid-template-columns:\s*minmax\(0, 1fr\) 7\.4rem/);
   assert.match(css, /\.drawer \.qr img/);
 });
+
+
+test("Arena right rail exposes truthful participant status and copyable session code", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /Presente · offline/);
+  assert.match(app, /copySessionCode/);
+  assert.match(app, /aria-label="Copiar código da sessão"/);
+  assert.match(css, /\.arena-session-code-row\s*\{/);
+  assert.match(css, /\.arena-status-dot\.present/);
+});
+
+test("Arena large desktop keeps full navigation labels and a wider context rail", () => {
+  const css = read("styles/arena-polish.css");
+
+  assert.match(css, /@media \(min-width: 90\.01rem\)/);
+  assert.match(css, /grid-template-columns:\s*13\.25rem minmax\(0, 1fr\) 17rem/);
+  assert.match(css, /text-overflow:\s*clip/);
+});

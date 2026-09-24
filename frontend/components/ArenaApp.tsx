@@ -2485,6 +2485,20 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     }
   }
 
+  async function copySessionCode() {
+    if (!joinCode) {
+      notify("Aguarde a geração do código da sessão.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(joinCode.code);
+      notify("Código da sessão copiado.");
+    } catch {
+      notify("Não foi possível copiar o código automaticamente.");
+    }
+  }
+
   function openProjector() {
     if (!joinCode) {
       notify("Aguarde a geração do código da sessão.");
@@ -3264,7 +3278,13 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                     <Avatar student={student} />
                     <div>
                       <strong>{student.nickname || student.name}</strong>
-                      <small>{participant.present ? "Presente" : "Ausente"}</small>
+                      <small>
+                        {participant.connected
+                          ? "Online"
+                          : participant.present
+                            ? "Presente · offline"
+                            : "Ausente"}
+                      </small>
                     </div>
                     <span
                       className={participant.connected ? "arena-status-dot online" : participant.present ? "arena-status-dot present" : "arena-status-dot offline"}
@@ -3285,7 +3305,18 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           <section className="arena-session-code-card">
             <div>
               <span className="arena-context-label">CÓDIGO DA SESSÃO</span>
-              <strong>{joinCode?.code ?? "------"}</strong>
+              <div className="arena-session-code-row">
+                <strong>{joinCode?.code ?? "------"}</strong>
+                <button
+                  type="button"
+                  onClick={() => { void copySessionCode(); }}
+                  disabled={!joinCode}
+                  aria-label="Copiar código da sessão"
+                  title="Copiar código"
+                >
+                  ⧉
+                </button>
+              </div>
               <small>Aponte a câmera para participar</small>
             </div>
             {joinCode && publicBaseUrl ? (

@@ -3042,3 +3042,107 @@
     transition: none;
   }
 }
+
+
+/* v0.8 · Arena cockpit polish — navigation, rail and score density */
+@media (min-width: 90.01rem) {
+  .arena-content-full .arena-cockpit {
+    grid-template-columns: 13.25rem minmax(0, 1fr) 17rem;
+  }
+
+  .arena-cockpit-nav button strong {
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
+.arena-cockpit-nav button > span {
+  color: currentColor;
+  font-size: .82rem;
+}
+
+.arena-cockpit-nav button.active > span {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.arena-participant-row {
+  padding-inline: .35rem;
+}
+
+.arena-participant-row strong {
+  font-size: .68rem;
+}
+
+.arena-participant-row small {
+  margin-top: .08rem;
+  font-size: .55rem;
+}
+
+.arena-status-dot.present {
+  background: #d6aa3c;
+  box-shadow: 0 0 .42rem color-mix(in srgb, #d6aa3c 36%, transparent);
+}
+
+.arena-session-code-row {
+  display: flex;
+  align-items: center;
+  gap: .42rem;
+}
+
+.arena-session-code-row > strong {
+  min-width: 0;
+  font-size: 1.35rem;
+  letter-spacing: .08em;
+}
+
+.arena-session-code-row > button {
+  width: 1.9rem;
+  height: 1.9rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.arena-session-code-row > button:hover:not(:disabled),
+.arena-session-code-row > button:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+  color: var(--accent);
+}
+
+.arena-session-code-row > button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.quick-score-dock {
+  padding: .72rem;
+}
+
+.quick-score-actions > button {
+  min-height: 3.9rem;
+}
+
+.quick-score-actions > button:not(:disabled):hover,
+.quick-score-actions > button:not(:disabled):focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-2));
+}
+
+.selected-student-bar.active {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 6%, transparent), transparent 42%),
+    color-mix(in srgb, var(--surface-2) 90%, transparent);
+}
+
+.selected-student-cta:hover,
+.selected-student-cta:focus-visible {
+  filter: brightness(1.05);
+  box-shadow: 0 0 1.2rem color-mix(in srgb, var(--accent) 18%, transparent);
+}
