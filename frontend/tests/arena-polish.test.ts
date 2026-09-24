@@ -190,3 +190,27 @@ test("Buzzer preserves server authority and winner scoring", () => {
   assert.match(app, /addBuzzerScore\(press\.studentId, 5\)/);
   assert.match(app, /addBuzzerScore\(press\.studentId, 10\)/);
 });
+
+
+test("Quiz 2.0 uses a gamified prepare and live workspace", () => {
+  const quiz = read("components/QuizPanel.tsx");
+  const css = read("components/QuizPanel.module.css");
+
+  assert.match(quiz, /DINÂMICA AO VIVO/);
+  assert.match(quiz, /className=\{styles\.prepareGrid\}/);
+  assert.match(quiz, /className=\{styles\.liveStage\}/);
+  assert.match(quiz, /QUESTÃO ATUAL/);
+  assert.match(quiz, /responseProgress/);
+  assert.match(css, /\.prepareGrid\s*\{/);
+  assert.match(css, /\.liveStage\s*\{/);
+});
+
+test("Quiz 2.0 preserves explicit teacher control and pedagogical feedback", () => {
+  const quiz = read("components/QuizPanel.tsx");
+
+  assert.match(quiz, /Abrir respostas/);
+  assert.match(quiz, /Bloquear respostas/);
+  assert.match(quiz, /Revelar resultado/);
+  assert.match(quiz, /LEITURA PEDAGÓGICA/);
+  assert.match(quiz, /Nenhuma decisão avança o roteiro automaticamente/);
+});

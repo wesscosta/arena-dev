@@ -74,6 +74,9 @@ export default function QuizPanel({
   }, [round?.id]);
 
   const pending = Math.max(0, presentCount - (round?.totalAnswers ?? 0));
+  const responseProgress = presentCount > 0
+    ? Math.min(100, Math.round(((round?.totalAnswers ?? 0) / presentCount) * 100))
+    : 0;
   const feedback = useMemo(() => deriveQuizFeedback(round), [round]);
   const authoredQuestion = useMemo(
     () => questions.find((question) => question.id === round?.question?.id),
@@ -184,34 +187,67 @@ export default function QuizPanel({
   }
 
   if (!round || creating) {
+    const selectedQuestion = supported.find((question) => question.id === questionId);
+
     return (
-      <section className={styles.shell}>
-        <div className={styles.header}>
+      <section className={`${styles.shell} ${styles.prepareShell}`}>
+        <div className={styles.heroHeader}>
           <div>
-            <span className={styles.eyebrow}>QUIZ AO VIVO</span>
-            <h3>Preparar questão estruturada</h3>
-            <p>Escolha uma questão objetiva já autorada nesta atividade.</p>
+            <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
+            <h2>Quiz</h2>
+            <p>Prepare uma questão e transforme a resposta da turma em feedback imediato.</p>
           </div>
-          {round?.status === "CLOSED" && (
-            <button className={styles.secondary} onClick={() => setCreating(false)}>
-              Voltar ao resultado anterior
-            </button>
-          )}
+          <div className={styles.headerActions}>
+            <span className={styles.modeBadge}>OBJETIVO</span>
+            {round?.status === "CLOSED" && (
+              <button className={styles.secondary} onClick={() => setCreating(false)}>
+                Ver resultado anterior
+              </button>
+            )}
+          </div>
         </div>
 
         {supported.length ? (
-          <>
-            <label className={styles.field}>
-              <span>Questão</span>
-              <select value={questionId} onChange={(event) => setQuestionId(event.target.value)}>
-                {supported.map((question) => (
-                  <option key={question.id} value={question.id}>
-                    {typeLabel(question.type)} · {question.statement}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className={styles.actions}>
+          <div className={styles.prepareGrid}>
+            <section className={styles.questionPickerCard}>
+              <span className={styles.cardLabel}>QUESTÃO DA RODADA</span>
+              <label className={styles.field}>
+                <span>Selecione uma questão</span>
+                <select value={questionId} onChange={(event) => setQuestionId(event.target.value)}>
+                  {supported.map((question) => (
+                    <option key={question.id} value={question.id}>
+                      {typeLabel(question.type)} · {question.statement}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {selectedQuestion && (
+                <div className={styles.questionPreview}>
+                  <div className={styles.questionPreviewMeta}>
+                    <span>{typeLabel(selectedQuestion.type)}</span>
+                    <span>{selectedQuestion.points} XP</span>
+                  </div>
+                  <h3>{selectedQuestion.statement}</h3>
+                  {selectedQuestion.options && (
+                    <div className={styles.previewOptions}>
+                      {selectedQuestion.options.map((option, index) => (
+                        <div key={option.id}>
+                          <b>{String.fromCharCode(65 + index)}</b>
+                          <span>{option.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+
+            <aside className={styles.prepareSideCard}>
+              <span className={styles.cardLabel}>PRONTO PARA ENTRAR NO PALCO</span>
+              <div className={styles.prepareOrb} aria-hidden="true">?</div>
+              <strong>{presentCount} aluno(s) presente(s)</strong>
+              <p>A questão só será liberada depois que você preparar e abrir a rodada.</p>
               <button
                 className={styles.primary}
                 disabled={busy || !questionId}
@@ -219,12 +255,12 @@ export default function QuizPanel({
               >
                 {busy ? "Preparando..." : "Preparar Quiz"}
               </button>
-            </div>
-          </>
+            </aside>
+          </div>
         ) : (
           <div className={styles.empty}>
             <strong>Nenhuma questão compatível</strong>
-            <p>O Quiz v0.5 aceita múltipla escolha e verdadeiro/falso.</p>
+            <p>O Quiz aceita múltipla escolha e verdadeiro/falso.</p>
           </div>
         )}
       </section>
@@ -240,27 +276,45 @@ export default function QuizPanel({
     : undefined;
 
   return (
-    <section className={styles.shell}>
-      <div className={styles.header}>
+    <section className={`${styles.shell} ${styles.liveShell}`}>
+      <div className={styles.heroHeader}>
         <div>
-          <span className={styles.eyebrow}>QUIZ AO VIVO</span>
-          <h3>{question?.statement ?? "Questão preparada"}</h3>
-          <p>
-            {round.publicResultsVisible
-              ? "Distribuição e correção liberadas para as audiências públicas."
-              : "O professor acompanha os dados; a correção permanece protegida."}
-          </p>
+          <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
+          <h2>Quiz</h2>
+          <p>{question?.statement ?? "Questão preparada"}</p>
         </div>
         <span className={`${styles.status} ${styles[round.status.toLowerCase()]}`}>
           {statusLabel(round.status)}
         </span>
       </div>
 
-      <div className={styles.stats}>
-        <div><strong>{presentCount}</strong><span>presentes</span></div>
-        <div><strong>{round.totalAnswers}</strong><span>respostas</span></div>
-        <div><strong>{pending}</strong><span>pendentes</span></div>
-      </div>
+      <div className={styles.liveStage}>
+        <section className={styles.questionStage}>
+          <div className={styles.questionStageHead}>
+            <div>
+              <span className={styles.cardLabel}>QUESTÃO ATUAL</span>
+              <h3>{question?.statement ?? "Questão preparada"}</h3>
+            </div>
+            <span className={styles.modeBadge}>{question ? typeLabel(question.type) : "Objetiva"}</span>
+          </div>
+
+          <div className={styles.responseProgress}>
+            <div>
+              <strong>{round.totalAnswers}/{presentCount}</strong>
+              <span>respostas recebidas</span>
+            </div>
+            <div className={styles.responseTrack}>
+              <span style={{ width: `${responseProgress}%` }} />
+            </div>
+            <small>{pending} pendente(s) · {responseProgress}% da turma respondeu</small>
+          </div>
+
+          <div className={styles.stats}>
+            <div><strong>{presentCount}</strong><span>presentes</span></div>
+            <div><strong>{round.totalAnswers}</strong><span>respostas</span></div>
+            <div><strong>{pending}</strong><span>pendentes</span></div>
+          </div>
+        </section>
 
       {question && (
         <div className={styles.results}>
@@ -284,6 +338,7 @@ export default function QuizPanel({
           })}
         </div>
       )}
+      </div>
 
       {feedbackAvailable && feedback && (
         <section className={styles.feedback} aria-labelledby="quiz-feedback-title">
