@@ -1,33 +1,73 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 23 de setembro de 2026
+**Última sincronização documental:** 24 de setembro de 2026
 
-**Baseline técnica corrente:** `v0.7.0 — Educational Integrations`.
+**Baseline publicada:** `v0.7.0 — Educational Integrations`.
 
-**Estado da linha:** candidata técnica concluída; aguardando merge/gate final para
-publicação formal.
+**Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
+
+**Incremento em execução:** `16.0 — Professor Arena Experience`.
+
+**Branch ativa:** `feat/v0.8-professor-arena-cockpit`.
 
 ## Estado resumido
 
-A linha `15.x` está tecnicamente encerrada. O Integration Core provider-independent
-foi consolidado e a integração Microsoft Teams cobre conexão, turmas, estudantes,
-atividades, entregas, avaliação/feedback, observabilidade e telemetria.
+A v0.7.0 está encerrada e publicada. A execução atual está concentrada na experiência do professor da v0.8.
 
-Google Classroom permanece em **standby** e não bloqueia a v0.7.0.
+O cockpit da Arena já migrou para uma arquitetura orientada por ações, com navegação lateral, workspace de dinâmica, ferramentas contextuais e rail persistente de participantes/sessão.
 
-## Baseline v0.7
+O Sorteio Inteligente 2.0 é a referência visual da nova shell e está funcional, com seleção autoritativa no backend, histórico, cobertura, pontuação rápida e roleta SVG adaptativa. A geometria visual final continua em refinamento e, portanto, o `16.0` ainda não está concluído.
+
+## Baselines
 
 ```text
-versão                 0.7.0
-schema                 Flyway V1–V27
-linha                  15.x encerrada tecnicamente
-provider operacional   Microsoft Teams
-Google Classroom       standby
+baseline publicada        v0.7.0
+linha ativa               v0.8
+incremento atual          16.0
+branch                    feat/v0.8-professor-arena-cockpit
+schema                    Flyway V1–V27
+provider operacional      Microsoft Teams
+Google Classroom          standby
 ```
 
-## Release
+## Professor Arena Experience — implementado
 
-O fechamento técnico está documentado em [`RELEASE_0_7.md`](RELEASE_0_7.md).
+- tabs antigas removidas da Arena;
+- sidebar persistente por ação;
+- Dinâmicas e Ferramentas separadas;
+- header operacional de sessão;
+- Arena full-width em desktop;
+- rail de participantes e código de sessão;
+- Timer, Organização e Presença como ferramentas contextuais;
+- Pontuação Rápida transversal;
+- Sorteio Inteligente com backend autoritativo;
+- Configurações exibem apenas políticas reais;
+- histórico e cobertura de sorteios;
+- roleta SVG com segmentos reais;
+- modo estático e carrossel para turmas maiores;
+- slots adaptados à largura disponível;
+- vencedor representado pelo estado do segmento, sem ponteiro como autoridade visual.
 
-Tag/GitHub Release só deve ser afirmada depois de verificação no mesmo SHA após
-merge e gate final.
+## Em refinamento
+
+- fidelidade visual da roleta;
+- proporção final do semianel;
+- escala do hub `SORTEAR`;
+- labels radiais;
+- responsividade visual comparada à referência aprovada.
+
+## Validação corrente
+
+```text
+frontend tests      228 passed
+frontend typecheck  OK
+frontend build      OK
+```
+
+## Próximo gate
+
+Concluir o polish visual e responsivo do `16.0`, validar as demais dinâmicas na nova shell e somente então avançar para `16.1 — Journey Core`.
+
+Detalhes:
+- [`ROADMAP_0_8.md`](ROADMAP_0_8.md)
+- [`INCREMENT_16_0.md`](INCREMENT_16_0.md)

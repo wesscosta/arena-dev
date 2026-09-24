@@ -2,11 +2,11 @@
 
 **Arena Dev Community** é uma plataforma open source e self-hosted para condução, participação e gamificação de dinâmicas de sala, com foco em baixa fricção para o professor.
 
-> **Baseline técnica corrente:** `v0.7.0 — Educational Integrations`.
+> **Baseline publicada:** `v0.7.0 — Educational Integrations`.
 >
-> **Estado:** linha `15.x` concluída para a release `v0.7.0`.
+> **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Provider operacional da release:** Microsoft Teams. Google Classroom permanece em standby.
+> **Execução atual:** `16.0 — Professor Arena Experience` na branch `feat/v0.8-professor-arena-cockpit`.
 
 ## Modelo do produto
 
@@ -106,7 +106,7 @@ Arena Dev Domain
 
 Regra arquitetural: IDs, tokens e detalhes específicos de Microsoft/Google não devem contaminar `ActivitySubmission`, `Assessment`, `ScoreEvent` ou os demais agregados centrais.
 
-O primeiro incremento da v0.7 é `15.0 — Integration Core Consolidation`, ainda **sem Microsoft Graph ou Google API**.
+A v0.7 foi encerrada com Microsoft Teams operacional sobre o Integration Core provider-independent. Google Classroom permanece em standby e não bloqueou a publicação da v0.7.0.
 
 ## Arquitetura
 
@@ -117,7 +117,7 @@ flowchart LR
     P["Projetor"] --> F
     F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
     F <-->|"WebSocket"| B
-    B --> D["PostgreSQL 17 + Flyway V1–V25"]
+    B --> D["PostgreSQL 17 + Flyway V1–V27"]
 ```
 
 Princípios:
@@ -169,6 +169,23 @@ Schema consolidado da linha: **Flyway V1–V25**.
 
 Detalhes de fechamento em `docs/RELEASE_0_7.md`.
 
+## v0.8 — linha ativa
+
+A v0.8 começa pela reestruturação da experiência do professor antes de avançar para a Jornada do aluno.
+
+Estado atual do `16.0 — Professor Arena Experience`:
+
+- Arena orientada por ações, sem as tabs antigas de Condução/Dinâmicas/Tempo/Organização;
+- sidebar persistente para Dinâmicas e Ferramentas;
+- workspace full-width e rail contextual de participantes/sessão;
+- Timer, Organização e Presença em ferramentas contextuais;
+- Pontuação Rápida transversal;
+- Sorteio Inteligente 2.0 com seleção autoritativa no backend;
+- roleta SVG com segmentos reais, modo estático e carrossel adaptativo para turmas maiores;
+- fidelidade visual do Sorteio ainda em refinamento.
+
+Roadmap e estado detalhado em `docs/ROADMAP_0_8.md` e `docs/INCREMENT_16_0.md`.
+
 ## Executando localmente
 
 ```bash
@@ -216,6 +233,8 @@ O histórico detalhado de release permanece em `docs/RELEASE_0_6.md`. A document
 ## Documentação corrente
 
 - [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
+- [`docs/ROADMAP_0_8.md`](docs/ROADMAP_0_8.md)
+- [`docs/INCREMENT_16_0.md`](docs/INCREMENT_16_0.md)
 - [`docs/ROADMAP_0_7.md`](docs/ROADMAP_0_7.md)
 - [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md)
 - [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)
@@ -235,7 +254,8 @@ Histórico da v0.6:
 - `v0.4.x` — histórica;
 - `v0.5.0` — histórica;
 - `v0.6.0` — baseline técnica encerrada e congelada;
-- `v0.7.0` — Educational Integrations; linha `15.x` concluída.
+- `v0.7.0` — Educational Integrations; publicada e encerrada;
+- `v0.8` — Professor Experience & Journey MVP; linha ativa, `16.0` em execução.
 
 ## Licença
 
