@@ -99,8 +99,39 @@ test("Sorteio Inteligente 2.0 renders a central roulette backed by session parti
 test("Sorteio Inteligente 2.0 keeps scoring evidence visible after the draw", () => {
   const app = read("components/ArenaApp.tsx");
 
-  assert.match(app, /SORTEADO AGORA/);
+  assert.match(app, /Sorteado agora/i);
   assert.match(app, /currentSession\.drawCounts\[selected\.id\]/);
   assert.match(app, /selectedXp/);
   assert.match(app, /Pontuação rápida/);
+});
+
+
+test("Professor Arena fidelity pass exposes persistent context rail and QR entry", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /className="arena-context-rail"/);
+  assert.match(app, /placeholder="Buscar aluno\.\.\."/);
+  assert.match(app, /joinQrImageUrl\(currentSession\.id/);
+  assert.match(css, /\.arena-context-rail\s*\{/);
+  assert.match(css, /\.arena-session-code-card\s*\{/);
+});
+
+test("Smart Draw workspace keeps roulette, policies, history, coverage and scoring in one surface", () => {
+  const app = read("components/ArenaApp.tsx");
+
+  assert.match(app, /className="smart-draw-workspace"/);
+  assert.match(app, /MODO DE SORTEIO/);
+  assert.match(app, /Últimos sorteados/);
+  assert.match(app, /drawCoverage/);
+  assert.match(app, /Confirmar e pontuar/);
+  assert.match(app, /className="quick-score-dock"/);
+});
+
+test("Draw history comes from persisted session events instead of a frontend-only array", () => {
+  const app = read("components/ArenaApp.tsx");
+
+  assert.match(app, /fetchSessionEventsBySession/);
+  assert.match(app, /event\.eventType === "DRAW_COMPLETED"/);
+  assert.match(app, /event\.payload\.studentId/);
 });

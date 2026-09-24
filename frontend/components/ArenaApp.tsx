@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import TeacherLogin from "@/components/TeacherLogin";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import ActivityStepEditor from "@/components/ActivityStepEditor";
@@ -51,7 +51,8 @@ import {
   type LiveFlowState,
 } from "@/lib/mechanics-api";
 import { createScoreEvent as createScoreEventApi, createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
-import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
+import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
+import { fetchSessionEventsBySession, type SessionEvent } from "@/lib/session-event-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
 import type { TimerState } from "@/lib/timer-api";
 import { fetchWordCloudState, type WordCloudState } from "@/lib/word-cloud-api";
@@ -1866,6 +1867,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [realtimeBusy, setRealtimeBusy] = useState(false);
   const [liveFlowState, setLiveFlowState] = useState<LiveFlowState | null>(null);
   const [liveFlowBusy, setLiveFlowBusy] = useState(false);
+  const [sessionEvents, setSessionEvents] = useState<SessionEvent[]>([]);
+  const [participantSearch, setParticipantSearch] = useState("");
   const classActivities = useMemo(
     () => data.activities.filter((activity) => activity.classroomId === classroomId),
     [data.activities, classroomId],
@@ -1875,6 +1878,26 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   useEffect(() => {
     if (typeof window !== "undefined") setPublicBaseUrl(window.location.origin);
   }, []);
+
+  useEffect(() => {
+    if (!currentSession) {
+      setSessionEvents([]);
+      return;
+    }
+
+    let active = true;
+    void fetchSessionEventsBySession(currentSession.id)
+      .then((events) => {
+        if (active) setSessionEvents(events);
+      })
+      .catch(() => {
+        if (active) setSessionEvents([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [currentSession?.id]);
 
   useEffect(() => {
     if (!currentSession) {
@@ -2140,6 +2163,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           ? mergeSessionMechanics(session, result.runtime)
           : session),
       }));
+      void fetchSessionEventsBySession(currentSession.id)
+        .then(setSessionEvents)
+        .catch(() => undefined);
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -2419,6 +2445,31 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const selectedXp = selected ? xpForStudent(data.scoreEvents, classroomId, selected.id) : 0;
   const activeActivity = data.activities.find((activity) => activity.id === (currentSession?.activityId ?? activityId));
   const currentQuestion = activeActivity?.questions?.find((question) => question.id === currentSession?.currentQuestionId);
+  const recentDrawEvents = sessionEvents
+    .filter((event) => event.eventType === "DRAW_COMPLETED")
+    .sort((a, b) => b.sequenceNo - a.sequenceNo);
+  const drawnStudentIds = new Set(
+    Object.entries(currentSession?.drawCounts ?? {})
+      .filter(([, count]) => count > 0)
+      .map(([studentId]) => studentId),
+  );
+  const drawCoverage = currentSession?.presentStudentIds.length
+    ? Math.round((drawnStudentIds.size / currentSession.presentStudentIds.length) * 100)
+    : 0;
+  const selectedDrawEvent = selectedId
+    ? recentDrawEvents.find((event) => event.payload.studentId === selectedId)
+    : undefined;
+  const visibleParticipants = sessionParticipants.filter((participant) => {
+    const student = data.students.find((item) => item.id === participant.studentId);
+    const query = participantSearch.trim().toLowerCase();
+    if (!query) return true;
+    return [
+      student?.name,
+      student?.nickname,
+      participant.displayName,
+      participant.preferredName,
+    ].some((value) => value?.toLowerCase().includes(query));
+  });
 
   if (!currentSession) {
     return (
@@ -2773,106 +2824,173 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       {arenaTab === "interactions" && (
         <div className="stack-lg arena-tab-content">
           {interactionTool === "draw" ? (
-          <div className="arena-grid">
-            <div className="arena-main-card draw-wheel-card">
-              <div className="draw-wheel-heading">
+          <div className="smart-draw-workspace">
+            <div className="smart-draw-hero">
+              <div className="smart-draw-titlebar">
                 <div>
-                  <span className="eyebrow accent">SORTEIO INTELIGENTE</span>
-                  <h3>Quem entra no centro agora?</h3>
-                  <p>O backend prioriza quem participou menos e evita repetição imediata.</p>
+                  <span className="eyebrow accent">DINÂMICA AO VIVO</span>
+                  <h2>Sorteio Inteligente</h2>
+                  <p>Escolha um aluno de forma justa e dinâmica, mantendo toda a turma em jogo.</p>
                 </div>
-                <div className="draw-wheel-meta">
-                  <span>{currentSession.presentStudentIds.length} presentes</span>
-                  <span>Balanceado</span>
-                </div>
-              </div>
-
-              <div className={drawPhase === "drawing" ? "draw-wheel is-spinning" : "draw-wheel"}>
-                {students
-                  .filter((student) => currentSession.presentStudentIds.includes(student.id))
-                  .map((student, index, participants) => {
-                    const angle = (index / Math.max(participants.length, 1)) * Math.PI * 2 - Math.PI / 2;
-                    const radius = participants.length > 10 ? 42 : 39;
-                    const left = 50 + Math.cos(angle) * radius;
-                    const top = 50 + Math.sin(angle) * radius;
-                    return (
-                      <div
-                        className={student.id === selectedId ? "draw-wheel-student selected" : "draw-wheel-student"}
-                        key={student.id}
-                        style={{ left: `${left}%`, top: `${top}%` }}
-                        title={student.nickname || student.name}
-                      >
-                        <Avatar student={student} />
-                        <span>{student.nickname || student.name.split(" ")[0]}</span>
-                      </div>
-                    );
-                  })}
-
-                <button
-                  type="button"
-                  className="draw-wheel-center"
-                  onClick={() => { void draw(); }}
-                  disabled={drawPhase === "drawing"}
-                  aria-label={drawPhase === "drawing" ? "Sorteio em andamento" : "Sortear aluno"}
-                >
-                  <span aria-hidden="true">◆</span>
-                  <strong>{drawPhase === "drawing" ? "SORTEANDO..." : "SORTEAR"}</strong>
-                  <small>{drawPhase === "drawing" ? "aguarde" : "clique para iniciar"}</small>
+                <button type="button" className="smart-draw-settings" onClick={() => notify("O modo balanceado é a política ativa nesta versão.")}>
+                  ⚙ Configurações
                 </button>
               </div>
 
-              <div className={selected ? "draw-result-banner has-result" : "draw-result-banner"}>
+              <div className="smart-draw-stage-grid">
+                <section className="draw-mode-panel" aria-label="Modo de sorteio">
+                  <span className="draw-panel-label">MODO DE SORTEIO</span>
+                  <div className="draw-mode-option active">
+                    <span className="draw-mode-radio" aria-hidden="true" />
+                    <div>
+                      <strong>Balanceado</strong>
+                      <small>Prioriza quem foi menos sorteado</small>
+                    </div>
+                  </div>
+                  <div className="draw-policy-row">
+                    <span aria-hidden="true">✓</span>
+                    <div><strong>Apenas presentes</strong><small>Usa a presença da sessão</small></div>
+                  </div>
+                  <div className="draw-policy-row">
+                    <span aria-hidden="true">✓</span>
+                    <div><strong>Evita repetição</strong><small>Não repete o último sorteado</small></div>
+                  </div>
+                  <div className="draw-policy-hint">
+                    <span aria-hidden="true">💡</span>
+                    <p>Todos continuam com chance; quem participou menos recebe maior peso.</p>
+                  </div>
+                </section>
+
+                <section className="draw-wheel-zone" aria-label="Roleta de participantes">
+                  <div className={drawPhase === "drawing" ? "draw-wheel is-spinning" : "draw-wheel"}>
+                    {students
+                      .filter((student) => currentSession.presentStudentIds.includes(student.id))
+                      .map((student, index, participants) => {
+                        const angle = (index / Math.max(participants.length, 1)) * Math.PI * 2 - Math.PI / 2;
+                        const radius = participants.length > 10 ? 42 : 39;
+                        const left = 50 + Math.cos(angle) * radius;
+                        const top = 50 + Math.sin(angle) * radius;
+                        return (
+                          <div
+                            className={student.id === selectedId ? "draw-wheel-student selected" : "draw-wheel-student"}
+                            key={student.id}
+                            style={{ left: `${left}%`, top: `${top}%` }}
+                            title={student.nickname || student.name}
+                          >
+                            <Avatar student={student} />
+                            <span>{student.nickname || student.name.split(" ")[0]}</span>
+                          </div>
+                        );
+                      })}
+
+                    <button
+                      type="button"
+                      className="draw-wheel-center"
+                      onClick={() => { void draw(); }}
+                      disabled={drawPhase === "drawing"}
+                      aria-label={drawPhase === "drawing" ? "Sorteio em andamento" : "Sortear aluno"}
+                    >
+                      <span aria-hidden="true">◆</span>
+                      <strong>{drawPhase === "drawing" ? "SORTEANDO..." : "SORTEAR"}</strong>
+                      <small>{drawPhase === "drawing" ? "aguarde" : "clique para iniciar"}</small>
+                    </button>
+                  </div>
+                </section>
+
+                <aside className="draw-insight-panel">
+                  <section className="draw-history-card">
+                    <div className="draw-insight-head">
+                      <strong>Últimos sorteados</strong>
+                      <span>{recentDrawEvents.length}</span>
+                    </div>
+                    <div className="draw-history-list">
+                      {recentDrawEvents.slice(0, 5).map((event) => {
+                        const studentId = typeof event.payload.studentId === "string" ? event.payload.studentId : "";
+                        const student = students.find((item) => item.id === studentId);
+                        return (
+                          <div className="draw-history-row" key={event.id}>
+                            {student ? <Avatar student={student} /> : <span className="draw-history-dot" />}
+                            <div>
+                              <strong>{student?.nickname || student?.name || "Aluno"}</strong>
+                              <small>{dateTime(event.occurredAt)}</small>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {recentDrawEvents.length === 0 && <small className="draw-history-empty">O histórico aparecerá após o primeiro sorteio.</small>}
+                    </div>
+                  </section>
+
+                  <section className="draw-coverage-card">
+                    <div className="draw-coverage-copy">
+                      <strong>{drawnStudentIds.size}</strong>
+                      <span>alunos já sorteados</span>
+                      <small>de {currentSession.presentStudentIds.length} presentes</small>
+                    </div>
+                    <div className="draw-coverage-ring" style={{ "--coverage": `${drawCoverage}%` } as CSSProperties}>
+                      <strong>{drawCoverage}%</strong>
+                    </div>
+                  </section>
+                </aside>
+              </div>
+
+              <div className={selected ? "selected-student-bar active" : "selected-student-bar"}>
                 {selected ? (
                   <>
                     <Avatar student={selected} large />
-                    <div>
-                      <span className="eyebrow accent">SORTEADO AGORA</span>
-                      <h3>{selected.nickname || selected.name}</h3>
-                      <p>{selected.name}</p>
+                    <div className="selected-student-copy">
+                      <div className="selected-student-name-row">
+                        <h3>{selected.nickname || selected.name}</h3>
+                        <span>🏆 Sorteado agora</span>
+                      </div>
+                      <p>
+                        Último sorteio: {selectedDrawEvent ? dateTime(selectedDrawEvent.occurredAt) : "agora"}
+                        <b>·</b>
+                        Participações nesta sessão: {currentSession.drawCounts[selected.id] ?? 0}
+                        <b>·</b>
+                        <em>+{selectedXp} XP</em>
+                      </p>
                     </div>
-                    <div className="draw-result-stats">
-                      <strong>{currentSession.drawCounts[selected.id] ?? 0}</strong>
-                      <span>sorteio(s)</span>
-                      <strong>{selectedXp}</strong>
-                      <span>XP</span>
-                    </div>
+                    <button type="button" className="selected-student-cta" onClick={() => { setReason("Participação"); void addScore(5, "COLLABORATION", "Participação"); }}>
+                      Confirmar e pontuar →
+                    </button>
                   </>
                 ) : (
                   <>
                     <div className="draw-result-placeholder" aria-hidden="true">◎</div>
-                    <div>
-                      <span className="eyebrow accent">PRONTO PARA COMEÇAR</span>
-                      <h3>Todos permanecem no jogo</h3>
-                      <p>O sorteio considera a participação acumulada nesta sessão.</p>
+                    <div className="selected-student-copy">
+                      <h3>Aguardando o próximo sorteio</h3>
+                      <p>O resultado aparecerá aqui e poderá ser pontuado imediatamente.</p>
                     </div>
                   </>
                 )}
               </div>
             </div>
 
-            <div className="score-card">
-              <div className="panel-heading"><div><h3>Pontuação rápida</h3><p>{selected ? `Aplicar a ${selected.nickname || selected.name}` : "Sorteie ou selecione um aluno"}</p></div></div>
-              <div className="score-presets">
-                {currentQuestion && <button disabled={!selected} onClick={() => addScore(currentQuestion.points, "QUESTION", `Questão: ${currentQuestion.statement}`)}><b>+{currentQuestion.points}</b><span>Questão atual</span></button>}
-                {SCORE_PRESETS.map((preset) => (
-                  <button key={`${preset.points}-${preset.label}`} disabled={!selected} onClick={() => { setReason(preset.label); addScore(preset.points, preset.category, preset.label); }}>
-                    <b>+{preset.points}</b><span>{preset.label}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="custom-score">
-                <input className="input compact" type="number" value={customPoints} onChange={(e) => setCustomPoints(Number(e.target.value))} />
-                <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo" />
-                <button className="button" disabled={!selected || !reason.trim()} onClick={() => addScore(customPoints, "ADJUSTMENT", reason)}>Aplicar</button>
-              </div>
-              <div className="student-select-list">
-                <span className="field-label">Selecionar manualmente</span>
-                <select className="select full" value={selectedId ?? ""} onChange={(e) => setSelectedId(e.target.value || undefined)}>
-                  <option value="">Selecione um aluno</option>
+            <section className="quick-score-dock" aria-label="Ações rápidas de pontuação">
+              <div className="quick-score-head">
+                <div><strong>Ações rápidas</strong><small>{selected ? `Pontuar ${selected.nickname || selected.name}` : "Selecione ou sorteie um aluno"}</small></div>
+                <select className="select" value={selectedId ?? ""} onChange={(e) => setSelectedId(e.target.value || undefined)}>
+                  <option value="">Selecionar aluno</option>
                   {students.filter((student) => currentSession.presentStudentIds.includes(student.id)).map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
                 </select>
               </div>
-            </div>
+              <div className="quick-score-actions">
+                {SCORE_PRESETS.map((preset) => (
+                  <button key={`${preset.points}-${preset.label}`} disabled={!selected} onClick={() => { setReason(preset.label); void addScore(preset.points, preset.category, preset.label); }}>
+                    <b>+{preset.points}</b><span>{preset.points === 5 ? "Participação" : preset.label}</span>
+                  </button>
+                ))}
+                <button className="quick-score-custom-trigger" disabled={!selected} onClick={() => setReason("Outra pontuação")}>
+                  <b>✎</b><span>Outra pontuação</span>
+                </button>
+                <div className="quick-score-custom">
+                  <input className="input compact" type="number" value={customPoints} onChange={(e) => setCustomPoints(Number(e.target.value))} />
+                  <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Adicionar observação..." />
+                  <button className="button primary" disabled={!selected || !reason.trim()} onClick={() => addScore(customPoints, "ADJUSTMENT", reason)}>Aplicar</button>
+                </div>
+              </div>
+            </section>
           </div>
           ) : interactionTool === "wordcloud" ? (
             <WordCloudPanel
@@ -2996,6 +3114,70 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </Panel>
       )}
         </main>
+
+        <aside className="arena-context-rail" aria-label="Contexto da sessão">
+          <section className="arena-participants-card">
+            <div className="arena-context-head">
+              <div>
+                <strong>Participantes</strong>
+                <small>{currentSession.presentStudentIds.length}/{sessionParticipants.length}</small>
+              </div>
+              <button type="button" onClick={() => setAccessOpen(true)}>Presença</button>
+            </div>
+
+            <label className="arena-participant-search">
+              <span aria-hidden="true">⌕</span>
+              <input
+                value={participantSearch}
+                onChange={(event) => setParticipantSearch(event.target.value)}
+                placeholder="Buscar aluno..."
+                aria-label="Buscar participante"
+              />
+            </label>
+
+            <div className="arena-participant-list">
+              {visibleParticipants.slice(0, 12).map((participant) => {
+                const student = data.students.find((item) => item.id === participant.studentId);
+                if (!student) return null;
+                return (
+                  <div className="arena-participant-row" key={participant.id}>
+                    <Avatar student={student} />
+                    <div>
+                      <strong>{student.nickname || student.name}</strong>
+                      <small>{participant.present ? "Presente" : "Ausente"}</small>
+                    </div>
+                    <span
+                      className={participant.connected ? "arena-status-dot online" : participant.present ? "arena-status-dot present" : "arena-status-dot offline"}
+                      aria-label={participant.connected ? "Online" : participant.present ? "Presente, offline" : "Ausente"}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {visibleParticipants.length > 12 && (
+              <button className="arena-context-more" type="button" onClick={() => setAccessOpen(true)}>
+                Ver todos ({visibleParticipants.length}) →
+              </button>
+            )}
+          </section>
+
+          <section className="arena-session-code-card">
+            <div>
+              <span className="arena-context-label">CÓDIGO DA SESSÃO</span>
+              <strong>{joinCode?.code ?? "------"}</strong>
+              <small>Aponte a câmera para participar</small>
+            </div>
+            {joinCode && publicBaseUrl ? (
+              <img
+                src={joinQrImageUrl(currentSession.id, publicBaseUrl, joinCode.code, 180)}
+                alt={`QR Code da sessão ${joinCode.code}`}
+              />
+            ) : (
+              <div className="arena-qr-placeholder">QR</div>
+            )}
+          </section>
+        </aside>
       </div>
     </div>
   );
