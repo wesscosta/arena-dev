@@ -2814,15 +2814,28 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                         .filter((student) => currentSession.presentStudentIds.includes(student.id))
                         .map((student, index, participants) => {
                           const count = participants.length;
-                          const startAngle = Math.PI * 1.08;
-                          const endAngle = Math.PI * 1.92;
-                          const progress = count === 1 ? 0.5 : index / (count - 1);
+                          const crowded = count >= 15;
+                          const lane = crowded ? index % 2 : 0;
+                          const position = crowded ? Math.floor(index / 2) : index;
+                          const laneCount = crowded
+                            ? Math.ceil((count - lane) / 2)
+                            : count;
+                          const progress = laneCount === 1 ? 0.5 : position / (laneCount - 1);
+                          const startAngle = Math.PI * (crowded && lane === 1 ? 1.14 : 1.08);
+                          const endAngle = Math.PI * (crowded && lane === 1 ? 1.86 : 1.92);
                           const angle = startAngle + progress * (endAngle - startAngle);
-                          const left = 50 + Math.cos(angle) * 43;
-                          const top = 92 + Math.sin(angle) * 74;
+                          const radiusX = crowded && lane === 1 ? 34 : 43;
+                          const radiusY = crowded && lane === 1 ? 57 : 74;
+                          const left = 50 + Math.cos(angle) * radiusX;
+                          const top = 92 + Math.sin(angle) * radiusY;
+                          const densityClass = count >= 15 ? "crowded" : count >= 10 ? "dense" : "spacious";
                           return (
                             <div
-                              className={student.id === selectedId ? "draw-wheel-student selected" : "draw-wheel-student"}
+                              className={[
+                                "draw-wheel-student",
+                                densityClass,
+                                student.id === selectedId ? "selected" : "",
+                              ].filter(Boolean).join(" ")}
                               key={student.id}
                               style={{ left: `${left}%`, top: `${top}%` }}
                               title={student.nickname || student.name}

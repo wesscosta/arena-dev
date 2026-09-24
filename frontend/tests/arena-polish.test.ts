@@ -328,9 +328,9 @@ test("Semicircle roulette keeps every participant label on the visible upper arc
   const app = read("components/ArenaApp.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.ok(app.includes("const startAngle = Math.PI * 1.08"));
-  assert.ok(app.includes("const endAngle = Math.PI * 1.92"));
-  assert.match(app, /count === 1/);
+  assert.match(app, /const startAngle = Math\.PI \* \(crowded && lane === 1 \? 1\.14 : 1\.08\)/);
+  assert.match(app, /const endAngle = Math\.PI \* \(crowded && lane === 1 \? 1\.86 : 1\.92\)/);
+  assert.match(app, /laneCount === 1/);
   assert.match(css, /\.draw-wheel-student-face > span/);
   assert.match(css, /text-align:\s*center/);
 });
@@ -373,4 +373,22 @@ test("Arena large desktop keeps full navigation labels and a wider context rail"
   assert.match(css, /@media \(min-width: 90\.01rem\)/);
   assert.match(css, /grid-template-columns:\s*13\.25rem minmax\(0, 1fr\) 17rem/);
   assert.match(css, /text-overflow:\s*clip/);
+});
+
+
+test("Semicircle roulette staggers crowded participant sets into two readable lanes", () => {
+  const app = read("components/ArenaApp.tsx");
+
+  assert.match(app, /const crowded = count >= 15/);
+  assert.match(app, /const lane = crowded \? index % 2 : 0/);
+  assert.match(app, /radiusX = crowded && lane === 1 \? 34 : 43/);
+  assert.match(app, /densityClass = count >= 15 \? "crowded" : count >= 10 \? "dense" : "spacious"/);
+});
+
+test("Arena responsive polish keeps labels at 1366 and collapses them only near tablet widths", () => {
+  const css = read("styles/arena-polish.css");
+
+  assert.match(css, /@media \(max-width: 90rem\)[\s\S]*?grid-template-columns:\s*10\.5rem minmax\(0, 1fr\) 14\.5rem/);
+  assert.match(css, /@media \(max-width: 74rem\)[\s\S]*?grid-template-columns:\s*4\.65rem minmax\(0, 1fr\)/);
+  assert.match(css, /@media \(max-width: 54rem\)[\s\S]*?\.quick-score-actions/);
 });
