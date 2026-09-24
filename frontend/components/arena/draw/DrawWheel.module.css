@@ -199,3 +199,59 @@
   .drawing .segment { animation: none; }
   .segmentShape { transition: none; }
 }
+
+
+/* v0.8 · fixed-slot carousel mode for larger classes */
+.centerSlot .segmentShape {
+  stroke-width: 2;
+}
+
+.carouselHint {
+  position: absolute;
+  right: .65rem;
+  bottom: .55rem;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  color: var(--muted);
+  font-size: .52rem;
+  pointer-events: none;
+}
+
+.carouselHint span {
+  padding: .2rem .36rem;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.stage[data-mode="carousel"] .segmentShape {
+  stroke-width: 2;
+}
+
+.stage[data-mode="carousel"] .name {
+  font-size: 15px;
+}
+
+.stage[data-mode="carousel"] .drawing .segment {
+  animation: carousel-slot-pulse .38s ease-in-out infinite alternate;
+}
+
+@keyframes carousel-slot-pulse {
+  from { opacity: .72; filter: brightness(.96); }
+  to { opacity: 1; filter: brightness(1.14); }
+}
+
+@media (max-width: 54rem) {
+  .carouselHint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage[data-mode="carousel"] .drawing .segment {
+    animation: none;
+  }
+}

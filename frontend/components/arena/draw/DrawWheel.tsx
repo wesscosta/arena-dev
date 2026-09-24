@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { Student } from "@/lib/types";
 import styles from "./DrawWheel.module.css";
@@ -18,6 +19,10 @@ const CENTER_Y = 500;
 const OUTER_RADIUS = 478;
 const INNER_RADIUS = 268;
 const LABEL_RADIUS = 372;
+
+const STATIC_LIMIT = 6;
+const VISIBLE_SLOTS = 7;
+const CENTER_SLOT_INDEX = Math.floor(VISIBLE_SLOTS / 2);
 
 function polar(radius: number, angleDeg: number) {
   const angle = (angleDeg * Math.PI) / 180;
@@ -52,19 +57,63 @@ function initials(name: string) {
     .toUpperCase();
 }
 
+function wrapIndex(index: number, length: number) {
+  return ((index % length) + length) % length;
+}
+
 export default function DrawWheel({ participants, selectedStudentId, drawing, onDraw }: DrawWheelProps) {
-  const count = Math.max(participants.length, 1);
-  const segmentAngle = 180 / count;
-  const gap = count >= 15 ? 0.45 : count >= 10 ? 0.65 : 0.9;
+  const carouselMode = participants.length > STATIC_LIMIT;
+  const [windowStart, setWindowStart] = useState(0);
+
+  useEffect(() => {
+    if (!carouselMode || !drawing || participants.length === 0) return;
+
+    const intervalId = window.setInterval(() => {
+      setWindowStart((current) => wrapIndex(current + 1, participants.length));
+    }, 95);
+
+    return () => window.clearInterval(intervalId);
+  }, [carouselMode, drawing, participants.length]);
+
+  useEffect(() => {
+    if (!carouselMode || drawing || !selectedStudentId || participants.length === 0) return;
+    const winnerIndex = participants.findIndex((student) => student.id === selectedStudentId);
+    if (winnerIndex < 0) return;
+
+    setWindowStart(wrapIndex(winnerIndex - CENTER_SLOT_INDEX, participants.length));
+  }, [carouselMode, drawing, selectedStudentId, participants]);
+
+  const visibleParticipants = useMemo(() => {
+    if (!carouselMode) {
+      return participants.map((student, slotIndex) => ({ slotIndex, student }));
+    }
+
+    return Array.from({ length: VISIBLE_SLOTS }, (_, slotIndex) => ({
+      slotIndex,
+      student: participants[wrapIndex(windowStart + slotIndex, participants.length)],
+    }));
+  }, [carouselMode, participants, windowStart]);
+
+  const segmentCount = carouselMode ? VISIBLE_SLOTS : Math.max(participants.length, 1);
+  const segmentAngle = 180 / segmentCount;
+  const gap = carouselMode ? 1.2 : 1;
 
   return (
-    <section className={styles.stage} aria-label="Roleta de participantes">
+    <section
+      className={styles.stage}
+      aria-label={carouselMode ? "Roleta dinâmica de participantes" : "Roleta de participantes"}
+      data-mode={carouselMode ? "carousel" : "static"}
+    >
       <div className={styles.viewport}>
         <svg
           className={styles.wheel}
           viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
           role="img"
-          aria-label={`Roleta semicircular com ${participants.length} participante(s)`}
+          aria-label={
+            carouselMode
+              ? `Roleta com ${participants.length} participantes e ${VISIBLE_SLOTS} casas visíveis`
+              : `Roleta semicircular com ${participants.length} participante(s)`
+          }
           preserveAspectRatio="xMidYMax meet"
         >
           <defs>
@@ -95,19 +144,23 @@ export default function DrawWheel({ participants, selectedStudentId, drawing, on
           />
 
           <g className={drawing ? styles.drawing : undefined}>
-            {participants.map((student, index) => {
-              const start = 180 + index * segmentAngle + gap;
-              const end = 180 + (index + 1) * segmentAngle - gap;
-              const mid = 180 + (index + 0.5) * segmentAngle;
+            {visibleParticipants.map(({ slotIndex, student }) => {
+              const start = 180 + slotIndex * segmentAngle + gap;
+              const end = 180 + (slotIndex + 1) * segmentAngle - gap;
+              const mid = 180 + (slotIndex + 0.5) * segmentAngle;
               const labelPoint = polar(LABEL_RADIUS, mid);
               const selected = student.id === selectedStudentId;
               const displayName = student.nickname || student.name.split(" ")[0];
+              const centerSlot = carouselMode && slotIndex === CENTER_SLOT_INDEX;
 
               return (
                 <g
-                  key={student.id}
-                  className={selected ? styles.segmentSelected : styles.segment}
-                  style={{ "--segment-index": index } as CSSProperties}
+                  key={carouselMode ? `slot-${slotIndex}` : student.id}
+                  className={[
+                    selected ? styles.segmentSelected : styles.segment,
+                    centerSlot ? styles.centerSlot : "",
+                  ].filter(Boolean).join(" ")}
+                  style={{ "--segment-index": slotIndex } as CSSProperties}
                 >
                   <path
                     className={styles.segmentShape}
@@ -130,12 +183,14 @@ export default function DrawWheel({ participants, selectedStudentId, drawing, on
               );
             })}
           </g>
-
-          <path
-            className={styles.pointer}
-            d="M 486 8 L 514 8 L 500 34 Z"
-          />
         </svg>
+
+        {carouselMode && (
+          <div className={styles.carouselHint} aria-hidden="true">
+            <span>{VISIBLE_SLOTS} casas visíveis</span>
+            <span>{participants.length} participantes na rodada</span>
+          </div>
+        )}
 
         <button
           type="button"

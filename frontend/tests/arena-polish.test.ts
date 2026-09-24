@@ -326,7 +326,7 @@ test("Draw settings expose backend policies as information instead of fake contr
 test("Semicircle roulette centers each participant inside an SVG segment", () => {
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
-  assert.match(wheel, /const mid = 180 \+ \(index \+ 0\.5\) \* segmentAngle/);
+  assert.match(wheel, /const mid = 180 \+ \(slotIndex \+ 0\.5\) \* segmentAngle/);
   assert.match(wheel, /const labelPoint = polar\(LABEL_RADIUS, mid\)/);
   assert.match(wheel, /textAnchor="middle"/);
   assert.match(wheel, /className=\{styles\.name\}/);
@@ -394,7 +394,7 @@ test("Arena responsive polish keeps labels at 1366 and collapses them only near 
 test("Annular roulette creates real SVG segments with an inner cutout", () => {
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
-  assert.match(wheel, /const segmentAngle = 180 \/ count/);
+  assert.match(wheel, /const segmentAngle = 180 \/ segmentCount/);
   assert.match(wheel, /segmentPath\(start, end\)/);
   assert.match(wheel, /const innerEnd = polar\(INNER_RADIUS, endAngle\)/);
   assert.match(wheel, /const innerStart = polar\(INNER_RADIUS, startAngle\)/);
@@ -420,4 +420,30 @@ test("Draw stage expands edge to edge while the SVG owns wheel proportions", () 
   assert.match(arenaCss, /margin-inline:\s*-\.9rem/);
   assert.match(wheelCss, /\.viewport\s*\{/);
   assert.match(wheelCss, /aspect-ratio:\s*1000 \/ 520/);
+});
+
+test("DrawWheel switches from static semicircle to fixed seven-slot carousel after six participants", () => {
+  const wheel = read("components/arena/draw/DrawWheel.tsx");
+
+  assert.match(wheel, /const STATIC_LIMIT = 6/);
+  assert.match(wheel, /const VISIBLE_SLOTS = 7/);
+  assert.match(wheel, /const carouselMode = participants\.length > STATIC_LIMIT/);
+  assert.match(wheel, /const segmentCount = carouselMode \? VISIBLE_SLOTS/);
+});
+
+test("DrawWheel carousel rotates students through fixed slots and settles the winner in the center slot", () => {
+  const wheel = read("components/arena/draw/DrawWheel.tsx");
+
+  assert.match(wheel, /setWindowStart\(\(current\) => wrapIndex\(current \+ 1, participants\.length\)\)/);
+  assert.match(wheel, /winnerIndex - CENTER_SLOT_INDEX/);
+  assert.match(wheel, /carouselMode \? `slot-\$\{slotIndex\}` : student\.id/);
+  assert.match(wheel, /student\.id === selectedStudentId/);
+});
+
+test("DrawWheel no longer renders a triangle pointer because selection is conveyed by segment state", () => {
+  const wheel = read("components/arena/draw/DrawWheel.tsx");
+
+  assert.doesNotMatch(wheel, /className=\{styles\.pointer\}/);
+  assert.doesNotMatch(wheel, /M 486 8 L 514 8 L 500 34 Z/);
+  assert.match(wheel, /fill=\{selected \? "url\(#draw-wheel-selected\)"/);
 });
