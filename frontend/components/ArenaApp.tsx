@@ -2899,49 +2899,116 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               onContinue={() => movePreparedFlow("next")}
             />
           ) : activeDynamic === "buzzer" ? (
-            <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">
-              <div className={`teacher-buzzer-state ${buzzerState.status.toLowerCase()}`}>
-                <div className="teacher-buzzer-head">
+            <div className="buzzer-workspace">
+              <section className="buzzer-hero">
+                <div className="buzzer-titlebar">
                   <div>
-                    <span className="eyebrow accent">RODADA</span>
-                    <h3>{buzzerState.status === "OPEN" ? "Buzzer aberto" : buzzerState.status === "CLOSED" ? "Rodada encerrada" : "Pronto para abrir"}</h3>
+                    <span className="eyebrow accent">DINÂMICA AO VIVO</span>
+                    <h2>Buzzer</h2>
+                    <p>Velocidade com ordem oficial definida pelo servidor.</p>
                   </div>
-                  <span className={`buzzer-status-pill ${buzzerState.status.toLowerCase()}`}>
-                    {buzzerState.status === "OPEN" ? "VALENDO" : buzzerState.status === "CLOSED" ? "FECHADO" : "AGUARDANDO"}
+                  <span className={`buzzer-status-badge ${buzzerState.status.toLowerCase()}`}>
+                    {buzzerState.status === "OPEN" ? "● VALENDO" : buzzerState.status === "CLOSED" ? "FECHADO" : "AGUARDANDO"}
                   </span>
                 </div>
-                <div className="inline-actions solid-actions">
-                  <button className="button primary" onClick={() => { void toggleBuzzer(true); }} disabled={realtimeBusy}>
-                    {buzzerState.status === "OPEN" ? "Nova rodada" : "Abrir Buzzer"}
-                  </button>
-                  <button className="button danger-outline" onClick={() => { void toggleBuzzer(false); }} disabled={realtimeBusy || buzzerState.status !== "OPEN"}>
-                    Fechar
-                  </button>
-                </div>
-              </div>
 
-              {buzzerState.presses.length > 0 ? (
-                <div className="buzzer-order-list">
-                  {buzzerState.presses.map((press) => (
-                    <div className={press.position === 1 ? "buzzer-order-row winner" : "buzzer-order-row"} key={press.id}>
-                      <b>#{press.position}</b>
-                      <div>
-                        <strong>{press.displayName || press.nickname || press.name}</strong>
-                        <small>{press.position === 1 ? "Primeiro clique confirmado pelo servidor" : dateTime(press.receivedAt)}</small>
-                      </div>
-                      {press.position === 1 && (
-                        <div className="buzzer-score-actions">
-                          <button onClick={() => { void addBuzzerScore(press.studentId, 5); }}>+5</button>
-                          <button onClick={() => { void addBuzzerScore(press.studentId, 10); }}>+10</button>
-                        </div>
-                      )}
+                <div className="buzzer-stage">
+                  <div className={`buzzer-orb ${buzzerState.status.toLowerCase()}`}>
+                    <span className="buzzer-orb-icon" aria-hidden="true">⚡</span>
+                    <strong>
+                      {buzzerState.status === "OPEN"
+                        ? "VALENDO!"
+                        : buzzerState.status === "CLOSED"
+                          ? "RODADA ENCERRADA"
+                          : "PRONTO"}
+                    </strong>
+                    <small>
+                      {buzzerState.status === "OPEN"
+                        ? "Aguardando o primeiro clique"
+                        : buzzerState.status === "CLOSED"
+                          ? `${buzzerState.presses.length} resposta(s) registradas`
+                          : "Abra uma rodada quando quiser"}
+                    </small>
+                  </div>
+
+                  <div className="buzzer-stage-actions">
+                    <button
+                      type="button"
+                      className="button primary buzzer-primary-action"
+                      onClick={() => { void toggleBuzzer(true); }}
+                      disabled={realtimeBusy}
+                    >
+                      {buzzerState.status === "OPEN" ? "Nova rodada" : "Abrir Buzzer"}
+                    </button>
+                    <button
+                      type="button"
+                      className="button danger-outline"
+                      onClick={() => { void toggleBuzzer(false); }}
+                      disabled={realtimeBusy || buzzerState.status !== "OPEN"}
+                    >
+                      Encerrar rodada
+                    </button>
+                  </div>
+
+                  <div className="buzzer-metrics">
+                    <div>
+                      <strong>{sessionParticipants.filter((participant) => participant.connected).length}</strong>
+                      <span>conectados</span>
                     </div>
-                  ))}
+                    <div>
+                      <strong>{buzzerState.presses.length}</strong>
+                      <span>cliques</span>
+                    </div>
+                    <div>
+                      <strong>{buzzerState.openedAt ? dateTime(buzzerState.openedAt) : "—"}</strong>
+                      <span>abertura</span>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <MiniEmpty text={buzzerState.status === "OPEN" ? "Aguardando o primeiro clique dos alunos conectados." : "Abra uma rodada quando quiser usar o Buzzer."} />
-              )}
-            </Panel>
+              </section>
+
+              <section className="buzzer-ranking-card">
+                <div className="buzzer-ranking-head">
+                  <div>
+                    <span className="eyebrow accent">ORDEM OFICIAL</span>
+                    <h3>Quem apertou primeiro?</h3>
+                  </div>
+                  <span>{buzzerState.presses.length} resposta(s)</span>
+                </div>
+
+                {buzzerState.presses.length > 0 ? (
+                  <div className="buzzer-podium-list">
+                    {buzzerState.presses.map((press) => {
+                      const student = students.find((item) => item.id === press.studentId);
+                      return (
+                        <div className={press.position === 1 ? "buzzer-podium-row winner" : "buzzer-podium-row"} key={press.id}>
+                          <div className="buzzer-position">#{press.position}</div>
+                          {student ? <Avatar student={student} /> : <div className="buzzer-avatar-fallback">{(press.displayName || press.nickname || press.name).slice(0, 1)}</div>}
+                          <div className="buzzer-student-copy">
+                            <strong>{press.displayName || press.nickname || press.name}</strong>
+                            <small>{press.position === 1 ? "Primeiro clique confirmado pelo servidor" : dateTime(press.receivedAt)}</small>
+                          </div>
+                          {press.position === 1 ? (
+                            <div className="buzzer-winner-actions">
+                              <button type="button" onClick={() => { void addBuzzerScore(press.studentId, 5); }}>+5 XP</button>
+                              <button type="button" onClick={() => { void addBuzzerScore(press.studentId, 10); }}>+10 XP</button>
+                            </div>
+                          ) : (
+                            <span className="buzzer-order-time">{dateTime(press.receivedAt)}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="buzzer-empty-state">
+                    <span aria-hidden="true">⚡</span>
+                    <strong>{buzzerState.status === "OPEN" ? "Aguardando o primeiro clique" : "Nenhuma rodada disputada ainda"}</strong>
+                    <p>{buzzerState.status === "OPEN" ? "Assim que alguém apertar, a ordem aparecerá aqui em tempo real." : "Abra o Buzzer quando quiser transformar uma pergunta em disputa ao vivo."}</p>
+                  </div>
+                )}
+              </section>
+            </div>
           ) : (
             <Panel title="Boss Battle" subtitle="Objetivo coletivo sincronizado com participantes e Projetor">
               <div className="boss-guide">

@@ -168,3 +168,25 @@ test("Arena tool drawer is modal, keyboard dismissible and mobile aware", () => 
   assert.match(css, /@media \(max-width: 48rem\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 });
+
+test("Buzzer uses the gamified Arena workspace instead of the legacy panel", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /className="buzzer-workspace"/);
+  assert.match(app, /buzzer-orb/);
+  assert.match(app, /ORDEM OFICIAL/);
+  assert.match(app, /Primeiro clique confirmado pelo servidor/);
+  assert.match(css, /\.buzzer-workspace\s*\{/);
+  assert.match(css, /\.buzzer-podium-row\.winner\s*\{/);
+});
+
+test("Buzzer preserves server authority and winner scoring", () => {
+  const app = read("components/ArenaApp.tsx");
+
+  assert.match(app, /ordem oficial definida pelo servidor/);
+  assert.match(app, /toggleBuzzer\(true\)/);
+  assert.match(app, /toggleBuzzer\(false\)/);
+  assert.match(app, /addBuzzerScore\(press\.studentId, 5\)/);
+  assert.match(app, /addBuzzerScore\(press\.studentId, 10\)/);
+});
