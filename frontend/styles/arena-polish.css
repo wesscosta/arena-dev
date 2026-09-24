@@ -2932,3 +2932,113 @@
       0 0 3.5rem color-mix(in srgb, var(--accent) 11%, transparent);
   }
 }
+
+
+/* v0.8 · 16.0F.1 — semicircle participant alignment + integrated draw CTA */
+.draw-wheel-semicircle {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, transparent), transparent 72%),
+    color-mix(in srgb, var(--surface-2) 90%, transparent);
+}
+
+.draw-wheel-ring {
+  background:
+    repeating-conic-gradient(
+      from -15deg,
+      color-mix(in srgb, var(--accent) 7%, transparent) 0 29deg,
+      color-mix(in srgb, var(--border) 52%, transparent) 29deg 30deg
+    );
+}
+
+.draw-wheel-student {
+  width: 6.25rem;
+}
+
+.draw-wheel-student-face {
+  min-height: 3.7rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: .28rem;
+  text-align: center;
+  transform: none;
+  transition: transform .18s ease, opacity .18s ease;
+}
+
+.draw-wheel-student-face .avatar {
+  flex: 0 0 auto;
+}
+
+.draw-wheel-student-face > span {
+  width: 100%;
+  max-width: 6.1rem;
+  min-height: 1.05rem;
+  display: block;
+  overflow: hidden;
+  color: var(--text);
+  font-size: .66rem;
+  font-weight: 760;
+  line-height: 1.15;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.draw-wheel-student.selected .draw-wheel-student-face {
+  transform: translateY(-.18rem) scale(1.06);
+}
+
+.draw-wheel-zone {
+  padding-bottom: 3.9rem;
+}
+
+.draw-wheel-zone .draw-wheel-center {
+  bottom: 0;
+  width: 10.5rem;
+  height: 5.15rem;
+  aspect-ratio: auto;
+  border-bottom: 0;
+  border-radius: 10.5rem 10.5rem 0 0;
+  background:
+    radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--accent) 24%, var(--surface-2)), var(--surface) 72%);
+  transform: translateX(-50%);
+}
+
+.draw-wheel-zone .draw-wheel-center:hover:not(:disabled) {
+  transform: translateX(-50%) translateY(-.1rem);
+}
+
+.draw-wheel-zone .draw-wheel-center > span {
+  margin-top: .45rem;
+}
+
+@media (max-width: 54rem) {
+  .draw-wheel-student {
+    width: 4.6rem;
+  }
+
+  .draw-wheel-student-face > span {
+    display: block;
+    max-width: 4.5rem;
+    font-size: .56rem;
+  }
+}
+
+@media (max-width: 42rem) {
+  .draw-wheel-zone {
+    padding-bottom: 3.5rem;
+  }
+
+  .draw-wheel-zone .draw-wheel-center {
+    width: 8.4rem;
+    height: 4.25rem;
+    border-radius: 8.4rem 8.4rem 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draw-wheel-student-face {
+    transition: none;
+  }
+}

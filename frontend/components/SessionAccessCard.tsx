@@ -17,6 +17,7 @@ type Props = {
   onRotate?: () => void | Promise<void>;
   rotateBusy?: boolean;
   compact?: boolean;
+  drawer?: boolean;
   title?: string;
   subtitle?: string;
 };
@@ -52,6 +53,7 @@ export default function SessionAccessCard({
   onRotate,
   rotateBusy = false,
   compact = false,
+  drawer = false,
   title = "Acesso dos alunos",
   subtitle = "O mesmo acesso permanece válido durante toda a sessão.",
 }: Props) {
@@ -75,7 +77,7 @@ export default function SessionAccessCard({
   }
 
   return (
-    <section className={`${styles.card} ${compact ? styles.compact : ""}`}>
+    <section className={`${styles.card} ${compact ? styles.compact : ""} ${drawer ? styles.drawer : ""}`}>
       <div className={styles.header}>
         <div>
           <span className={styles.eyebrow}>ENTRADA NA SESSÃO</span>
@@ -144,7 +146,7 @@ export default function SessionAccessCard({
                 sessionId,
                 publicBaseUrl,
                 joinCode.code,
-                compact ? 260 : 380,
+                drawer ? 180 : compact ? 260 : 380,
               )}
               alt={`QR Code da sessão ${joinCode.code}`}
             />

@@ -322,3 +322,35 @@ test("Draw settings expose backend policies as information instead of fake contr
   assert.match(app, /Evita repetição imediata/);
   assert.doesNotMatch(app, /draw-settings-rule[\s\S]{0,120}<input/);
 });
+
+
+test("Semicircle roulette keeps every participant label on the visible upper arc", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.ok(app.includes("const startAngle = Math.PI * 1.08"));
+  assert.ok(app.includes("const endAngle = Math.PI * 1.92"));
+  assert.match(app, /count === 1/);
+  assert.match(css, /\.draw-wheel-student-face > span/);
+  assert.match(css, /text-align:\s*center/);
+});
+
+test("Draw CTA is integrated as a semicircle instead of a detached circular hub", () => {
+  const css = read("styles/arena-polish.css");
+
+  assert.match(css, /\.draw-wheel-zone \.draw-wheel-center/);
+  assert.match(css, /border-bottom:\s*0/);
+  assert.match(css, /border-radius:\s*10\.5rem 10\.5rem 0 0/);
+});
+
+test("Presence drawer uses the dedicated compact SessionAccessCard variant", () => {
+  const app = read("components/ArenaApp.tsx");
+  const access = read("components/SessionAccessCard.tsx");
+  const css = read("components/SessionAccessCard.module.css");
+
+  assert.match(app, /<SessionAccessCard[\s\S]*?compact[\s\S]*?drawer/);
+  assert.match(access, /drawer \? styles\.drawer/);
+  assert.match(css, /\.drawer \.content/);
+  assert.match(css, /grid-template-columns:\s*minmax\(0, 1fr\) 7\.4rem/);
+  assert.match(css, /\.drawer \.qr img/);
+});

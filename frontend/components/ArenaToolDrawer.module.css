@@ -105,3 +105,13 @@
   from { transform: translateY(1.5rem); opacity: .55; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+.wide {
+  width: min(38rem, 96vw);
+}
+
+@media (max-width: 48rem) {
+  .wide {
+    width: 100%;
+  }
+}

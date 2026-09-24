@@ -7,11 +7,12 @@ type Props = {
   open: boolean;
   title: string;
   subtitle?: string;
+  size?: "default" | "wide";
   onClose: () => void;
   children: ReactNode;
 };
 
-export default function ArenaToolDrawer({ open, title, subtitle, onClose, children }: Props) {
+export default function ArenaToolDrawer({ open, title, subtitle, size = "default", onClose, children }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export default function ArenaToolDrawer({ open, title, subtitle, onClose, childr
   return (
     <div className={styles.backdrop} role="presentation" onMouseDown={onClose}>
       <aside
-        className={styles.drawer}
+        className={`${styles.drawer} ${size === "wide" ? styles.wide : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="arena-tool-title"

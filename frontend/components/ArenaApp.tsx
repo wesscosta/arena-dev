@@ -2793,33 +2793,33 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                       <div
                         className="draw-wheel-ring"
                         style={{ "--rotation": `${drawRotation}deg` } as CSSProperties}
-                      >
-                        {students
-                          .filter((student) => currentSession.presentStudentIds.includes(student.id))
-                          .map((student, index, participants) => {
-                            const angle = (index / Math.max(participants.length, 1)) * Math.PI * 2 - Math.PI / 2;
-                            const radius = participants.length > 12 ? 43 : 40;
-                            const left = 50 + Math.cos(angle) * radius;
-                            const top = 50 + Math.sin(angle) * radius;
-                            return (
-                              <div
-                                className={student.id === selectedId ? "draw-wheel-student selected" : "draw-wheel-student"}
-                                key={student.id}
-                                style={{
-                                  left: `${left}%`,
-                                  top: `${top}%`,
-                                  "--counter-rotation": `${-drawRotation}deg`,
-                                } as CSSProperties}
-                                title={student.nickname || student.name}
-                              >
-                                <div className="draw-wheel-student-face">
-                                  <Avatar student={student} />
-                                  <span>{student.nickname || student.name.split(" ")[0]}</span>
-                                </div>
+                        aria-hidden="true"
+                      />
+
+                      {students
+                        .filter((student) => currentSession.presentStudentIds.includes(student.id))
+                        .map((student, index, participants) => {
+                          const count = participants.length;
+                          const startAngle = Math.PI * 1.08;
+                          const endAngle = Math.PI * 1.92;
+                          const progress = count === 1 ? 0.5 : index / (count - 1);
+                          const angle = startAngle + progress * (endAngle - startAngle);
+                          const left = 50 + Math.cos(angle) * 43;
+                          const top = 92 + Math.sin(angle) * 74;
+                          return (
+                            <div
+                              className={student.id === selectedId ? "draw-wheel-student selected" : "draw-wheel-student"}
+                              key={student.id}
+                              style={{ left: `${left}%`, top: `${top}%` }}
+                              title={student.nickname || student.name}
+                            >
+                              <div className="draw-wheel-student-face">
+                                <Avatar student={student} />
+                                <span>{student.nickname || student.name.split(" ")[0]}</span>
                               </div>
-                            );
-                          })}
-                      </div>
+                            </div>
+                          );
+                        })}
 
                     </div>
                   </div>
@@ -3405,6 +3405,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         open={activeTool === "attendance"}
         title="Presença e acesso"
         subtitle="Gerencie check-in, presença e dispositivos sem abandonar a dinâmica."
+        size="wide"
         onClose={() => setActiveTool(null)}
       >
         <div className="arena-tool-attendance">
@@ -3419,6 +3420,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             onRotate={rotateSessionCode}
             rotateBusy={realtimeBusy}
             compact
+            drawer
             title="Entrada dos alunos"
             subtitle="O código permanece válido durante a sessão."
           />

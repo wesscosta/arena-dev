@@ -960,3 +960,186 @@
   padding-left: 17px;
   padding-right: 17px;
 }
+
+
+/* Arena drawer variant — keep check-in usable inside the contextual tool rail */
+.drawer {
+  width: 100%;
+  margin: 0;
+  padding: .85rem;
+  gap: .75rem;
+  border-radius: 12px;
+}
+
+.drawer .header {
+  min-height: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+}
+
+.drawer .header > div {
+  min-width: 0;
+  display: grid;
+  gap: .14rem;
+  padding: 0;
+}
+
+.drawer .eyebrow {
+  font-size: .58rem;
+}
+
+.drawer .header h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.drawer .header p {
+  max-width: none;
+  margin: 0;
+  font-size: .66rem;
+  line-height: 1.4;
+}
+
+.drawer .connection {
+  position: static;
+  flex: 0 0 auto;
+  margin: 0 0 0 auto;
+  padding: .3rem .45rem;
+  font-size: .55rem;
+}
+
+.drawer .connection i {
+  width: .36rem;
+  height: .36rem;
+}
+
+.drawer .content {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) 7.4rem;
+  gap: .65rem;
+  align-items: stretch;
+}
+
+.drawer .details {
+  min-width: 0;
+  gap: .55rem;
+}
+
+.drawer .codeBlock {
+  gap: .16rem;
+  margin: 0;
+}
+
+.drawer .codeLabel,
+.drawer .urlBlock > span {
+  font-size: .56rem;
+}
+
+.drawer .codeRow {
+  margin: 0;
+}
+
+.drawer .codeRow strong {
+  font-size: clamp(1.75rem, 6vw, 2.3rem);
+  line-height: 1;
+  letter-spacing: .11em;
+}
+
+.drawer .urlBlock {
+  min-width: 0;
+  gap: .2rem;
+  margin: 0;
+}
+
+.drawer .url {
+  width: 100%;
+  min-width: 0;
+  height: 2.15rem;
+  padding: 0 .65rem;
+  overflow: hidden;
+  font-size: .64rem;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer .url::after {
+  display: none;
+}
+
+.drawer .actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .38rem;
+  margin: 0;
+}
+
+.drawer .primary,
+.drawer .secondary,
+.drawer .ghost {
+  min-width: 0;
+  height: 2.05rem;
+  padding: 0 .5rem;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: .6rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer .ghost {
+  grid-column: 1 / -1;
+}
+
+.drawer .qr {
+  width: 7.4rem;
+  min-width: 0;
+  justify-self: stretch;
+  padding: .35rem;
+  gap: .25rem;
+  border-radius: 10px;
+}
+
+.drawer .qr img,
+.drawer .placeholder {
+  width: 6.7rem;
+  height: 6.7rem;
+}
+
+.drawer .qr small {
+  max-width: 6.5rem;
+  font-size: .45rem;
+  line-height: 1.2;
+}
+
+.drawer .warning {
+  min-height: 0;
+  margin: 0;
+  padding: .45rem .55rem;
+}
+
+.drawer .warning strong {
+  font-size: .52rem;
+}
+
+@media (max-width: 30rem) {
+  .drawer .header {
+    display: grid;
+  }
+
+  .drawer .connection {
+    margin-left: 0;
+    justify-self: start;
+  }
+
+  .drawer .content {
+    grid-template-columns: 1fr;
+  }
+
+  .drawer .qr {
+    width: 7.4rem;
+    justify-self: center;
+  }
+}
