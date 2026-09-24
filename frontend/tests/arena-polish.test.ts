@@ -135,3 +135,36 @@ test("Draw history comes from persisted session events instead of a frontend-onl
   assert.match(app, /event\.eventType === "DRAW_COMPLETED"/);
   assert.match(app, /event\.payload\.studentId/);
 });
+
+
+test("Arena separates primary dynamics from contextual tools", () => {
+  const app = read("components/ArenaApp.tsx");
+
+  assert.match(app, /type ArenaDynamic = "runbook" \| "draw"/);
+  assert.match(app, /type ArenaTool = "timer" \| "groups" \| "attendance" \| "score" \| null/);
+  assert.match(app, /const \[activeDynamic, setActiveDynamic\]/);
+  assert.match(app, /const \[activeTool, setActiveTool\]/);
+  assert.doesNotMatch(app, /const \[arenaTab, setArenaTab\]/);
+});
+
+test("Arena contextual tools open without replacing the primary dynamic", () => {
+  const app = read("components/ArenaApp.tsx");
+
+  assert.match(app, /setActiveTool\("timer"\)/);
+  assert.match(app, /setActiveTool\("groups"\)/);
+  assert.match(app, /setActiveTool\("attendance"\)/);
+  assert.match(app, /setActiveTool\("score"\)/);
+  assert.match(app, /open=\{activeTool === "timer"\}/);
+  assert.match(app, /open=\{activeTool === "attendance"\}/);
+});
+
+test("Arena tool drawer is modal, keyboard dismissible and mobile aware", () => {
+  const drawer = read("components/ArenaToolDrawer.tsx");
+  const css = read("components/ArenaToolDrawer.module.css");
+
+  assert.match(drawer, /role="dialog"/);
+  assert.match(drawer, /aria-modal="true"/);
+  assert.match(drawer, /event\.key === "Escape"/);
+  assert.match(css, /@media \(max-width: 48rem\)/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
+});

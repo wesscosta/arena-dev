@@ -8,6 +8,7 @@ import ActivitySubmissionDashboard from "@/components/ActivitySubmissionDashboar
 import LiveFlowConductor from "@/components/LiveFlowConductor";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
+import ArenaToolDrawer from "@/components/ArenaToolDrawer";
 import WordCloudPanel from "@/components/WordCloudPanel";
 import PollPanel from "@/components/PollPanel";
 import QuizPanel from "@/components/QuizPanel";
@@ -77,6 +78,8 @@ import {
 
 type View = "dashboard" | "classroom" | "classroom-settings" | "arena" | "integrations" | "settings";
 type ClassroomTab = "home" | "students" | "activities" | "ranking" | "history";
+type ArenaDynamic = "runbook" | "draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss";
+type ArenaTool = "timer" | "groups" | "attendance" | "score" | null;
 
 const VIEW_LABEL: Record<View, string> = {
   dashboard: "Visão geral",
@@ -1839,10 +1842,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   notify: (message: string) => void;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
-  const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "groups">("live");
-  const [interactionTool, setInteractionTool] = useState<"draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss">("draw");
-  const [accessOpen, setAccessOpen] = useState(false);
-  const [checkinRosterExpanded, setCheckinRosterExpanded] = useState(true);
+  const [activeDynamic, setActiveDynamic] = useState<ArenaDynamic>("draw");
+  const [activeTool, setActiveTool] = useState<ArenaTool>(null);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
   const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
@@ -2061,7 +2062,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         ],
         currentSessionId: started.id,
       }));
-      setArenaTab("live");
+      setActiveDynamic(activityId ? "runbook" : "draw");
+      setActiveTool(null);
       notify("Arena iniciada. Sessão e mecânicas estão no PostgreSQL.");
     } catch (error) {
       notify(errorMessage(error));
@@ -2091,7 +2093,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }));
       setSelectedId(undefined);
       setGroups([]);
-      setArenaTab("live");
+      setActiveDynamic("draw");
+      setActiveTool(null);
       setLiveFlowState(null);
       onPreferredActivityChange(undefined);
       notify("Sessão encerrada e persistida.");
@@ -2532,11 +2535,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </div>
         <div className="topbar-actions arena-session-actions">
           <Button
-            variant={accessOpen ? "primary" : "secondary"}
-            onClick={() => setAccessOpen((open) => !open)}
+            variant={activeTool === "attendance" ? "primary" : "secondary"}
+            onClick={() => setActiveTool((tool) => tool === "attendance" ? null : "attendance")}
             disabled={!joinCode}
           >
-            {accessOpen ? "Fechar check-in" : "Check-in"}
+            Presença
           </Button>
           <Button
             variant="secondary"
@@ -2556,148 +2559,26 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </div>
       </div>
 
-      {accessOpen && (
-        <div className={`arena-checkin-workspace ${checkinRosterExpanded ? "" : "roster-collapsed"}`}>
-          <div className="arena-checkin-access">
-            <SessionAccessCard
-              sessionId={currentSession.id}
-              joinCode={joinCode}
-              publicBaseUrl={publicBaseUrl}
-              notify={notify}
-              realtimeStatus={realtimeStatus}
-              connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
-              presentCount={sessionParticipants.filter((participant) => participant.present).length}
-              onRotate={rotateSessionCode}
-              rotateBusy={realtimeBusy}
-              title="Check-in dos alunos"
-              subtitle="O login realiza o check-in automaticamente. Você pode ajustar a presença manualmente."
-            />
-          </div>
-
-          <aside
-            className={`arena-checkin-roster ${checkinRosterExpanded ? "" : "is-collapsed"}`}
-            aria-label="Check-in da turma"
-          >
-            {checkinRosterExpanded ? (
-              <>
-                <div className="arena-checkin-roster-head">
-                  <div>
-                    <strong>Participantes</strong>
-                    <small>
-                      {currentSession.presentStudentIds.length} de {sessionParticipants.length} presentes
-                    </small>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="arena-checkin-roster-toggle"
-                    onClick={() => setCheckinRosterExpanded(false)}
-                    aria-expanded="true"
-                    aria-label="Recolher lista de alunos"
-                    title="Recolher"
-                  >
-                    ›
-                  </button>
-                </div>
-
-                <div className="arena-checkin-roster-list">
-                  {sessionParticipants.map((participant) => {
-                    const student = data.students.find((item) => item.id === participant.studentId);
-                    if (!student) return null;
-
-                    const statusLabel = participant.connected
-                      ? "online"
-                      : "offline";
-
-                    const statusClass = participant.connected
-                      ? "is-online"
-                      : "is-offline";
-
-                    return (
-                      <div key={participant.id} className="arena-checkin-row">
-                        <Avatar student={student} />
-
-                        <div className="arena-checkin-student-copy">
-                          <strong>{student.name}</strong>
-                          <small className={statusClass}>
-                            <i />
-                            {statusLabel}
-                          </small>
-                        </div>
-
-                        <label
-                          className="arena-checkin-presence-control"
-                          title={participant.present ? "Desmarcar presença" : "Marcar presença"}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={participant.present}
-                            disabled={presenceBusyId === participant.id}
-                            onChange={(event) => {
-                              void changePresence(participant, event.target.checked);
-                            }}
-                          />
-                          <span aria-hidden="true" />
-                          <small>{participant.present ? "Presente" : "Ausente"}</small>
-                        </label>
-
-                        {participant.connected && (
-                          <button
-                            type="button"
-                            className="arena-checkin-release"
-                            onClick={() => { void releaseDevice(participant); }}
-                            title="Liberar dispositivo deste aluno"
-                            aria-label={`Liberar dispositivo de ${student.name}`}
-                          >
-                            ⋯
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="arena-checkin-rail"
-                onClick={() => setCheckinRosterExpanded(true)}
-                aria-label={`Expandir participantes. ${currentSession.presentStudentIds.length} presentes`}
-                title="Expandir participantes"
-              >
-                <span className="arena-checkin-rail-icon">◎</span>
-                <strong>{currentSession.presentStudentIds.length}</strong>
-                <small>presentes</small>
-                <span className="arena-checkin-rail-arrow">‹</span>
-              </button>
-            )}
-          </aside>
-        </div>
-      )}
-
       <div className="arena-cockpit">
         <aside className="arena-cockpit-nav" aria-label="Ferramentas da Arena">
           <div className="arena-cockpit-nav-group">
             <span className="arena-cockpit-nav-label">DINÂMICAS</span>
-            {[
+            {([
               ["draw", "◎", "Sorteio"],
               ["quiz", "?", "Quiz"],
               ["poll", "◉", "Votação"],
               ["wordcloud", "☁", "Nuvem de Palavras"],
               ["buzzer", "⚡", "Buzzer"],
               ["boss", "◆", "Boss Battle"],
-            ].map(([id, icon, label]) => (
+            ] as const).map(([id, icon, label]) => (
               <button
                 key={id}
                 type="button"
-                className={arenaTab === "interactions" && interactionTool === id ? "active" : ""}
+                className={activeDynamic === id ? "active" : ""}
+                aria-current={activeDynamic === id ? "page" : undefined}
                 onClick={() => {
-                  setArenaTab("interactions");
-                  if (id === "boss") {
-                    setInteractionTool("boss");
-                    return;
-                  }
-                  setInteractionTool(id as "draw" | "wordcloud" | "poll" | "quiz" | "buzzer");
+                  setActiveDynamic(id);
+                  setActiveTool(null);
                 }}
               >
                 <span aria-hidden="true">{icon}</span>
@@ -2708,23 +2589,19 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
           <div className="arena-cockpit-nav-group">
             <span className="arena-cockpit-nav-label">FERRAMENTAS</span>
-            <button type="button" className={arenaTab === "live" ? "active" : ""} onClick={() => setArenaTab("live")}>
+            <button type="button" className={activeDynamic === "runbook" ? "active" : ""} onClick={() => { setActiveDynamic("runbook"); setActiveTool(null); }}>
               <span aria-hidden="true">▶</span><strong>Roteiro da aula</strong>
             </button>
-            <button type="button" className={arenaTab === "timer" ? "active" : ""} onClick={() => setArenaTab("timer")}>
+            <button type="button" className={activeTool === "timer" ? "active" : ""} onClick={() => setActiveTool("timer")}>
               <span aria-hidden="true">◷</span><strong>Timer</strong>
             </button>
-            <button type="button" className={arenaTab === "groups" ? "active" : ""} onClick={() => setArenaTab("groups")}>
+            <button type="button" className={activeTool === "groups" ? "active" : ""} onClick={() => setActiveTool("groups")}>
               <span aria-hidden="true">👥</span><strong>Organizar turma</strong>
             </button>
-            <button type="button" className={accessOpen ? "active" : ""} onClick={() => setAccessOpen((open) => !open)}>
+            <button type="button" className={activeTool === "attendance" ? "active" : ""} onClick={() => setActiveTool("attendance")}>
               <span aria-hidden="true">✓</span><strong>Presença</strong>
             </button>
-            <button
-              type="button"
-              className={arenaTab === "interactions" && interactionTool === "draw" ? "active" : ""}
-              onClick={() => { setArenaTab("interactions"); setInteractionTool("draw"); }}
-            >
+            <button type="button" className={activeTool === "score" ? "active" : ""} onClick={() => setActiveTool("score")}>
               <span aria-hidden="true">＋</span><strong>Pontuação rápida</strong>
             </button>
           </div>
@@ -2732,7 +2609,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
         <main className="arena-cockpit-main">
 
-      {arenaTab === "live" && (
+      {activeDynamic === "runbook" && (
         <div className="stack-lg arena-tab-content">
           <div className="arena-activity-strip">
             <div>
@@ -2756,8 +2633,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 onPrevious={() => { void movePreparedFlow("previous"); }}
                 onNext={() => { void movePreparedFlow("next"); }}
                 onOpenWordCloud={() => {
-                  setArenaTab("interactions");
-                  setInteractionTool("wordcloud");
+                  setActiveDynamic("wordcloud");
+                  setActiveTool(null);
                 }}
               />
             ) : activeActivity ? (
@@ -2812,18 +2689,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </div>
       )}
 
-      {arenaTab === "timer" && (
-        <TimerPanel
-          sessionId={currentSession.id}
-          state={timerState}
-          onStateChange={setTimerState}
-          notify={notify}
-        />
-      )}
-
-      {arenaTab === "interactions" && (
+      {activeDynamic !== "runbook" && (
         <div className="stack-lg arena-tab-content">
-          {interactionTool === "draw" ? (
+          {activeDynamic === "draw" ? (
           <div className="smart-draw-workspace">
             <div className="smart-draw-hero">
               <div className="smart-draw-titlebar">
@@ -2992,7 +2860,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               </div>
             </section>
           </div>
-          ) : interactionTool === "wordcloud" ? (
+          ) : activeDynamic === "wordcloud" ? (
             <WordCloudPanel
               sessionId={currentSession.id}
               state={wordCloudState}
@@ -3005,7 +2873,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               presentCount={sessionParticipants.filter((participant) => participant.present).length}
               showAccessCard={false}
             />
-          ) : interactionTool === "poll" ? (
+          ) : activeDynamic === "poll" ? (
             <PollPanel
               sessionId={currentSession.id}
               state={pollState}
@@ -3018,7 +2886,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               presentCount={sessionParticipants.filter((participant) => participant.present).length}
               showAccessCard={false}
             />
-          ) : interactionTool === "quiz" ? (
+          ) : activeDynamic === "quiz" ? (
             <QuizPanel
               sessionId={currentSession.id}
               state={quizState}
@@ -3030,7 +2898,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               canAdvanceFlow={Boolean(liveFlowState?.started && liveFlowState.hasNext)}
               onContinue={() => movePreparedFlow("next")}
             />
-          ) : interactionTool === "buzzer" ? (
+          ) : activeDynamic === "buzzer" ? (
             <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">
               <div className={`teacher-buzzer-state ${buzzerState.status.toLowerCase()}`}>
                 <div className="teacher-buzzer-head">
@@ -3104,15 +2972,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       )}
 
 
-      {arenaTab === "groups" && (
-        <Panel title="Organização da turma" subtitle="Alterne entre individual, duplas e grupos sem encerrar a sessão">
-          <div className="group-controls">
-            <label>Formato<select className="select" value={groupSize} onChange={(e) => setGroupSize(Number(e.target.value))}><option value={1}>Individual</option><option value={2}>Duplas</option><option value={3}>Trios</option><option value={4}>Grupos de 4</option><option value={5}>Grupos de 5</option></select></label>
-            <button className="button" onClick={() => { void createGroups(); }}>{groupSize === 1 ? "Voltar ao individual" : "Organizar turma"}</button>
-          </div>
-          {groups.length > 0 ? <div className="groups-grid">{groups.map((group, index) => <div className="group-card" key={index}><b>{groupSize === 1 ? `INDIVIDUAL ${String(index + 1).padStart(2, "0")}` : `GRUPO ${String(index + 1).padStart(2, "0")}`}</b>{group.map((id) => <span key={id}>{students.find((student) => student.id === id)?.nickname || students.find((student) => student.id === id)?.name}</span>)}</div>)}</div> : <MiniEmpty text="Escolha como a turma deve se organizar nesta etapa da aula." />}
-        </Panel>
-      )}
         </main>
 
         <aside className="arena-context-rail" aria-label="Contexto da sessão">
@@ -3122,7 +2981,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 <strong>Participantes</strong>
                 <small>{currentSession.presentStudentIds.length}/{sessionParticipants.length}</small>
               </div>
-              <button type="button" onClick={() => setAccessOpen(true)}>Presença</button>
+              <button type="button" onClick={() => setActiveTool("attendance")}>Presença</button>
             </div>
 
             <label className="arena-participant-search">
@@ -3156,7 +3015,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             </div>
 
             {visibleParticipants.length > 12 && (
-              <button className="arena-context-more" type="button" onClick={() => setAccessOpen(true)}>
+              <button className="arena-context-more" type="button" onClick={() => setActiveTool("attendance")}>
                 Ver todos ({visibleParticipants.length}) →
               </button>
             )}
@@ -3179,6 +3038,164 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           </section>
         </aside>
       </div>
+
+      <ArenaToolDrawer
+        open={activeTool === "timer"}
+        title="Timer"
+        subtitle="Controle o tempo sem sair da dinâmica atual."
+        onClose={() => setActiveTool(null)}
+      >
+        <TimerPanel
+          sessionId={currentSession.id}
+          state={timerState}
+          onStateChange={setTimerState}
+          notify={notify}
+        />
+      </ArenaToolDrawer>
+
+      <ArenaToolDrawer
+        open={activeTool === "groups"}
+        title="Organizar turma"
+        subtitle="Monte duplas e grupos mantendo a dinâmica principal visível."
+        onClose={() => setActiveTool(null)}
+      >
+        <div className="arena-tool-groups">
+          <div className="group-controls">
+            <label>
+              Formato
+              <select className="select" value={groupSize} onChange={(event) => setGroupSize(Number(event.target.value))}>
+                <option value={1}>Individual</option>
+                <option value={2}>Duplas</option>
+                <option value={3}>Trios</option>
+                <option value={4}>Grupos de 4</option>
+                <option value={5}>Grupos de 5</option>
+              </select>
+            </label>
+            <button className="button primary" onClick={() => { void createGroups(); }}>
+              {groupSize === 1 ? "Ativar individual" : "Organizar turma"}
+            </button>
+          </div>
+          {groups.length > 0 ? (
+            <div className="groups-grid arena-tool-groups-grid">
+              {groups.map((group, index) => (
+                <div className="group-card" key={index}>
+                  <b>{groupSize === 1 ? `INDIVIDUAL ${String(index + 1).padStart(2, "0")}` : `GRUPO ${String(index + 1).padStart(2, "0")}`}</b>
+                  {group.map((id) => (
+                    <span key={id}>
+                      {students.find((student) => student.id === id)?.nickname || students.find((student) => student.id === id)?.name}
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <MiniEmpty text="Escolha um formato e organize a turma quando precisar." />
+          )}
+        </div>
+      </ArenaToolDrawer>
+
+      <ArenaToolDrawer
+        open={activeTool === "attendance"}
+        title="Presença e acesso"
+        subtitle="Gerencie check-in, presença e dispositivos sem abandonar a dinâmica."
+        onClose={() => setActiveTool(null)}
+      >
+        <div className="arena-tool-attendance">
+          <SessionAccessCard
+            sessionId={currentSession.id}
+            joinCode={joinCode}
+            publicBaseUrl={publicBaseUrl}
+            notify={notify}
+            realtimeStatus={realtimeStatus}
+            connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+            presentCount={sessionParticipants.filter((participant) => participant.present).length}
+            onRotate={rotateSessionCode}
+            rotateBusy={realtimeBusy}
+            compact
+            title="Entrada dos alunos"
+            subtitle="O código permanece válido durante a sessão."
+          />
+
+          <div className="arena-tool-roster">
+            <div className="arena-tool-roster-head">
+              <strong>Participantes</strong>
+              <span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span>
+            </div>
+            {sessionParticipants.map((participant) => {
+              const student = data.students.find((item) => item.id === participant.studentId);
+              if (!student) return null;
+              return (
+                <div key={participant.id} className="arena-tool-roster-row">
+                  <Avatar student={student} />
+                  <div>
+                    <strong>{student.name}</strong>
+                    <small>{participant.connected ? "online" : "offline"}</small>
+                  </div>
+                  <label className="arena-checkin-presence-control">
+                    <input
+                      type="checkbox"
+                      checked={participant.present}
+                      disabled={presenceBusyId === participant.id}
+                      onChange={(event) => { void changePresence(participant, event.target.checked); }}
+                    />
+                    <span aria-hidden="true" />
+                    <small>{participant.present ? "Presente" : "Ausente"}</small>
+                  </label>
+                  {participant.connected && (
+                    <button
+                      type="button"
+                      className="arena-tool-release"
+                      onClick={() => { void releaseDevice(participant); }}
+                      aria-label={`Liberar dispositivo de ${student.name}`}
+                      title="Liberar dispositivo"
+                    >
+                      ⋯
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </ArenaToolDrawer>
+
+      <ArenaToolDrawer
+        open={activeTool === "score"}
+        title="Pontuação rápida"
+        subtitle="Aplique XP mantendo a dinâmica principal no palco."
+        onClose={() => setActiveTool(null)}
+      >
+        <div className="arena-tool-score">
+          <label className="field-label">Aluno</label>
+          <select className="select full" value={selectedId ?? ""} onChange={(event) => setSelectedId(event.target.value || undefined)}>
+            <option value="">Selecione um aluno</option>
+            {students
+              .filter((student) => currentSession.presentStudentIds.includes(student.id))
+              .map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
+          </select>
+
+          <div className="score-presets arena-tool-score-presets">
+            {SCORE_PRESETS.map((preset) => (
+              <button
+                key={`${preset.points}-${preset.label}`}
+                disabled={!selected}
+                onClick={() => { setReason(preset.label); void addScore(preset.points, preset.category, preset.label); }}
+              >
+                <b>+{preset.points}</b>
+                <span>{preset.points === 5 ? "Participação" : preset.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="custom-score arena-tool-score-custom">
+            <input className="input compact" type="number" value={customPoints} onChange={(event) => setCustomPoints(Number(event.target.value))} />
+            <input className="input" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Motivo ou observação" />
+            <button className="button primary" disabled={!selected || !reason.trim()} onClick={() => addScore(customPoints, "ADJUSTMENT", reason)}>
+              Aplicar
+            </button>
+          </div>
+        </div>
+      </ArenaToolDrawer>
     </div>
   );
 }

@@ -1589,3 +1589,137 @@
     grid-column: 1 / -1;
   }
 }
+
+
+/* v0.8 · 16.0D — contextual Arena tools */
+.arena-tool-groups,
+.arena-tool-attendance,
+.arena-tool-score {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.arena-tool-groups .group-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .65rem;
+  align-items: end;
+}
+
+.arena-tool-groups .group-controls label {
+  display: grid;
+  gap: .35rem;
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+.arena-tool-groups-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.arena-tool-roster {
+  display: grid;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+}
+
+.arena-tool-roster-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .75rem .8rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.arena-tool-roster-head strong {
+  font-size: .78rem;
+}
+
+.arena-tool-roster-head span {
+  color: var(--muted);
+  font-size: .62rem;
+}
+
+.arena-tool-roster-row {
+  min-height: 3.2rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: .55rem;
+  padding: .45rem .7rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+}
+
+.arena-tool-roster-row:last-child {
+  border-bottom: 0;
+}
+
+.arena-tool-roster-row > div {
+  min-width: 0;
+  display: grid;
+}
+
+.arena-tool-roster-row strong {
+  overflow: hidden;
+  font-size: .68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arena-tool-roster-row small {
+  color: var(--muted);
+  font-size: .56rem;
+}
+
+.arena-tool-release {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.arena-tool-release:hover,
+.arena-tool-release:focus-visible {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+.arena-tool-score .select {
+  min-height: 2.5rem;
+}
+
+.arena-tool-score-presets {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.arena-tool-score-presets button {
+  min-height: 4.25rem;
+}
+
+.arena-tool-score-custom {
+  grid-template-columns: 5rem minmax(0, 1fr) auto;
+}
+
+@media (max-width: 36rem) {
+  .arena-tool-groups .group-controls,
+  .arena-tool-groups-grid,
+  .arena-tool-score-presets,
+  .arena-tool-score-custom {
+    grid-template-columns: 1fr;
+  }
+
+  .arena-tool-roster-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .arena-tool-release {
+    grid-column: 3;
+  }
+}

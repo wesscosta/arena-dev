@@ -1,0 +1,107 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(0, 0, 0, .46);
+  backdrop-filter: blur(4px);
+}
+
+.drawer {
+  width: min(32rem, 94vw);
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border-left: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 34%),
+    var(--surface);
+  box-shadow: -1.5rem 0 4rem rgba(0, 0, 0, .28);
+  animation: arena-tool-drawer-in .18s ease-out;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.15rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-size: .63rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.header h2 {
+  margin: .2rem 0 .12rem;
+  font-size: 1.25rem;
+}
+
+.header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .72rem;
+  line-height: 1.45;
+}
+
+.close {
+  width: 2.2rem;
+  height: 2.2rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+
+.close:hover,
+.close:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+  color: var(--accent);
+}
+
+.content {
+  min-height: 0;
+  overflow: auto;
+  padding: 1rem;
+}
+
+@keyframes arena-tool-drawer-in {
+  from { transform: translateX(1.5rem); opacity: .55; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media (max-width: 48rem) {
+  .backdrop {
+    align-items: flex-end;
+  }
+
+  .drawer {
+    width: 100%;
+    height: min(78vh, 46rem);
+    border-top: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+    border-left: 0;
+    border-radius: 18px 18px 0 0;
+    animation-name: arena-tool-sheet-in;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    animation: none;
+  }
+}
+
+@keyframes arena-tool-sheet-in {
+  from { transform: translateY(1.5rem); opacity: .55; }
+  to { transform: translateY(0); opacity: 1; }
+}

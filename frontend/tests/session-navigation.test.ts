@@ -17,16 +17,17 @@ test("ending a session requires explicit confirmation inside Arena", () => {
   assert.match(arena, /Histórico, XP e atividades permanecem salvos/);
 });
 
-test("session navigation keeps participants inside unified Check-in instead of a top-level tab", () => {
+test("session navigation keeps presence as a contextual Arena tool instead of a top-level tab", () => {
   assert.doesNotMatch(arena, /id:\s*"presence",[\s\S]*?label:\s*"Participantes"/);
   assert.doesNotMatch(arena, /title="Participantes da sessão"/);
-  assert.match(arena, /Fechar check-in/);
-  assert.match(arena, /Check-in/);
-  assert.match(arena, /arena-checkin-roster/);
+  assert.match(arena, /activeTool === "attendance"/);
+  assert.match(arena, /title="Presença e acesso"/);
+  assert.match(arena, /arena-tool-roster/);
 });
 
-test("Boss Battle belongs to Dinâmicas instead of a top-level session tab", () => {
-  assert.match(arena, /setInteractionTool\("boss"\)/);
+test("Boss Battle belongs to the primary Arena dynamics", () => {
+  assert.match(arena, /\["boss", "◆", "Boss Battle"\]/);
+  assert.match(arena, /activeDynamic === "buzzer"/);
   assert.doesNotMatch(arena, /arenaTab === "boss"/);
   assert.match(arena, /Dano manual nesta versão/);
 });
