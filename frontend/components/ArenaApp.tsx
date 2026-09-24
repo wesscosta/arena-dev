@@ -2624,22 +2624,62 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </div>
       )}
 
-      <Tabs
-        className="arena-tabs-six"
-        label="Ferramentas da sessão"
-        activeId={arenaTab}
-        onChange={(id) => {
-          setArenaTab(
-            id as "live" | "interactions" | "timer" | "groups"
-          );
-        }}
-        items={[
-          { id: "live", label: "Condução" },
-          { id: "interactions", label: "Dinâmicas" },
-          { id: "timer", label: "Tempo" },
-          { id: "groups", label: "Organização" },
-        ] satisfies TabItem[]}
-      />
+      <div className="arena-cockpit">
+        <aside className="arena-cockpit-nav" aria-label="Ferramentas da Arena">
+          <div className="arena-cockpit-nav-group">
+            <span className="arena-cockpit-nav-label">DINÂMICAS</span>
+            {[
+              ["draw", "◎", "Sorteio"],
+              ["quiz", "?", "Quiz"],
+              ["poll", "◉", "Votação"],
+              ["wordcloud", "☁", "Nuvem de Palavras"],
+              ["buzzer", "⚡", "Buzzer"],
+              ["boss", "◆", "Boss Battle"],
+            ].map(([id, icon, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={arenaTab === "interactions" && interactionTool === id ? "active" : ""}
+                onClick={() => {
+                  setArenaTab("interactions");
+                  if (id === "boss") {
+                    setInteractionTool("boss");
+                    return;
+                  }
+                  setInteractionTool(id as "draw" | "wordcloud" | "poll" | "quiz" | "buzzer");
+                }}
+              >
+                <span aria-hidden="true">{icon}</span>
+                <strong>{label}</strong>
+              </button>
+            ))}
+          </div>
+
+          <div className="arena-cockpit-nav-group">
+            <span className="arena-cockpit-nav-label">FERRAMENTAS</span>
+            <button type="button" className={arenaTab === "live" ? "active" : ""} onClick={() => setArenaTab("live")}>
+              <span aria-hidden="true">▶</span><strong>Roteiro da aula</strong>
+            </button>
+            <button type="button" className={arenaTab === "timer" ? "active" : ""} onClick={() => setArenaTab("timer")}>
+              <span aria-hidden="true">◷</span><strong>Timer</strong>
+            </button>
+            <button type="button" className={arenaTab === "groups" ? "active" : ""} onClick={() => setArenaTab("groups")}>
+              <span aria-hidden="true">👥</span><strong>Organizar turma</strong>
+            </button>
+            <button type="button" className={accessOpen ? "active" : ""} onClick={() => setAccessOpen((open) => !open)}>
+              <span aria-hidden="true">✓</span><strong>Presença</strong>
+            </button>
+            <button
+              type="button"
+              className={arenaTab === "interactions" && interactionTool === "draw" ? "active" : ""}
+              onClick={() => { setArenaTab("interactions"); setInteractionTool("draw"); }}
+            >
+              <span aria-hidden="true">＋</span><strong>Pontuação rápida</strong>
+            </button>
+          </div>
+        </aside>
+
+        <main className="arena-cockpit-main">
 
       {arenaTab === "live" && (
         <div className="stack-lg arena-tab-content">
@@ -2732,85 +2772,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
       {arenaTab === "interactions" && (
         <div className="stack-lg arena-tab-content">
-          <div className="arena-interaction-switch" role="tablist" aria-label="Tipo de dinâmica">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "draw"}
-              className={interactionTool === "draw" ? "active" : ""}
-              onClick={() => setInteractionTool("draw")}
-            >
-              <span>◎</span>
-              <div>
-                <strong>Sorteio</strong>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "wordcloud"}
-              className={interactionTool === "wordcloud" ? "active" : ""}
-              onClick={() => setInteractionTool("wordcloud")}
-            >
-              <span>☁</span>
-              <div>
-                <strong>Nuvem de Palavras</strong>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "poll"}
-              className={interactionTool === "poll" ? "active" : ""}
-              onClick={() => setInteractionTool("poll")}
-            >
-              <span>◉</span>
-              <div>
-                <strong>Votação</strong>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "quiz"}
-              className={interactionTool === "quiz" ? "active" : ""}
-              onClick={() => setInteractionTool("quiz")}
-            >
-              <span>?</span>
-              <div>
-                <strong>Quiz</strong>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "buzzer"}
-              className={interactionTool === "buzzer" ? "active" : ""}
-              onClick={() => setInteractionTool("buzzer")}
-            >
-              <span>⚡</span>
-              <div>
-                <strong>Buzzer</strong>
-              </div>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "boss"}
-              className={interactionTool === "boss" ? "active" : ""}
-              onClick={() => setInteractionTool("boss")}
-            >
-              <span>◆</span>
-              <div>
-                <strong>Boss Battle</strong>
-              </div>
-            </button>
-          </div>
-
           {interactionTool === "draw" ? (
           <div className="arena-grid">
             <div className="arena-main-card">
@@ -2978,7 +2939,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           {groups.length > 0 ? <div className="groups-grid">{groups.map((group, index) => <div className="group-card" key={index}><b>{groupSize === 1 ? `INDIVIDUAL ${String(index + 1).padStart(2, "0")}` : `GRUPO ${String(index + 1).padStart(2, "0")}`}</b>{group.map((id) => <span key={id}>{students.find((student) => student.id === id)?.nickname || students.find((student) => student.id === id)?.name}</span>)}</div>)}</div> : <MiniEmpty text="Escolha como a turma deve se organizar nesta etapa da aula." />}
         </Panel>
       )}
-
+        </main>
+      </div>
     </div>
   );
 }

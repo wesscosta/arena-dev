@@ -53,3 +53,33 @@ test("globals imports Arena polish after accessibility foundation", () => {
   assert.ok(accessibility >= 0);
   assert.ok(polish > accessibility);
 });
+
+
+test("Professor Arena cockpit replaces the old session tabs", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /className="arena-cockpit"/);
+  assert.match(app, /className="arena-cockpit-nav"/);
+  assert.doesNotMatch(app, /className="arena-tabs-six"/);
+  assert.match(css, /\.arena-cockpit\s*\{/);
+});
+
+test("Professor Arena cockpit exposes dynamics and transversal tools together", () => {
+  const app = read("components/ArenaApp.tsx");
+
+  for (const label of [
+    "Sorteio",
+    "Quiz",
+    "Votação",
+    "Nuvem de Palavras",
+    "Buzzer",
+    "Boss Battle",
+    "Timer",
+    "Organizar turma",
+    "Presença",
+    "Pontuação rápida",
+  ]) {
+    assert.ok(app.includes(label), `missing Arena action: ${label}`);
+  }
+});
