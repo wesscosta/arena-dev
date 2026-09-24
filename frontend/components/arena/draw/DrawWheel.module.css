@@ -13,8 +13,8 @@
 .viewport {
   position: relative;
   width: 100%;
-  aspect-ratio: 1000 / 520;
-  min-height: 22rem;
+  aspect-ratio: 1000 / 440;
+  min-height: 19rem;
   overflow: hidden;
 }
 
@@ -91,9 +91,14 @@
   fill: var(--accent);
 }
 
-.pointer {
-  fill: var(--accent);
-  filter: drop-shadow(0 0 9px color-mix(in srgb, var(--accent) 48%, transparent));
+.participantLabel {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform .2s ease, filter .2s ease;
+}
+
+.segmentSelected .participantLabel {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 28%, transparent));
 }
 
 .commandHub {
@@ -101,8 +106,8 @@
   left: 50%;
   bottom: -1px;
   z-index: 5;
-  width: clamp(12rem, 19%, 15.5rem);
-  height: clamp(6.2rem, 19%, 8rem);
+  width: clamp(14.5rem, 24%, 18.5rem);
+  height: clamp(7.25rem, 23%, 9.25rem);
   display: grid;
   place-items: center;
   align-content: center;
@@ -110,7 +115,7 @@
   transform: translateX(-50%);
   border: 1px solid color-mix(in srgb, var(--accent) 72%, var(--border));
   border-bottom: 0;
-  border-radius: 15rem 15rem 0 0;
+  border-radius: 18.5rem 18.5rem 0 0;
   background:
     radial-gradient(circle at 50% 95%, color-mix(in srgb, var(--accent) 28%, var(--surface-2)) 0 7%, transparent 32%),
     color-mix(in srgb, var(--surface) 96%, #03110c);
@@ -127,7 +132,7 @@
   inset: .65rem .65rem 0;
   border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   border-bottom: 0;
-  border-radius: 13rem 13rem 0 0;
+  border-radius: 16.5rem 16.5rem 0 0;
   pointer-events: none;
 }
 
@@ -153,18 +158,18 @@
 
 .commandIcon {
   color: var(--accent);
-  font-size: 1.15rem;
+  font-size: 1.35rem;
 }
 
 .commandHub strong {
   color: var(--accent);
-  font-size: .9rem;
+  font-size: 1.02rem;
   letter-spacing: .06em;
 }
 
 .commandHub small {
   color: var(--muted);
-  font-size: .56rem;
+  font-size: .61rem;
 }
 
 .drawing .segment {
@@ -178,21 +183,21 @@
 }
 
 @media (max-width: 90rem) {
-  .viewport { min-height: 19rem; }
+  .viewport { min-height: 18rem; }
   .initials, .name { font-size: 14px; }
-  .commandHub { width: 12rem; height: 6.2rem; }
+  .commandHub { width: 13.5rem; height: 6.8rem; }
 }
 
 @media (max-width: 54rem) {
-  .viewport { min-height: 16rem; }
+  .viewport { min-height: 15.5rem; }
   .name, .initials { font-size: 13px; }
-  .commandHub { width: 10rem; height: 5.2rem; }
+  .commandHub { width: 11.5rem; height: 5.8rem; }
 }
 
 @media (max-width: 42rem) {
-  .viewport { min-height: 13rem; }
+  .viewport { min-height: 12.75rem; }
   .name { display: none; }
-  .commandHub { width: 8.6rem; height: 4.4rem; }
+  .commandHub { width: 9.5rem; height: 4.8rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

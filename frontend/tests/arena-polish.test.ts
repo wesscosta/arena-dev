@@ -327,7 +327,7 @@ test("Semicircle roulette centers each participant inside an SVG segment", () =>
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
   assert.match(wheel, /const mid = 180 \+ \(slotIndex \+ 0\.5\) \* segmentAngle/);
-  assert.match(wheel, /const labelPoint = polar\(LABEL_RADIUS, mid\)/);
+  assert.match(wheel, /const labelPoint = ellipticalPoint\(LABEL_RADIUS_X, LABEL_RADIUS_Y, mid\)/);
   assert.match(wheel, /textAnchor="middle"/);
   assert.match(wheel, /className=\{styles\.name\}/);
 });
@@ -337,7 +337,7 @@ test("Draw CTA is integrated as a semicircle instead of a detached circular hub"
 
   assert.match(css, /\.commandHub\s*\{/);
   assert.match(css, /border-bottom:\s*0/);
-  assert.match(css, /border-radius:\s*15rem 15rem 0 0/);
+  assert.match(css, /border-radius:\s*18\.5rem 18\.5rem 0 0/);
 });
 
 test("Presence drawer uses the dedicated compact SessionAccessCard variant", () => {
@@ -373,13 +373,16 @@ test("Arena large desktop keeps full navigation labels and a wider context rail"
 });
 
 
-test("Semicircle roulette keeps participants on one SVG annular band", () => {
+test("Semicircle roulette uses a flatter elliptical annular band", () => {
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
-  assert.match(wheel, /const OUTER_RADIUS = 478/);
-  assert.match(wheel, /const INNER_RADIUS = 268/);
-  assert.match(wheel, /const LABEL_RADIUS = 372/);
-  assert.match(wheel, /const innerEnd = polar\(INNER_RADIUS, endAngle\)/);
+  assert.match(wheel, /const OUTER_RADIUS_X = 478/);
+  assert.match(wheel, /const OUTER_RADIUS_Y = 388/);
+  assert.match(wheel, /const INNER_RADIUS_X = 284/);
+  assert.match(wheel, /const INNER_RADIUS_Y = 224/);
+  assert.match(wheel, /const LABEL_RADIUS_X = 382/);
+  assert.match(wheel, /const LABEL_RADIUS_Y = 306/);
+  assert.match(wheel, /const innerEnd = ellipticalPoint\(INNER_RADIUS_X, INNER_RADIUS_Y, endAngle\)/);
 });
 
 test("Arena responsive polish keeps labels at 1366 and collapses them only near tablet widths", () => {
@@ -396,8 +399,8 @@ test("Annular roulette creates real SVG segments with an inner cutout", () => {
 
   assert.match(wheel, /const segmentAngle = 180 \/ segmentCount/);
   assert.match(wheel, /segmentPath\(start, end\)/);
-  assert.match(wheel, /const innerEnd = polar\(INNER_RADIUS, endAngle\)/);
-  assert.match(wheel, /const innerStart = polar\(INNER_RADIUS, startAngle\)/);
+  assert.match(wheel, /const innerEnd = ellipticalPoint\(INNER_RADIUS_X, INNER_RADIUS_Y, endAngle\)/);
+  assert.match(wheel, /const innerStart = ellipticalPoint\(INNER_RADIUS_X, INNER_RADIUS_Y, startAngle\)/);
 });
 
 test("Draw hero uses an integrated target icon and semicircular command hub", () => {
@@ -406,8 +409,9 @@ test("Draw hero uses an integrated target icon and semicircular command hub", ()
 
   assert.match(app, /className="smart-draw-title-icon"/);
   assert.match(css, /\.commandHub\s*\{/);
-  assert.match(css, /width:\s*clamp\(12rem, 19%, 15\.5rem\)/);
-  assert.match(css, /border-radius:\s*15rem 15rem 0 0/);
+  assert.match(css, /width:\s*clamp\(14\.5rem, 24%, 18\.5rem\)/);
+  assert.match(css, /height:\s*clamp\(7\.25rem, 23%, 9\.25rem\)/);
+  assert.match(css, /border-radius:\s*18\.5rem 18\.5rem 0 0/);
 });
 
 
@@ -419,23 +423,25 @@ test("Draw stage expands edge to edge while the SVG owns wheel proportions", () 
   assert.match(arenaCss, /width:\s*calc\(100% \+ 1\.8rem\)/);
   assert.match(arenaCss, /margin-inline:\s*-\.9rem/);
   assert.match(wheelCss, /\.viewport\s*\{/);
-  assert.match(wheelCss, /aspect-ratio:\s*1000 \/ 520/);
+  assert.match(wheelCss, /aspect-ratio:\s*1000 \/ 440/);
 });
 
-test("DrawWheel switches from static semicircle to fixed seven-slot carousel after six participants", () => {
+test("DrawWheel chooses five or seven visible slots from the measured wheel width", () => {
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
-  assert.match(wheel, /const STATIC_LIMIT = 6/);
-  assert.match(wheel, /const VISIBLE_SLOTS = 7/);
-  assert.match(wheel, /const carouselMode = participants\.length > STATIC_LIMIT/);
-  assert.match(wheel, /const segmentCount = carouselMode \? VISIBLE_SLOTS/);
+  assert.match(wheel, /const NARROW_SLOT_COUNT = 5/);
+  assert.match(wheel, /const WIDE_SLOT_COUNT = 7/);
+  assert.match(wheel, /const WIDE_THRESHOLD = 1180/);
+  assert.match(wheel, /new ResizeObserver/);
+  assert.match(wheel, /const visibleSlots = visibleSlotCount\(wheelWidth\)/);
+  assert.match(wheel, /const carouselMode = participants\.length > visibleSlots/);
 });
 
 test("DrawWheel carousel rotates students through fixed slots and settles the winner in the center slot", () => {
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
   assert.match(wheel, /setWindowStart\(\(current\) => wrapIndex\(current \+ 1, participants\.length\)\)/);
-  assert.match(wheel, /winnerIndex - CENTER_SLOT_INDEX/);
+  assert.match(wheel, /winnerIndex - centerSlotIndex/);
   assert.match(wheel, /carouselMode \? `slot-\$\{slotIndex\}` : student\.id/);
   assert.match(wheel, /student\.id === selectedStudentId/);
 });
@@ -446,4 +452,21 @@ test("DrawWheel no longer renders a triangle pointer because selection is convey
   assert.doesNotMatch(wheel, /className=\{styles\.pointer\}/);
   assert.doesNotMatch(wheel, /M 486 8 L 514 8 L 500 34 Z/);
   assert.match(wheel, /fill=\{selected \? "url\(#draw-wheel-selected\)"/);
+});
+
+test("DrawWheel rotates participant labels toward the radial center with a bounded angle", () => {
+  const wheel = read("components/arena/draw/DrawWheel.tsx");
+
+  assert.match(wheel, /const MAX_LABEL_ROTATION = 20/);
+  assert.match(wheel, /const normalized = midAngle - 270/);
+  assert.match(wheel, /normalized \* 0\.32/);
+  assert.match(wheel, /rotate\(\$\{rotation\.toFixed\(2\)\}\)/);
+});
+
+test("DrawWheel keeps the winner centered for adaptive five and seven slot carousels", () => {
+  const wheel = read("components/arena/draw/DrawWheel.tsx");
+
+  assert.match(wheel, /const centerSlotIndex = Math\.floor\(visibleSlots \/ 2\)/);
+  assert.match(wheel, /winnerIndex - centerSlotIndex/);
+  assert.match(wheel, /const segmentCount = carouselMode \? visibleSlots/);
 });
