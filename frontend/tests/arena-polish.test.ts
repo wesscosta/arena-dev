@@ -328,9 +328,9 @@ test("Semicircle roulette keeps every participant label on the visible upper arc
   const app = read("components/ArenaApp.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /const startAngle = Math\.PI \* \(crowded && lane === 1 \? 1\.14 : 1\.08\)/);
-  assert.match(app, /const endAngle = Math\.PI \* \(crowded && lane === 1 \? 1\.86 : 1\.92\)/);
-  assert.match(app, /laneCount === 1/);
+  assert.match(app, /const startAngle = Math\.PI \* 1\.035/);
+  assert.match(app, /const endAngle = Math\.PI \* 1\.965/);
+  assert.match(app, /count === 1 \? 0\.5/);
   assert.match(css, /\.draw-wheel-student-face > span/);
   assert.match(css, /text-align:\s*center/);
 });
@@ -340,7 +340,7 @@ test("Draw CTA is integrated as a semicircle instead of a detached circular hub"
 
   assert.match(css, /\.draw-wheel-zone \.draw-wheel-center/);
   assert.match(css, /border-bottom:\s*0/);
-  assert.match(css, /border-radius:\s*10\.5rem 10\.5rem 0 0/);
+  assert.match(css, /border-radius:\s*14rem 14rem 0 0/);
 });
 
 test("Presence drawer uses the dedicated compact SessionAccessCard variant", () => {
@@ -376,12 +376,13 @@ test("Arena large desktop keeps full navigation labels and a wider context rail"
 });
 
 
-test("Semicircle roulette staggers crowded participant sets into two readable lanes", () => {
+test("Semicircle roulette keeps participants on a single annular band", () => {
   const app = read("components/ArenaApp.tsx");
 
-  assert.match(app, /const crowded = count >= 15/);
-  assert.match(app, /const lane = crowded \? index % 2 : 0/);
-  assert.match(app, /radiusX = crowded && lane === 1 \? 34 : 43/);
+  assert.match(app, /const startAngle = Math\.PI \* 1\.035/);
+  assert.match(app, /const endAngle = Math\.PI \* 1\.965/);
+  assert.match(app, /const left = 50 \+ Math\.cos\(angle\) \* 44/);
+  assert.match(app, /const top = 50 \+ Math\.sin\(angle\) \* 39/);
   assert.match(app, /densityClass = count >= 15 \? "crowded" : count >= 10 \? "dense" : "spacious"/);
 });
 
@@ -391,4 +392,25 @@ test("Arena responsive polish keeps labels at 1366 and collapses them only near 
   assert.match(css, /@media \(max-width: 90rem\)[\s\S]*?grid-template-columns:\s*10\.5rem minmax\(0, 1fr\) 14\.5rem/);
   assert.match(css, /@media \(max-width: 74rem\)[\s\S]*?grid-template-columns:\s*4\.65rem minmax\(0, 1fr\)/);
   assert.match(css, /@media \(max-width: 54rem\)[\s\S]*?\.quick-score-actions/);
+});
+
+
+test("Annular roulette uses an inner cutout and dynamic segment count", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /"--segment-count": Math\.max\(currentSession\.presentStudentIds\.length, 1\)/);
+  assert.match(css, /--segment-angle:\s*calc\(180deg \/ var\(--segment-count\)\)/);
+  assert.match(css, /\.draw-wheel-semicircle::after\s*\{/);
+  assert.match(css, /inset:\s*29%/);
+});
+
+test("Draw hero uses an integrated target icon and semicircular command hub", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /className="smart-draw-title-icon"/);
+  assert.match(css, /\.draw-wheel-zone \.draw-wheel-center\s*\{/);
+  assert.match(css, /width:\s*14rem/);
+  assert.match(css, /border-radius:\s*14rem 14rem 0 0/);
 });

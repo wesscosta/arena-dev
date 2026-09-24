@@ -2790,10 +2790,13 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           <div className="smart-draw-workspace">
             <div className="smart-draw-hero">
               <div className="smart-draw-titlebar">
-                <div>
-                  <span className="eyebrow accent">DINÂMICA AO VIVO</span>
-                  <h2>Sorteio Inteligente</h2>
-                  <p>Escolha um aluno de forma justa e dinâmica, mantendo toda a turma em jogo.</p>
+                <div className="smart-draw-title-copy">
+                  <span className="smart-draw-title-icon" aria-hidden="true">◎</span>
+                  <div>
+                    <span className="eyebrow accent">DINÂMICA AO VIVO</span>
+                    <h2>Sorteio Inteligente</h2>
+                    <p>Escolha um aluno de forma justa e dinâmica, mantendo toda a turma em jogo.</p>
+                  </div>
                 </div>
                 <button type="button" className="smart-draw-settings" onClick={() => setDrawSettingsOpen(true)}>
                   ⚙ Configurações
@@ -2803,7 +2806,12 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <div className="draw-wheel-hero-stage">
                 <section className="draw-wheel-zone" aria-label="Roleta de participantes">
                   <div className="draw-wheel-viewport">
-                    <div className={drawPhase === "drawing" ? "draw-wheel-semicircle is-spinning" : "draw-wheel-semicircle"}>
+                    <div
+                      className={drawPhase === "drawing" ? "draw-wheel-semicircle is-spinning" : "draw-wheel-semicircle"}
+                      style={{
+                        "--segment-count": Math.max(currentSession.presentStudentIds.length, 1),
+                      } as CSSProperties}
+                    >
                       <div
                         className="draw-wheel-ring"
                         style={{ "--rotation": `${drawRotation}deg` } as CSSProperties}
@@ -2814,20 +2822,12 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                         .filter((student) => currentSession.presentStudentIds.includes(student.id))
                         .map((student, index, participants) => {
                           const count = participants.length;
-                          const crowded = count >= 15;
-                          const lane = crowded ? index % 2 : 0;
-                          const position = crowded ? Math.floor(index / 2) : index;
-                          const laneCount = crowded
-                            ? Math.ceil((count - lane) / 2)
-                            : count;
-                          const progress = laneCount === 1 ? 0.5 : position / (laneCount - 1);
-                          const startAngle = Math.PI * (crowded && lane === 1 ? 1.14 : 1.08);
-                          const endAngle = Math.PI * (crowded && lane === 1 ? 1.86 : 1.92);
+                          const progress = count === 1 ? 0.5 : index / (count - 1);
+                          const startAngle = Math.PI * 1.035;
+                          const endAngle = Math.PI * 1.965;
                           const angle = startAngle + progress * (endAngle - startAngle);
-                          const radiusX = crowded && lane === 1 ? 34 : 43;
-                          const radiusY = crowded && lane === 1 ? 57 : 74;
-                          const left = 50 + Math.cos(angle) * radiusX;
-                          const top = 92 + Math.sin(angle) * radiusY;
+                          const left = 50 + Math.cos(angle) * 44;
+                          const top = 50 + Math.sin(angle) * 39;
                           const densityClass = count >= 15 ? "crowded" : count >= 10 ? "dense" : "spacious";
                           return (
                             <div
@@ -2837,7 +2837,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                                 student.id === selectedId ? "selected" : "",
                               ].filter(Boolean).join(" ")}
                               key={student.id}
-                              style={{ left: `${left}%`, top: `${top}%` }}
+                              style={{
+                                left: `${left}%`,
+                                top: `${top}%`,
+                                "--slot-progress": progress,
+                              } as CSSProperties}
                               title={student.nickname || student.name}
                             >
                               <div className="draw-wheel-student-face">
@@ -2847,7 +2851,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                             </div>
                           );
                         })}
-
                     </div>
                   </div>
 

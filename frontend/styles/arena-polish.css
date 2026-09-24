@@ -3344,3 +3344,281 @@
     height: 1.55rem;
   }
 }
+
+
+/* v0.8 · 16.0F.3 — annular semicircle roulette fidelity */
+.smart-draw-title-copy {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: .72rem;
+}
+
+.smart-draw-title-icon {
+  width: 2.55rem;
+  height: 2.55rem;
+  display: grid;
+  place-items: center;
+  border: 2px solid color-mix(in srgb, var(--accent) 78%, white 8%);
+  border-radius: 50%;
+  color: var(--accent);
+  font-size: 1.25rem;
+  font-weight: 900;
+  box-shadow: 0 0 1.2rem color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.draw-wheel-viewport {
+  width: min(100%, 68rem);
+  height: clamp(19.5rem, 30vw, 31rem);
+}
+
+.draw-wheel-semicircle {
+  --segment-count: 8;
+  --segment-angle: calc(180deg / var(--segment-count));
+  top: .65rem;
+  width: clamp(42rem, 64vw, 68rem);
+  max-width: calc(100% - .25rem);
+  background:
+    radial-gradient(circle at 50% 50%,
+      transparent 0 45%,
+      color-mix(in srgb, var(--accent) 4%, transparent) 45.2% 46%,
+      transparent 46.2% 100%),
+    color-mix(in srgb, var(--surface-2) 91%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  box-shadow:
+    inset 0 0 0 .45rem color-mix(in srgb, var(--accent) 2.5%, transparent),
+    0 0 3.7rem color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.draw-wheel-semicircle::after {
+  content: "";
+  position: absolute;
+  inset: 29%;
+  z-index: 2;
+  border: 1px solid color-mix(in srgb, var(--accent) 23%, var(--border));
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent) 4%, var(--surface)) 0 48%, var(--surface) 72%);
+  box-shadow:
+    0 0 0 .7rem color-mix(in srgb, var(--accent) 2%, transparent),
+    inset 0 0 2rem rgba(0,0,0,.16);
+}
+
+.draw-wheel-ring {
+  z-index: 1;
+  background:
+    repeating-conic-gradient(
+      from 180deg,
+      color-mix(in srgb, var(--accent) 8%, transparent) 0 calc(var(--segment-angle) - .9deg),
+      color-mix(in srgb, var(--accent) 30%, var(--border)) calc(var(--segment-angle) - .9deg) var(--segment-angle)
+    );
+  opacity: .92;
+}
+
+.draw-wheel-ring::after {
+  content: "";
+  position: absolute;
+  inset: 2.25%;
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 50%;
+}
+
+.draw-wheel-student {
+  z-index: 4;
+  width: 5.1rem;
+  transform: translate(-50%, -50%);
+}
+
+.draw-wheel-student-face {
+  min-height: 4.45rem;
+  gap: .32rem;
+}
+
+.draw-wheel-student-face .avatar {
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 50%;
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  background:
+    linear-gradient(145deg,
+      color-mix(in srgb, var(--accent) 10%, var(--ds-avatar-start)),
+      var(--ds-avatar-end));
+  font-size: .68rem;
+  box-shadow: 0 .35rem 1rem rgba(0,0,0,.18);
+}
+
+.draw-wheel-student-face > span {
+  max-width: 5rem;
+  font-size: .61rem;
+  line-height: 1.1;
+  text-shadow: 0 1px .45rem rgba(0,0,0,.55);
+}
+
+.draw-wheel-student.selected .draw-wheel-student-face {
+  transform: translateY(-.2rem) scale(1.08);
+}
+
+.draw-wheel-student.selected .avatar {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 .22rem color-mix(in srgb, var(--accent) 14%, transparent),
+    0 0 1.25rem color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.draw-wheel-student.selected .draw-wheel-student-face > span {
+  color: var(--accent);
+}
+
+.draw-wheel-viewport::before {
+  top: .08rem;
+  border-left-width: .8rem;
+  border-right-width: .8rem;
+  border-top-width: 1.35rem;
+}
+
+.draw-wheel-zone {
+  padding-bottom: 5.25rem;
+}
+
+.draw-wheel-zone .draw-wheel-center {
+  bottom: .05rem;
+  z-index: 7;
+  width: 14rem;
+  height: 7.1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 72%, var(--border));
+  border-bottom: 0;
+  border-radius: 14rem 14rem 0 0;
+  background:
+    radial-gradient(circle at 50% 86%, color-mix(in srgb, var(--accent) 23%, var(--surface-2)) 0 10%, var(--surface) 68%);
+  box-shadow:
+    0 0 0 .6rem color-mix(in srgb, var(--accent) 5%, transparent),
+    0 -1rem 3rem color-mix(in srgb, var(--accent) 22%, transparent),
+    inset 0 .15rem 0 color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.draw-wheel-zone .draw-wheel-center::before {
+  content: "";
+  position: absolute;
+  inset: .72rem .72rem 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  border-bottom: 0;
+  border-radius: 12rem 12rem 0 0;
+  pointer-events: none;
+}
+
+.draw-wheel-zone .draw-wheel-center > span {
+  position: relative;
+  z-index: 1;
+  margin-top: .55rem;
+  color: var(--accent);
+  font-size: 1.15rem;
+}
+
+.draw-wheel-zone .draw-wheel-center > strong {
+  position: relative;
+  z-index: 1;
+  color: var(--accent);
+  font-size: .9rem;
+}
+
+.draw-wheel-zone .draw-wheel-center > small {
+  position: relative;
+  z-index: 1;
+  font-size: .57rem;
+}
+
+.draw-wheel-semicircle.is-spinning .draw-wheel-ring {
+  filter: brightness(1.16);
+}
+
+@media (max-width: 90rem) {
+  .draw-wheel-viewport {
+    width: min(100%, 57rem);
+    height: clamp(18rem, 30vw, 26rem);
+  }
+
+  .draw-wheel-semicircle {
+    width: clamp(38rem, 61vw, 57rem);
+  }
+
+  .draw-wheel-student {
+    width: 4.6rem;
+  }
+
+  .draw-wheel-student-face .avatar {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+
+  .draw-wheel-student-face > span {
+    max-width: 4.45rem;
+    font-size: .56rem;
+  }
+
+  .draw-wheel-zone .draw-wheel-center {
+    width: 12.4rem;
+    height: 6.3rem;
+    border-radius: 12.4rem 12.4rem 0 0;
+  }
+}
+
+@media (max-width: 74rem) {
+  .draw-wheel-viewport {
+    height: clamp(17rem, 39vw, 24rem);
+  }
+
+  .draw-wheel-semicircle {
+    width: clamp(35rem, 76vw, 49rem);
+  }
+}
+
+@media (max-width: 54rem) {
+  .smart-draw-title-copy {
+    grid-template-columns: 2.2rem minmax(0,1fr);
+  }
+
+  .smart-draw-title-icon {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1rem;
+  }
+
+  .draw-wheel-student,
+  .draw-wheel-student.dense,
+  .draw-wheel-student.crowded {
+    width: 3.9rem;
+  }
+
+  .draw-wheel-student-face .avatar,
+  .draw-wheel-student.crowded .draw-wheel-student-face .avatar {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+
+  .draw-wheel-student-face > span,
+  .draw-wheel-student.dense .draw-wheel-student-face > span,
+  .draw-wheel-student.crowded .draw-wheel-student-face > span {
+    max-width: 3.75rem;
+    font-size: .49rem;
+  }
+}
+
+@media (max-width: 42rem) {
+  .draw-wheel-viewport {
+    height: clamp(13rem, 55vw, 18rem);
+  }
+
+  .draw-wheel-semicircle {
+    width: clamp(28rem, 112vw, 37rem);
+  }
+
+  .draw-wheel-zone {
+    padding-bottom: 4.3rem;
+  }
+
+  .draw-wheel-zone .draw-wheel-center {
+    width: 9.2rem;
+    height: 4.65rem;
+    border-radius: 9.2rem 9.2rem 0 0;
+  }
+}
