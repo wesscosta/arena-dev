@@ -214,3 +214,27 @@ test("Quiz 2.0 preserves explicit teacher control and pedagogical feedback", () 
   assert.match(quiz, /LEITURA PEDAGÓGICA/);
   assert.match(quiz, /Nenhuma decisão avança o roteiro automaticamente/);
 });
+
+
+test("Votação 2.0 uses a gamified prepare and live workspace", () => {
+  const poll = read("components/PollPanel.tsx");
+  const css = read("components/PollPanel.module.css");
+
+  assert.match(poll, /DINÂMICA AO VIVO/);
+  assert.match(poll, /className=\{styles\.prepareGrid\}/);
+  assert.match(poll, /className=\{styles\.liveGrid\}/);
+  assert.match(poll, /PARTICIPAÇÃO DA TURMA/);
+  assert.match(poll, /DISTRIBUIÇÃO/);
+  assert.match(css, /\.prepareGrid\s*\{/);
+  assert.match(css, /\.liveGrid\s*\{/);
+});
+
+test("Votação 2.0 preserves reveal and explicit close control", () => {
+  const poll = read("components/PollPanel.tsx");
+
+  assert.match(poll, /Revelar resultados/);
+  assert.match(poll, /Encerrar votação/);
+  assert.match(poll, /window\.confirm/);
+  assert.match(poll, /Resultados ao vivo/);
+  assert.match(poll, /Resultados protegidos/);
+});
