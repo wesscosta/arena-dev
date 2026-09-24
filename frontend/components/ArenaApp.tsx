@@ -9,6 +9,7 @@ import LiveFlowConductor from "@/components/LiveFlowConductor";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
 import ArenaToolDrawer from "@/components/ArenaToolDrawer";
+import DrawWheel from "@/components/arena/draw/DrawWheel";
 import WordCloudPanel from "@/components/WordCloudPanel";
 import PollPanel from "@/components/PollPanel";
 import QuizPanel from "@/components/QuizPanel";
@@ -1867,7 +1868,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
   const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
-  const [drawRotation, setDrawRotation] = useState(0);
   const [drawSettingsOpen, setDrawSettingsOpen] = useState(false);
   const [reason, setReason] = useState("Resposta correta");
   const [customPoints, setCustomPoints] = useState(10);
@@ -2194,17 +2194,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
     try {
       const result = await drawStudentApi(currentSession.id);
-      const targetIndex = participants.findIndex((student) => student.id === result.studentId);
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      if (targetIndex >= 0) {
-        const targetResidue = ((-(targetIndex / participants.length) * 360) % 360 + 360) % 360;
-        setDrawRotation((currentRotation) => {
-          const currentResidue = ((currentRotation % 360) + 360) % 360;
-          const alignmentDelta = (targetResidue - currentResidue + 360) % 360;
-          return currentRotation + (reducedMotion ? alignmentDelta : 1080 + alignmentDelta);
-        });
-      }
 
       patch((current) => ({
         ...current,
@@ -2804,68 +2794,12 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               </div>
 
               <div className="draw-wheel-hero-stage">
-                <section className="draw-wheel-zone" aria-label="Roleta de participantes">
-                  <div className="draw-wheel-viewport">
-                    <div
-                      className={drawPhase === "drawing" ? "draw-wheel-semicircle is-spinning" : "draw-wheel-semicircle"}
-                      style={{
-                        "--segment-count": Math.max(currentSession.presentStudentIds.length, 1),
-                      } as CSSProperties}
-                    >
-                      <div
-                        className="draw-wheel-ring"
-                        style={{ "--rotation": `${drawRotation}deg` } as CSSProperties}
-                        aria-hidden="true"
-                      />
-
-                      {students
-                        .filter((student) => currentSession.presentStudentIds.includes(student.id))
-                        .map((student, index, participants) => {
-                          const count = participants.length;
-                          const progress = count === 1 ? 0.5 : index / (count - 1);
-                          const startAngle = Math.PI * 1.035;
-                          const endAngle = Math.PI * 1.965;
-                          const angle = startAngle + progress * (endAngle - startAngle);
-                          const left = 50 + Math.cos(angle) * 44;
-                          const top = 50 + Math.sin(angle) * 39;
-                          const densityClass = count >= 15 ? "crowded" : count >= 10 ? "dense" : "spacious";
-                          return (
-                            <div
-                              className={[
-                                "draw-wheel-student",
-                                densityClass,
-                                student.id === selectedId ? "selected" : "",
-                              ].filter(Boolean).join(" ")}
-                              key={student.id}
-                              style={{
-                                left: `${left}%`,
-                                top: `${top}%`,
-                                "--slot-progress": progress,
-                              } as CSSProperties}
-                              title={student.nickname || student.name}
-                            >
-                              <div className="draw-wheel-student-face">
-                                <Avatar student={student} />
-                                <span>{student.nickname || student.name.split(" ")[0]}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="draw-wheel-center"
-                    onClick={() => { void draw(); }}
-                    disabled={drawPhase === "drawing"}
-                    aria-label={drawPhase === "drawing" ? "Sorteio em andamento" : "Sortear aluno"}
-                  >
-                    <span aria-hidden="true">◆</span>
-                    <strong>{drawPhase === "drawing" ? "SORTEANDO..." : "SORTEAR"}</strong>
-                    <small>{drawPhase === "drawing" ? "aguarde" : "clique para iniciar"}</small>
-                  </button>
-                </section>
+                <DrawWheel
+                  participants={students.filter((student) => currentSession.presentStudentIds.includes(student.id))}
+                  selectedStudentId={selectedId}
+                  drawing={drawPhase === "drawing"}
+                  onDraw={() => { void draw(); }}
+                />
               </div>
 
               <div className="draw-context-strip">

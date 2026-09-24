@@ -1,0 +1,201 @@
+.stage {
+  --draw-wheel-segment-top: color-mix(in srgb, var(--accent) 9%, var(--surface-2));
+  --draw-wheel-segment-bottom: color-mix(in srgb, var(--accent) 3%, var(--surface));
+  --draw-wheel-selected-top: color-mix(in srgb, var(--accent) 78%, #0b2b21);
+  --draw-wheel-selected-bottom: color-mix(in srgb, var(--accent) 34%, #071811);
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+}
+
+.viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1000 / 520;
+  min-height: 22rem;
+  overflow: hidden;
+}
+
+.wheel {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.outerGuide,
+.innerGuide {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 58%, var(--border));
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.innerGuide {
+  stroke: color-mix(in srgb, var(--accent) 28%, var(--border));
+}
+
+.segmentShape {
+  stroke: color-mix(in srgb, var(--accent) 35%, var(--border));
+  stroke-width: 1.8;
+  vector-effect: non-scaling-stroke;
+  transition: filter .2s ease, opacity .2s ease;
+}
+
+.segmentSelected .segmentShape {
+  stroke: color-mix(in srgb, var(--accent) 88%, white 8%);
+  stroke-width: 2.4;
+}
+
+.avatarHalo {
+  fill: color-mix(in srgb, var(--surface) 82%, transparent);
+  stroke: color-mix(in srgb, var(--accent) 28%, var(--border));
+  stroke-width: 2;
+}
+
+.segmentSelected .avatarHalo {
+  fill: color-mix(in srgb, var(--accent) 13%, var(--surface));
+  stroke: var(--accent);
+}
+
+.avatar {
+  fill: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
+  stroke: color-mix(in srgb, var(--accent) 22%, var(--border));
+  stroke-width: 1.5;
+}
+
+.segmentSelected .avatar {
+  fill: color-mix(in srgb, var(--accent) 19%, var(--surface-2));
+  stroke: color-mix(in srgb, var(--accent) 70%, white 5%);
+}
+
+.initials {
+  fill: var(--text);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+.name {
+  fill: var(--text);
+  font-size: 16px;
+  font-weight: 760;
+  paint-order: stroke;
+  stroke: color-mix(in srgb, var(--surface) 76%, transparent);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.segmentSelected .name {
+  fill: var(--accent);
+}
+
+.pointer {
+  fill: var(--accent);
+  filter: drop-shadow(0 0 9px color-mix(in srgb, var(--accent) 48%, transparent));
+}
+
+.commandHub {
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  z-index: 5;
+  width: clamp(12rem, 19%, 15.5rem);
+  height: clamp(6.2rem, 19%, 8rem);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: .15rem;
+  transform: translateX(-50%);
+  border: 1px solid color-mix(in srgb, var(--accent) 72%, var(--border));
+  border-bottom: 0;
+  border-radius: 15rem 15rem 0 0;
+  background:
+    radial-gradient(circle at 50% 95%, color-mix(in srgb, var(--accent) 28%, var(--surface-2)) 0 7%, transparent 32%),
+    color-mix(in srgb, var(--surface) 96%, #03110c);
+  color: var(--text);
+  box-shadow:
+    0 0 0 .55rem color-mix(in srgb, var(--accent) 5%, transparent),
+    0 -1rem 2.6rem color-mix(in srgb, var(--accent) 18%, transparent);
+  cursor: pointer;
+}
+
+.commandHub::before {
+  content: "";
+  position: absolute;
+  inset: .65rem .65rem 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-bottom: 0;
+  border-radius: 13rem 13rem 0 0;
+  pointer-events: none;
+}
+
+.commandHub:hover:not(:disabled),
+.commandHub:focus-visible {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 .55rem color-mix(in srgb, var(--accent) 8%, transparent),
+    0 -1rem 3rem color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.commandHub:disabled {
+  cursor: wait;
+  opacity: .86;
+}
+
+.commandIcon,
+.commandHub strong,
+.commandHub small {
+  position: relative;
+  z-index: 1;
+}
+
+.commandIcon {
+  color: var(--accent);
+  font-size: 1.15rem;
+}
+
+.commandHub strong {
+  color: var(--accent);
+  font-size: .9rem;
+  letter-spacing: .06em;
+}
+
+.commandHub small {
+  color: var(--muted);
+  font-size: .56rem;
+}
+
+.drawing .segment {
+  animation: segment-scan 1.05s ease-in-out infinite;
+  animation-delay: calc(var(--segment-index) * 55ms);
+}
+
+@keyframes segment-scan {
+  0%, 70%, 100% { opacity: .72; }
+  35% { opacity: 1; filter: brightness(1.22); }
+}
+
+@media (max-width: 90rem) {
+  .viewport { min-height: 19rem; }
+  .initials, .name { font-size: 14px; }
+  .commandHub { width: 12rem; height: 6.2rem; }
+}
+
+@media (max-width: 54rem) {
+  .viewport { min-height: 16rem; }
+  .name, .initials { font-size: 13px; }
+  .commandHub { width: 10rem; height: 5.2rem; }
+}
+
+@media (max-width: 42rem) {
+  .viewport { min-height: 13rem; }
+  .name { display: none; }
+  .commandHub { width: 8.6rem; height: 4.4rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawing .segment { animation: none; }
+  .segmentShape { transition: none; }
+}

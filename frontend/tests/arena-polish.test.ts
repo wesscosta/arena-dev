@@ -85,16 +85,16 @@ test("Professor Arena cockpit exposes dynamics and transversal tools together", 
 });
 
 
-test("Sorteio Inteligente 2.0 renders a semicircle roulette backed by session participants", () => {
+test("Sorteio Inteligente 2.0 delegates roulette geometry to the SVG DrawWheel", () => {
   const app = read("components/ArenaApp.tsx");
-  const css = read("styles/arena-polish.css");
+  const wheel = read("components/arena/draw/DrawWheel.tsx");
+  const css = read("components/arena/draw/DrawWheel.module.css");
 
-  assert.match(app, /className="draw-wheel-viewport"/);
-  assert.match(app, /"draw-wheel-semicircle is-spinning"/);
+  assert.match(app, /<DrawWheel/);
   assert.match(app, /currentSession\.presentStudentIds\.includes\(student\.id\)/);
-  assert.match(app, /aria-label=\{drawPhase === "drawing" \? "Sorteio em andamento" : "Sortear aluno"\}/);
-  assert.match(css, /\.draw-wheel-viewport\s*\{/);
-  assert.match(css, /\.draw-wheel-semicircle\s*\{/);
+  assert.match(wheel, /segmentPath\(start, end\)/);
+  assert.match(wheel, /viewBox=/);
+  assert.match(css, /\.commandHub\s*\{/);
 });
 
 test("Sorteio Inteligente 2.0 keeps scoring evidence visible after the draw", () => {
@@ -302,14 +302,13 @@ test("Arena desktop fidelity pass removes the global content max width only insi
   assert.match(globals, /max-width:\s*none/);
 });
 
-test("Semicircle roulette animates to the student selected by the backend", () => {
+test("Semicircle roulette keeps backend authority and only animates presentation", () => {
   const app = read("components/ArenaApp.tsx");
+  const wheel = read("components/arena/draw/DrawWheel.tsx");
 
   assert.match(app, /const result = await drawStudentApi\(currentSession\.id\)/);
-  assert.match(app, /targetIndex = participants\.findIndex/);
-  assert.match(app, /targetResidue/);
-  assert.match(app, /setDrawRotation/);
-  assert.match(app, /1080 \+ alignmentDelta/);
+  assert.match(app, /setSelectedId\(result\.studentId\)/);
+  assert.match(wheel, /drawing \? styles\.drawing/);
   assert.doesNotMatch(app, /Math\.random\(\).*student|student.*Math\.random\(\)/);
 });
 
@@ -324,23 +323,21 @@ test("Draw settings expose backend policies as information instead of fake contr
 });
 
 
-test("Semicircle roulette keeps every participant label on the visible upper arc", () => {
-  const app = read("components/ArenaApp.tsx");
-  const css = read("styles/arena-polish.css");
+test("Semicircle roulette centers each participant inside an SVG segment", () => {
+  const wheel = read("components/arena/draw/DrawWheel.tsx");
 
-  assert.match(app, /const startAngle = Math\.PI \* 1\.035/);
-  assert.match(app, /const endAngle = Math\.PI \* 1\.965/);
-  assert.match(app, /count === 1 \? 0\.5/);
-  assert.match(css, /\.draw-wheel-student-face > span/);
-  assert.match(css, /text-align:\s*center/);
+  assert.match(wheel, /const mid = 180 \+ \(index \+ 0\.5\) \* segmentAngle/);
+  assert.match(wheel, /const labelPoint = polar\(LABEL_RADIUS, mid\)/);
+  assert.match(wheel, /textAnchor="middle"/);
+  assert.match(wheel, /className=\{styles\.name\}/);
 });
 
 test("Draw CTA is integrated as a semicircle instead of a detached circular hub", () => {
-  const css = read("styles/arena-polish.css");
+  const css = read("components/arena/draw/DrawWheel.module.css");
 
-  assert.match(css, /\.draw-wheel-zone \.draw-wheel-center/);
+  assert.match(css, /\.commandHub\s*\{/);
   assert.match(css, /border-bottom:\s*0/);
-  assert.match(css, /border-radius:\s*14rem 14rem 0 0/);
+  assert.match(css, /border-radius:\s*15rem 15rem 0 0/);
 });
 
 test("Presence drawer uses the dedicated compact SessionAccessCard variant", () => {
@@ -376,14 +373,13 @@ test("Arena large desktop keeps full navigation labels and a wider context rail"
 });
 
 
-test("Semicircle roulette keeps participants on a single annular band", () => {
-  const app = read("components/ArenaApp.tsx");
+test("Semicircle roulette keeps participants on one SVG annular band", () => {
+  const wheel = read("components/arena/draw/DrawWheel.tsx");
 
-  assert.match(app, /const startAngle = Math\.PI \* 1\.035/);
-  assert.match(app, /const endAngle = Math\.PI \* 1\.965/);
-  assert.match(app, /const left = 50 \+ Math\.cos\(angle\) \* 44/);
-  assert.match(app, /const top = 50 \+ Math\.sin\(angle\) \* 39/);
-  assert.match(app, /densityClass = count >= 15 \? "crowded" : count >= 10 \? "dense" : "spacious"/);
+  assert.match(wheel, /const OUTER_RADIUS = 478/);
+  assert.match(wheel, /const INNER_RADIUS = 268/);
+  assert.match(wheel, /const LABEL_RADIUS = 372/);
+  assert.match(wheel, /const innerEnd = polar\(INNER_RADIUS, endAngle\)/);
 });
 
 test("Arena responsive polish keeps labels at 1366 and collapses them only near tablet widths", () => {
@@ -395,33 +391,33 @@ test("Arena responsive polish keeps labels at 1366 and collapses them only near 
 });
 
 
-test("Annular roulette uses an inner cutout and dynamic segment count", () => {
-  const app = read("components/ArenaApp.tsx");
-  const css = read("styles/arena-polish.css");
+test("Annular roulette creates real SVG segments with an inner cutout", () => {
+  const wheel = read("components/arena/draw/DrawWheel.tsx");
 
-  assert.match(app, /"--segment-count": Math\.max\(currentSession\.presentStudentIds\.length, 1\)/);
-  assert.match(css, /--segment-angle:\s*calc\(180deg \/ var\(--segment-count\)\)/);
-  assert.match(css, /\.draw-wheel-semicircle::after\s*\{/);
-  assert.match(css, /inset:\s*29%/);
+  assert.match(wheel, /const segmentAngle = 180 \/ count/);
+  assert.match(wheel, /segmentPath\(start, end\)/);
+  assert.match(wheel, /const innerEnd = polar\(INNER_RADIUS, endAngle\)/);
+  assert.match(wheel, /const innerStart = polar\(INNER_RADIUS, startAngle\)/);
 });
 
 test("Draw hero uses an integrated target icon and semicircular command hub", () => {
   const app = read("components/ArenaApp.tsx");
-  const css = read("styles/arena-polish.css");
+  const css = read("components/arena/draw/DrawWheel.module.css");
 
   assert.match(app, /className="smart-draw-title-icon"/);
-  assert.match(css, /\.draw-wheel-zone \.draw-wheel-center\s*\{/);
-  assert.match(css, /width:\s*14rem/);
-  assert.match(css, /border-radius:\s*14rem 14rem 0 0/);
+  assert.match(css, /\.commandHub\s*\{/);
+  assert.match(css, /width:\s*clamp\(12rem, 19%, 15\.5rem\)/);
+  assert.match(css, /border-radius:\s*15rem 15rem 0 0/);
 });
 
 
-test("Draw stage expands edge to edge inside the Arena hero", () => {
-  const css = read("styles/arena-polish.css");
+test("Draw stage expands edge to edge while the SVG owns wheel proportions", () => {
+  const arenaCss = read("styles/arena-polish.css");
+  const wheelCss = read("components/arena/draw/DrawWheel.module.css");
 
-  assert.match(css, /\.arena-content-full \.draw-wheel-hero-stage\s*\{/);
-  assert.match(css, /width:\s*calc\(100% \+ 1\.8rem\)/);
-  assert.match(css, /margin-inline:\s*-\.9rem/);
-  assert.match(css, /\.arena-content-full \.draw-wheel-viewport[\s\S]*?aspect-ratio:\s*2 \/ 1/);
-  assert.match(css, /\.arena-content-full \.draw-wheel-semicircle[\s\S]*?width:\s*100%/);
+  assert.match(arenaCss, /\.arena-content-full \.draw-wheel-hero-stage\s*\{/);
+  assert.match(arenaCss, /width:\s*calc\(100% \+ 1\.8rem\)/);
+  assert.match(arenaCss, /margin-inline:\s*-\.9rem/);
+  assert.match(wheelCss, /\.viewport\s*\{/);
+  assert.match(wheelCss, /aspect-ratio:\s*1000 \/ 520/);
 });
