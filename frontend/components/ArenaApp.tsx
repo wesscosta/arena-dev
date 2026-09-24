@@ -2462,6 +2462,21 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const selectedDrawEvent = selectedId
     ? recentDrawEvents.find((event) => event.payload.studentId === selectedId)
     : undefined;
+  const bossHpPercent = currentSession?.boss
+    ? Math.max(0, Math.round((currentSession.boss.currentHp / currentSession.boss.maxHp) * 100))
+    : 0;
+  const bossDamageTotal = currentSession?.boss
+    ? currentSession.boss.maxHp - currentSession.boss.currentHp
+    : 0;
+  const bossPhase = !currentSession?.boss
+    ? "Aguardando"
+    : currentSession.boss.currentHp === 0
+      ? "Derrotado"
+      : bossHpPercent <= 30
+        ? "Crítico"
+        : bossHpPercent <= 70
+          ? "Enfraquecido"
+          : "Inteiro";
   const visibleParticipants = sessionParticipants.filter((participant) => {
     const student = data.students.find((item) => item.id === participant.studentId);
     const query = participantSearch.trim().toLowerCase();
@@ -3010,30 +3025,154 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               </section>
             </div>
           ) : (
-            <Panel title="Boss Battle" subtitle="Objetivo coletivo sincronizado com participantes e Projetor">
-              <div className="boss-guide">
-                <strong>Como funciona nesta versão</strong>
-                <p>
-                  Defina um Boss e seus pontos de vida. Conforme a turma cumpre desafios,
-                  aplique o dano manualmente. Todos acompanham o HP sincronizado.
-                </p>
-                <small>Dano manual nesta versão — Quiz e XP não reduzem HP automaticamente.</small>
-              </div>
-              {currentSession.boss ? (
-                <div className="boss-box">
-                  <div className="boss-head"><div><span className="eyebrow accent">BOSS</span><h3>{currentSession.boss.name}</h3></div><b>{currentSession.boss.currentHp}/{currentSession.boss.maxHp} HP</b></div>
-                  <div className="hp-track"><span style={{ width: `${(currentSession.boss.currentHp / currentSession.boss.maxHp) * 100}%` }} /></div>
-                  <div className="damage-buttons"><button onClick={() => { void damageBoss(10); }}>−10 HP</button><button onClick={() => { void damageBoss(20); }}>−20 HP</button><button onClick={() => { void damageBoss(30); }}>−30 HP</button></div>
-                  {currentSession.boss.currentHp === 0 && <div className="boss-defeated">BOSS DERROTADO · objetivo coletivo concluído</div>}
+            <div className="boss-workspace">
+              <section className="boss-hero">
+                <div className="boss-titlebar">
+                  <div>
+                    <span className="eyebrow accent">DESAFIO COLETIVO</span>
+                    <h2>Boss Battle</h2>
+                    <p>Transforme desafios da aula em dano coletivo contra um objetivo compartilhado.</p>
+                  </div>
+                  <div className="boss-title-actions">
+                    <span className={`boss-phase-badge ${currentSession.boss?.currentHp === 0 ? "defeated" : currentSession.boss ? "active" : "idle"}`}>
+                      {bossPhase}
+                    </span>
+                    <button type="button" className="smart-draw-settings" onClick={openProjector} disabled={!joinCode}>
+                      Projetor ↗
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <div className="boss-create">
-                  <input className="input" value={bossName} onChange={(e) => setBossName(e.target.value)} placeholder="Nome do Boss" />
-                  <input className="input" type="number" min="10" value={bossHp} onChange={(e) => setBossHp(Math.max(10, Number(e.target.value)))} />
-                  <button className="button" onClick={() => { void createBoss(); }}>Criar Boss</button>
-                </div>
-              )}
-            </Panel>
+
+                {currentSession.boss ? (
+                  <div className="boss-live-grid">
+                    <section className="boss-stage" aria-label={`Boss ${currentSession.boss.name}`}>
+                      <div className={`boss-core ${currentSession.boss.currentHp === 0 ? "defeated" : bossHpPercent <= 30 ? "critical" : ""}`}>
+                        <span className="boss-core-rune" aria-hidden="true">◆</span>
+                        <span className="boss-core-label">BOSS</span>
+                        <strong>{currentSession.boss.name}</strong>
+                        <small>{bossPhase}</small>
+                      </div>
+
+                      <div className="boss-hp-panel">
+                        <div className="boss-hp-head">
+                          <span>HP DO BOSS</span>
+                          <strong>{currentSession.boss.currentHp} / {currentSession.boss.maxHp}</strong>
+                        </div>
+                        <div className="boss-hp-track" role="progressbar" aria-label="Vida do Boss" aria-valuemin={0} aria-valuemax={currentSession.boss.maxHp} aria-valuenow={currentSession.boss.currentHp}>
+                          <span style={{ width: `${bossHpPercent}%` }} />
+                        </div>
+                        <div className="boss-hp-foot">
+                          <span>{bossHpPercent}% restante</span>
+                          <span>{bossDamageTotal} de dano acumulado</span>
+                        </div>
+                      </div>
+
+                      <div className="boss-session-metrics">
+                        <div><strong>{currentSession.presentStudentIds.length}</strong><span>heróis presentes</span></div>
+                        <div><strong>{bossDamageTotal}</strong><span>dano causado</span></div>
+                        <div><strong>{bossPhase}</strong><span>estado atual</span></div>
+                      </div>
+
+                      {currentSession.boss.currentHp === 0 && (
+                        <div className="boss-victory-banner" role="status">
+                          <span aria-hidden="true">🏆</span>
+                          <div>
+                            <strong>BOSS DERROTADO</strong>
+                            <p>Objetivo coletivo concluído. A vitória já foi persistida na sessão.</p>
+                          </div>
+                        </div>
+                      )}
+                    </section>
+
+                    <aside className="boss-combat-panel">
+                      <div className="boss-combat-head">
+                        <div>
+                          <span className="eyebrow accent">CONTROLE DE COMBATE</span>
+                          <h3>Aplicar dano</h3>
+                        </div>
+                        <span>manual</span>
+                      </div>
+
+                      <p className="boss-combat-note">
+                        Dano manual nesta versão — Quiz e XP não reduzem HP automaticamente.
+                      </p>
+
+                      <div className="boss-attacks">
+                        <button type="button" disabled={mechanicsBusy || currentSession.boss.currentHp === 0} onClick={() => { void damageBoss(10); }}>
+                          <span>⚔</span><strong>−10 HP</strong><small>Ataque leve</small>
+                        </button>
+                        <button type="button" disabled={mechanicsBusy || currentSession.boss.currentHp === 0} onClick={() => { void damageBoss(20); }}>
+                          <span>⚡</span><strong>−20 HP</strong><small>Ataque médio</small>
+                        </button>
+                        <button type="button" disabled={mechanicsBusy || currentSession.boss.currentHp === 0} onClick={() => { void damageBoss(30); }}>
+                          <span>✦</span><strong>−30 HP</strong><small>Ataque crítico</small>
+                        </button>
+                      </div>
+
+                      <div className="boss-rule-card">
+                        <strong>Regra desta versão</strong>
+                        <p>O professor decide quando um desafio foi cumprido e aplica o dano. O backend persiste HP, derrota e sincroniza participantes e Projetor.</p>
+                      </div>
+
+                      {currentSession.boss.currentHp === 0 && (
+                        <div className="boss-next-challenge">
+                          <span className="eyebrow accent">PRÓXIMO DESAFIO</span>
+                          <input className="input" value={bossName} onChange={(event) => setBossName(event.target.value)} placeholder="Nome do novo Boss" />
+                          <div className="boss-hp-config">
+                            <input className="input" type="number" min="10" value={bossHp} onChange={(event) => setBossHp(Math.max(10, Number(event.target.value)))} aria-label="HP do novo Boss" />
+                            <button className="button primary" disabled={mechanicsBusy} onClick={() => { void createBoss(); }}>Iniciar novo Boss</button>
+                          </div>
+                        </div>
+                      )}
+                    </aside>
+                  </div>
+                ) : (
+                  <div className="boss-setup-grid">
+                    <section className="boss-setup-card">
+                      <span className="eyebrow accent">PREPARAR BATALHA</span>
+                      <h3>Crie o objetivo coletivo</h3>
+                      <p>Defina um nome memorável e a quantidade de HP. O Boss será sincronizado com toda a sessão.</p>
+
+                      <label>
+                        <span>Nome do Boss</span>
+                        <input className="input" value={bossName} onChange={(event) => setBossName(event.target.value)} placeholder="Ex.: Spaghetti Code" />
+                      </label>
+
+                      <label>
+                        <span>HP inicial</span>
+                        <input className="input" type="number" min="10" value={bossHp} onChange={(event) => setBossHp(Math.max(10, Number(event.target.value)))} />
+                      </label>
+
+                      <div className="boss-hp-presets" aria-label="Atalhos de HP">
+                        {[50, 100, 150, 200].map((hp) => (
+                          <button key={hp} type="button" className={bossHp === hp ? "active" : ""} onClick={() => setBossHp(hp)}>
+                            {hp} HP
+                          </button>
+                        ))}
+                      </div>
+
+                      <button className="button primary boss-start-button" disabled={mechanicsBusy || !bossName.trim()} onClick={() => { void createBoss(); }}>
+                        {mechanicsBusy ? "Invocando..." : "Iniciar Boss Battle"}
+                      </button>
+                    </section>
+
+                    <aside className="boss-preview-card">
+                      <span className="eyebrow accent">PREVIEW</span>
+                      <div className="boss-core preview">
+                        <span className="boss-core-rune" aria-hidden="true">◆</span>
+                        <span className="boss-core-label">BOSS</span>
+                        <strong>{bossName.trim() || "Seu Boss"}</strong>
+                        <small>{bossHp} HP</small>
+                      </div>
+                      <div className="boss-rule-card">
+                        <strong>Objetivo compartilhado</strong>
+                        <p>Todos acompanham a mesma vida do Boss. Cada ataque aplicado pelo professor é persistido e transmitido em tempo real.</p>
+                      </div>
+                    </aside>
+                  </div>
+                )}
+              </section>
+            </div>
           )}
         </div>
       )}

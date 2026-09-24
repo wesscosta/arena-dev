@@ -263,3 +263,28 @@ test("Nuvem de Palavras 2.0 preserves reveal, projector and close controls", () 
   assert.match(cloud, /window\.confirm/);
   assert.match(cloud, /Coleta protegida/);
 });
+
+
+test("Boss Battle 2.0 uses a gamified collective challenge workspace", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /className="boss-workspace"/);
+  assert.match(app, /DESAFIO COLETIVO/);
+  assert.match(app, /CONTROLE DE COMBATE/);
+  assert.match(app, /HP DO BOSS/);
+  assert.match(app, /BOSS DERROTADO/);
+  assert.match(css, /\.boss-live-grid/);
+  assert.match(css, /\.boss-core\.critical\s*\{/);
+});
+
+test("Boss Battle 2.0 preserves backend-authoritative manual damage", () => {
+  const app = read("components/ArenaApp.tsx");
+
+  assert.match(app, /damageBoss\(10\)/);
+  assert.match(app, /damageBoss\(20\)/);
+  assert.match(app, /damageBoss\(30\)/);
+  assert.match(app, /Dano manual nesta versão/);
+  assert.match(app, /Quiz e XP não reduzem HP automaticamente/);
+  assert.match(app, /createBoss\(\)/);
+});
