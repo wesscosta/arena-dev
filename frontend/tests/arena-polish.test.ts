@@ -85,15 +85,16 @@ test("Professor Arena cockpit exposes dynamics and transversal tools together", 
 });
 
 
-test("Sorteio Inteligente 2.0 renders a central roulette backed by session participants", () => {
+test("Sorteio Inteligente 2.0 renders a semicircle roulette backed by session participants", () => {
   const app = read("components/ArenaApp.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /className=\{drawPhase === "drawing" \? "draw-wheel is-spinning" : "draw-wheel"\}/);
+  assert.match(app, /className="draw-wheel-viewport"/);
+  assert.match(app, /"draw-wheel-semicircle is-spinning"/);
   assert.match(app, /currentSession\.presentStudentIds\.includes\(student\.id\)/);
   assert.match(app, /aria-label=\{drawPhase === "drawing" \? "Sorteio em andamento" : "Sortear aluno"\}/);
-  assert.match(css, /\.draw-wheel-center\s*\{/);
-  assert.match(css, /\.draw-result-banner\.has-result\s*\{/);
+  assert.match(css, /\.draw-wheel-viewport\s*\{/);
+  assert.match(css, /\.draw-wheel-semicircle\s*\{/);
 });
 
 test("Sorteio Inteligente 2.0 keeps scoring evidence visible after the draw", () => {
@@ -117,11 +118,13 @@ test("Professor Arena fidelity pass exposes persistent context rail and QR entry
   assert.match(css, /\.arena-session-code-card\s*\{/);
 });
 
-test("Smart Draw workspace keeps roulette, policies, history, coverage and scoring in one surface", () => {
+test("Smart Draw workspace prioritizes the roulette and moves policies to settings", () => {
   const app = read("components/ArenaApp.tsx");
 
   assert.match(app, /className="smart-draw-workspace"/);
-  assert.match(app, /MODO DE SORTEIO/);
+  assert.match(app, /setDrawSettingsOpen\(true\)/);
+  assert.match(app, /title="Configurações do Sorteio"/);
+  assert.match(app, /POLÍTICAS DO BACKEND/);
   assert.match(app, /Últimos sorteados/);
   assert.match(app, /drawCoverage/);
   assert.match(app, /Confirmar e pontuar/);
@@ -287,4 +290,35 @@ test("Boss Battle 2.0 preserves backend-authoritative manual damage", () => {
   assert.match(app, /Dano manual nesta versão/);
   assert.match(app, /Quiz e XP não reduzem HP automaticamente/);
   assert.match(app, /createBoss\(\)/);
+});
+
+
+test("Arena desktop fidelity pass removes the global content max width only inside Arena", () => {
+  const app = read("components/ArenaApp.tsx");
+  const globals = read("app/globals.css");
+
+  assert.match(app, /view === "arena" \? "content arena-content-full" : "content"/);
+  assert.match(globals, /\.app-shell-no-sidebar \.content\.arena-content-full/);
+  assert.match(globals, /max-width:\s*none/);
+});
+
+test("Semicircle roulette animates to the student selected by the backend", () => {
+  const app = read("components/ArenaApp.tsx");
+
+  assert.match(app, /const result = await drawStudentApi\(currentSession\.id\)/);
+  assert.match(app, /targetIndex = participants\.findIndex/);
+  assert.match(app, /targetResidue/);
+  assert.match(app, /setDrawRotation/);
+  assert.match(app, /1080 \+ alignmentDelta/);
+  assert.doesNotMatch(app, /Math\.random\(\).*student|student.*Math\.random\(\)/);
+});
+
+test("Draw settings expose backend policies as information instead of fake controls", () => {
+  const app = read("components/ArenaApp.tsx");
+
+  assert.match(app, /MODO ATIVO/);
+  assert.match(app, /Balanceado/);
+  assert.match(app, /Apenas presentes/);
+  assert.match(app, /Evita repetição imediata/);
+  assert.doesNotMatch(app, /draw-settings-rule[\s\S]{0,120}<input/);
 });

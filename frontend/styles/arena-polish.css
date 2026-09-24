@@ -2439,3 +2439,496 @@
     transition:none;
   }
 }
+
+
+/* v0.8 · 16.0F — Desktop Arena Fidelity Pass */
+.arena-content-full .arena-session-workspace {
+  --arena-gap: .65rem;
+  width: 100%;
+  max-width: none;
+}
+
+.arena-desktop-session-header {
+  min-height: 4.35rem;
+  padding: .55rem .7rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 13%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 95%, transparent);
+}
+
+.arena-session-context {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+}
+
+.arena-back-to-class {
+  width: 2.35rem;
+  height: 2.35rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: .95rem;
+}
+
+.arena-back-to-class:hover,
+.arena-back-to-class:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+.arena-session-breadcrumb {
+  display: block;
+  overflow: hidden;
+  margin-bottom: .16rem;
+  color: var(--muted);
+  font-size: .6rem;
+  font-weight: 720;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arena-desktop-session-header .arena-session-title-row h2 {
+  margin: 0;
+  font-size: .98rem;
+  letter-spacing: -.02em;
+}
+
+.arena-session-elapsed {
+  min-height: 2.55rem;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: .45rem;
+  padding: .35rem .6rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--surface-2) 84%, transparent);
+}
+
+.arena-session-elapsed > span {
+  color: var(--accent);
+  font-size: .95rem;
+}
+
+.arena-session-elapsed > div {
+  display: grid;
+}
+
+.arena-session-elapsed strong {
+  font-size: .72rem;
+  line-height: 1;
+}
+
+.arena-session-elapsed small {
+  margin-top: .12rem;
+  color: var(--muted);
+  font-size: .5rem !important;
+}
+
+.arena-content-full .arena-cockpit {
+  grid-template-columns: 11.75rem minmax(0, 1fr) 16.5rem;
+  gap: .65rem;
+}
+
+.arena-content-full .arena-cockpit-nav,
+.arena-content-full .arena-context-rail {
+  top: .65rem;
+}
+
+.arena-content-full .arena-cockpit-nav {
+  padding: .7rem;
+  border-radius: 12px;
+}
+
+.arena-content-full .arena-context-rail {
+  gap: .65rem;
+}
+
+.arena-content-full .smart-draw-hero,
+.arena-content-full .quick-score-dock,
+.arena-content-full .arena-participants-card,
+.arena-content-full .arena-session-code-card {
+  box-shadow: none;
+}
+
+.arena-content-full .smart-draw-hero {
+  padding: .85rem .9rem .75rem;
+}
+
+.draw-wheel-hero-stage {
+  min-width: 0;
+  display: grid;
+}
+
+.draw-wheel-zone {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  padding-bottom: 4.8rem;
+}
+
+.draw-wheel-viewport {
+  position: relative;
+  width: min(100%, 62rem);
+  height: clamp(18rem, 27vw, 29rem);
+  overflow: hidden;
+  margin-inline: auto;
+}
+
+.draw-wheel-viewport::before {
+  content: "";
+  position: absolute;
+  top: .15rem;
+  left: 50%;
+  z-index: 8;
+  border-left: .62rem solid transparent;
+  border-right: .62rem solid transparent;
+  border-top: 1.05rem solid var(--accent);
+  transform: translateX(-50%);
+  filter: drop-shadow(0 0 .55rem color-mix(in srgb, var(--accent) 45%, transparent));
+}
+
+.draw-wheel-semicircle {
+  position: absolute;
+  top: .75rem;
+  left: 50%;
+  width: clamp(38rem, 58vw, 62rem);
+  max-width: calc(100% - .5rem);
+  aspect-ratio: 1;
+  overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--accent) 48%, var(--border));
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center,
+      color-mix(in srgb, var(--accent) 14%, transparent) 0 17%,
+      transparent 17% 39%,
+      color-mix(in srgb, var(--accent) 5%, transparent) 39% 41%,
+      transparent 41% 100%),
+    color-mix(in srgb, var(--surface-2) 88%, transparent);
+  box-shadow:
+    inset 0 0 0 .7rem color-mix(in srgb, var(--accent) 3%, transparent),
+    0 0 3.5rem color-mix(in srgb, var(--accent) 11%, transparent);
+  transform: translateX(-50%);
+}
+
+.draw-wheel-ring {
+  --rotation: 0deg;
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(
+      from -18deg,
+      color-mix(in srgb, var(--accent) 7%, transparent) 0 35deg,
+      color-mix(in srgb, var(--border) 48%, transparent) 35deg 36deg
+    );
+  transform: rotate(var(--rotation));
+  transition: transform 1.75s cubic-bezier(.12, .72, .18, 1);
+}
+
+.draw-wheel-semicircle.is-spinning {
+  box-shadow:
+    inset 0 0 0 .7rem color-mix(in srgb, var(--accent) 5%, transparent),
+    0 0 4.6rem color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.draw-wheel-student {
+  z-index: 3;
+}
+
+.draw-wheel-student-face {
+  display: grid;
+  justify-items: center;
+  gap: .18rem;
+  transform: rotate(var(--counter-rotation, 0deg));
+  transition: transform 1.75s cubic-bezier(.12, .72, .18, 1);
+}
+
+.draw-wheel-student-face > span {
+  max-width: 5.5rem;
+  overflow: hidden;
+  color: var(--text);
+  font-size: .65rem;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.draw-wheel-student.selected .draw-wheel-student-face > span {
+  color: var(--accent);
+}
+
+.draw-wheel-zone .draw-wheel-center {
+  top: auto;
+  bottom: .35rem;
+  left: 50%;
+  width: 8.6rem;
+  transform: translateX(-50%);
+  box-shadow:
+    0 0 0 .55rem color-mix(in srgb, var(--accent) 7%, transparent),
+    0 0 2.4rem color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.draw-wheel-zone .draw-wheel-center:hover:not(:disabled) {
+  transform: translateX(-50%) scale(1.035);
+}
+
+.draw-context-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .7rem;
+  align-items: stretch;
+  margin-top: -.15rem;
+  margin-bottom: .65rem;
+}
+
+.draw-recent-strip,
+.draw-coverage-inline {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--surface-2) 78%, transparent);
+}
+
+.draw-recent-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: .75rem;
+  padding: .55rem .7rem;
+}
+
+.draw-context-label {
+  display: grid;
+  gap: .08rem;
+  padding-right: .7rem;
+  border-right: 1px solid var(--border);
+}
+
+.draw-context-label strong {
+  font-size: .62rem;
+}
+
+.draw-context-label span {
+  color: var(--muted);
+  font-size: .53rem;
+}
+
+.draw-recent-people {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  overflow: hidden;
+}
+
+.draw-recent-person {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: .32rem;
+}
+
+.draw-recent-person > span {
+  max-width: 4.8rem;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: .57rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.draw-coverage-inline {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: .55rem;
+  padding: .45rem .55rem .45rem .7rem;
+}
+
+.draw-coverage-inline > div:first-child {
+  display: grid;
+}
+
+.draw-coverage-inline > div:first-child strong {
+  font-size: .78rem;
+}
+
+.draw-coverage-inline > div:first-child span {
+  color: var(--muted);
+  font-size: .53rem;
+}
+
+.draw-coverage-inline .draw-coverage-ring {
+  width: 3rem;
+}
+
+.draw-settings-panel {
+  display: grid;
+  gap: .85rem;
+}
+
+.draw-settings-mode,
+.draw-settings-rules,
+.draw-settings-explainer {
+  display: grid;
+  gap: .55rem;
+  padding: .8rem;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--surface-2) 84%, transparent);
+}
+
+.draw-settings-label {
+  color: var(--muted);
+  font-size: .6rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+.draw-settings-mode-card,
+.draw-settings-rule {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .65rem;
+  align-items: start;
+}
+
+.draw-settings-mode-card strong,
+.draw-settings-rule strong,
+.draw-settings-explainer strong {
+  font-size: .72rem;
+}
+
+.draw-settings-mode-card p,
+.draw-settings-rule p,
+.draw-settings-explainer p {
+  margin: .15rem 0 0;
+  color: var(--muted);
+  font-size: .61rem;
+  line-height: 1.5;
+}
+
+.draw-settings-rule > span {
+  width: 1.15rem;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+  border-radius: 50%;
+  color: var(--accent);
+  font-size: .6rem;
+}
+
+@media (max-width: 90rem) {
+  .arena-content-full .arena-cockpit {
+    grid-template-columns: 4.65rem minmax(0, 1fr) 15rem;
+  }
+
+  .draw-wheel-semicircle {
+    width: clamp(36rem, 61vw, 54rem);
+  }
+}
+
+@media (max-width: 74rem) {
+  .arena-content-full .arena-cockpit {
+    grid-template-columns: 4.65rem minmax(0, 1fr);
+  }
+
+  .draw-wheel-viewport {
+    height: clamp(17rem, 39vw, 26rem);
+  }
+
+  .draw-context-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 54rem) {
+  .arena-desktop-session-header {
+    align-items: stretch;
+  }
+
+  .arena-session-actions {
+    width: 100%;
+  }
+
+  .draw-wheel-viewport {
+    width: 100%;
+    height: clamp(15rem, 48vw, 23rem);
+  }
+
+  .draw-wheel-semicircle {
+    width: clamp(32rem, 88vw, 46rem);
+  }
+
+  .draw-wheel-student-face > span {
+    display: none;
+  }
+
+  .draw-recent-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .draw-context-label {
+    display: flex;
+    justify-content: space-between;
+    padding-right: 0;
+    padding-bottom: .35rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 42rem) {
+  .arena-session-context {
+    align-items: flex-start;
+  }
+
+  .arena-session-elapsed {
+    width: 100%;
+  }
+
+  .draw-wheel-zone {
+    padding-bottom: 4.25rem;
+  }
+
+  .draw-wheel-viewport {
+    height: clamp(13.5rem, 54vw, 19rem);
+  }
+
+  .draw-wheel-semicircle {
+    width: clamp(28rem, 112vw, 38rem);
+  }
+
+  .draw-wheel-zone .draw-wheel-center {
+    width: 7.25rem;
+  }
+
+  .draw-recent-people {
+    overflow-x: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draw-wheel-ring,
+  .draw-wheel-student-face {
+    transition: none;
+  }
+
+  .draw-wheel-semicircle.is-spinning {
+    box-shadow:
+      inset 0 0 0 .7rem color-mix(in srgb, var(--accent) 3%, transparent),
+      0 0 3.5rem color-mix(in srgb, var(--accent) 11%, transparent);
+  }
+}

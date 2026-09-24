@@ -81,6 +81,16 @@ type ClassroomTab = "home" | "students" | "activities" | "ranking" | "history";
 type ArenaDynamic = "runbook" | "draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss";
 type ArenaTool = "timer" | "groups" | "attendance" | "score" | null;
 
+const ARENA_DYNAMIC_LABELS: Record<ArenaDynamic, string> = {
+  runbook: "Roteiro da aula",
+  draw: "Sorteio",
+  wordcloud: "Nuvem de Palavras",
+  poll: "Votação",
+  quiz: "Quiz",
+  buzzer: "Buzzer",
+  boss: "Boss Battle",
+};
+
 const VIEW_LABEL: Record<View, string> = {
   dashboard: "Visão geral",
   classroom: "Turma",
@@ -118,6 +128,14 @@ function todayTitle() {
     month: "2-digit",
     year: "numeric",
   }).format(new Date());
+}
+
+function formatSessionElapsed(startedAt: string, now: number) {
+  const elapsedSeconds = Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000));
+  const hours = Math.floor(elapsedSeconds / 3600);
+  const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+  const seconds = elapsedSeconds % 60;
+  return [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
 }
 
 function errorMessage(error: unknown) {
@@ -450,7 +468,7 @@ export default function ArenaApp() {
           </div>
         </header>
 
-        <section className="content">
+        <section className={view === "arena" ? "content arena-content-full" : "content"}>
           {apiError && <div className="api-alert" role="alert" aria-live="assertive"><strong>API indisponível.</strong><span>{apiError}</span><button className="text-button" onClick={() => { void refreshClassroomDomain(); }}>Tentar novamente</button></div>}
 
           {view === "dashboard" && (
@@ -578,6 +596,7 @@ export default function ArenaApp() {
                 sessionParticipants={data.sessionParticipants.filter((item) => item.sessionId === currentSession?.id)}
                 preferredActivityId={arenaActivityId}
                 onPreferredActivityChange={setArenaActivityId}
+                onBack={() => openClassroom("home")}
                 onSessionEnded={() => {
                   openClassroom("home");
                 }}
@@ -1829,7 +1848,7 @@ function ClassroomManagementPage({
 }
 
 
-function ArenaView({ data, classroomId, students, currentSession, sessionParticipants, preferredActivityId, onPreferredActivityChange, onSessionEnded, patch, notify }: {
+function ArenaView({ data, classroomId, students, currentSession, sessionParticipants, preferredActivityId, onPreferredActivityChange, onBack, onSessionEnded, patch, notify }: {
   data: ArenaData;
   classroomId: string;
   students: Student[];
@@ -1837,6 +1856,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   sessionParticipants: SessionParticipant[];
   preferredActivityId?: string;
   onPreferredActivityChange: (activityId?: string) => void;
+  onBack: () => void;
   onSessionEnded: () => void;
   patch: (updater: (current: ArenaData) => ArenaData) => void;
   notify: (message: string) => void;
@@ -1847,6 +1867,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
   const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
+  const [drawRotation, setDrawRotation] = useState(0);
+  const [drawSettingsOpen, setDrawSettingsOpen] = useState(false);
   const [reason, setReason] = useState("Resposta correta");
   const [customPoints, setCustomPoints] = useState(10);
   const [groups, setGroups] = useState<string[][]>(currentSession?.groups ?? []);
@@ -1870,6 +1892,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [liveFlowBusy, setLiveFlowBusy] = useState(false);
   const [sessionEvents, setSessionEvents] = useState<SessionEvent[]>([]);
   const [participantSearch, setParticipantSearch] = useState("");
+  const [sessionNow, setSessionNow] = useState(() => Date.now());
+  const classroom = data.classrooms.find((item) => item.id === classroomId);
   const classActivities = useMemo(
     () => data.activities.filter((activity) => activity.classroomId === classroomId),
     [data.activities, classroomId],
@@ -1879,6 +1903,13 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   useEffect(() => {
     if (typeof window !== "undefined") setPublicBaseUrl(window.location.origin);
   }, []);
+
+  useEffect(() => {
+    if (!currentSession) return;
+    setSessionNow(Date.now());
+    const intervalId = window.setInterval(() => setSessionNow(Date.now()), 1000);
+    return () => window.clearInterval(intervalId);
+  }, [currentSession?.id]);
 
   useEffect(() => {
     if (!currentSession) {
@@ -2151,21 +2182,40 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
   async function draw() {
     if (!currentSession || drawPhase === "drawing" || mechanicsBusy) return;
+    const participants = students.filter((student) => currentSession.presentStudentIds.includes(student.id));
+    if (!participants.length) {
+      notify("Nenhum aluno presente está disponível para o sorteio.");
+      return;
+    }
+
     setDrawPhase("drawing");
     setMechanicsBusy(true);
     setSelectedId(undefined);
+
     try {
-      const [result] = await Promise.all([
-        drawStudentApi(currentSession.id),
-        new Promise((resolve) => window.setTimeout(resolve, 900)),
-      ]);
-      setSelectedId(result.studentId);
+      const result = await drawStudentApi(currentSession.id);
+      const targetIndex = participants.findIndex((student) => student.id === result.studentId);
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (targetIndex >= 0) {
+        const targetResidue = ((-(targetIndex / participants.length) * 360) % 360 + 360) % 360;
+        setDrawRotation((currentRotation) => {
+          const currentResidue = ((currentRotation % 360) + 360) % 360;
+          const alignmentDelta = (targetResidue - currentResidue + 360) % 360;
+          return currentRotation + (reducedMotion ? alignmentDelta : 1080 + alignmentDelta);
+        });
+      }
+
       patch((current) => ({
         ...current,
         sessions: current.sessions.map((session) => session.id === currentSession.id
           ? mergeSessionMechanics(session, result.runtime)
           : session),
       }));
+
+      await new Promise((resolve) => window.setTimeout(resolve, reducedMotion ? 80 : 1800));
+      setSelectedId(result.studentId);
+
       void fetchSessionEventsBySession(currentSession.id)
         .then(setSessionEvents)
         .catch(() => undefined);
@@ -2541,14 +2591,30 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
   return (
     <div className="stack-lg arena-session-workspace">
-      <div className="arena-header compact">
-        <div>
-          <div className="arena-session-title-row">
-            <h2>{currentSession.title}</h2>
-            <Badge variant="live" dot>AO VIVO</Badge>
+      <div className="arena-header compact arena-desktop-session-header">
+        <div className="arena-session-context">
+          <button type="button" className="arena-back-to-class" onClick={onBack} aria-label="Voltar para a turma">
+            ←
+          </button>
+          <div>
+            <span className="arena-session-breadcrumb">
+              {classroom?.name ?? "Turma"} · {ARENA_DYNAMIC_LABELS[activeDynamic]}
+            </span>
+            <div className="arena-session-title-row">
+              <h2>{currentSession.title}</h2>
+              <Badge variant="live" dot>AO VIVO</Badge>
+            </div>
           </div>
         </div>
+
         <div className="topbar-actions arena-session-actions">
+          <div className="arena-session-elapsed" aria-label={`Tempo de sessão ${formatSessionElapsed(currentSession.startedAt, sessionNow)}`}>
+            <span aria-hidden="true">◷</span>
+            <div>
+              <strong>{formatSessionElapsed(currentSession.startedAt, sessionNow)}</strong>
+              <small>Tempo de sessão</small>
+            </div>
+          </div>
           <Button
             variant={activeTool === "attendance" ? "primary" : "secondary"}
             onClick={() => setActiveTool((tool) => tool === "attendance" ? null : "attendance")}
@@ -2715,106 +2781,95 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                   <h2>Sorteio Inteligente</h2>
                   <p>Escolha um aluno de forma justa e dinâmica, mantendo toda a turma em jogo.</p>
                 </div>
-                <button type="button" className="smart-draw-settings" onClick={() => notify("O modo balanceado é a política ativa nesta versão.")}>
+                <button type="button" className="smart-draw-settings" onClick={() => setDrawSettingsOpen(true)}>
                   ⚙ Configurações
                 </button>
               </div>
 
-              <div className="smart-draw-stage-grid">
-                <section className="draw-mode-panel" aria-label="Modo de sorteio">
-                  <span className="draw-panel-label">MODO DE SORTEIO</span>
-                  <div className="draw-mode-option active">
-                    <span className="draw-mode-radio" aria-hidden="true" />
-                    <div>
-                      <strong>Balanceado</strong>
-                      <small>Prioriza quem foi menos sorteado</small>
-                    </div>
-                  </div>
-                  <div className="draw-policy-row">
-                    <span aria-hidden="true">✓</span>
-                    <div><strong>Apenas presentes</strong><small>Usa a presença da sessão</small></div>
-                  </div>
-                  <div className="draw-policy-row">
-                    <span aria-hidden="true">✓</span>
-                    <div><strong>Evita repetição</strong><small>Não repete o último sorteado</small></div>
-                  </div>
-                  <div className="draw-policy-hint">
-                    <span aria-hidden="true">💡</span>
-                    <p>Todos continuam com chance; quem participou menos recebe maior peso.</p>
-                  </div>
-                </section>
-
+              <div className="draw-wheel-hero-stage">
                 <section className="draw-wheel-zone" aria-label="Roleta de participantes">
-                  <div className={drawPhase === "drawing" ? "draw-wheel is-spinning" : "draw-wheel"}>
-                    {students
-                      .filter((student) => currentSession.presentStudentIds.includes(student.id))
-                      .map((student, index, participants) => {
-                        const angle = (index / Math.max(participants.length, 1)) * Math.PI * 2 - Math.PI / 2;
-                        const radius = participants.length > 10 ? 42 : 39;
-                        const left = 50 + Math.cos(angle) * radius;
-                        const top = 50 + Math.sin(angle) * radius;
-                        return (
-                          <div
-                            className={student.id === selectedId ? "draw-wheel-student selected" : "draw-wheel-student"}
-                            key={student.id}
-                            style={{ left: `${left}%`, top: `${top}%` }}
-                            title={student.nickname || student.name}
-                          >
-                            <Avatar student={student} />
-                            <span>{student.nickname || student.name.split(" ")[0]}</span>
-                          </div>
-                        );
-                      })}
+                  <div className="draw-wheel-viewport">
+                    <div className={drawPhase === "drawing" ? "draw-wheel-semicircle is-spinning" : "draw-wheel-semicircle"}>
+                      <div
+                        className="draw-wheel-ring"
+                        style={{ "--rotation": `${drawRotation}deg` } as CSSProperties}
+                      >
+                        {students
+                          .filter((student) => currentSession.presentStudentIds.includes(student.id))
+                          .map((student, index, participants) => {
+                            const angle = (index / Math.max(participants.length, 1)) * Math.PI * 2 - Math.PI / 2;
+                            const radius = participants.length > 12 ? 43 : 40;
+                            const left = 50 + Math.cos(angle) * radius;
+                            const top = 50 + Math.sin(angle) * radius;
+                            return (
+                              <div
+                                className={student.id === selectedId ? "draw-wheel-student selected" : "draw-wheel-student"}
+                                key={student.id}
+                                style={{
+                                  left: `${left}%`,
+                                  top: `${top}%`,
+                                  "--counter-rotation": `${-drawRotation}deg`,
+                                } as CSSProperties}
+                                title={student.nickname || student.name}
+                              >
+                                <div className="draw-wheel-student-face">
+                                  <Avatar student={student} />
+                                  <span>{student.nickname || student.name.split(" ")[0]}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
 
-                    <button
-                      type="button"
-                      className="draw-wheel-center"
-                      onClick={() => { void draw(); }}
-                      disabled={drawPhase === "drawing"}
-                      aria-label={drawPhase === "drawing" ? "Sorteio em andamento" : "Sortear aluno"}
-                    >
-                      <span aria-hidden="true">◆</span>
-                      <strong>{drawPhase === "drawing" ? "SORTEANDO..." : "SORTEAR"}</strong>
-                      <small>{drawPhase === "drawing" ? "aguarde" : "clique para iniciar"}</small>
-                    </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="draw-wheel-center"
+                    onClick={() => { void draw(); }}
+                    disabled={drawPhase === "drawing"}
+                    aria-label={drawPhase === "drawing" ? "Sorteio em andamento" : "Sortear aluno"}
+                  >
+                    <span aria-hidden="true">◆</span>
+                    <strong>{drawPhase === "drawing" ? "SORTEANDO..." : "SORTEAR"}</strong>
+                    <small>{drawPhase === "drawing" ? "aguarde" : "clique para iniciar"}</small>
+                  </button>
+                </section>
+              </div>
+
+              <div className="draw-context-strip">
+                <section className="draw-recent-strip" aria-label="Últimos sorteados">
+                  <div className="draw-context-label">
+                    <strong>Últimos sorteados</strong>
+                    <span>{recentDrawEvents.length}</span>
+                  </div>
+                  <div className="draw-recent-people">
+                    {recentDrawEvents.slice(0, 5).map((event) => {
+                      const studentId = typeof event.payload.studentId === "string" ? event.payload.studentId : "";
+                      const student = students.find((item) => item.id === studentId);
+                      return (
+                        <div className="draw-recent-person" key={event.id} title={dateTime(event.occurredAt)}>
+                          {student ? <Avatar student={student} /> : <span className="draw-history-dot" />}
+                          <span>{student?.nickname || student?.name?.split(" ")[0] || "Aluno"}</span>
+                        </div>
+                      );
+                    })}
+                    {recentDrawEvents.length === 0 && (
+                      <small className="draw-history-empty">O histórico aparecerá após o primeiro sorteio.</small>
+                    )}
                   </div>
                 </section>
 
-                <aside className="draw-insight-panel">
-                  <section className="draw-history-card">
-                    <div className="draw-insight-head">
-                      <strong>Últimos sorteados</strong>
-                      <span>{recentDrawEvents.length}</span>
-                    </div>
-                    <div className="draw-history-list">
-                      {recentDrawEvents.slice(0, 5).map((event) => {
-                        const studentId = typeof event.payload.studentId === "string" ? event.payload.studentId : "";
-                        const student = students.find((item) => item.id === studentId);
-                        return (
-                          <div className="draw-history-row" key={event.id}>
-                            {student ? <Avatar student={student} /> : <span className="draw-history-dot" />}
-                            <div>
-                              <strong>{student?.nickname || student?.name || "Aluno"}</strong>
-                              <small>{dateTime(event.occurredAt)}</small>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {recentDrawEvents.length === 0 && <small className="draw-history-empty">O histórico aparecerá após o primeiro sorteio.</small>}
-                    </div>
-                  </section>
-
-                  <section className="draw-coverage-card">
-                    <div className="draw-coverage-copy">
-                      <strong>{drawnStudentIds.size}</strong>
-                      <span>alunos já sorteados</span>
-                      <small>de {currentSession.presentStudentIds.length} presentes</small>
-                    </div>
-                    <div className="draw-coverage-ring" style={{ "--coverage": `${drawCoverage}%` } as CSSProperties}>
-                      <strong>{drawCoverage}%</strong>
-                    </div>
-                  </section>
-                </aside>
+                <section className="draw-coverage-inline" aria-label="Cobertura do sorteio">
+                  <div>
+                    <strong>{drawnStudentIds.size}/{currentSession.presentStudentIds.length}</strong>
+                    <span>já sorteados</span>
+                  </div>
+                  <div className="draw-coverage-ring" style={{ "--coverage": `${drawCoverage}%` } as CSSProperties}>
+                    <strong>{drawCoverage}%</strong>
+                  </div>
+                </section>
               </div>
 
               <div className={selected ? "selected-student-bar active" : "selected-student-bar"}>
@@ -3244,6 +3299,52 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           </section>
         </aside>
       </div>
+
+      <ArenaToolDrawer
+        open={drawSettingsOpen}
+        title="Configurações do Sorteio"
+        subtitle="Entenda as políticas ativas sem ocupar o palco da dinâmica."
+        onClose={() => setDrawSettingsOpen(false)}
+      >
+        <div className="draw-settings-panel">
+          <section className="draw-settings-mode">
+            <span className="draw-settings-label">MODO ATIVO</span>
+            <div className="draw-settings-mode-card">
+              <span className="draw-mode-radio" aria-hidden="true" />
+              <div>
+                <strong>Balanceado</strong>
+                <p>Prioriza quem foi sorteado menos vezes durante a sessão.</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="draw-settings-rules">
+            <span className="draw-settings-label">POLÍTICAS DO BACKEND</span>
+            <div className="draw-settings-rule">
+              <span aria-hidden="true">✓</span>
+              <div>
+                <strong>Apenas presentes</strong>
+                <p>Somente alunos marcados como presentes entram no sorteio.</p>
+              </div>
+            </div>
+            <div className="draw-settings-rule">
+              <span aria-hidden="true">✓</span>
+              <div>
+                <strong>Evita repetição imediata</strong>
+                <p>Quando há mais de um participante, o último sorteado não é escolhido novamente na rodada seguinte.</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="draw-settings-explainer">
+            <strong>Como o balanceamento funciona</strong>
+            <p>
+              Todos continuam com chance de serem sorteados, mas o peso aumenta para quem participou menos.
+              A decisão final continua sendo feita pelo servidor.
+            </p>
+          </section>
+        </div>
+      </ArenaToolDrawer>
 
       <ArenaToolDrawer
         open={activeTool === "timer"}
