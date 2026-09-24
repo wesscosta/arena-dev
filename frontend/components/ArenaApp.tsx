@@ -2774,24 +2774,80 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         <div className="stack-lg arena-tab-content">
           {interactionTool === "draw" ? (
           <div className="arena-grid">
-            <div className="arena-main-card">
-              <span className="eyebrow accent">SORTEIO INTELIGENTE</span>
-              <div className={drawPhase === "drawing" ? "draw-stage spinning" : "draw-stage"}>
-                {drawPhase === "drawing" ? (
-                  <div className="draw-loading"><span /><span /><span /></div>
-                ) : selected ? (
+            <div className="arena-main-card draw-wheel-card">
+              <div className="draw-wheel-heading">
+                <div>
+                  <span className="eyebrow accent">SORTEIO INTELIGENTE</span>
+                  <h3>Quem entra no centro agora?</h3>
+                  <p>O backend prioriza quem participou menos e evita repetição imediata.</p>
+                </div>
+                <div className="draw-wheel-meta">
+                  <span>{currentSession.presentStudentIds.length} presentes</span>
+                  <span>Balanceado</span>
+                </div>
+              </div>
+
+              <div className={drawPhase === "drawing" ? "draw-wheel is-spinning" : "draw-wheel"}>
+                {students
+                  .filter((student) => currentSession.presentStudentIds.includes(student.id))
+                  .map((student, index, participants) => {
+                    const angle = (index / Math.max(participants.length, 1)) * Math.PI * 2 - Math.PI / 2;
+                    const radius = participants.length > 10 ? 42 : 39;
+                    const left = 50 + Math.cos(angle) * radius;
+                    const top = 50 + Math.sin(angle) * radius;
+                    return (
+                      <div
+                        className={student.id === selectedId ? "draw-wheel-student selected" : "draw-wheel-student"}
+                        key={student.id}
+                        style={{ left: `${left}%`, top: `${top}%` }}
+                        title={student.nickname || student.name}
+                      >
+                        <Avatar student={student} />
+                        <span>{student.nickname || student.name.split(" ")[0]}</span>
+                      </div>
+                    );
+                  })}
+
+                <button
+                  type="button"
+                  className="draw-wheel-center"
+                  onClick={() => { void draw(); }}
+                  disabled={drawPhase === "drawing"}
+                  aria-label={drawPhase === "drawing" ? "Sorteio em andamento" : "Sortear aluno"}
+                >
+                  <span aria-hidden="true">◆</span>
+                  <strong>{drawPhase === "drawing" ? "SORTEANDO..." : "SORTEAR"}</strong>
+                  <small>{drawPhase === "drawing" ? "aguarde" : "clique para iniciar"}</small>
+                </button>
+              </div>
+
+              <div className={selected ? "draw-result-banner has-result" : "draw-result-banner"}>
+                {selected ? (
                   <>
                     <Avatar student={selected} large />
-                    <h3>{selected.nickname || selected.name}</h3>
-                    <p>{selected.name}</p>
-                    <div className="xp-badge">{selectedXp} XP · {getLevel(selectedXp).name}</div>
+                    <div>
+                      <span className="eyebrow accent">SORTEADO AGORA</span>
+                      <h3>{selected.nickname || selected.name}</h3>
+                      <p>{selected.name}</p>
+                    </div>
+                    <div className="draw-result-stats">
+                      <strong>{currentSession.drawCounts[selected.id] ?? 0}</strong>
+                      <span>sorteio(s)</span>
+                      <strong>{selectedXp}</strong>
+                      <span>XP</span>
+                    </div>
                   </>
                 ) : (
-                  <><div className="target-mark">+</div><h3>Pronto para sortear</h3><p>O backend prioriza quem participou menos.</p></>
+                  <>
+                    <div className="draw-result-placeholder" aria-hidden="true">◎</div>
+                    <div>
+                      <span className="eyebrow accent">PRONTO PARA COMEÇAR</span>
+                      <h3>Todos permanecem no jogo</h3>
+                      <p>O sorteio considera a participação acumulada nesta sessão.</p>
+                    </div>
+                  </>
                 )}
               </div>
-              <button className="button primary huge" onClick={() => { void draw(); }} disabled={drawPhase === "drawing"}>SORTEAR DEV</button>
-              {selected && <small className="draw-count">Sorteado nesta sessão: {currentSession.drawCounts[selected.id] ?? 0} vez(es)</small>}
             </div>
 
             <div className="score-card">

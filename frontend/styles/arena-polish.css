@@ -768,3 +768,211 @@
     min-height: 2.8rem;
   }
 }
+
+/* v0.8 · 16.0C — Sorteio Inteligente 2.0 */
+.draw-wheel-card {
+  min-height: 40rem;
+  padding: var(--space-5);
+}
+.draw-wheel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.draw-wheel-heading h3 {
+  margin: .3rem 0 .2rem;
+  font-size: 1.2rem;
+}
+.draw-wheel-heading p {
+  max-width: 38rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+.draw-wheel-meta {
+  display: flex;
+  gap: .4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.draw-wheel-meta span {
+  padding: .38rem .6rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  color: var(--accent);
+  font-size: .66rem;
+  font-weight: 750;
+}
+.draw-wheel {
+  position: relative;
+  width: min(31rem, 76vw);
+  aspect-ratio: 1;
+  margin: 1.2rem auto 1.35rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, color-mix(in srgb, var(--accent) 17%, transparent) 0 20%, transparent 20% 43%, color-mix(in srgb, var(--accent) 5%, transparent) 43% 45%, transparent 45% 100%),
+    repeating-conic-gradient(from -18deg, color-mix(in srgb, var(--accent) 8%, transparent) 0 35deg, transparent 35deg 36deg);
+  box-shadow:
+    inset 0 0 0 .65rem color-mix(in srgb, var(--accent) 3%, transparent),
+    0 0 3.2rem color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.draw-wheel::before {
+  content: "";
+  position: absolute;
+  top: -.7rem;
+  left: 50%;
+  z-index: 5;
+  border-left: .58rem solid transparent;
+  border-right: .58rem solid transparent;
+  border-top: 1rem solid var(--accent);
+  transform: translateX(-50%);
+}
+.draw-wheel-student {
+  position: absolute;
+  z-index: 2;
+  width: 5.2rem;
+  display: grid;
+  justify-items: center;
+  gap: .2rem;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+.draw-wheel-student .avatar {
+  box-shadow: 0 0 0 .14rem var(--surface), 0 0 0 .2rem color-mix(in srgb, var(--border) 84%, transparent);
+  transition: box-shadow .16s ease, transform .16s ease;
+}
+.draw-wheel-student > span {
+  max-width: 4.8rem;
+  overflow: hidden;
+  color: var(--text);
+  font-size: .62rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.draw-wheel-student.selected .avatar {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 .14rem var(--surface), 0 0 0 .24rem var(--accent), 0 0 1.15rem color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.draw-wheel-student.selected > span {
+  color: var(--accent);
+}
+.draw-wheel-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  width: 9.5rem;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: .22rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 58%, var(--border));
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 22%, var(--surface-2)), var(--surface) 70%);
+  color: var(--accent);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 .6rem color-mix(in srgb, var(--accent) 7%, transparent), 0 0 2.2rem color-mix(in srgb, var(--accent) 20%, transparent);
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.draw-wheel-center:hover:not(:disabled) {
+  transform: translate(-50%, -50%) scale(1.035);
+  box-shadow: 0 0 0 .72rem color-mix(in srgb, var(--accent) 10%, transparent), 0 0 2.8rem color-mix(in srgb, var(--accent) 26%, transparent);
+}
+.draw-wheel-center:disabled {
+  cursor: wait;
+  opacity: .82;
+}
+.draw-wheel-center > span { font-size: 1.25rem; }
+.draw-wheel-center > strong { font-size: .82rem; letter-spacing: .06em; }
+.draw-wheel-center > small { color: var(--muted); font-size: .58rem; }
+.draw-wheel.is-spinning {
+  animation: arena-wheel-pulse .7s ease-in-out infinite alternate;
+}
+.draw-result-banner {
+  min-height: 5.4rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: .85rem;
+  padding: .85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.draw-result-banner.has-result {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-2));
+}
+.draw-result-banner h3 {
+  margin: .18rem 0 .1rem;
+  font-size: 1rem;
+}
+.draw-result-banner p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .7rem;
+}
+.draw-result-placeholder {
+  width: 2.8rem;
+  height: 2.8rem;
+  display: grid;
+  place-items: center;
+  border: 1px dashed color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: 50%;
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+.draw-result-stats {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: .35rem;
+  row-gap: .05rem;
+  align-items: baseline;
+  padding-left: .9rem;
+  border-left: 1px solid var(--border);
+}
+.draw-result-stats strong {
+  color: var(--accent);
+  font-size: 1rem;
+}
+.draw-result-stats span {
+  color: var(--muted);
+  font-size: .62rem;
+}
+@keyframes arena-wheel-pulse {
+  from { transform: scale(.995); filter: brightness(.96); }
+  to { transform: scale(1.008); filter: brightness(1.08); }
+}
+@media (max-width: 72rem) {
+  .draw-wheel-card { min-height: auto; }
+  .draw-wheel { width: min(28rem, 70vw); }
+}
+@media (max-width: 48rem) {
+  .draw-wheel-heading { display: grid; }
+  .draw-wheel-meta { justify-content: flex-start; }
+  .draw-wheel { width: min(26rem, 88vw); }
+  .draw-wheel-student { width: 3.6rem; }
+  .draw-wheel-student > span { display: none; }
+  .draw-wheel-center { width: 7.5rem; }
+  .draw-result-banner.has-result { grid-template-columns: auto minmax(0, 1fr); }
+  .draw-result-stats {
+    grid-column: 1 / -1;
+    grid-template-columns: auto auto auto auto;
+    padding: .65rem 0 0;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .draw-wheel.is-spinning { animation: none; }
+  .draw-wheel-center,
+  .draw-wheel-student .avatar { transition: none; }
+}

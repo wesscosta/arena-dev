@@ -83,3 +83,24 @@ test("Professor Arena cockpit exposes dynamics and transversal tools together", 
     assert.ok(app.includes(label), `missing Arena action: ${label}`);
   }
 });
+
+
+test("Sorteio Inteligente 2.0 renders a central roulette backed by session participants", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /className=\{drawPhase === "drawing" \? "draw-wheel is-spinning" : "draw-wheel"\}/);
+  assert.match(app, /currentSession\.presentStudentIds\.includes\(student\.id\)/);
+  assert.match(app, /aria-label=\{drawPhase === "drawing" \? "Sorteio em andamento" : "Sortear aluno"\}/);
+  assert.match(css, /\.draw-wheel-center\s*\{/);
+  assert.match(css, /\.draw-result-banner\.has-result\s*\{/);
+});
+
+test("Sorteio Inteligente 2.0 keeps scoring evidence visible after the draw", () => {
+  const app = read("components/ArenaApp.tsx");
+
+  assert.match(app, /SORTEADO AGORA/);
+  assert.match(app, /currentSession\.drawCounts\[selected\.id\]/);
+  assert.match(app, /selectedXp/);
+  assert.match(app, /Pontuação rápida/);
+});
