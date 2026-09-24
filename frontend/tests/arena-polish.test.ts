@@ -238,3 +238,28 @@ test("Votação 2.0 preserves reveal and explicit close control", () => {
   assert.match(poll, /Resultados ao vivo/);
   assert.match(poll, /Resultados protegidos/);
 });
+
+
+test("Nuvem de Palavras 2.0 uses a gamified prepare and live stage", () => {
+  const cloud = read("components/WordCloudPanel.tsx");
+  const css = read("components/WordCloudPanel.module.css");
+
+  assert.match(cloud, /DINÂMICA AO VIVO/);
+  assert.match(cloud, /className=\{styles\.prepareGrid\}/);
+  assert.match(cloud, /className=\{styles\.liveGrid\}/);
+  assert.match(cloud, /PALCO DA TURMA/);
+  assert.match(cloud, /NUVEM DA TURMA/);
+  assert.match(cloud, /participationProgress/);
+  assert.match(css, /\.previewCloudOrb\s*\{/);
+  assert.match(css, /\.cloudStage\s*\{/);
+});
+
+test("Nuvem de Palavras 2.0 preserves reveal, projector and close controls", () => {
+  const cloud = read("components/WordCloudPanel.tsx");
+
+  assert.match(cloud, /Revelar respostas/);
+  assert.match(cloud, /Projetar Nuvem/);
+  assert.match(cloud, /Encerrar rodada/);
+  assert.match(cloud, /window\.confirm/);
+  assert.match(cloud, /Coleta protegida/);
+});

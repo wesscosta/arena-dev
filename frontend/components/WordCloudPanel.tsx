@@ -58,6 +58,9 @@ export default function WordCloudPanel({
         round.submissionCount,
       )
     : wordCloudParticipationMetrics(presentCount, 0, 0);
+  const participationProgress = participation.presentCount > 0
+    ? Math.min(100, Math.round((participation.answeredCount / participation.presentCount) * 100))
+    : 0;
 
   async function create() {
     if (!prompt.trim() || busy) return;
@@ -152,68 +155,76 @@ export default function WordCloudPanel({
     return (
       <div>
         {accessCard}
-        <section className={styles.shell}>
-        <div className={styles.header}>
-          <div>
-            <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
-            <h3>Criar Nuvem de Palavras</h3>
-            <p>Faça uma pergunta curta e deixe a turma responder pelo mesmo /join da sessão.</p>
-          </div>
-          {round?.status === "CLOSED" && (
-            <button className={styles.secondary} onClick={() => setCreating(false)}>Voltar à rodada anterior</button>
-          )}
-        </div>
-
-        <label className={styles.field}>
-          <span>Pergunta para a turma</span>
-          <textarea
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
-            maxLength={280}
-            rows={3}
-            placeholder="Ex.: Qual palavra melhor resume o conceito de API?"
-          />
-          <small>{prompt.length}/280</small>
-        </label>
-
-        <div className={styles.configGrid}>
-          <div className={styles.field}>
-            <span>Respostas por aluno</span>
-            <select value={maxWords} onChange={(event) => setMaxWords(Number(event.target.value))}>
-              {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}
-            </select>
+        <section className={`${styles.shell} ${styles.prepareShell}`}>
+          <div className={styles.heroHeader}>
+            <div>
+              <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
+              <h2>Nuvem de Palavras</h2>
+              <p>Transforme respostas curtas da turma em um painel visual coletivo.</p>
+            </div>
+            {round?.status === "CLOSED" && (
+              <button className={styles.secondary} onClick={() => setCreating(false)}>
+                Ver rodada anterior
+              </button>
+            )}
           </div>
 
-          <div className={styles.modeGroup}>
-            <span>Como exibir</span>
-            <button
-              type="button"
-              className={!liveReveal ? styles.modeActive : styles.mode}
-              onClick={() => setLiveReveal(false)}
-            >
-              <b>Coletar e revelar</b>
-              <small>As respostas ficam ocultas até você liberar.</small>
-            </button>
-            <button
-              type="button"
-              className={liveReveal ? styles.modeActive : styles.mode}
-              onClick={() => setLiveReveal(true)}
-            >
-              <b>Ao vivo</b>
-              <small>A frequência aparece conforme a turma responde.</small>
-            </button>
-          </div>
-        </div>
+          <div className={styles.prepareGrid}>
+            <section className={styles.composeCard}>
+              <span className={styles.cardLabel}>PERGUNTA DA RODADA</span>
+              <label className={styles.field}>
+                <span>Pergunta para a turma</span>
+                <textarea
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  maxLength={280}
+                  rows={4}
+                  placeholder="Ex.: Qual palavra melhor resume o conceito de API?"
+                />
+                <small>{prompt.length}/280</small>
+              </label>
 
-        <div className={styles.actions}>
-          <button
-            className={styles.primary}
-            disabled={busy || !prompt.trim()}
-            onClick={() => void create()}
-          >
-            {busy ? "Criando..." : "Abrir Nuvem de Palavras"}
-          </button>
-        </div>
+              <div className={styles.configGrid}>
+                <div className={styles.field}>
+                  <span>Respostas por aluno</span>
+                  <select value={maxWords} onChange={(event) => setMaxWords(Number(event.target.value))}>
+                    {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}
+                  </select>
+                </div>
+
+                <div className={styles.modeGroup}>
+                  <span>Como exibir</span>
+                  <button type="button" className={!liveReveal ? styles.modeActive : styles.mode} onClick={() => setLiveReveal(false)}>
+                    <b>Coletar e revelar</b>
+                    <small>As respostas ficam ocultas até você liberar.</small>
+                  </button>
+                  <button type="button" className={liveReveal ? styles.modeActive : styles.mode} onClick={() => setLiveReveal(true)}>
+                    <b>Ao vivo</b>
+                    <small>A frequência aparece conforme a turma responde.</small>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <aside className={styles.stagePreviewCard}>
+              <span className={styles.cardLabel}>PALCO DA TURMA</span>
+              <div className={styles.previewCloudOrb} aria-hidden="true">
+                <span>API</span>
+                <b>REST</b>
+                <em>JSON</em>
+                <small>HTTP</small>
+              </div>
+              <strong>{presentCount} aluno(s) presente(s)</strong>
+              <p>As palavras ganham destaque conforme a frequência aumenta.</p>
+              <button
+                className={styles.primary}
+                disabled={busy || !prompt.trim()}
+                onClick={() => void create()}
+              >
+                {busy ? "Criando..." : "Abrir Nuvem"}
+              </button>
+            </aside>
+          </div>
         </section>
       </div>
     );
@@ -224,91 +235,104 @@ export default function WordCloudPanel({
   return (
     <div>
       {accessCard}
-      <section className={styles.shell}>
-      <div className={styles.header}>
-        <div>
-          <span className={styles.eyebrow}>NUVEM DE PALAVRAS</span>
-          <h3>{round.prompt}</h3>
-          <p>{round.liveReveal ? "Exibição ao vivo" : "Coleta protegida até a revelação"}</p>
+      <section className={`${styles.shell} ${styles.liveShell}`}>
+        <div className={styles.heroHeader}>
+          <div>
+            <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
+            <h2>Nuvem de Palavras</h2>
+            <p>{round.prompt}</p>
+          </div>
+          <span className={`${styles.status} ${styles[round.status.toLowerCase()]}`}>
+            {statusLabel(round.status)}
+          </span>
         </div>
-        <span className={`${styles.status} ${styles[round.status.toLowerCase()]}`}>
-          {statusLabel(round.status)}
-        </span>
-      </div>
 
-      <div className={styles.stats}>
-        <div>
-          <strong>{participation.presentCount}</strong>
-          <span>presentes</span>
-        </div>
-        <div>
-          <strong>{participation.answeredCount}</strong>
-          <span>responderam</span>
-        </div>
-        <div>
-          <strong>{participation.pendingCount}</strong>
-          <span>pendentes</span>
-        </div>
-        <div>
-          <strong>{participation.submissionCount}</strong>
-          <span>respostas</span>
-        </div>
-      </div>
+        <div className={styles.liveGrid}>
+          <section className={styles.participationCard}>
+            <div className={styles.participationHead}>
+              <span className={styles.cardLabel}>PARTICIPAÇÃO</span>
+              <strong>{participation.answeredCount}/{participation.presentCount}</strong>
+            </div>
 
-      <div className={styles.participationSummary}>
-        <span>
-          {participation.presentCount > 0
-            ? `${participation.answeredCount} de ${participation.presentCount} presentes participaram`
-            : "Nenhum participante está marcado como presente nesta sessão"}
-        </span>
-        <small>Máximo de {round.maxWordsPerParticipant} resposta(s) por aluno.</small>
-      </div>
+            <div className={styles.participationTrack}>
+              <span style={{ width: `${participationProgress}%` }} />
+            </div>
+            <small>{participation.pendingCount} pendente(s) · {participationProgress}% da turma participou</small>
 
-      {round.terms.length > 0 ? (
-        <div className={styles.preview}>
-          {round.terms.slice(0, 24).map((term) => (
-            <span
-              key={term.normalizedText}
-              style={{ fontSize: `${Math.min(34, 15 + term.count * 4)}px` }}
-            >
-              {term.text}<b>×{term.count}</b>
-            </span>
-          ))}
-        </div>
-      ) : (
-        <div className={styles.empty}>
-          {round.status === "COLLECTING" && !round.liveReveal
-            ? `As respostas estão chegando, mas permanecem ocultas. ${round.submissionCount} recebida(s).`
-            : round.status === "COLLECTING"
-              ? "Aguardando as primeiras respostas da turma."
-              : "Nenhuma resposta foi registrada nesta rodada."}
-        </div>
-      )}
+            <div className={styles.stats}>
+              <div><strong>{participation.presentCount}</strong><span>presentes</span></div>
+              <div><strong>{participation.answeredCount}</strong><span>responderam</span></div>
+              <div><strong>{participation.pendingCount}</strong><span>pendentes</span></div>
+              <div><strong>{participation.submissionCount}</strong><span>respostas</span></div>
+            </div>
 
-      <div className={styles.actions}>
-        <button
-          className={styles.secondary}
-          disabled={!joinCode}
-          onClick={projectWordCloud}
-        >
-          Projetar Nuvem ↗
-        </button>
-        {round.status === "COLLECTING" && !round.liveReveal && (
-          <button className={styles.primary} disabled={busy} onClick={() => void reveal()}>
-            Revelar respostas
+            <div className={styles.roundPolicy}>
+              <span>{round.liveReveal ? "☁ Exibição ao vivo" : round.status === "REVEALED" ? "☁ Respostas reveladas" : "☁ Coleta protegida"}</span>
+              <small>Máximo de {round.maxWordsPerParticipant} resposta(s) por aluno.</small>
+            </div>
+          </section>
+
+          <section className={styles.cloudStage}>
+            <div className={styles.cloudStageHead}>
+              <div>
+                <span className={styles.cardLabel}>NUVEM DA TURMA</span>
+                <h3>{round.terms.length > 0 ? "Ideias em destaque" : "Aguardando respostas"}</h3>
+              </div>
+              <span>{round.terms.length} termo(s)</span>
+            </div>
+
+            {round.terms.length > 0 ? (
+              <div className={styles.preview}>
+                {round.terms.slice(0, 30).map((term, index) => (
+                  <span
+                    key={term.normalizedText}
+                    className={index < 3 ? styles.topTerm : undefined}
+                    style={{ fontSize: `${Math.min(42, 15 + term.count * 4)}px` }}
+                  >
+                    {term.text}<b>×{term.count}</b>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.empty}>
+                <span aria-hidden="true">☁</span>
+                <strong>
+                  {round.status === "COLLECTING" && !round.liveReveal
+                    ? "As respostas estão chegando"
+                    : round.status === "COLLECTING"
+                      ? "Esperando as primeiras palavras"
+                      : "Nenhuma resposta registrada"}
+                </strong>
+                <p>
+                  {round.status === "COLLECTING" && !round.liveReveal
+                    ? `${round.submissionCount} resposta(s) recebida(s), ainda ocultas até você revelar.`
+                    : "A nuvem aparecerá aqui assim que houver termos disponíveis."}
+                </p>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className={styles.actions}>
+          <button className={styles.secondary} disabled={!joinCode} onClick={projectWordCloud}>
+            Projetar Nuvem ↗
           </button>
-        )}
-        {round.status !== "CLOSED" && (
-          <button className={styles.danger} disabled={busy} onClick={() => void close()}>
-            Encerrar rodada
-          </button>
-        )}
-        {round.status === "CLOSED" && (
-          <button className={styles.primary} onClick={() => setCreating(true)}>
-            Nova rodada
-          </button>
-        )}
-      </div>
+          {round.status === "COLLECTING" && !round.liveReveal && (
+            <button className={styles.primary} disabled={busy} onClick={() => void reveal()}>
+              Revelar respostas
+            </button>
+          )}
+          {round.status !== "CLOSED" && (
+            <button className={styles.danger} disabled={busy} onClick={() => void close()}>
+              Encerrar rodada
+            </button>
+          )}
+          {round.status === "CLOSED" && (
+            <button className={styles.primary} onClick={() => setCreating(true)}>
+              Nova rodada
+            </button>
+          )}
+        </div>
       </section>
     </div>
   );

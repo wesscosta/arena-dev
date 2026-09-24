@@ -284,3 +284,239 @@
     flex-direction: column;
   }
 }
+
+/* v0.8 · Nuvem de Palavras 2.0 */
+.prepareShell,
+.liveShell {
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 44%),
+    var(--surface);
+  box-shadow: 0 1.4rem 3.8rem rgba(0,0,0,.12);
+}
+.heroHeader {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:1rem;
+  margin-bottom:1rem;
+}
+.heroHeader h2 {
+  margin:.18rem 0 .16rem;
+  font-size:clamp(1.7rem,2.6vw,2.4rem);
+  letter-spacing:-.045em;
+}
+.heroHeader p {
+  margin:0;
+  color:var(--muted);
+  font-size:.76rem;
+}
+.cardLabel {
+  color:var(--muted);
+  font-size:.61rem;
+  font-weight:800;
+  letter-spacing:.1em;
+}
+.prepareGrid {
+  display:grid;
+  grid-template-columns:minmax(0,1.3fr) minmax(15rem,.7fr);
+  gap:.85rem;
+}
+.composeCard,
+.stagePreviewCard,
+.participationCard,
+.cloudStage {
+  border:1px solid color-mix(in srgb,var(--accent) 16%,var(--border));
+  border-radius:14px;
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+}
+.composeCard {
+  display:grid;
+  gap:.8rem;
+  padding:.9rem;
+}
+.stagePreviewCard {
+  display:grid;
+  place-items:center;
+  align-content:center;
+  gap:.65rem;
+  padding:1rem;
+  text-align:center;
+}
+.stagePreviewCard > p {
+  max-width:15rem;
+  margin:0;
+  color:var(--muted);
+  font-size:.62rem;
+  line-height:1.5;
+}
+.previewCloudOrb {
+  position:relative;
+  width:10rem;
+  aspect-ratio:1;
+  border:1px solid color-mix(in srgb,var(--accent) 35%,var(--border));
+  border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--accent) 16%,var(--surface)),var(--surface) 72%);
+  box-shadow:0 0 2.6rem color-mix(in srgb,var(--accent) 14%,transparent);
+}
+.previewCloudOrb span,
+.previewCloudOrb b,
+.previewCloudOrb em,
+.previewCloudOrb small {
+  position:absolute;
+  color:var(--accent);
+  font-style:normal;
+}
+.previewCloudOrb span { left:17%;top:26%;font-size:1.05rem;font-weight:800; }
+.previewCloudOrb b { right:14%;top:38%;font-size:1.3rem; }
+.previewCloudOrb em { left:28%;bottom:24%;font-size:.86rem; }
+.previewCloudOrb small { right:24%;bottom:14%;font-size:.68rem; }
+.liveGrid {
+  display:grid;
+  grid-template-columns:minmax(15rem,.68fr) minmax(0,1.32fr);
+  gap:.8rem;
+  align-items:start;
+}
+.participationCard {
+  display:grid;
+  gap:.8rem;
+  padding:.9rem;
+  position:sticky;
+  top:1rem;
+}
+.participationHead {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.6rem;
+}
+.participationHead strong {
+  color:var(--accent);
+  font-size:1rem;
+}
+.participationTrack {
+  height:.55rem;
+  overflow:hidden;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--border) 70%,transparent);
+}
+.participationTrack span {
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:var(--accent);
+  box-shadow:0 0 .8rem color-mix(in srgb,var(--accent) 38%,transparent);
+}
+.participationCard > small {
+  color:var(--muted);
+  font-size:.58rem;
+}
+.roundPolicy {
+  display:grid;
+  gap:.2rem;
+  padding:.7rem;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:color-mix(in srgb,var(--surface) 90%,transparent);
+}
+.roundPolicy span {
+  color:var(--accent);
+  font-size:.66rem;
+  font-weight:750;
+}
+.roundPolicy small {
+  color:var(--muted);
+  font-size:.56rem;
+}
+.cloudStage {
+  padding:.9rem;
+  min-width:0;
+}
+.cloudStageHead {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:.7rem;
+  margin-bottom:.7rem;
+}
+.cloudStageHead h3 {
+  margin:.18rem 0 0;
+  font-size:1rem;
+}
+.cloudStageHead > span {
+  color:var(--muted);
+  font-size:.58rem;
+}
+.liveShell .preview {
+  min-height:25rem;
+  position:relative;
+  overflow:hidden;
+  border-color:color-mix(in srgb,var(--accent) 20%,var(--border));
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb,var(--accent) 8%,transparent), transparent 50%),
+    color-mix(in srgb,var(--surface) 92%,transparent);
+}
+.liveShell .preview span {
+  padding:.15rem .2rem;
+  text-shadow:0 0 1rem color-mix(in srgb,var(--accent) 18%,transparent);
+}
+.liveShell .preview .topTerm {
+  color:var(--accent);
+  text-shadow:0 0 1.2rem color-mix(in srgb,var(--accent) 30%,transparent);
+}
+.liveShell .empty {
+  min-height:25rem;
+  gap:.4rem;
+  align-content:center;
+}
+.liveShell .empty > span {
+  width:4rem;
+  aspect-ratio:1;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:color-mix(in srgb,var(--accent) 9%,transparent);
+  color:var(--accent);
+  font-size:1.6rem;
+}
+.liveShell .empty strong {
+  color:var(--text);
+}
+.liveShell .empty p {
+  max-width:20rem;
+  margin:0;
+  font-size:.64rem;
+  line-height:1.45;
+}
+.liveShell .actions {
+  position:sticky;
+  bottom:.5rem;
+  z-index:3;
+  padding:.65rem;
+  border:1px solid color-mix(in srgb,var(--accent) 18%,var(--border));
+  border-radius:12px;
+  background:color-mix(in srgb,var(--surface) 92%,transparent);
+  backdrop-filter:blur(10px);
+  box-shadow:0 .8rem 2rem rgba(0,0,0,.18);
+}
+@media (max-width:72rem) {
+  .prepareGrid,
+  .liveGrid {
+    grid-template-columns:1fr;
+  }
+  .participationCard {
+    position:static;
+  }
+}
+@media (max-width:42rem) {
+  .heroHeader,
+  .cloudStageHead,
+  .participationHead {
+    display:grid;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .previewCloudOrb,
+  .liveShell .actions {
+    transition:none;
+  }
+}
