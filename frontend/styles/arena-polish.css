@@ -3622,3 +3622,76 @@
     border-radius: 9.2rem 9.2rem 0 0;
   }
 }
+
+
+/* v0.8 · 16.0F.4 — edge-to-edge roulette stage */
+.arena-content-full .smart-draw-hero {
+  overflow: hidden;
+}
+
+.arena-content-full .draw-wheel-hero-stage {
+  width: calc(100% + 1.8rem);
+  margin-inline: -.9rem;
+}
+
+.arena-content-full .draw-wheel-zone {
+  width: 100%;
+  padding-inline: 0;
+}
+
+.arena-content-full .draw-wheel-viewport {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  aspect-ratio: 2 / 1;
+  margin-inline: 0;
+}
+
+.arena-content-full .draw-wheel-semicircle {
+  top: .35rem;
+  width: 100%;
+  max-width: none;
+}
+
+@media (max-width: 90rem) {
+  .arena-content-full .draw-wheel-viewport {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2 / 1;
+  }
+
+  .arena-content-full .draw-wheel-semicircle {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 74rem) {
+  .arena-content-full .draw-wheel-hero-stage {
+    width: calc(100% + 1.8rem);
+    margin-inline: -.9rem;
+  }
+
+  .arena-content-full .draw-wheel-viewport {
+    height: auto;
+    aspect-ratio: 2 / 1;
+  }
+
+  .arena-content-full .draw-wheel-semicircle {
+    width: 100%;
+  }
+}
+
+@media (max-width: 42rem) {
+  .arena-content-full .draw-wheel-hero-stage {
+    width: calc(100% + 1.8rem);
+  }
+
+  .arena-content-full .draw-wheel-viewport {
+    aspect-ratio: 1.82 / 1;
+  }
+
+  .arena-content-full .draw-wheel-semicircle {
+    width: 110%;
+  }
+}

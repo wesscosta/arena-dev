@@ -414,3 +414,14 @@ test("Draw hero uses an integrated target icon and semicircular command hub", ()
   assert.match(css, /width:\s*14rem/);
   assert.match(css, /border-radius:\s*14rem 14rem 0 0/);
 });
+
+
+test("Draw stage expands edge to edge inside the Arena hero", () => {
+  const css = read("styles/arena-polish.css");
+
+  assert.match(css, /\.arena-content-full \.draw-wheel-hero-stage\s*\{/);
+  assert.match(css, /width:\s*calc\(100% \+ 1\.8rem\)/);
+  assert.match(css, /margin-inline:\s*-\.9rem/);
+  assert.match(css, /\.arena-content-full \.draw-wheel-viewport[\s\S]*?aspect-ratio:\s*2 \/ 1/);
+  assert.match(css, /\.arena-content-full \.draw-wheel-semicircle[\s\S]*?width:\s*100%/);
+});
