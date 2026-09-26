@@ -26,7 +26,7 @@ test("session navigation keeps presence as a contextual Arena tool instead of a 
 });
 
 test("Boss Battle belongs to the primary Arena dynamics", () => {
-  assert.match(arena, /\["boss", "◆", "Boss Battle"\]/);
+  assert.match(arena, /\["boss", "boss", "Boss Battle"\]/);
   assert.match(arena, /activeDynamic === "buzzer"/);
   assert.doesNotMatch(arena, /arenaTab === "boss"/);
   assert.match(arena, /Dano manual nesta versão/);

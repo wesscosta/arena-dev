@@ -33,13 +33,18 @@ export default function ArenaToolDrawer({ open, title, subtitle, size = "default
   if (!open) return null;
 
   return (
-    <div className={styles.backdrop} role="presentation" onMouseDown={onClose}>
+    <div
+      className={styles.backdrop}
+      role="presentation"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
       <aside
         className={`${styles.drawer} ${size === "wide" ? styles.wide : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="arena-tool-title"
-        onMouseDown={(event) => event.stopPropagation()}
       >
         <header className={styles.header}>
           <div>

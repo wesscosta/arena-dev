@@ -1,6 +1,6 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 24 de setembro de 2026
+**Última sincronização documental:** 26 de setembro de 2026
 
 **Baseline publicada:** `v0.7.0 — Educational Integrations`.
 
@@ -16,7 +16,7 @@ A v0.7.0 está encerrada e publicada. A execução atual está concentrada na ex
 
 O cockpit da Arena já migrou para uma arquitetura orientada por ações, com navegação lateral, workspace de dinâmica, ferramentas contextuais e rail persistente de participantes/sessão.
 
-O Sorteio Inteligente 2.0 é a referência visual da nova shell e está funcional, com seleção autoritativa no backend, histórico, cobertura, pontuação rápida e roleta SVG adaptativa. A geometria visual final continua em refinamento e, portanto, o `16.0` ainda não está concluído.
+O Sorteio Inteligente 2.0 é a referência visual da nova shell e está funcional, com seleção autoritativa no backend, marcador fixo, roleta SVG circular adaptativa, histórico, cobertura e pontuação rápida. O cockpit também consolidou filtros de participantes, QR ampliável, drawers estáveis e altura integral para Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle. O `16.0` permanece aberto apenas para o gate final de polish, responsividade, acessibilidade e limpeza técnica.
 
 ## Baselines
 
@@ -43,30 +43,36 @@ Google Classroom          standby
 - Sorteio Inteligente com backend autoritativo;
 - Configurações exibem apenas políticas reais;
 - histórico e cobertura de sorteios;
-- roleta SVG com segmentos reais;
-- modo estático e carrossel para turmas maiores;
-- slots adaptados à largura disponível;
-- vencedor representado pelo estado do segmento, sem ponteiro como autoridade visual.
+- roleta SVG com segmentos reais e geometria circular preservada;
+- marcador fixo sobre o slot vencedor, sem autoridade de domínio;
+- carrossel adaptativo com slots ímpares e slot neutro para turmas pares pequenas;
+- animação em aceleração, giro sustentado e desaceleração;
+- rail com filtro Presentes/Todos;
+- QR ampliável em Presença e acesso;
+- indicadores de online e presença consolidados no roster;
+- selects nativos com contraste dark consistente;
+- Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle em workspace de altura integral no desktop.
 
 ## Em refinamento
 
-- fidelidade visual da roleta;
-- proporção final do semianel;
-- escala do hub `SORTEAR`;
-- labels radiais;
-- responsividade visual comparada à referência aprovada.
+- limpeza de CSS legado da roleta;
+- revisão visual final entre todas as dinâmicas;
+- estados vazios, erro e carregamento;
+- acessibilidade de teclado/foco nos controles contextuais;
+- gate responsivo final da Arena.
 
 ## Validação corrente
 
 ```text
-frontend tests      228 passed
+frontend tests      242 passed
 frontend typecheck  OK
 frontend build      OK
+frontend Docker     OK
 ```
 
 ## Próximo gate
 
-Concluir o polish visual e responsivo do `16.0`, validar as demais dinâmicas na nova shell e somente então avançar para `16.1 — Journey Core`.
+Executar o gate final do `16.0`: limpeza técnica, estados de exceção, acessibilidade e validação responsiva completa. Com esse gate aprovado, encerrar o incremento e iniciar `16.1 — Journey Core`.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)

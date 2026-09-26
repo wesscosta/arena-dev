@@ -92,6 +92,40 @@ const ARENA_DYNAMIC_LABELS: Record<ArenaDynamic, string> = {
   boss: "Boss Battle",
 };
 
+type ArenaGlyphName =
+  | "arena"
+  | "draw"
+  | "quiz"
+  | "poll"
+  | "wordcloud"
+  | "buzzer"
+  | "boss"
+  | "runbook"
+  | "timer"
+  | "groups"
+  | "attendance"
+  | "score";
+
+function ArenaGlyph({ name }: { name: ArenaGlyphName }) {
+  const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+      {name === "draw" && <><circle {...common} cx="12" cy="12" r="7" /><circle {...common} cx="12" cy="12" r="2.5" /><path {...common} d="M12 2v3M19 5l-2 2M22 12h-3" /></>}
+      {name === "quiz" && <><path {...common} d="M9.5 9a2.7 2.7 0 1 1 4.7 1.8c-1.2 1-2.2 1.4-2.2 3" /><path {...common} d="M12 18h.01" /><circle {...common} cx="12" cy="12" r="9" /></>}
+      {name === "poll" && <><circle {...common} cx="12" cy="12" r="8" /><path {...common} d="M12 4v8h8M12 12l-5.6 5.6" /></>}
+      {name === "wordcloud" && <path {...common} d="M7.5 18h9.2a4.3 4.3 0 0 0 .8-8.5A5.8 5.8 0 0 0 6.6 8.2 4.8 4.8 0 0 0 7.5 18Z" />}
+      {name === "buzzer" && <path {...common} d="m13.5 2-7 11h5l-1 9 7-12h-5l1-8Z" />}
+      {name === "boss" && <><path {...common} d="m12 3 7 4-7 4-7-4 7-4Z" /><path {...common} d="m5 7 7 4 7-4v10l-7 4-7-4V7Z" /><path {...common} d="M12 11v10" /></>}
+      {name === "runbook" && <><rect {...common} x="4" y="4" width="16" height="16" rx="2" /><path {...common} d="m10 8 5 4-5 4V8Z" /></>}
+      {name === "timer" && <><circle {...common} cx="12" cy="13" r="7" /><path {...common} d="M12 13V9M9 2h6M12 6V4" /></>}
+      {name === "groups" && <><circle {...common} cx="9" cy="9" r="3" /><circle {...common} cx="17" cy="10" r="2.3" /><path {...common} d="M3.5 19a5.5 5.5 0 0 1 11 0M14 18a4 4 0 0 1 6.5-3.1" /></>}
+      {name === "attendance" && <><rect {...common} x="5" y="3" width="14" height="18" rx="2" /><path {...common} d="m8.5 12 2.2 2.2 4.8-5" /></>}
+      {name === "score" && <><circle {...common} cx="12" cy="12" r="8" /><path {...common} d="M12 8v8M8 12h8" /></>}
+      {name === "arena" && <><path {...common} d="M7 9h10a4 4 0 0 1 3.7 5.5l-1 2.5a2 2 0 0 1-3.2.8L14.8 16H9.2l-1.7 1.8a2 2 0 0 1-3.2-.8l-1-2.5A4 4 0 0 1 7 9Z" /><path {...common} d="M8 12v3M6.5 13.5h3M16 12h.01M18 14h.01" /></>}
+    </svg>
+  );
+}
+
 const VIEW_LABEL: Record<View, string> = {
   dashboard: "Visão geral",
   classroom: "Turma",
@@ -337,7 +371,7 @@ export default function ArenaApp() {
       </a>
       <LiveRegion>{toast}</LiveRegion>
       <main id="main-content" className="main-area" tabIndex={-1}>
-        <header className="topbar app-topbar contextual-topbar">
+        <header className={`topbar app-topbar contextual-topbar ${view === "arena" && currentSession ? "arena-root-topbar-hidden" : ""}`}>
           <button
             type="button"
             className="topbar-brand"
@@ -598,6 +632,16 @@ export default function ArenaApp() {
                 preferredActivityId={arenaActivityId}
                 onPreferredActivityChange={setArenaActivityId}
                 onBack={() => openClassroom("home")}
+                onGoDashboard={() => setView("dashboard")}
+                teacherUsername={teacherSession.username}
+                onOpenSettings={() => setView("settings")}
+                onLogout={() => {
+                  void logoutTeacher().finally(() => {
+                    setTeacherSession(null);
+                    setData(EMPTY_DATA);
+                    setHydrated(false);
+                  });
+                }}
                 onSessionEnded={() => {
                   openClassroom("home");
                 }}
@@ -1849,7 +1893,7 @@ function ClassroomManagementPage({
 }
 
 
-function ArenaView({ data, classroomId, students, currentSession, sessionParticipants, preferredActivityId, onPreferredActivityChange, onBack, onSessionEnded, patch, notify }: {
+function ArenaView({ data, classroomId, students, currentSession, sessionParticipants, preferredActivityId, onPreferredActivityChange, onBack, onGoDashboard, teacherUsername, onOpenSettings, onLogout, onSessionEnded, patch, notify }: {
   data: ArenaData;
   classroomId: string;
   students: Student[];
@@ -1858,6 +1902,10 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   preferredActivityId?: string;
   onPreferredActivityChange: (activityId?: string) => void;
   onBack: () => void;
+  onGoDashboard: () => void;
+  teacherUsername: string;
+  onOpenSettings: () => void;
+  onLogout: () => void;
   onSessionEnded: () => void;
   patch: (updater: (current: ArenaData) => ArenaData) => void;
   notify: (message: string) => void;
@@ -1869,8 +1917,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
   const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
   const [drawSettingsOpen, setDrawSettingsOpen] = useState(false);
+  const [sessionQrOpen, setSessionQrOpen] = useState(false);
   const [reason, setReason] = useState("Resposta correta");
   const [customPoints, setCustomPoints] = useState(10);
+  const [customScoreOpen, setCustomScoreOpen] = useState(false);
+  const [scoreFeedback, setScoreFeedback] = useState(false);
   const [groups, setGroups] = useState<string[][]>(currentSession?.groups ?? []);
   const [groupSize, setGroupSize] = useState(currentSession?.groupSize ?? 2);
   const [bossName, setBossName] = useState("Spaghetti Code");
@@ -1892,6 +1943,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [liveFlowBusy, setLiveFlowBusy] = useState(false);
   const [sessionEvents, setSessionEvents] = useState<SessionEvent[]>([]);
   const [participantSearch, setParticipantSearch] = useState("");
+  const [participantFilter, setParticipantFilter] = useState<"present" | "all">("present");
   const [sessionNow, setSessionNow] = useState(() => Date.now());
   const classroom = data.classrooms.find((item) => item.id === classroomId);
   const classActivities = useMemo(
@@ -1903,6 +1955,17 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   useEffect(() => {
     if (typeof window !== "undefined") setPublicBaseUrl(window.location.origin);
   }, []);
+
+  useEffect(() => {
+    if (!sessionQrOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSessionQrOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [sessionQrOpen]);
 
   useEffect(() => {
     if (!currentSession) return;
@@ -2203,8 +2266,14 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           : session),
       }));
 
-      await new Promise((resolve) => window.setTimeout(resolve, reducedMotion ? 80 : 1800));
-      setSelectedId(result.studentId);
+      if (reducedMotion) {
+        setSelectedId(result.studentId);
+        await new Promise((resolve) => window.setTimeout(resolve, 80));
+      } else {
+        await new Promise((resolve) => window.setTimeout(resolve, 850));
+        setSelectedId(result.studentId);
+        await new Promise((resolve) => window.setTimeout(resolve, 950));
+      }
 
       void fetchSessionEventsBySession(currentSession.id)
         .then(setSessionEvents)
@@ -2232,6 +2301,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         questionId: currentSession.currentQuestionId,
       });
       patch((current) => ({ ...current, scoreEvents: [...current.scoreEvents, event] }));
+      setScoreFeedback(true);
+      window.setTimeout(() => setScoreFeedback(false), 900);
       notify(`${points >= 0 ? "+" : ""}${points} XP registrado no PostgreSQL.`);
     } catch (error) {
       notify(errorMessage(error));
@@ -2505,9 +2576,10 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const recentDrawEvents = sessionEvents
     .filter((event) => event.eventType === "DRAW_COMPLETED")
     .sort((a, b) => b.sequenceNo - a.sequenceNo);
+  const presentStudentIdSet = new Set(currentSession?.presentStudentIds ?? []);
   const drawnStudentIds = new Set(
     Object.entries(currentSession?.drawCounts ?? {})
-      .filter(([, count]) => count > 0)
+      .filter(([studentId, count]) => count > 0 && presentStudentIdSet.has(studentId))
       .map(([studentId]) => studentId),
   );
   const drawCoverage = currentSession?.presentStudentIds.length
@@ -2532,6 +2604,10 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           ? "Enfraquecido"
           : "Inteiro";
   const visibleParticipants = sessionParticipants.filter((participant) => {
+    if (participantFilter === "present" && !currentSession?.presentStudentIds.includes(participant.studentId)) {
+      return false;
+    }
+
     const student = data.students.find((item) => item.id === participant.studentId);
     const query = participantSearch.trim().toLowerCase();
     if (!query) return true;
@@ -2595,21 +2671,28 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
   return (
     <div className="stack-lg arena-session-workspace">
-      <div className="arena-header compact arena-desktop-session-header">
-        <div className="arena-session-context">
-          <button type="button" className="arena-back-to-class" onClick={onBack} aria-label="Voltar para a turma">
-            ←
-          </button>
-          <div>
-            <span className="arena-session-breadcrumb">
-              {classroom?.name ?? "Turma"} · {ARENA_DYNAMIC_LABELS[activeDynamic]}
-            </span>
-            <div className="arena-session-title-row">
-              <h2>{currentSession.title}</h2>
-              <Badge variant="live" dot>AO VIVO</Badge>
-            </div>
-          </div>
-        </div>
+      <header className="topbar app-topbar arena-live-topbar">
+        <button
+          type="button"
+          className="topbar-brand arena-live-brand"
+          onClick={onGoDashboard}
+          title="Voltar para a Visão geral"
+        >
+          <span className="topbar-brand-mark">A</span>
+          <span>
+            <strong>ARENA DEV</strong>
+            <small>Classroom Edition</small>
+          </span>
+        </button>
+
+        <nav className="arena-live-context" aria-label="Contexto da sessão">
+          <button type="button" onClick={onGoDashboard}>Turmas</button>
+          <span aria-hidden="true">›</span>
+          <button type="button" onClick={onBack}>{classroom?.name ?? "Turma"}</button>
+          <span aria-hidden="true">›</span>
+          <strong>{currentSession.title}</strong>
+          <Badge variant="live" dot>AO VIVO</Badge>
+        </nav>
 
         <div className="topbar-actions arena-session-actions">
           <div className="arena-session-elapsed" aria-label={`Tempo de sessão ${formatSessionElapsed(currentSession.startedAt, sessionNow)}`}>
@@ -2619,13 +2702,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <small>Tempo de sessão</small>
             </div>
           </div>
-          <Button
-            variant={activeTool === "attendance" ? "primary" : "secondary"}
-            onClick={() => setActiveTool((tool) => tool === "attendance" ? null : "attendance")}
-            disabled={!joinCode}
-          >
-            Presença
-          </Button>
           <Button
             variant="secondary"
             onClick={openProjector}
@@ -2641,20 +2717,56 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           >
             Encerrar sessão
           </Button>
+          <Menu
+            trigger={(triggerProps) => (
+              <button
+                {...triggerProps}
+                type="button"
+                className="topbar-profile arena-live-profile"
+                aria-label="Abrir menu do professor"
+              >
+                <span className="topbar-profile-avatar">
+                  {teacherUsername.trim().charAt(0).toUpperCase() || "P"}
+                </span>
+                <span className="topbar-profile-copy">
+                  <strong>{teacherUsername}</strong>
+                  <small>Professor</small>
+                </span>
+                <span className="topbar-profile-chevron">⌄</span>
+              </button>
+            )}
+          >
+            <MenuItem icon="⚙" description="Perfil, sistema e backup" onSelect={onOpenSettings}>
+              Configurações
+            </MenuItem>
+            <MenuItem icon="↪" danger description="Encerrar sessão do professor" onSelect={onLogout}>
+              Sair
+            </MenuItem>
+          </Menu>
         </div>
-      </div>
+      </header>
 
       <div className="arena-cockpit">
         <aside className="arena-cockpit-nav" aria-label="Ferramentas da Arena">
+          <div className="arena-nav-context">
+            <div className="arena-nav-arena-card" aria-current="page">
+              <span className="arena-nav-arena-icon" aria-hidden="true"><ArenaGlyph name="arena" /></span>
+              <div>
+                <strong>Arena</strong>
+                <small>Condução ao vivo</small>
+              </div>
+            </div>
+          </div>
+
           <div className="arena-cockpit-nav-group">
             <span className="arena-cockpit-nav-label">DINÂMICAS</span>
             {([
-              ["draw", "◎", "Sorteio"],
-              ["quiz", "?", "Quiz"],
-              ["poll", "◉", "Votação"],
-              ["wordcloud", "☁", "Nuvem de Palavras"],
-              ["buzzer", "⚡", "Buzzer"],
-              ["boss", "◆", "Boss Battle"],
+              ["draw", "draw", "Sorteio"],
+              ["quiz", "quiz", "Quiz"],
+              ["poll", "poll", "Votação"],
+              ["wordcloud", "wordcloud", "Nuvem de Palavras"],
+              ["buzzer", "buzzer", "Buzzer"],
+              ["boss", "boss", "Boss Battle"],
             ] as const).map(([id, icon, label]) => (
               <button
                 key={id}
@@ -2666,7 +2778,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                   setActiveTool(null);
                 }}
               >
-                <span aria-hidden="true">{icon}</span>
+                <span aria-hidden="true"><ArenaGlyph name={icon} /></span>
                 <strong>{label}</strong>
               </button>
             ))}
@@ -2675,19 +2787,19 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           <div className="arena-cockpit-nav-group">
             <span className="arena-cockpit-nav-label">FERRAMENTAS</span>
             <button type="button" className={activeDynamic === "runbook" ? "active" : ""} onClick={() => { setActiveDynamic("runbook"); setActiveTool(null); }}>
-              <span aria-hidden="true">▶</span><strong>Roteiro da aula</strong>
+              <span aria-hidden="true"><ArenaGlyph name="runbook" /></span><strong>Roteiro da aula</strong>
             </button>
             <button type="button" className={activeTool === "timer" ? "active" : ""} onClick={() => setActiveTool("timer")}>
-              <span aria-hidden="true">◷</span><strong>Timer</strong>
+              <span aria-hidden="true"><ArenaGlyph name="timer" /></span><strong>Timer</strong>
             </button>
             <button type="button" className={activeTool === "groups" ? "active" : ""} onClick={() => setActiveTool("groups")}>
-              <span aria-hidden="true">👥</span><strong>Organizar turma</strong>
+              <span aria-hidden="true"><ArenaGlyph name="groups" /></span><strong>Organizar turma</strong>
             </button>
             <button type="button" className={activeTool === "attendance" ? "active" : ""} onClick={() => setActiveTool("attendance")}>
-              <span aria-hidden="true">✓</span><strong>Presença</strong>
+              <span aria-hidden="true"><ArenaGlyph name="attendance" /></span><strong>Presença</strong>
             </button>
             <button type="button" className={activeTool === "score" ? "active" : ""} onClick={() => setActiveTool("score")}>
-              <span aria-hidden="true">＋</span><strong>Pontuação rápida</strong>
+              <span aria-hidden="true"><ArenaGlyph name="score" /></span><strong>Pontuação rápida</strong>
             </button>
           </div>
         </aside>
@@ -2781,7 +2893,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             <div className="smart-draw-hero">
               <div className="smart-draw-titlebar">
                 <div className="smart-draw-title-copy">
-                  <span className="smart-draw-title-icon" aria-hidden="true">◎</span>
+                  <span className="smart-draw-title-icon" aria-hidden="true"><ArenaGlyph name="draw" /></span>
                   <div>
                     <span className="eyebrow accent">DINÂMICA AO VIVO</span>
                     <h2>Sorteio Inteligente</h2>
@@ -2789,7 +2901,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                   </div>
                 </div>
                 <button type="button" className="smart-draw-settings" onClick={() => setDrawSettingsOpen(true)}>
-                  ⚙ Configurações
+                  ⚙ Ajustes
                 </button>
               </div>
 
@@ -2802,138 +2914,192 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 />
               </div>
 
-              <div className="draw-context-strip">
-                <section className="draw-recent-strip" aria-label="Últimos sorteados">
-                  <div className="draw-context-label">
-                    <strong>Últimos sorteados</strong>
-                    <span>{recentDrawEvents.length}</span>
-                  </div>
-                  <div className="draw-recent-people">
-                    {recentDrawEvents.slice(0, 5).map((event) => {
-                      const studentId = typeof event.payload.studentId === "string" ? event.payload.studentId : "";
-                      const student = students.find((item) => item.id === studentId);
-                      return (
-                        <div className="draw-recent-person" key={event.id} title={dateTime(event.occurredAt)}>
-                          {student ? <Avatar student={student} /> : <span className="draw-history-dot" />}
-                          <span>{student?.nickname || student?.name?.split(" ")[0] || "Aluno"}</span>
+              <div className={selected ? "selected-student-bar active" : "selected-student-bar"}>
+                <div className="selected-student-primary">
+                  <div className="selected-student-main">
+                    {selected ? (
+                      <>
+                        <Avatar student={selected} large />
+                        <div className="selected-student-copy">
+                          <div className="selected-student-name-row">
+                            <h3>{selected.nickname || selected.name}</h3>
+                            <span>🏆 Sorteado agora</span>
+                          </div>
+                          <p>
+                            Participações nesta sessão: {currentSession.drawCounts[selected.id] ?? 0}
+                            <b>·</b>
+                            <em>+{selectedXp} XP</em>
+                          </p>
                         </div>
-                      );
-                    })}
-                    {recentDrawEvents.length === 0 && (
-                      <small className="draw-history-empty">O histórico aparecerá após o primeiro sorteio.</small>
+                      </>
+                    ) : (
+                      <>
+                        <div className="draw-result-placeholder" aria-hidden="true">◎</div>
+                        <div className="selected-student-copy">
+                          <h3>Aguardando o próximo sorteio</h3>
+                          <p>O resultado aparecerá aqui e poderá ser pontuado imediatamente.</p>
+                        </div>
+                      </>
                     )}
                   </div>
-                </section>
 
-                <section className="draw-coverage-inline" aria-label="Cobertura do sorteio">
-                  <div>
-                    <strong>{drawnStudentIds.size}/{currentSession.presentStudentIds.length}</strong>
-                    <span>já sorteados</span>
-                  </div>
-                  <div className="draw-coverage-ring" style={{ "--coverage": `${drawCoverage}%` } as CSSProperties}>
-                    <strong>{drawCoverage}%</strong>
-                  </div>
-                </section>
-              </div>
-
-              <div className={selected ? "selected-student-bar active" : "selected-student-bar"}>
-                {selected ? (
-                  <>
-                    <Avatar student={selected} large />
-                    <div className="selected-student-copy">
-                      <div className="selected-student-name-row">
-                        <h3>{selected.nickname || selected.name}</h3>
-                        <span>🏆 Sorteado agora</span>
-                      </div>
-                      <p>
-                        Último sorteio: {selectedDrawEvent ? dateTime(selectedDrawEvent.occurredAt) : "agora"}
-                        <b>·</b>
-                        Participações nesta sessão: {currentSession.drawCounts[selected.id] ?? 0}
-                        <b>·</b>
-                        <em>+{selectedXp} XP</em>
-                      </p>
-                    </div>
-                    <button type="button" className="selected-student-cta" onClick={() => { setReason("Participação"); void addScore(5, "COLLABORATION", "Participação"); }}>
-                      Confirmar e pontuar →
+                  {selected && (
+                    <button type="button" className={scoreFeedback ? "selected-student-cta success" : "selected-student-cta"} onClick={() => { setReason("Participação"); void addScore(5, "COLLABORATION", "Participação"); }}>
+                      {scoreFeedback ? "✓ Pontuado" : "Confirmar e pontuar →"}
                     </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="draw-result-placeholder" aria-hidden="true">◎</div>
-                    <div className="selected-student-copy">
-                      <h3>Aguardando o próximo sorteio</h3>
-                      <p>O resultado aparecerá aqui e poderá ser pontuado imediatamente.</p>
-                    </div>
-                  </>
-                )}
+                  )}
+                </div>
+
+                <section className="draw-coverage-summary" aria-label={`Cobertura do sorteio: ${drawnStudentIds.size} de ${currentSession.presentStudentIds.length}, ${drawCoverage}%`}>
+                  <div className="draw-coverage-count">
+                    <span className="draw-coverage-badge">já sorteados</span>
+                    <details className="draw-history-popover draw-history-inline">
+                      <summary aria-label="Exibir últimos sorteados" title="Exibir últimos sorteados">
+                        <strong>{drawnStudentIds.size}/{currentSession.presentStudentIds.length}</strong>
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                          <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </summary>
+                      <div className="draw-history-menu" aria-label="Últimos sorteados">
+                        {recentDrawEvents.length > 0 ? recentDrawEvents.slice(0, 10).map((event, index) => {
+                          const studentId = typeof event.payload.studentId === "string" ? event.payload.studentId : "";
+                          const student = students.find((item) => item.id === studentId);
+                          return (
+                            <span key={event.id} title={dateTime(event.occurredAt)}>
+                              {index > 0 && <i aria-hidden="true">·</i>}
+                              {student?.nickname || student?.name?.split(" ")[0] || "Aluno"}
+                            </span>
+                          );
+                        }) : (
+                          <small>Nenhum sorteio registrado nesta sessão.</small>
+                        )}
+                      </div>
+                    </details>
+                  </div>
+
+                  <div
+                    className="draw-coverage-ring"
+                    style={{ "--coverage-angle": `${drawCoverage * 3.6}deg` } as CSSProperties}
+                    aria-hidden="true"
+                  >
+                    <span>{drawCoverage}%</span>
+                  </div>
+                </section>
               </div>
             </div>
 
             <section className="quick-score-dock" aria-label="Ações rápidas de pontuação">
               <div className="quick-score-head">
-                <div><strong>Ações rápidas</strong><small>{selected ? `Pontuar ${selected.nickname || selected.name}` : "Selecione ou sorteie um aluno"}</small></div>
-                <select className="select" value={selectedId ?? ""} onChange={(e) => setSelectedId(e.target.value || undefined)}>
-                  <option value="">Selecionar aluno</option>
-                  {students.filter((student) => currentSession.presentStudentIds.includes(student.id)).map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
-                </select>
+                <div>
+                  <strong>Ações rápidas</strong>
+                  <small>Pontue o aluno selecionado.</small>
+                </div>
+                <label className="quick-score-student">
+                  <span className="sr-only">Aluno para pontuação</span>
+                  {selected ? <Avatar student={selected} /> : <span className="quick-score-student-placeholder" aria-hidden="true">—</span>}
+                  <select
+                    className="select"
+                    aria-label="Aluno para pontuação"
+                    value={selectedId ?? ""}
+                    onChange={(e) => setSelectedId(e.target.value || undefined)}
+                  >
+                    <option value="">Selecionar aluno</option>
+                    {students.filter((student) => currentSession.presentStudentIds.includes(student.id)).map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
+                  </select>
+                </label>
               </div>
-              <div className="quick-score-actions">
+
+              <div className="quick-score-presets">
                 {SCORE_PRESETS.map((preset) => (
                   <button key={`${preset.points}-${preset.label}`} disabled={!selected} onClick={() => { setReason(preset.label); void addScore(preset.points, preset.category, preset.label); }}>
                     <b>+{preset.points}</b><span>{preset.points === 5 ? "Participação" : preset.label}</span>
                   </button>
                 ))}
-                <button className="quick-score-custom-trigger" disabled={!selected} onClick={() => setReason("Outra pontuação")}>
-                  <b>✎</b><span>Outra pontuação</span>
-                </button>
-                <div className="quick-score-custom">
-                  <input className="input compact" type="number" value={customPoints} onChange={(e) => setCustomPoints(Number(e.target.value))} />
-                  <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Adicionar observação..." />
-                  <button className="button primary" disabled={!selected || !reason.trim()} onClick={() => addScore(customPoints, "ADJUSTMENT", reason)}>Aplicar</button>
+                <div className="quick-score-custom-wrap">
+                  <button
+                    type="button"
+                    className={customScoreOpen ? "quick-score-custom-trigger active" : "quick-score-custom-trigger"}
+                    disabled={!selected}
+                    aria-expanded={customScoreOpen}
+                    onClick={() => {
+                      setReason("Outra pontuação");
+                      setCustomScoreOpen((open) => !open);
+                    }}
+                  >
+                    <b>✎</b><span>Personalizar</span>
+                  </button>
+                  {customScoreOpen && (
+                    <div className="quick-score-custom-popover">
+                      <label>
+                        <span>Pontos</span>
+                        <input className="input compact" type="number" value={customPoints} onChange={(e) => setCustomPoints(Number(e.target.value))} />
+                      </label>
+                      <label>
+                        <span>Motivo ou observação</span>
+                        <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ex.: colaboração excepcional" />
+                      </label>
+                      <button
+                        className="button primary"
+                        disabled={!selected || !reason.trim()}
+                        onClick={() => {
+                          void addScore(customPoints, "ADJUSTMENT", reason);
+                          setCustomScoreOpen(false);
+                        }}
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
           </div>
           ) : activeDynamic === "wordcloud" ? (
-            <WordCloudPanel
-              sessionId={currentSession.id}
-              state={wordCloudState}
-              onStateChange={setWordCloudState}
-              notify={notify}
-              joinCode={joinCode}
-              publicBaseUrl={publicBaseUrl}
-              realtimeStatus={realtimeStatus}
-              connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
-              presentCount={sessionParticipants.filter((participant) => participant.present).length}
-              showAccessCard={false}
-            />
+            <div className="arena-dynamic-workspace">
+              <WordCloudPanel
+                sessionId={currentSession.id}
+                state={wordCloudState}
+                onStateChange={setWordCloudState}
+                notify={notify}
+                joinCode={joinCode}
+                publicBaseUrl={publicBaseUrl}
+                realtimeStatus={realtimeStatus}
+                connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+                presentCount={sessionParticipants.filter((participant) => participant.present).length}
+                showAccessCard={false}
+              />
+            </div>
           ) : activeDynamic === "poll" ? (
-            <PollPanel
-              sessionId={currentSession.id}
-              state={pollState}
-              onStateChange={setPollState}
-              notify={notify}
-              joinCode={joinCode}
-              publicBaseUrl={publicBaseUrl}
-              realtimeStatus={realtimeStatus}
-              connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
-              presentCount={sessionParticipants.filter((participant) => participant.present).length}
-              showAccessCard={false}
-            />
+            <div className="arena-dynamic-workspace">
+              <PollPanel
+                sessionId={currentSession.id}
+                state={pollState}
+                onStateChange={setPollState}
+                notify={notify}
+                joinCode={joinCode}
+                publicBaseUrl={publicBaseUrl}
+                realtimeStatus={realtimeStatus}
+                connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+                presentCount={sessionParticipants.filter((participant) => participant.present).length}
+                showAccessCard={false}
+              />
+            </div>
           ) : activeDynamic === "quiz" ? (
-            <QuizPanel
-              sessionId={currentSession.id}
-              state={quizState}
-              onStateChange={setQuizState}
-              questions={activeActivity?.questions ?? []}
-              presentCount={sessionParticipants.filter((participant) => participant.present).length}
-              joinCode={joinCode}
-              notify={notify}
-              canAdvanceFlow={Boolean(liveFlowState?.started && liveFlowState.hasNext)}
-              onContinue={() => movePreparedFlow("next")}
-            />
+            <div className="arena-quiz-workspace">
+              <QuizPanel
+                sessionId={currentSession.id}
+                state={quizState}
+                onStateChange={setQuizState}
+                questions={activeActivity?.questions ?? []}
+                presentCount={sessionParticipants.filter((participant) => participant.present).length}
+                joinCode={joinCode}
+                notify={notify}
+                canAdvanceFlow={Boolean(liveFlowState?.started && liveFlowState.hasNext)}
+                onContinue={() => movePreparedFlow("next")}
+              />
+            </div>
           ) : activeDynamic === "buzzer" ? (
-            <div className="buzzer-workspace">
+            <div className="arena-dynamic-workspace buzzer-workspace">
               <section className="buzzer-hero">
                 <div className="buzzer-titlebar">
                   <div>
@@ -3044,7 +3210,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               </section>
             </div>
           ) : (
-            <div className="boss-workspace">
+            <div className="arena-dynamic-workspace boss-workspace">
               <section className="boss-hero">
                 <div className="boss-titlebar">
                   <div>
@@ -3209,6 +3375,25 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <button type="button" onClick={() => setActiveTool("attendance")}>Presença</button>
             </div>
 
+            <div className="arena-participant-filter" role="group" aria-label="Filtrar participantes">
+              <button
+                type="button"
+                className={participantFilter === "present" ? "active" : ""}
+                aria-pressed={participantFilter === "present"}
+                onClick={() => setParticipantFilter("present")}
+              >
+                Presentes <span>{currentSession.presentStudentIds.length}</span>
+              </button>
+              <button
+                type="button"
+                className={participantFilter === "all" ? "active" : ""}
+                aria-pressed={participantFilter === "all"}
+                onClick={() => setParticipantFilter("all")}
+              >
+                Todos <span>{sessionParticipants.length}</span>
+              </button>
+            </div>
+
             <label className="arena-participant-search">
               <span aria-hidden="true">⌕</span>
               <input
@@ -3270,16 +3455,59 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <small>Aponte a câmera para participar</small>
             </div>
             {joinCode && publicBaseUrl ? (
-              <img
-                src={joinQrImageUrl(currentSession.id, publicBaseUrl, joinCode.code, 180)}
-                alt={`QR Code da sessão ${joinCode.code}`}
-              />
+              <button
+                type="button"
+                className="arena-session-qr-trigger"
+                onClick={() => setSessionQrOpen(true)}
+                aria-label="Ampliar QR Code da sessão"
+                title="Ampliar QR Code"
+              >
+                <img
+                  src={joinQrImageUrl(currentSession.id, publicBaseUrl, joinCode.code, 180)}
+                  alt={`QR Code da sessão ${joinCode.code}`}
+                />
+              </button>
             ) : (
               <div className="arena-qr-placeholder">QR</div>
             )}
           </section>
         </aside>
       </div>
+
+      {sessionQrOpen && joinCode && publicBaseUrl && (
+        <div
+          className="arena-session-qr-modal"
+          role="presentation"
+          onClick={() => setSessionQrOpen(false)}
+        >
+          <section
+            className="arena-session-qr-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="arena-session-qr-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="arena-session-qr-close"
+              onClick={() => setSessionQrOpen(false)}
+              aria-label="Fechar QR Code ampliado"
+            >
+              ×
+            </button>
+            <span className="arena-session-qr-eyebrow">ENTRE NA ARENA</span>
+            <h2 id="arena-session-qr-title">Escaneie para participar</h2>
+            <div className="arena-session-qr-large">
+              <img
+                src={joinQrImageUrl(currentSession.id, publicBaseUrl, joinCode.code, 720)}
+                alt={`QR Code ampliado da sessão ${joinCode.code}`}
+              />
+            </div>
+            <strong>{joinCode.code}</strong>
+            <p>Aponte a câmera do celular para acessar a sessão.</p>
+          </section>
+        </div>
+      )}
 
       <ArenaToolDrawer
         open={drawSettingsOpen}
@@ -3395,21 +3623,22 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             joinCode={joinCode}
             publicBaseUrl={publicBaseUrl}
             notify={notify}
-            realtimeStatus={realtimeStatus}
-            connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
-            presentCount={sessionParticipants.filter((participant) => participant.present).length}
             onRotate={rotateSessionCode}
             rotateBusy={realtimeBusy}
             compact
             drawer
             title="Entrada dos alunos"
-            subtitle="O código permanece válido durante a sessão."
+            subtitle=""
+            onExpandQr={() => setSessionQrOpen(true)}
           />
 
           <div className="arena-tool-roster">
             <div className="arena-tool-roster-head">
               <strong>Participantes</strong>
-              <span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span>
+              <div className="arena-tool-roster-badges">
+                <span className="online">{sessionParticipants.filter((participant) => participant.connected).length} online</span>
+                <span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span>
+              </div>
             </div>
             {sessionParticipants.map((participant) => {
               const student = data.students.find((item) => item.id === participant.studentId);

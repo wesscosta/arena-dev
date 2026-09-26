@@ -4,8 +4,9 @@
   --draw-wheel-selected-top: color-mix(in srgb, var(--accent) 78%, #0b2b21);
   --draw-wheel-selected-bottom: color-mix(in srgb, var(--accent) 34%, #071811);
   position: relative;
-  width: 100%;
+  width: min(100%, 64rem);
   min-width: 0;
+  margin-inline: auto;
   display: grid;
   place-items: center;
 }
@@ -13,8 +14,8 @@
 .viewport {
   position: relative;
   width: 100%;
-  aspect-ratio: 1000 / 440;
-  min-height: 19rem;
+  aspect-ratio: 1100 / 430;
+  min-height: 17.5rem;
   overflow: hidden;
 }
 
@@ -101,6 +102,15 @@
   filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 28%, transparent));
 }
 
+.pointer {
+  fill: var(--accent);
+  stroke: color-mix(in srgb, var(--accent) 58%, white 22%);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 62%, transparent));
+  pointer-events: none;
+}
+
 .commandHub {
   position: absolute;
   left: 50%;
@@ -183,19 +193,19 @@
 }
 
 @media (max-width: 90rem) {
-  .viewport { min-height: 18rem; }
+  .viewport { min-height: 16.5rem; }
   .initials, .name { font-size: 14px; }
   .commandHub { width: 13.5rem; height: 6.8rem; }
 }
 
 @media (max-width: 54rem) {
-  .viewport { min-height: 15.5rem; }
+  .viewport { min-height: 14rem; }
   .name, .initials { font-size: 13px; }
   .commandHub { width: 11.5rem; height: 5.8rem; }
 }
 
 @media (max-width: 42rem) {
-  .viewport { min-height: 12.75rem; }
+  .viewport { min-height: 11.5rem; }
   .name { display: none; }
   .commandHub { width: 9.5rem; height: 4.8rem; }
 }
@@ -209,27 +219,6 @@
 /* v0.8 · fixed-slot carousel mode for larger classes */
 .centerSlot .segmentShape {
   stroke-width: 2;
-}
-
-.carouselHint {
-  position: absolute;
-  right: .65rem;
-  bottom: .55rem;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: .45rem;
-  color: var(--muted);
-  font-size: .52rem;
-  pointer-events: none;
-}
-
-.carouselHint span {
-  padding: .2rem .36rem;
-  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 84%, transparent);
-  backdrop-filter: blur(8px);
 }
 
 .stage[data-mode="carousel"] .segmentShape {
@@ -249,14 +238,65 @@
   to { opacity: 1; filter: brightness(1.14); }
 }
 
-@media (max-width: 54rem) {
-  .carouselHint {
-    display: none;
+@media (prefers-reduced-motion: reduce) {
+  .stage[data-mode="carousel"] .drawing .segment {
+    animation: none;
   }
 }
 
+/* Small classes still animate through the fixed selection lane. */
+.stage[data-mode="animated"] .drawing .segment {
+  animation: carousel-slot-pulse .38s ease-in-out infinite alternate;
+}
+
+.stage[data-mode="animated"] .segmentShape {
+  stroke-width: 2;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .stage[data-mode="carousel"] .drawing .segment {
+  .stage[data-mode="animated"] .drawing .segment {
+    animation: none;
+  }
+}
+
+/* v0.8 · 16.0F.14 — fairness placeholders and settled winner feedback */
+.placeholderSegment .segmentShape {
+  fill: color-mix(in srgb, var(--surface-2) 94%, var(--accent) 2%);
+  stroke: color-mix(in srgb, var(--border) 88%, var(--accent) 12%);
+  opacity: .62;
+}
+
+.placeholderMark {
+  fill: color-mix(in srgb, var(--muted) 58%, transparent);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.settled .segmentShape {
+  animation: winner-settle-shape .46s cubic-bezier(.2, .85, .25, 1);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.settled .participantLabel {
+  animation: winner-settle-label .46s cubic-bezier(.2, .85, .25, 1);
+}
+
+@keyframes winner-settle-shape {
+  0% { filter: brightness(1); }
+  42% { filter: brightness(1.28) drop-shadow(0 0 13px color-mix(in srgb, var(--accent) 42%, transparent)); }
+  100% { filter: brightness(1); }
+}
+
+@keyframes winner-settle-label {
+  0% { scale: 1; }
+  45% { scale: 1.045; }
+  100% { scale: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settled .segmentShape,
+  .settled .participantLabel {
     animation: none;
   }
 }

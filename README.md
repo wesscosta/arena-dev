@@ -180,9 +180,12 @@ Estado atual do `16.0 — Professor Arena Experience`:
 - workspace full-width e rail contextual de participantes/sessão;
 - Timer, Organização e Presença em ferramentas contextuais;
 - Pontuação Rápida transversal;
-- Sorteio Inteligente 2.0 com seleção autoritativa no backend;
-- roleta SVG com segmentos reais, modo estático e carrossel adaptativo para turmas maiores;
-- fidelidade visual do Sorteio ainda em refinamento.
+- Sorteio Inteligente 2.0 com seleção autoritativa no backend, marcador fixo e animação com aceleração/desaceleração;
+- roleta SVG circular com slots adaptativos, quantidade ímpar de casas visíveis e slot neutro para preservar percepção de justiça em turmas pares;
+- rail de participantes com filtro Presentes/Todos e ferramentas contextuais estáveis para Timer, Organização, Presença e Pontuação Rápida;
+- QR ampliável, indicadores de online/presença consolidados e selects com contraste consistente no tema escuro;
+- Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle ocupando a altura disponível do cockpit em desktop;
+- polish visual e responsivo do 16.0 em fase final de consolidação.
 
 Roadmap e estado detalhado em `docs/ROADMAP_0_8.md` e `docs/INCREMENT_16_0.md`.
 

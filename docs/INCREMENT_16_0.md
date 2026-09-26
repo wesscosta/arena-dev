@@ -114,23 +114,63 @@ O Sorteio e o cockpit devem ser validados pelo menos em:
 
 ## Estado do polish
 
-A estrutura funcional está consolidada, mas o Sorteio continua em ajuste de fidelidade visual em relação à referência aprovada.
+A estrutura funcional está consolidada e os passes de fidelidade `16.0F.5/16.0F.6/16.0F.7/16.0F.8/16.0F.9` aproximaram a Arena da referência aprovada sem alterar a autoridade do backend.
 
-Pendências visuais atuais:
-- proporção final do semianel;
-- altura do arco;
-- escala do hub `SORTEAR`;
-- orientação dos labels;
-- comparação lado a lado com a referência em larguras de desktop.
+Implementado neste passe:
+- topbar operacional única durante a sessão ao vivo;
+- contexto `Turmas > Turma > Sessão` e estado `AO VIVO` no header;
+- sidebar simplificada: o retorno redundante `Voltar para a turma` foi removido e o contexto `Arena — Conduza sua aula ao vivo` passa a abrir a navegação;
+- ícones SVG internos consistentes para dinâmicas e ferramentas;
+- cockpit com proporções desktop reajustadas;
+- roleta baseada em circunferência real, sem raios X/Y independentes;
+- raio externo ampliado para `512` (~7% sobre o raio horizontal anterior) e interno para `327` (~15%);
+- palco horizontal ampliado sem aumentar a altura útil da roleta;
+- quantidade de casas calculada pela largura medida, comprimento do arco médio e total de participantes;
+- mínimo visual de aproximadamente `150 px` de arco por casa, com capacidade adaptativa de até 9 slots;
+- capacidade par é reduzida em uma casa quando necessário para preservar uma casa real exatamente sob o marcador fixo;
+- badges auxiliares de quantidade de casas e participantes removidos da roleta;
+- marcador triangular superior reintroduzido como referência visual fixa;
+- destaque da casa de seleção preso ao slot central sob o marcador, enquanto os participantes circulam por essa posição;
+- histórico permanente removido e incorporado à barra do sorteado por meio de um popover sem deslocamento de layout;
+- HUD do sorteio reorganizado em duas zonas: resultado/CTA à esquerda e cobertura/histórico à direita;
+- bloco de cobertura ocupa aproximadamente um terço da faixa, com `sorteados/total`, percentual em mini donut independente e `já sorteados` como acionador do histórico;
+- o histórico fica integrado ao próprio bloco de cobertura, sem consumir uma coluna isolada;
+- turmas pequenas também percorrem os slots durante o sorteio: a animação deixa de depender exclusivamente do modo carousel;
+- marcador e casa de seleção permanecem fixos, enquanto os participantes percorrem os slots em três momentos perceptivos: aceleração curta, velocidade sustentada e desaceleração progressiva antes do assentamento final;
+- após o backend definir o vencedor, a interface mantém ~850 ms de giro rápido, revela o vencedor para iniciar ~950 ms de desaceleração e só então encerra o estado de sorteio; `prefers-reduced-motion` continua usando caminho reduzido;
+- ao encerrar a animação, a casa vencedora executa um pulse curto (~460 ms) para confirmar visualmente o resultado sem transformar a dinâmica em uma estética de cassino;
+- em turmas pares pequenas, o slot extra usado para preservar uma casa central deixa de duplicar participantes no estado parado e vira um slot neutro (`◇`); durante a animação a circulação continua circular;
+- rail de participantes passa a abrir em `Presentes` por padrão e oferece alternância explícita `Presentes | Todos`, reduzindo ruído durante a condução ao vivo;
+- seletor de aluno em `Ações rápidas` passa a incorporar avatar/inicial e tratamento de chip contextual, enquanto `Outra pontuação` vira `Personalizar` com peso visual secundário;
+- `Arena` na sidebar passa a funcionar como contexto visual mais silencioso e `Sorteio` concentra o estado ativo forte;
+- ação `Configurações` do Sorteio foi compactada para `Ajustes`, e o espaçamento título→roleta foi reduzido para recuperar área útil sem alterar a geometria circular;
+- drawers contextuais deixaram de fechar em eventos de `mousedown` do backdrop: agora só fecham por clique real fora do drawer, botão `×` ou `Esc`, evitando o fechamento indevido de selects nativos em `Organizar turma` e `Pontuação rápida`;
+- QR da ferramenta `Presença e acesso` passou a reutilizar o mesmo modal ampliado da Arena, com affordance de zoom no próprio QR;
+- no passe `16.0F.16`, o card de acesso foi simplificado: QR maior e sem moldura branca auxiliar/texto explicativo, URL com tipografia ampliada, subtítulo redundante removido e rotação de código movida para um botão circular discreto no cabeçalho do código;
+- no passe `16.0F.17`, selects nativos da Arena e dos drawers receberam `color-scheme: dark` e estilos explícitos para campo/opções, eliminando o menu branco sem contraste no tema escuro;
+- o indicador de usuários online saiu do card `Entrada dos alunos` e passou a aparecer ao lado do contador de presentes no cabeçalho da lista de participantes;
+- `Nuvem de Palavras`, `Votação`, `Buzzer` e `Boss Battle` passaram a compartilhar um workspace de dinâmica com `height: 100%` em desktop, seguindo a mesma regra aplicada ao Quiz e retornando ao fluxo natural abaixo de `74rem`;
+- workspace do Quiz passa a ocupar toda a altura disponível do cockpit em desktop (`100%` do `arena-cockpit-main`), mantendo fluxo natural abaixo de `74rem` para preservar responsividade;
+- metadados do sorteado reduzidos a participação na sessão e XP para preservar foco operacional;
+- `Ações rápidas` reorganizadas em contexto + seletor de aluno + cinco presets, com pontuação personalizada aberta sob demanda em popover;
+- em desktop largo, pontuação rápida permanece em uma única faixa para evitar scroll da página principal;
+- Arena desktop ocupando `100dvh`, com navegação e rail contextual esticados até o fim da tela;
+- lista de participantes rolando internamente para manter código e QR visíveis;
+- tipografia funcional elevada para os tokens mínimos do Design System;
+- rail de participantes, resultado e pontuação rápida com densidade revisada;
+- ação `Encerrar sessão` preservada também nos breakpoints compactos.
+
+O passe `16.0F.17` foi validado visualmente em `1672×941` e `1366×768` no tema escuro, ambos sem scroll da página principal. Os selects de `Organizar turma` e `Pontuação rápida` permanecem estáveis após alteração de valor, o QR ampliado abre a partir de `Presença e acesso`, e o Quiz ocupa toda a altura disponível do cockpit em desktop. Em `1024×768`, a Arena mantém o comportamento responsivo de tablet com fluxo natural e scroll da página quando necessário, evitando comprimir controles abaixo dos mínimos de usabilidade. Permanece pendente apenas a remoção consolidada dos seletores legados da roleta antiga em `arena-polish.css`.
 
 ## Validação técnica
 
 Último gate executado na branch:
 
 ```text
-228 testes frontend aprovados
+242 testes frontend aprovados
 npm run typecheck  OK
 npm run build      OK
+Docker frontend    OK
 ```
 ## Não objetivos
 

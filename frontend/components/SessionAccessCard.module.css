@@ -1017,8 +1017,8 @@
 
 .drawer .content {
   min-width: 0;
-  grid-template-columns: minmax(0, 1fr) 7.4rem;
-  gap: .65rem;
+  grid-template-columns: minmax(0, 1fr) 9.75rem;
+  gap: .85rem;
   align-items: stretch;
 }
 
@@ -1030,6 +1030,46 @@
 .drawer .codeBlock {
   gap: .16rem;
   margin: 0;
+}
+
+.drawer .codeHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+.drawer .refreshButton {
+  width: 1.9rem;
+  height: 1.9rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color .16s ease, border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.drawer .refreshButton:hover,
+.drawer .refreshButton:focus-visible {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  outline: none;
+  transform: rotate(18deg);
+}
+
+.drawer .refreshButton:disabled {
+  opacity: .45;
+  cursor: wait;
+  transform: none;
 }
 
 .drawer .codeLabel,
@@ -1056,10 +1096,10 @@
 .drawer .url {
   width: 100%;
   min-width: 0;
-  height: 2.15rem;
-  padding: 0 .65rem;
+  height: 2.35rem;
+  padding: 0 .75rem;
   overflow: hidden;
-  font-size: .64rem;
+  font-size: .78rem;
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1072,8 +1112,8 @@
 .drawer .actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: .38rem;
-  margin: 0;
+  gap: .42rem;
+  margin: .05rem 0 0;
 }
 
 .drawer .primary,
@@ -1094,24 +1134,35 @@
 }
 
 .drawer .qr {
-  width: 7.4rem;
+  width: 9.75rem;
   min-width: 0;
+  display: grid;
+  place-items: center;
   justify-self: stretch;
-  padding: .35rem;
-  gap: .25rem;
-  border-radius: 10px;
+  align-self: stretch;
+  padding: 0;
+  gap: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
 }
 
+.drawer .qrTrigger,
 .drawer .qr img,
 .drawer .placeholder {
-  width: 6.7rem;
-  height: 6.7rem;
+  width: 9.1rem;
+  height: 9.1rem;
 }
 
-.drawer .qr small {
-  max-width: 6.5rem;
-  font-size: .45rem;
-  line-height: 1.2;
+.drawer .qrTrigger {
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.drawer .qr small,
+.drawer .qrTrigger span {
+  display: none;
 }
 
 .drawer .warning {
@@ -1139,7 +1190,61 @@
   }
 
   .drawer .qr {
-    width: 7.4rem;
+    width: min(100%, 10rem);
     justify-self: center;
   }
+
+  .drawer .qrTrigger,
+  .drawer .qr img,
+  .drawer .placeholder {
+    width: min(9.1rem, 72vw);
+    height: auto;
+    aspect-ratio: 1;
+  }
+}
+
+/* Arena drawer QR affordance — reuse the full-screen session QR modal. */
+.qrTrigger {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.qrTrigger img {
+  display: block;
+}
+
+.qrTrigger span {
+  position: absolute;
+  right: .35rem;
+  bottom: .35rem;
+  padding: .2rem .38rem;
+  border-radius: 999px;
+  background: rgba(3, 8, 6, .78);
+  color: #fff;
+  font-size: .48rem;
+  font-weight: 800;
+  opacity: 0;
+  transform: translateY(.15rem);
+  transition: opacity .16s ease, transform .16s ease;
+}
+
+.qrTrigger:hover span,
+.qrTrigger:focus-visible span {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.qrTrigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, white 10%);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qrTrigger span { transition: none; }
 }

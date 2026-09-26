@@ -32,7 +32,7 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 
 Transformar a Arena em um cockpit desktop de aula ao vivo orientado por ações, eliminando a navegação por abas conceituais.
 
-### Implementado até 24/09/2026
+### Implementado até 26/09/2026
 
 #### Shell e arquitetura de informação
 - navegação lateral persistente;
@@ -66,20 +66,24 @@ Transformar a Arena em um cockpit desktop de aula ao vivo orientado por ações,
 - segmentos reais por participante/slot;
 - modo estático para conjuntos pequenos;
 - modo carrossel para turmas maiores;
-- quantidade de slots visíveis adaptada à largura do componente;
-- remoção do ponteiro triangular redundante;
-- destaque do vencedor pelo próprio estado do segmento;
+- quantidade de slots visíveis adaptada à largura do componente com preferência por contagem ímpar;
+- marcador triangular fixo reintroduzido como referência espacial, sem participar da autoridade do resultado;
+- participante vencedor assentado no slot central fixo;
+- slot neutro no estado parado para evitar duplicidade visual em turmas pares pequenas;
+- aceleração, velocidade sustentada e desaceleração progressiva durante o sorteio;
+- pulse curto de confirmação após o assentamento;
 - reduced motion preservado.
 
 ### Em refinamento
 
-A fidelidade visual do Sorteio ainda está em polish. Em especial:
-- proporção final do arco externo;
-- relação entre altura da roleta e largura útil;
-- dimensão final do hub `SORTEAR`;
-- rotação/legibilidade dos labels;
-- validação visual em 1366, 1440 e 1920 px.
-Esses ajustes são de apresentação. Não alteram a regra de sorteio nem a autoridade do backend.
+O núcleo visual/funcional do cockpit está consolidado. O fechamento do 16.0 concentra-se agora em:
+- limpeza dos seletores CSS legados da roleta antiga;
+- revisão visual final de todas as dinâmicas na mesma densidade do Sorteio/Quiz;
+- validação responsiva final em 1366×768, 1440×900, 1672×941 e 1920×1080;
+- revisão de estados vazios, carregamento, erro e ausência de participantes;
+- gate de acessibilidade/teclado dos drawers, selects, popovers e controles da Arena.
+
+Esses ajustes são de apresentação, resiliência e acessibilidade. Não alteram a regra de sorteio nem a autoridade do backend.
 
 ### Gates já preservados
 - XP continua baseado em `ScoreEvent`;
@@ -95,9 +99,10 @@ Esses ajustes são de apresentação. Não alteram a regra de sorteio nem a auto
 
 ```text
 frontend
-npm test       228 passed
+npm test       242 passed
 npm typecheck  OK
 npm build      OK
+Docker frontend OK
 ```
 
 ## Critério de fechamento do 16.0

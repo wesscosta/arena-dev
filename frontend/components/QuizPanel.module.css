@@ -254,3 +254,39 @@
   .prepareOrb,
   .liveShell .actions { transition:none; }
 }
+
+/* Arena cockpit sizing — fill the available stage on desktop, flow naturally below. */
+.prepareShell,
+.liveShell {
+  min-height: 100%;
+}
+
+.prepareShell {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.prepareShell .prepareGrid,
+.prepareShell .empty {
+  min-height: 0;
+}
+
+.prepareShell .empty {
+  display: grid;
+  place-content: center;
+  align-self: stretch;
+}
+
+.liveShell {
+  align-content: start;
+}
+
+@media (max-width: 74rem) {
+  .prepareShell,
+  .liveShell {
+    min-height: auto;
+  }
+
+  .prepareShell {
+    grid-template-rows: auto auto;
+  }
+}

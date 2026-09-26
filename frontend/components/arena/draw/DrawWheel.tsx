@@ -12,42 +12,43 @@ type DrawWheelProps = {
   onDraw: () => void;
 };
 
-const VIEWBOX_WIDTH = 1000;
-const VIEWBOX_HEIGHT = 440;
-const CENTER_X = 500;
-const CENTER_Y = 430;
+const VIEWBOX_WIDTH = 1100;
+const VIEWBOX_HEIGHT = 430;
+const CENTER_X = 550;
+const CENTER_Y = 525;
 
-const OUTER_RADIUS_X = 478;
-const OUTER_RADIUS_Y = 388;
-const INNER_RADIUS_X = 284;
-const INNER_RADIUS_Y = 224;
-const LABEL_RADIUS_X = 382;
-const LABEL_RADIUS_Y = 306;
+// Circular geometry is intentional: Rx and Ry must always be identical.
+// Relative to the previous horizontal radii, the outer radius grows ~7%
+// and the inner radius grows ~15% to open the central void.
+const OUTER_RADIUS = 512;
+const INNER_RADIUS = 327;
+const LABEL_RADIUS = 420;
+const AVERAGE_RADIUS = (OUTER_RADIUS + INNER_RADIUS) / 2;
 
-const NARROW_SLOT_COUNT = 5;
-const WIDE_SLOT_COUNT = 7;
-const WIDE_THRESHOLD = 1180;
+const MIN_VISIBLE_SLOTS = 5;
+const MAX_VISIBLE_SLOTS = 9;
+const MIN_SLOT_ARC_PX = 150;
 const MAX_LABEL_ROTATION = 20;
 
-function ellipticalPoint(radiusX: number, radiusY: number, angleDeg: number) {
+function circularPoint(radius: number, angleDeg: number) {
   const angle = (angleDeg * Math.PI) / 180;
   return {
-    x: CENTER_X + Math.cos(angle) * radiusX,
-    y: CENTER_Y + Math.sin(angle) * radiusY,
+    x: CENTER_X + Math.cos(angle) * radius,
+    y: CENTER_Y + Math.sin(angle) * radius,
   };
 }
 
 function segmentPath(startAngle: number, endAngle: number) {
-  const outerStart = ellipticalPoint(OUTER_RADIUS_X, OUTER_RADIUS_Y, startAngle);
-  const outerEnd = ellipticalPoint(OUTER_RADIUS_X, OUTER_RADIUS_Y, endAngle);
-  const innerEnd = ellipticalPoint(INNER_RADIUS_X, INNER_RADIUS_Y, endAngle);
-  const innerStart = ellipticalPoint(INNER_RADIUS_X, INNER_RADIUS_Y, startAngle);
+  const outerStart = circularPoint(OUTER_RADIUS, startAngle);
+  const outerEnd = circularPoint(OUTER_RADIUS, endAngle);
+  const innerEnd = circularPoint(INNER_RADIUS, endAngle);
+  const innerStart = circularPoint(INNER_RADIUS, startAngle);
 
   return [
     `M ${outerStart.x.toFixed(2)} ${outerStart.y.toFixed(2)}`,
-    `A ${OUTER_RADIUS_X} ${OUTER_RADIUS_Y} 0 0 1 ${outerEnd.x.toFixed(2)} ${outerEnd.y.toFixed(2)}`,
+    `A ${OUTER_RADIUS} ${OUTER_RADIUS} 0 0 1 ${outerEnd.x.toFixed(2)} ${outerEnd.y.toFixed(2)}`,
     `L ${innerEnd.x.toFixed(2)} ${innerEnd.y.toFixed(2)}`,
-    `A ${INNER_RADIUS_X} ${INNER_RADIUS_Y} 0 0 0 ${innerStart.x.toFixed(2)} ${innerStart.y.toFixed(2)}`,
+    `A ${INNER_RADIUS} ${INNER_RADIUS} 0 0 0 ${innerStart.x.toFixed(2)} ${innerStart.y.toFixed(2)}`,
     "Z",
   ].join(" ");
 }
@@ -71,9 +72,22 @@ function wrapIndex(index: number, length: number) {
   return ((index % length) + length) % length;
 }
 
-function visibleSlotCount(width: number) {
-  if (width <= 0) return NARROW_SLOT_COUNT;
-  return width >= WIDE_THRESHOLD ? WIDE_SLOT_COUNT : NARROW_SLOT_COUNT;
+function visibleSlotCount(width: number, participantCount: number) {
+  if (participantCount <= 0) return MIN_VISIBLE_SLOTS;
+  if (width <= 0) return Math.min(participantCount, MIN_VISIBLE_SLOTS);
+
+  const scale = width / VIEWBOX_WIDTH;
+  const visibleArcPx = Math.PI * AVERAGE_RADIUS * scale;
+  const capacityByArc = Math.max(MIN_VISIBLE_SLOTS, Math.floor(visibleArcPx / MIN_SLOT_ARC_PX));
+  const boundedCapacity = Math.min(participantCount, MAX_VISIBLE_SLOTS, capacityByArc);
+
+  // Prefer an odd number of visible houses so one real segment always sits
+  // exactly below the fixed marker. This avoids a marker landing on a seam.
+  if (boundedCapacity > MIN_VISIBLE_SLOTS && boundedCapacity % 2 === 0) {
+    return boundedCapacity - 1;
+  }
+
+  return boundedCapacity;
 }
 
 function labelRotation(midAngle: number) {
@@ -83,8 +97,10 @@ function labelRotation(midAngle: number) {
 
 export default function DrawWheel({ participants, selectedStudentId, drawing, onDraw }: DrawWheelProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
+  const previousDrawingRef = useRef(drawing);
   const [wheelWidth, setWheelWidth] = useState(0);
   const [windowStart, setWindowStart] = useState(0);
+  const [settledPulse, setSettledPulse] = useState(false);
 
   useEffect(() => {
     const element = viewportRef.current;
@@ -102,49 +118,104 @@ export default function DrawWheel({ participants, selectedStudentId, drawing, on
     return () => observer.disconnect();
   }, []);
 
-  const visibleSlots = visibleSlotCount(wheelWidth);
-  const centerSlotIndex = Math.floor(visibleSlots / 2);
+  useEffect(() => {
+    const wasDrawing = previousDrawingRef.current;
+    previousDrawingRef.current = drawing;
+
+    if (!wasDrawing || drawing || !selectedStudentId) return;
+
+    setSettledPulse(true);
+    const timeoutId = window.setTimeout(() => setSettledPulse(false), 460);
+    return () => window.clearTimeout(timeoutId);
+  }, [drawing, selectedStudentId]);
+
+  const visibleSlots = visibleSlotCount(wheelWidth, participants.length);
   const carouselMode = participants.length > visibleSlots;
+  const baseSlotCount = carouselMode ? visibleSlots : Math.max(participants.length, 1);
+  const renderedSlotCount =
+    baseSlotCount > 1 && baseSlotCount % 2 === 0
+      ? baseSlotCount + 1
+      : baseSlotCount;
+  const centerSlotIndex = Math.floor(renderedSlotCount / 2);
+  const animatedMode = participants.length > 1;
 
   useEffect(() => {
-    if (!carouselMode || !drawing || participants.length === 0) return;
+    if (!animatedMode || !drawing || participants.length === 0) return;
 
-    const intervalId = window.setInterval(() => {
-      setWindowStart((current) => wrapIndex(current + 1, participants.length));
-    }, 95);
+    let timeoutId: number | undefined;
+    let cancelled = false;
+    const phaseStartedAt = performance.now();
+    const settling = Boolean(selectedStudentId);
 
-    return () => window.clearInterval(intervalId);
-  }, [carouselMode, drawing, participants.length]);
+    function scheduleNextStep() {
+      if (cancelled) return;
+
+      const elapsed = performance.now() - phaseStartedAt;
+      const delay = settling
+        ? Math.min(260, 78 + elapsed * 0.2)
+        : Math.max(64, 112 - elapsed * 0.12);
+
+      timeoutId = window.setTimeout(() => {
+        setWindowStart((current) => wrapIndex(current + 1, participants.length));
+        scheduleNextStep();
+      }, delay);
+    }
+
+    scheduleNextStep();
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
+  }, [animatedMode, drawing, participants.length, selectedStudentId]);
 
   useEffect(() => {
-    if (!carouselMode || drawing || !selectedStudentId || participants.length === 0) return;
+    if (!animatedMode || drawing || !selectedStudentId || participants.length === 0) return;
 
     const winnerIndex = participants.findIndex((student) => student.id === selectedStudentId);
     if (winnerIndex < 0) return;
 
     setWindowStart(wrapIndex(winnerIndex - centerSlotIndex, participants.length));
-  }, [carouselMode, centerSlotIndex, drawing, selectedStudentId, participants]);
+  }, [animatedMode, centerSlotIndex, drawing, selectedStudentId, participants]);
 
   const visibleParticipants = useMemo(() => {
-    if (!carouselMode) {
-      return participants.map((student, slotIndex) => ({ slotIndex, student }));
-    }
+    if (participants.length === 0) return [];
 
-    return Array.from({ length: visibleSlots }, (_, slotIndex) => ({
+    const slots = Array.from({ length: renderedSlotCount }, (_, slotIndex) => ({
       slotIndex,
-      student: participants[wrapIndex(windowStart + slotIndex, participants.length)],
+      student: participants[wrapIndex(windowStart + slotIndex, participants.length)] as Student | undefined,
+      placeholder: false,
     }));
-  }, [carouselMode, participants, visibleSlots, windowStart]);
 
-  const segmentCount = carouselMode ? visibleSlots : Math.max(participants.length, 1);
+    if (drawing || renderedSlotCount <= participants.length) return slots;
+
+    const preferredSlotByStudent = new Map<string, number>();
+    slots.forEach(({ slotIndex, student }) => {
+      if (!student) return;
+      const previous = preferredSlotByStudent.get(student.id);
+      if (previous === undefined || Math.abs(slotIndex - centerSlotIndex) < Math.abs(previous - centerSlotIndex)) {
+        preferredSlotByStudent.set(student.id, slotIndex);
+      }
+    });
+
+    return slots.map((slot) => {
+      if (!slot.student) return slot;
+      const preferredSlot = preferredSlotByStudent.get(slot.student.id);
+      return preferredSlot === slot.slotIndex
+        ? slot
+        : { ...slot, student: undefined, placeholder: true };
+    });
+  }, [centerSlotIndex, drawing, participants, renderedSlotCount, windowStart]);
+
+  const segmentCount = renderedSlotCount;
   const segmentAngle = 180 / segmentCount;
   const gap = carouselMode ? 1.35 : 1.05;
 
   return (
     <section
       className={styles.stage}
-      aria-label={carouselMode ? "Roleta dinâmica de participantes" : "Roleta de participantes"}
-      data-mode={carouselMode ? "carousel" : "static"}
+      aria-label={animatedMode ? "Roleta dinâmica de participantes" : "Roleta de participantes"}
+      data-mode={carouselMode ? "carousel" : animatedMode ? "animated" : "static"}
       data-slots={visibleSlots}
     >
       <div className={styles.viewport} ref={viewportRef}>
@@ -179,30 +250,31 @@ export default function DrawWheel({ participants, selectedStudentId, drawing, on
 
           <path
             className={styles.outerGuide}
-            d={`M ${CENTER_X - OUTER_RADIUS_X} ${CENTER_Y} A ${OUTER_RADIUS_X} ${OUTER_RADIUS_Y} 0 0 1 ${CENTER_X + OUTER_RADIUS_X} ${CENTER_Y}`}
+            d={`M ${CENTER_X - OUTER_RADIUS} ${CENTER_Y} A ${OUTER_RADIUS} ${OUTER_RADIUS} 0 0 1 ${CENTER_X + OUTER_RADIUS} ${CENTER_Y}`}
           />
           <path
             className={styles.innerGuide}
-            d={`M ${CENTER_X - INNER_RADIUS_X} ${CENTER_Y} A ${INNER_RADIUS_X} ${INNER_RADIUS_Y} 0 0 1 ${CENTER_X + INNER_RADIUS_X} ${CENTER_Y}`}
+            d={`M ${CENTER_X - INNER_RADIUS} ${CENTER_Y} A ${INNER_RADIUS} ${INNER_RADIUS} 0 0 1 ${CENTER_X + INNER_RADIUS} ${CENTER_Y}`}
           />
 
           <g className={drawing ? styles.drawing : undefined}>
-            {visibleParticipants.map(({ slotIndex, student }) => {
+            {visibleParticipants.map(({ slotIndex, student, placeholder }) => {
               const start = 180 + slotIndex * segmentAngle + gap;
               const end = 180 + (slotIndex + 1) * segmentAngle - gap;
               const mid = 180 + (slotIndex + 0.5) * segmentAngle;
-              const labelPoint = ellipticalPoint(LABEL_RADIUS_X, LABEL_RADIUS_Y, mid);
+              const labelPoint = circularPoint(LABEL_RADIUS, mid);
               const rotation = labelRotation(mid);
-              const selected = student.id === selectedStudentId;
-              const displayName = shortName(student.nickname || student.name);
-              const centerSlot = carouselMode && slotIndex === centerSlotIndex;
+              const selected = slotIndex === centerSlotIndex && Boolean(student);
+              const displayName = student ? shortName(student.nickname || student.name) : "";
+              const centerSlot = slotIndex === centerSlotIndex;
 
               return (
                 <g
-                  key={carouselMode ? `slot-${slotIndex}` : student.id}
+                  key={animatedMode ? `slot-${slotIndex}` : student?.id ?? `placeholder-${slotIndex}`}
                   className={[
-                    selected ? styles.segmentSelected : styles.segment,
+                    placeholder ? styles.placeholderSegment : selected ? styles.segmentSelected : styles.segment,
                     centerSlot ? styles.centerSlot : "",
+                    selected && settledPulse ? styles.settled : "",
                   ].filter(Boolean).join(" ")}
                   style={{ "--segment-index": slotIndex } as CSSProperties}
                 >
@@ -213,31 +285,44 @@ export default function DrawWheel({ participants, selectedStudentId, drawing, on
                     filter={selected ? "url(#draw-wheel-glow)" : undefined}
                   />
 
-                  <g
-                    className={styles.participantLabel}
-                    transform={`translate(${labelPoint.x.toFixed(2)} ${labelPoint.y.toFixed(2)}) rotate(${rotation.toFixed(2)})`}
-                  >
-                    <circle className={styles.avatarHalo} r={selected ? 41 : 34} />
-                    <circle className={styles.avatar} r={selected ? 32 : 28} />
-                    <text className={styles.initials} textAnchor="middle" dominantBaseline="middle" y="-1">
-                      {initials(student.name)}
+                  {student ? (
+                    <g
+                      className={styles.participantLabel}
+                      transform={`translate(${labelPoint.x.toFixed(2)} ${labelPoint.y.toFixed(2)}) rotate(${rotation.toFixed(2)})`}
+                    >
+                      <circle className={styles.avatarHalo} r={selected ? 41 : 34} />
+                      <circle className={styles.avatar} r={selected ? 32 : 28} />
+                      <text className={styles.initials} textAnchor="middle" dominantBaseline="middle" y="-1">
+                        {initials(student.name)}
+                      </text>
+                      <text className={styles.name} textAnchor="middle" y={selected ? 56 : 49}>
+                        {displayName}
+                      </text>
+                    </g>
+                  ) : (
+                    <text
+                      className={styles.placeholderMark}
+                      x={labelPoint.x}
+                      y={labelPoint.y}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      transform={`rotate(${rotation.toFixed(2)} ${labelPoint.x.toFixed(2)} ${labelPoint.y.toFixed(2)})`}
+                      aria-hidden="true"
+                    >
+                      ◇
                     </text>
-                    <text className={styles.name} textAnchor="middle" y={selected ? 56 : 49}>
-                      {displayName}
-                    </text>
-                  </g>
+                  )}
                 </g>
               );
             })}
           </g>
-        </svg>
 
-        {carouselMode && (
-          <div className={styles.carouselHint} aria-hidden="true">
-            <span>{visibleSlots} casas visíveis</span>
-            <span>{participants.length} participantes na rodada</span>
-          </div>
-        )}
+          <path
+            className={styles.pointer}
+            d={`M ${CENTER_X - 18} 2 L ${CENTER_X + 18} 2 L ${CENTER_X} 30 Z`}
+            aria-hidden="true"
+          />
+        </svg>
 
         <button
           type="button"

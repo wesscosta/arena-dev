@@ -125,7 +125,7 @@ test("Smart Draw workspace prioritizes the roulette and moves policies to settin
   assert.match(app, /setDrawSettingsOpen\(true\)/);
   assert.match(app, /title="Configurações do Sorteio"/);
   assert.match(app, /POLÍTICAS DO BACKEND/);
-  assert.match(app, /Últimos sorteados/);
+  assert.match(app, /className="draw-history-popover draw-history-inline"/);
   assert.match(app, /drawCoverage/);
   assert.match(app, /Confirmar e pontuar/);
   assert.match(app, /className="quick-score-dock"/);
@@ -176,7 +176,7 @@ test("Buzzer uses the gamified Arena workspace instead of the legacy panel", () 
   const app = read("components/ArenaApp.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /className="buzzer-workspace"/);
+  assert.match(app, /className="arena-dynamic-workspace buzzer-workspace"/);
   assert.match(app, /buzzer-orb/);
   assert.match(app, /ORDEM OFICIAL/);
   assert.match(app, /Primeiro clique confirmado pelo servidor/);
@@ -272,7 +272,7 @@ test("Boss Battle 2.0 uses a gamified collective challenge workspace", () => {
   const app = read("components/ArenaApp.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /className="boss-workspace"/);
+  assert.match(app, /className="arena-dynamic-workspace boss-workspace"/);
   assert.match(app, /DESAFIO COLETIVO/);
   assert.match(app, /CONTROLE DE COMBATE/);
   assert.match(app, /HP DO BOSS/);
@@ -327,7 +327,7 @@ test("Semicircle roulette centers each participant inside an SVG segment", () =>
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
   assert.match(wheel, /const mid = 180 \+ \(slotIndex \+ 0\.5\) \* segmentAngle/);
-  assert.match(wheel, /const labelPoint = ellipticalPoint\(LABEL_RADIUS_X, LABEL_RADIUS_Y, mid\)/);
+  assert.match(wheel, /const labelPoint = circularPoint\(LABEL_RADIUS, mid\)/);
   assert.match(wheel, /textAnchor="middle"/);
   assert.match(wheel, /className=\{styles\.name\}/);
 });
@@ -348,8 +348,12 @@ test("Presence drawer uses the dedicated compact SessionAccessCard variant", () 
   assert.match(app, /<SessionAccessCard[\s\S]*?compact[\s\S]*?drawer/);
   assert.match(access, /drawer \? styles\.drawer/);
   assert.match(css, /\.drawer \.content/);
-  assert.match(css, /grid-template-columns:\s*minmax\(0, 1fr\) 7\.4rem/);
+  assert.match(css, /grid-template-columns:\s*minmax\(0, 1fr\) 9\.75rem/);
   assert.match(css, /\.drawer \.qr img/);
+  assert.match(css, /\.drawer \.refreshButton\s*\{/);
+  assert.match(css, /font-size:\s*\.78rem/);
+  assert.match(app, /subtitle=""/);
+  assert.doesNotMatch(access, /Escaneie para abrir a participação da aula no \/join\./);
 });
 
 
@@ -364,6 +368,18 @@ test("Arena right rail exposes truthful participant status and copyable session 
   assert.match(css, /\.arena-status-dot\.present/);
 });
 
+test("Arena QR preview expands into a projector-friendly modal", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /setSessionQrOpen\(true\)/);
+  assert.match(app, /aria-label="Ampliar QR Code da sessão"/);
+  assert.match(app, /className="arena-session-qr-modal"/);
+  assert.match(app, /joinQrImageUrl\(currentSession\.id, publicBaseUrl, joinCode\.code, 720\)/);
+  assert.match(css, /\.arena-session-qr-modal\s*\{/);
+  assert.match(css, /\.arena-session-qr-large\s*\{/);
+});
+
 test("Arena large desktop keeps full navigation labels and a wider context rail", () => {
   const css = read("styles/arena-polish.css");
 
@@ -373,16 +389,18 @@ test("Arena large desktop keeps full navigation labels and a wider context rail"
 });
 
 
-test("Semicircle roulette uses a flatter elliptical annular band", () => {
+test("Semicircle roulette preserves true circular geometry while enlarging both radii", () => {
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
-  assert.match(wheel, /const OUTER_RADIUS_X = 478/);
-  assert.match(wheel, /const OUTER_RADIUS_Y = 388/);
-  assert.match(wheel, /const INNER_RADIUS_X = 284/);
-  assert.match(wheel, /const INNER_RADIUS_Y = 224/);
-  assert.match(wheel, /const LABEL_RADIUS_X = 382/);
-  assert.match(wheel, /const LABEL_RADIUS_Y = 306/);
-  assert.match(wheel, /const innerEnd = ellipticalPoint\(INNER_RADIUS_X, INNER_RADIUS_Y, endAngle\)/);
+  assert.match(wheel, /const VIEWBOX_WIDTH = 1100/);
+  assert.match(wheel, /const VIEWBOX_HEIGHT = 430/);
+  assert.match(wheel, /const OUTER_RADIUS = 512/);
+  assert.match(wheel, /const INNER_RADIUS = 327/);
+  assert.match(wheel, /const LABEL_RADIUS = 420/);
+  assert.match(wheel, /function circularPoint\(radius: number, angleDeg: number\)/);
+  assert.match(wheel, /A \$\{OUTER_RADIUS\} \$\{OUTER_RADIUS\}/);
+  assert.match(wheel, /A \$\{INNER_RADIUS\} \$\{INNER_RADIUS\}/);
+  assert.doesNotMatch(wheel, /OUTER_RADIUS_X|OUTER_RADIUS_Y|INNER_RADIUS_X|INNER_RADIUS_Y/);
 });
 
 test("Arena responsive polish keeps labels at 1366 and collapses them only near tablet widths", () => {
@@ -399,8 +417,8 @@ test("Annular roulette creates real SVG segments with an inner cutout", () => {
 
   assert.match(wheel, /const segmentAngle = 180 \/ segmentCount/);
   assert.match(wheel, /segmentPath\(start, end\)/);
-  assert.match(wheel, /const innerEnd = ellipticalPoint\(INNER_RADIUS_X, INNER_RADIUS_Y, endAngle\)/);
-  assert.match(wheel, /const innerStart = ellipticalPoint\(INNER_RADIUS_X, INNER_RADIUS_Y, startAngle\)/);
+  assert.match(wheel, /const innerEnd = circularPoint\(INNER_RADIUS, endAngle\)/);
+  assert.match(wheel, /const innerStart = circularPoint\(INNER_RADIUS, startAngle\)/);
 });
 
 test("Draw hero uses an integrated target icon and semicircular command hub", () => {
@@ -423,35 +441,50 @@ test("Draw stage expands edge to edge while the SVG owns wheel proportions", () 
   assert.match(arenaCss, /width:\s*calc\(100% \+ 1\.8rem\)/);
   assert.match(arenaCss, /margin-inline:\s*-\.9rem/);
   assert.match(wheelCss, /\.viewport\s*\{/);
-  assert.match(wheelCss, /aspect-ratio:\s*1000 \/ 440/);
+  assert.match(wheelCss, /aspect-ratio:\s*1100 \/ 430/);
 });
 
-test("DrawWheel chooses five or seven visible slots from the measured wheel width", () => {
+test("DrawWheel derives up to nine visible slots from arc capacity, width and participant count", () => {
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
-  assert.match(wheel, /const NARROW_SLOT_COUNT = 5/);
-  assert.match(wheel, /const WIDE_SLOT_COUNT = 7/);
-  assert.match(wheel, /const WIDE_THRESHOLD = 1180/);
+  assert.match(wheel, /const MIN_VISIBLE_SLOTS = 5/);
+  assert.match(wheel, /const MAX_VISIBLE_SLOTS = 9/);
+  assert.match(wheel, /const MIN_SLOT_ARC_PX = 150/);
+  assert.match(wheel, /const visibleArcPx = Math\.PI \* AVERAGE_RADIUS \* scale/);
+  assert.match(wheel, /Math\.floor\(visibleArcPx \/ MIN_SLOT_ARC_PX\)/);
+  assert.match(wheel, /const boundedCapacity = Math\.min\(participantCount, MAX_VISIBLE_SLOTS, capacityByArc\)/);
+  assert.match(wheel, /boundedCapacity % 2 === 0/);
   assert.match(wheel, /new ResizeObserver/);
-  assert.match(wheel, /const visibleSlots = visibleSlotCount\(wheelWidth\)/);
+  assert.match(wheel, /const visibleSlots = visibleSlotCount\(wheelWidth, participants\.length\)/);
   assert.match(wheel, /const carouselMode = participants\.length > visibleSlots/);
 });
 
-test("DrawWheel carousel rotates students through fixed slots and settles the winner in the center slot", () => {
+test("DrawWheel animates both windowed and fully visible classes through fixed slots", () => {
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
+  assert.match(wheel, /const animatedMode = participants\.length > 1/);
+  assert.match(wheel, /if \(!animatedMode \|\| !drawing \|\| participants\.length === 0\) return/);
+  assert.match(wheel, /const settling = Boolean\(selectedStudentId\)/);
+  assert.match(wheel, /Math\.max\(64, 112 - elapsed \* 0\.12\)/);
+  assert.match(wheel, /Math\.min\(260, 78 \+ elapsed \* 0\.2\)/);
   assert.match(wheel, /setWindowStart\(\(current\) => wrapIndex\(current \+ 1, participants\.length\)\)/);
   assert.match(wheel, /winnerIndex - centerSlotIndex/);
-  assert.match(wheel, /carouselMode \? `slot-\$\{slotIndex\}` : student\.id/);
-  assert.match(wheel, /student\.id === selectedStudentId/);
+  assert.match(wheel, /key=\{animatedMode \? `slot-\$\{slotIndex\}` : student\?\.id \?\? `placeholder-\$\{slotIndex\}`\}/);
+  assert.match(wheel, /data-mode=\{carouselMode \? "carousel" : animatedMode \? "animated" : "static"\}/);
+  assert.match(wheel, /const selected = slotIndex === centerSlotIndex/);
 });
 
-test("DrawWheel no longer renders a triangle pointer because selection is conveyed by segment state", () => {
+test("DrawWheel renders a fixed top marker and removes the carousel information badges", () => {
   const wheel = read("components/arena/draw/DrawWheel.tsx");
+  const css = read("components/arena/draw/DrawWheel.module.css");
 
-  assert.doesNotMatch(wheel, /className=\{styles\.pointer\}/);
-  assert.doesNotMatch(wheel, /M 486 8 L 514 8 L 500 34 Z/);
-  assert.match(wheel, /fill=\{selected \? "url\(#draw-wheel-selected\)"/);
+  assert.match(wheel, /className=\{styles\.pointer\}/);
+  assert.match(wheel, /CENTER_X - 18/);
+  assert.match(wheel, /CENTER_X \+ 18/);
+  assert.match(css, /\.pointer\s*\{/);
+  assert.doesNotMatch(wheel, /className=\{styles\.carouselHint\}/);
+  assert.doesNotMatch(wheel, /participantes na rodada/);
+  assert.doesNotMatch(css, /\.carouselHint/);
 });
 
 test("DrawWheel rotates participant labels toward the radial center with a bounded angle", () => {
@@ -463,10 +496,172 @@ test("DrawWheel rotates participant labels toward the radial center with a bound
   assert.match(wheel, /rotate\(\$\{rotation\.toFixed\(2\)\}\)/);
 });
 
-test("DrawWheel keeps the winner centered for adaptive five and seven slot carousels", () => {
+test("DrawWheel settles the winner in the fixed focus slot for adaptive and fully visible modes", () => {
   const wheel = read("components/arena/draw/DrawWheel.tsx");
+  const app = read("components/ArenaApp.tsx");
 
-  assert.match(wheel, /const centerSlotIndex = Math\.floor\(visibleSlots \/ 2\)/);
+  assert.match(wheel, /const baseSlotCount = carouselMode \? visibleSlots : Math\.max\(participants\.length, 1\)/);
+  assert.match(wheel, /baseSlotCount > 1 && baseSlotCount % 2 === 0/);
+  assert.match(wheel, /\? baseSlotCount \+ 1/);
+  assert.match(wheel, /const centerSlotIndex = Math\.floor\(renderedSlotCount \/ 2\)/);
   assert.match(wheel, /winnerIndex - centerSlotIndex/);
-  assert.match(wheel, /const segmentCount = carouselMode \? visibleSlots/);
+  assert.match(wheel, /const segmentCount = renderedSlotCount/);
+  assert.match(app, /setTimeout\(resolve, 850\)/);
+  assert.match(app, /setSelectedId\(result\.studentId\)/);
+  assert.match(app, /setTimeout\(resolve, 950\)/);
+});
+
+test("DrawWheel uses neutral placeholders after settling instead of duplicating students in even classes", () => {
+  const wheel = read("components/arena/draw/DrawWheel.tsx");
+  const css = read("components/arena/draw/DrawWheel.module.css");
+
+  assert.match(wheel, /if \(drawing \|\| renderedSlotCount <= participants\.length\) return slots/);
+  assert.match(wheel, /const preferredSlotByStudent = new Map<string, number>\(\)/);
+  assert.match(wheel, /placeholder: true/);
+  assert.match(wheel, /styles\.placeholderSegment/);
+  assert.match(wheel, /styles\.placeholderMark/);
+  assert.match(css, /\.placeholderSegment \.segmentShape/);
+  assert.match(css, /\.placeholderMark/);
+});
+
+test("Arena participant rail defaults to present students and exposes an explicit all-students filter", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /useState<"present" \| "all">\("present"\)/);
+  assert.match(app, /participantFilter === "present"/);
+  assert.match(app, /Presentes <span>\{currentSession\.presentStudentIds\.length\}<\/span>/);
+  assert.match(app, /Todos <span>\{sessionParticipants\.length\}<\/span>/);
+  assert.match(css, /\.arena-participant-filter\s*\{/);
+});
+
+test("Arena tool drawer only closes from a real backdrop click so native selects stay usable", () => {
+  const drawer = read("components/ArenaToolDrawer.tsx");
+
+  assert.doesNotMatch(drawer, /onMouseDown=\{onClose\}/);
+  assert.match(drawer, /event\.target === event\.currentTarget/);
+  assert.match(drawer, /onClick=\{\(event\) =>/);
+});
+
+test("Attendance drawer QR reuses the enlarged Arena QR experience", () => {
+  const app = read("components/ArenaApp.tsx");
+  const access = read("components/SessionAccessCard.tsx");
+  const css = read("components/SessionAccessCard.module.css");
+
+  assert.match(access, /onExpandQr\?: \(\) => void/);
+  assert.match(access, /className=\{styles\.qrTrigger\}/);
+  assert.match(app, /onExpandQr=\{\(\) => setSessionQrOpen\(true\)\}/);
+  assert.match(css, /\.qrTrigger\s*\{/);
+});
+
+test("Arena native selects keep dark contrast in the cockpit and contextual drawers", () => {
+  const css = read("styles/arena-polish.css");
+
+  assert.match(css, /html\[data-theme="dark"\] \.arena-session-workspace select/);
+  assert.match(css, /html\[data-theme="dark"\] \[role="dialog"\] select/);
+  assert.match(css, /select option[\s\S]*?background:\s*#0d1915/);
+  assert.match(css, /color-scheme:\s*dark/);
+});
+
+test("Attendance tool groups online and present counts beside the participant heading", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /className="arena-tool-roster-badges"/);
+  assert.match(app, /className="online">\{sessionParticipants\.filter\(\(participant\) => participant\.connected\)\.length\} online/);
+  assert.match(app, /\{currentSession\.presentStudentIds\.length\}\/\{sessionParticipants\.length\} presentes/);
+  assert.doesNotMatch(app, /<SessionAccessCard[\s\S]*?realtimeStatus=\{realtimeStatus\}[\s\S]*?title="Entrada dos alunos"/);
+  assert.match(css, /\.arena-tool-roster-badges\s*\{/);
+});
+
+test("Word cloud, poll, buzzer and boss share the full-height Arena dynamic workspace", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /activeDynamic === "wordcloud"[\s\S]*?className="arena-dynamic-workspace"/);
+  assert.match(app, /activeDynamic === "poll"[\s\S]*?className="arena-dynamic-workspace"/);
+  assert.match(app, /className="arena-dynamic-workspace buzzer-workspace"/);
+  assert.match(app, /className="arena-dynamic-workspace boss-workspace"/);
+  assert.match(css, /\.arena-dynamic-workspace\s*\{[\s\S]*?height:\s*100%/);
+  assert.match(css, /@media \(max-width: 74rem\)[\s\S]*?\.arena-dynamic-workspace/);
+});
+
+test("Quiz workspace fills the Arena cockpit height on desktop and returns to natural flow responsively", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+  const quizCss = read("components/QuizPanel.module.css");
+
+  assert.match(app, /className="arena-quiz-workspace"/);
+  assert.match(css, /\.arena-quiz-workspace\s*\{[\s\S]*?height:\s*100%/);
+  assert.match(css, /@media \(max-width: 74rem\)[\s\S]*?\.arena-quiz-workspace/);
+  assert.match(quizCss, /\.prepareShell,[\s\S]*?\.liveShell\s*\{[\s\S]*?min-height:\s*100%/);
+});
+
+test("Smart Draw folds history and coverage into the single result HUD without layout-shifting history rows", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.doesNotMatch(app, /className="draw-context-strip"/);
+  assert.match(app, /className="draw-history-popover draw-history-inline"/);
+  assert.match(app, /className="draw-history-menu"/);
+  assert.match(app, /className="selected-student-primary"/);
+  assert.match(app, /className="draw-coverage-summary"/);
+  assert.match(app, /className="draw-coverage-count"/);
+  assert.match(app, /className="draw-coverage-badge"/);
+  assert.match(app, /className="draw-coverage-ring"/);
+  assert.match(app, /const presentStudentIdSet = new Set\(currentSession\?\.presentStudentIds \?\? \[\]\)/);
+  assert.match(app, /count > 0 && presentStudentIdSet\.has\(studentId\)/);
+  assert.match(app, /<span>\{drawCoverage\}%<\/span>/);
+  assert.match(app, /<span className="draw-coverage-badge">já sorteados<\/span>/);
+  assert.match(app, /<strong>\{drawnStudentIds\.size\}\/\{currentSession\.presentStudentIds\.length\}<\/strong>/);
+  assert.match(css, /\.draw-history-menu\s*\{[\s\S]*?position:\s*absolute/);
+  assert.match(css, /\.draw-coverage-summary\s*\{/);
+  assert.match(css, /\.draw-coverage-summary > \.draw-coverage-ring\s*\{[\s\S]*?height:\s*100%/);
+});
+
+test("Quick score keeps the selected-student context and presets compact while custom scoring opens on demand", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /className="quick-score-student"/);
+  assert.match(app, /className="sr-only">Aluno para pontuação<\/span>/);
+  assert.match(app, /aria-label="Aluno para pontuação"/);
+  assert.match(app, /Pontue o aluno selecionado\./);
+  assert.match(app, /className="quick-score-presets"/);
+  assert.match(app, /quick-score-custom-popover/);
+  assert.match(app, /aria-expanded=\{customScoreOpen\}/);
+  assert.match(css, /\.quick-score-custom-popover\s*\{[\s\S]*?position:\s*absolute/);
+  assert.match(css, /@media \(min-width: 90\.01rem\)[\s\S]*?\.quick-score-dock/);
+});
+
+test("Live Arena stretches the cockpit to the full dynamic viewport height", () => {
+  const css = read("styles/arena-polish.css");
+
+  assert.match(css, /\.app-shell-no-sidebar \.content\.arena-content-full\s*\{[\s\S]*?height:\s*100dvh/);
+  assert.match(css, /\.arena-content-full \.arena-session-workspace\s*\{[\s\S]*?height:\s*100%/);
+  assert.match(css, /\.arena-content-full \.arena-cockpit\s*\{[\s\S]*?flex:\s*1 1 auto/);
+  assert.match(css, /\.arena-content-full \.arena-participant-list\s*\{[\s\S]*?max-height:\s*none/);
+});
+
+
+test("Live Arena replaces the duplicated root header with one operational topbar", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /arena-root-topbar-hidden/);
+  assert.match(app, /className="topbar app-topbar arena-live-topbar"/);
+  assert.match(app, /Modo Projetor ↗/);
+  assert.match(app, /Encerrar sessão/);
+  assert.doesNotMatch(app, /arena-desktop-session-header/);
+  assert.match(css, /\.topbar\.arena-root-topbar-hidden\s*\{\s*display:\s*none/);
+});
+
+test("Arena navigation exposes classroom context before dynamics and uses internal SVG glyphs", () => {
+  const app = read("components/ArenaApp.tsx");
+
+  assert.match(app, /className="arena-nav-context"/);
+  assert.doesNotMatch(app, /className="arena-nav-back"/);
+  assert.match(app, /Condução ao vivo/);
+  assert.match(app, /function ArenaGlyph/);
+  assert.match(app, /<ArenaGlyph name="draw" \/>/);
 });
