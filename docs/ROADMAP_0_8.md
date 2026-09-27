@@ -1,8 +1,8 @@
 # Roadmap v0.8 — Professor Experience & Journey MVP
 
-**Linha ativa:** v0.8  
-**Branch de execução:** `feat/v0.8-professor-arena-cockpit`  
-**Estado atual:** `16.0 — Professor Arena Experience` concluído na branch e aguardando PR.
+**Linha ativa:** v0.8
+**Branch de execução:** `feat/v0.8-journey-core`
+**Estado atual:** `16.1 — Journey Core` em execução.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
@@ -15,8 +15,8 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 
 | Incremento | Objetivo | Estado |
 | --- | --- | --- |
-| 16.0 | Professor Arena Experience | **Concluído na branch · aguardando PR** |
-| 16.1 | Journey Core | **Próximo** |
+| 16.0 | Professor Arena Experience | **Concluído · PR #21 mergeado** |
+| 16.1 | Journey Core | **Em execução** |
 | 16.2 | Learning Resources básico | Planejado |
 | 16.3 | Student Experience | Planejado |
 | 16.4 | Journey Map | Planejado |
@@ -81,7 +81,7 @@ O `16.0` está concluído na branch de execução. Os últimos gates foram fecha
 - `16.0F.19` — consistência visual e vocabulário de estados entre as dinâmicas;
 - `16.0F.20` — consistência do Projetor e recuperação após falha inicial do snapshot público.
 
-Não há implementação funcional pendente para o `16.0`; resta apenas integrar a branch por PR antes de abrir o `16.1`.
+Não há implementação funcional pendente para o `16.0`; o incremento foi integrado à `main` pelo PR #21.
 
 ### Gates já preservados
 - XP continua baseado em `ScoreEvent`;
@@ -126,3 +126,46 @@ Não entram nesta etapa:
 - Student Experience.
 
 Esses itens permanecem nos incrementos posteriores da v0.8.
+
+## 16.1 — Journey Core
+
+### Objetivo
+
+Criar a fonte de verdade persistente da progressão pedagógica antes da experiência visual final do aluno.
+
+### Implementado nesta primeira fatia
+
+- migration `V28__journey_core.sql`;
+- entidades `Journey`, `JourneyStage` e `JourneyStageProgress`;
+- lifecycle `DRAFT → PUBLISHED → ARCHIVED`;
+- desbloqueio `IMMEDIATE` e `PREVIOUS_STAGE_COMPLETED`;
+- conclusão `MANUAL`, `ACTIVITY_SUBMITTED` e `ACTIVITY_GRADED`;
+- conclusão por atividade derivada de `ActivitySubmission`, sem duplicar estado;
+- progresso calculado por matrícula com estados `LOCKED`, `AVAILABLE`, `IN_PROGRESS` e `COMPLETED`;
+- estrutura da jornada protegida após publicação;
+- API administrativa e de progresso inicial;
+- nova aba **Jornadas** na turma;
+- editor mínimo do professor para ordenar etapas, vincular atividades, publicar e arquivar;
+- smoke test real de criação/publicação concluído no ambiente Docker.
+
+### Gates atuais
+
+```text
+backend package/tests       OK
+JourneyCoreIT               OK
+SecurityAndMigrationIT      OK
+Flyway                      V1–V28 OK
+frontend tests              252 passed
+frontend typecheck          OK
+frontend build              OK
+Docker backend/frontend     OK
+```
+
+### Próximas fatias do 16.1
+
+- endpoint público autenticado por participante para leitura da jornada publicada da própria turma;
+- contrato explícito para a etapa atual e próxima ação do aluno;
+- timestamp de conclusão derivada de atividade quando disponível;
+- testes HTTP do `JourneyController` e autorização;
+- refinamento do editor de jornada publicado para modo de leitura mais compacto;
+- fechamento documental do incremento antes do `16.2`.

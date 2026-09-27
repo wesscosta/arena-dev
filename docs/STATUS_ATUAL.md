@@ -6,30 +6,42 @@
 
 **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 
-**Incremento concluído na branch:** `16.0 — Professor Arena Experience`.
+**Incremento ativo:** `16.1 — Journey Core`.
 
-**Branch ativa:** `feat/v0.8-professor-arena-cockpit`.
+**Branch ativa:** `feat/v0.8-journey-core`.
 
 ## Estado resumido
 
-A v0.7.0 está encerrada e publicada. A execução atual está concentrada na experiência do professor da v0.8.
+A v0.7.0 está encerrada e publicada. O `16.0 — Professor Arena Experience` também foi integrado à `main`; a execução atual está concentrada no `16.1 — Journey Core`.
 
 O cockpit da Arena já migrou para uma arquitetura orientada por ações, com navegação lateral, workspace de dinâmica, ferramentas contextuais e rail persistente de participantes/sessão.
 
-O Sorteio Inteligente 2.0 é a referência visual da nova shell e está funcional, com seleção autoritativa no backend, marcador fixo, roleta SVG circular adaptativa, histórico, cobertura e pontuação rápida. O cockpit também consolidou filtros de participantes, QR ampliável, drawers estáveis e altura integral para Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle. Os passes `16.0F.18`, `16.0F.19` e `16.0F.20` fecharam respectivamente os gates técnico, de consistência visual e de Projetor/resiliência. Não há implementação funcional pendente no `16.0`; a branch aguarda apenas integração por PR.
+O Sorteio Inteligente 2.0 é a referência visual da nova shell e está funcional, com seleção autoritativa no backend, marcador fixo, roleta SVG circular adaptativa, histórico, cobertura e pontuação rápida. O cockpit também consolidou filtros de participantes, QR ampliável, drawers estáveis e altura integral para Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle. Os passes `16.0F.18`, `16.0F.19` e `16.0F.20` fecharam respectivamente os gates técnico, de consistência visual e de Projetor/resiliência. O `16.0` foi integrado à `main` pelo PR #21; a branch ativa agora é a do Journey Core.
 
 ## Baselines
 
 ```text
 baseline publicada        v0.7.0
 linha ativa               v0.8
-incremento concluído      16.0
-próximo incremento        16.1
-branch                    feat/v0.8-professor-arena-cockpit
-schema                    Flyway V1–V27
+último incremento          16.0 · mergeado no PR #21
+incremento atual           16.1
+branch                    feat/v0.8-journey-core
+schema                    Flyway V1–V28
 provider operacional      Microsoft Teams
 Google Classroom          standby
 ```
+
+## Journey Core — implementação atual
+
+- Flyway V28 com `journeys`, `journey_stages` e `journey_stage_progress`;
+- jornadas pertencem à turma e passam por `DRAFT`, `PUBLISHED` e `ARCHIVED`;
+- etapas ordenadas podem vincular uma atividade existente;
+- desbloqueio imediato ou dependente da etapa anterior;
+- conclusão manual ou derivada de `ActivitySubmission`;
+- progresso calculado por matrícula sem duplicar o estado das entregas;
+- estrutura protegida após publicação;
+- aba **Jornadas** e editor mínimo do professor implementados;
+- criação e publicação validadas no ambiente Docker.
 
 ## Professor Arena Experience — implementado
 
@@ -73,7 +85,7 @@ frontend Docker     OK
 
 ## Próximo gate
 
-Integrar `feat/v0.8-professor-arena-cockpit` por PR. Após o merge, abrir `16.1 — Journey Core` como próximo incremento da v0.8.
+Consolidar o `16.1 — Journey Core`: domínio, persistência, API e editor mínimo do professor antes de avançar para `16.2 — Learning Resources básico`.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)
