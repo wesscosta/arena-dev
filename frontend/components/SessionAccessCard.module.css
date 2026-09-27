@@ -960,3 +960,291 @@
   padding-left: 17px;
   padding-right: 17px;
 }
+
+
+/* Arena drawer variant — keep check-in usable inside the contextual tool rail */
+.drawer {
+  width: 100%;
+  margin: 0;
+  padding: .85rem;
+  gap: .75rem;
+  border-radius: 12px;
+}
+
+.drawer .header {
+  min-height: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+}
+
+.drawer .header > div {
+  min-width: 0;
+  display: grid;
+  gap: .14rem;
+  padding: 0;
+}
+
+.drawer .eyebrow {
+  font-size: .58rem;
+}
+
+.drawer .header h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.drawer .header p {
+  max-width: none;
+  margin: 0;
+  font-size: .66rem;
+  line-height: 1.4;
+}
+
+.drawer .connection {
+  position: static;
+  flex: 0 0 auto;
+  margin: 0 0 0 auto;
+  padding: .3rem .45rem;
+  font-size: .55rem;
+}
+
+.drawer .connection i {
+  width: .36rem;
+  height: .36rem;
+}
+
+.drawer .content {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) 9.75rem;
+  gap: .85rem;
+  align-items: stretch;
+}
+
+.drawer .details {
+  min-width: 0;
+  gap: .55rem;
+}
+
+.drawer .codeBlock {
+  gap: .16rem;
+  margin: 0;
+}
+
+.drawer .codeHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+.drawer .refreshButton {
+  width: 1.9rem;
+  height: 1.9rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color .16s ease, border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.drawer .refreshButton:hover,
+.drawer .refreshButton:focus-visible {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  outline: none;
+  transform: rotate(18deg);
+}
+
+.drawer .refreshButton:disabled {
+  opacity: .45;
+  cursor: wait;
+  transform: none;
+}
+
+.drawer .codeLabel,
+.drawer .urlBlock > span {
+  font-size: .56rem;
+}
+
+.drawer .codeRow {
+  margin: 0;
+}
+
+.drawer .codeRow strong {
+  font-size: clamp(1.75rem, 6vw, 2.3rem);
+  line-height: 1;
+  letter-spacing: .11em;
+}
+
+.drawer .urlBlock {
+  min-width: 0;
+  gap: .2rem;
+  margin: 0;
+}
+
+.drawer .url {
+  width: 100%;
+  min-width: 0;
+  height: 2.35rem;
+  padding: 0 .75rem;
+  overflow: hidden;
+  font-size: .78rem;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer .url::after {
+  display: none;
+}
+
+.drawer .actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .42rem;
+  margin: .05rem 0 0;
+}
+
+.drawer .primary,
+.drawer .secondary,
+.drawer .ghost {
+  min-width: 0;
+  height: 2.05rem;
+  padding: 0 .5rem;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: .6rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer .ghost {
+  grid-column: 1 / -1;
+}
+
+.drawer .qr {
+  width: 9.75rem;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  justify-self: stretch;
+  align-self: stretch;
+  padding: 0;
+  gap: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.drawer .qrTrigger,
+.drawer .qr img,
+.drawer .placeholder {
+  width: 9.1rem;
+  height: 9.1rem;
+}
+
+.drawer .qrTrigger {
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.drawer .qr small,
+.drawer .qrTrigger span {
+  display: none;
+}
+
+.drawer .warning {
+  min-height: 0;
+  margin: 0;
+  padding: .45rem .55rem;
+}
+
+.drawer .warning strong {
+  font-size: .52rem;
+}
+
+@media (max-width: 30rem) {
+  .drawer .header {
+    display: grid;
+  }
+
+  .drawer .connection {
+    margin-left: 0;
+    justify-self: start;
+  }
+
+  .drawer .content {
+    grid-template-columns: 1fr;
+  }
+
+  .drawer .qr {
+    width: min(100%, 10rem);
+    justify-self: center;
+  }
+
+  .drawer .qrTrigger,
+  .drawer .qr img,
+  .drawer .placeholder {
+    width: min(9.1rem, 72vw);
+    height: auto;
+    aspect-ratio: 1;
+  }
+}
+
+/* Arena drawer QR affordance — reuse the full-screen session QR modal. */
+.qrTrigger {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.qrTrigger img {
+  display: block;
+}
+
+.qrTrigger span {
+  position: absolute;
+  right: .35rem;
+  bottom: .35rem;
+  padding: .2rem .38rem;
+  border-radius: 999px;
+  background: rgba(3, 8, 6, .78);
+  color: #fff;
+  font-size: .48rem;
+  font-weight: 800;
+  opacity: 0;
+  transform: translateY(.15rem);
+  transition: opacity .16s ease, transform .16s ease;
+}
+
+.qrTrigger:hover span,
+.qrTrigger:focus-visible span {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.qrTrigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, white 10%);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qrTrigger span { transition: none; }
+}

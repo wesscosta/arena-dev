@@ -28,3 +28,21 @@ test("projector marks the correct option only inside the revealed result branch"
   assert.match(quizBranch, /quizOptionMatchesAnswer/);
   assert.match(quizBranch, /RESPOSTA CORRETA/);
 });
+
+test("projector mirrors the Arena lifecycle vocabulary for public dynamics", () => {
+  assert.match(projector, /function quizLifecycleLabel/);
+  assert.match(projector, /function pollLifecycleLabel/);
+  assert.match(projector, /function wordCloudLifecycleLabel/);
+  assert.match(projector, /function buzzerLifecycleLabel/);
+  assert.match(projector, /function bossLifecycleLabel/);
+  assert.match(projector, /"PREPARAR"/);
+  assert.match(projector, /"AO VIVO"/);
+  assert.match(projector, /"RESULTADO"/);
+  assert.match(projector, /"ENCERRADO"/);
+});
+
+test("projector can retry the same session code after an initial snapshot failure", () => {
+  assert.match(projector, /const \[loadAttempt, setLoadAttempt\] = useState\(0\)/);
+  assert.match(projector, /setLoadAttempt\(\(attempt\) => attempt \+ 1\)/);
+  assert.match(projector, /\}, \[code, loadAttempt\]\);/);
+});

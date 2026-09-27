@@ -3197,3 +3197,17 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* v0.8 · Arena desktop full-width shell */
+.app-shell-no-sidebar .content.arena-content-full {
+  width: 100%;
+  max-width: none;
+  padding: 12px 14px 32px;
+}
+
+@media (max-width: 48rem) {
+  .app-shell-no-sidebar .content.arena-content-full {
+    padding: 10px 10px 28px;
+  }
+}

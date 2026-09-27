@@ -17,8 +17,10 @@ type Props = {
   onRotate?: () => void | Promise<void>;
   rotateBusy?: boolean;
   compact?: boolean;
+  drawer?: boolean;
   title?: string;
   subtitle?: string;
+  onExpandQr?: () => void;
 };
 
 
@@ -52,8 +54,10 @@ export default function SessionAccessCard({
   onRotate,
   rotateBusy = false,
   compact = false,
+  drawer = false,
   title = "Acesso dos alunos",
   subtitle = "O mesmo acesso permanece válido durante toda a sessão.",
+  onExpandQr,
 }: Props) {
   const joinUrl = joinCode
     ? sessionJoinUrl(publicBaseUrl, joinCode.code)
@@ -75,12 +79,12 @@ export default function SessionAccessCard({
   }
 
   return (
-    <section className={`${styles.card} ${compact ? styles.compact : ""}`}>
+    <section className={`${styles.card} ${compact ? styles.compact : ""} ${drawer ? styles.drawer : ""}`}>
       <div className={styles.header}>
         <div>
           <span className={styles.eyebrow}>ENTRADA NA SESSÃO</span>
           <h3>{title}</h3>
-          <p>{subtitle}</p>
+          {subtitle ? <p>{subtitle}</p> : null}
         </div>
 
         {realtimeStatus && (
@@ -94,7 +98,21 @@ export default function SessionAccessCard({
       <div className={styles.content}>
         <div className={styles.details}>
           <div className={styles.codeBlock}>
-            <span className={styles.codeLabel}>CÓDIGO DA SESSÃO</span>
+            <div className={styles.codeHead}>
+              <span className={styles.codeLabel}>CÓDIGO DA SESSÃO</span>
+              {onRotate && (
+                <button
+                  type="button"
+                  className={styles.refreshButton}
+                  disabled={rotateBusy}
+                  onClick={() => void onRotate()}
+                  aria-label="Gerar novo código"
+                  title="Gerar novo código"
+                >
+                  ↻
+                </button>
+              )}
+            </div>
             <div className={styles.codeRow}>
               <strong>{joinCode?.code ?? "------"}</strong>
             </div>
@@ -124,34 +142,46 @@ export default function SessionAccessCard({
             >
               Abrir como aluno ↗
             </button>
-            {onRotate && (
-              <button
-                type="button"
-                className={styles.ghost}
-                disabled={rotateBusy}
-                onClick={() => void onRotate()}
-              >
-                {rotateBusy ? "Gerando..." : "Gerar novo código"}
-              </button>
-            )}
+
           </div>
         </div>
 
         <div className={styles.qr}>
           {joinCode && publicBaseUrl ? (
-            <img
-              src={joinQrImageUrl(
-                sessionId,
-                publicBaseUrl,
-                joinCode.code,
-                compact ? 260 : 380,
-              )}
-              alt={`QR Code da sessão ${joinCode.code}`}
-            />
+            onExpandQr ? (
+              <button
+                type="button"
+                className={styles.qrTrigger}
+                onClick={onExpandQr}
+                aria-label="Ampliar QR Code da sessão"
+                title="Ampliar QR Code"
+              >
+                <img
+                  src={joinQrImageUrl(
+                    sessionId,
+                    publicBaseUrl,
+                    joinCode.code,
+                    drawer ? 240 : compact ? 260 : 380,
+                  )}
+                  alt={`QR Code da sessão ${joinCode.code}`}
+                />
+
+              </button>
+            ) : (
+              <img
+                src={joinQrImageUrl(
+                  sessionId,
+                  publicBaseUrl,
+                  joinCode.code,
+                  drawer ? 240 : compact ? 260 : 380,
+                )}
+                alt={`QR Code da sessão ${joinCode.code}`}
+              />
+            )
           ) : (
             <div className={styles.placeholder}>QR</div>
           )}
-          <small>Escaneie para abrir a participação da aula no /join.</small>
+
         </div>
       </div>
 
