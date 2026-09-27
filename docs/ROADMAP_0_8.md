@@ -151,7 +151,7 @@ Criar a fonte de verdade persistente da progressão pedagógica antes da experi�
 ### Gates atuais
 
 ```text
-backend package/tests       OK
+backend tests               86 passed
 JourneyCoreIT               OK
 SecurityAndMigrationIT      OK
 Flyway                      V1–V28 OK
@@ -163,9 +163,9 @@ Docker backend/frontend     OK
 
 ### Próximas fatias do 16.1
 
-- endpoint público autenticado por participante para leitura da jornada publicada da própria turma;
-- contrato explícito para a etapa atual e próxima ação do aluno;
-- timestamp de conclusão derivada de atividade quando disponível;
-- testes HTTP do `JourneyController` e autorização;
+- endpoint público autenticado por participante para leitura da jornada publicada da própria turma — concluído;
+- contrato explícito para a etapa atual e próxima ação do aluno — concluído;
+- timestamp de conclusão derivada de atividade quando disponível — concluído;
+- testes de autorização do contrato público e testes HTTP do `JourneyController`;
 - refinamento do editor de jornada publicado para modo de leitura mais compacto;
 - fechamento documental do incremento antes do `16.2`.

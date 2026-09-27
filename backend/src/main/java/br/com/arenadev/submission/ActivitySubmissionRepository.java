@@ -12,4 +12,5 @@ public interface ActivitySubmissionRepository extends JpaRepository<ActivitySubm
     Optional<ActivitySubmission> findByActivityIdAndEnrollmentIdAndAttemptNumber(UUID activityId, UUID enrollmentId, int attemptNumber);
     List<ActivitySubmission> findByActivityIdOrderByUpdatedAtDesc(UUID activityId);
     boolean existsByActivityIdAndEnrollmentIdAndStatusIn(UUID activityId, UUID enrollmentId, Collection<ActivitySubmissionStatus> statuses);
+    Optional<ActivitySubmission> findFirstByActivityIdAndEnrollmentIdAndStatusInOrderByUpdatedAtDesc(UUID activityId, UUID enrollmentId, Collection<ActivitySubmissionStatus> statuses);
 }

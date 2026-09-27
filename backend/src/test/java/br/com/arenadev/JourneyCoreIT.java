@@ -106,6 +106,8 @@ class JourneyCoreIT {
         JourneyService.JourneyProgressView initial = journeyService.progress(journey.id(), fixture.enrollment().getId());
         assertThat(initial.stages()).extracting(JourneyService.StageProgressView::status)
                 .containsExactly(JourneyStageProgressStatus.AVAILABLE, JourneyStageProgressStatus.LOCKED);
+        assertThat(initial.stages().getFirst().nextAction()).isEqualTo("COMPLETE_STAGE");
+        assertThat(initial.stages().get(1).nextAction()).isEqualTo("WAIT_FOR_PREVIOUS_STAGE");
 
         JourneyService.JourneyProgressView completed = journeyService.completeStage(
                 journey.id(), journey.stages().getFirst().id(), fixture.enrollment().getId()
@@ -134,6 +136,34 @@ class JourneyCoreIT {
         assertThat(after.completedStages()).isEqualTo(1);
         assertThat(after.percent()).isEqualTo(100);
         assertThat(after.stages().getFirst().status()).isEqualTo(JourneyStageProgressStatus.COMPLETED);
+        assertThat(after.stages().getFirst().completedAt()).isNotNull();
+        assertThat(after.stages().getFirst().nextAction()).isEqualTo("NONE");
+    }
+
+    @Test
+    void participantCatalogReturnsOnlyPublishedJourneysWithCurrentStage() {
+        Fixture fixture = fixture("Catálogo", "JRNY-C");
+        journeyService.create(new JourneyService.JourneyInput(
+                fixture.classroom().getId(), "Rascunho oculto", null,
+                List.of(stage("Oculta", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL))
+        ));
+        JourneyService.JourneyView published = createPublishedJourney(fixture,
+                List.of(
+                        stage("Começar", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL),
+                        stage("Depois", fixture.activity().getId(), JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.ACTIVITY_SUBMITTED)
+                ));
+
+        List<JourneyService.ParticipantJourneyView> catalog = journeyService.publishedForEnrollment(
+                fixture.classroom().getId(), fixture.enrollment().getId()
+        );
+
+        assertThat(catalog).hasSize(1);
+        assertThat(catalog.getFirst().journeyId()).isEqualTo(published.id());
+        assertThat(catalog.getFirst().currentStage()).isNotNull();
+        assertThat(catalog.getFirst().currentStage().title()).isEqualTo("Começar");
+        assertThat(catalog.getFirst().currentStage().nextAction()).isEqualTo("COMPLETE_STAGE");
+        assertThat(catalog.getFirst().stages()).extracting(JourneyService.StageProgressView::status)
+                .containsExactly(JourneyStageProgressStatus.AVAILABLE, JourneyStageProgressStatus.LOCKED);
     }
 
     @Test

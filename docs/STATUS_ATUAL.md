@@ -41,7 +41,9 @@ Google Classroom          standby
 - progresso calculado por matrícula sem duplicar o estado das entregas;
 - estrutura protegida após publicação;
 - aba **Jornadas** e editor mínimo do professor implementados;
-- criação e publicação validadas no ambiente Docker.
+- criação e publicação validadas no ambiente Docker;
+- leitura pública de jornadas publicada protegida por `X-Participant-Token`;
+- contrato de progresso expõe etapa atual, próxima ação e timestamps de conclusão derivados das entregas.
 
 ## Professor Arena Experience — implementado
 

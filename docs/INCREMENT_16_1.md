@@ -70,7 +70,22 @@ POST   /api/journeys/{id}/archive
 GET    /api/journeys/{id}/progress/{enrollmentId}
 POST   /api/journeys/{id}/stages/{stageId}/progress/{enrollmentId}/start
 POST   /api/journeys/{id}/stages/{stageId}/progress/{enrollmentId}/complete
+
+GET    /api/join/{code}/journeys
+       X-Participant-Token: <token>
 ```
+
+## Contrato do participante — segunda fatia
+
+O endpoint público autenticado por token da sessão retorna somente jornadas `PUBLISHED` da turma do participante. O cliente não envia `enrollmentId`: a matrícula é resolvida no backend a partir do token, evitando acesso horizontal a progresso de outro aluno.
+
+Cada jornada pública inclui:
+
+- percentual e contagem de etapas concluídas;
+- `currentStage`, calculada como a primeira etapa `IN_PROGRESS` ou `AVAILABLE`;
+- lista completa de etapas com estados `LOCKED`, `AVAILABLE`, `IN_PROGRESS` e `COMPLETED`;
+- `nextAction` explícita: `WAIT_FOR_PREVIOUS_STAGE`, `OPEN_ACTIVITY`, `COMPLETE_STAGE` ou `NONE`;
+- `completedAt` também para conclusões derivadas de `ActivitySubmission`, quando o timestamp pode ser inferido da entrega.
 
 ## Experiência do professor — primeira fatia
 
@@ -105,9 +120,10 @@ Não entram neste incremento:
 ```text
 backend compile                OK
 backend JourneyCoreIT          OK
-backend test suite             OK
+backend test suite             86 passed
 Flyway V1–V28                  OK
 frontend tests                 252 passed
 frontend typecheck             OK
 frontend production build      OK
+participant journey contract   OK
 ```

@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface JourneyRepository extends JpaRepository<Journey, UUID> {
     List<Journey> findByClassroomIdOrderByUpdatedAtDesc(UUID classroomId);
+    List<Journey> findByClassroomIdAndStatusOrderByUpdatedAtDesc(UUID classroomId, JourneyStatus status);
 }

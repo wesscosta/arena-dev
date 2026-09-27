@@ -101,6 +101,28 @@ public class JourneyService {
         return buildProgress(journey, enrollment);
     }
 
+    @Transactional(readOnly = true)
+    public List<ParticipantJourneyView> publishedForEnrollment(UUID classroomId, UUID enrollmentId) {
+        Enrollment enrollment = requireEnrollment(enrollmentId);
+        if (!enrollment.isActive() || !enrollment.getClassroom().getId().equals(classroomId)) {
+            throw new IllegalArgumentException("A matrícula não pertence à turma informada.");
+        }
+        return journeyRepository.findByClassroomIdAndStatusOrderByUpdatedAtDesc(classroomId, JourneyStatus.PUBLISHED).stream()
+                .map(journey -> {
+                    JourneyProgressView progress = buildProgress(journey, enrollment);
+                    StageProgressView current = progress.stages().stream()
+                            .filter(stage -> stage.status() == JourneyStageProgressStatus.IN_PROGRESS
+                                    || stage.status() == JourneyStageProgressStatus.AVAILABLE)
+                            .findFirst()
+                            .orElse(null);
+                    return new ParticipantJourneyView(
+                            journey.getId(), journey.getTitle(), journey.getDescription(), progress.percent(),
+                            progress.completedStages(), progress.totalStages(), current, progress.stages()
+                    );
+                })
+                .toList();
+    }
+
     @Transactional
     public JourneyProgressView startStage(UUID journeyId, UUID stageId, UUID enrollmentId) {
         Journey journey = requireJourney(journeyId);
@@ -160,10 +182,12 @@ public class JourneyService {
                             : JourneyStageProgressStatus.AVAILABLE;
             if (completed) completedCount++;
             result.add(new StageProgressView(
-                    stage.getId(), stage.getPosition(), stage.getTitle(), stage.getActivity() == null ? null : stage.getActivity().getId(),
+                    stage.getId(), stage.getPosition(), stage.getTitle(), stage.getDescription(),
+                    stage.getActivity() == null ? null : stage.getActivity().getId(),
                     stage.getUnlockRule(), stage.getCompletionRule(), status,
                     stored == null ? null : stored.getStartedAt(),
-                    completed ? completionTimestamp(stage, enrollment, stored) : null
+                    completed ? completionTimestamp(stage, enrollment, stored) : null,
+                    nextAction(stage, status)
             ));
             previousCompleted = completed;
         }
@@ -185,7 +209,28 @@ public class JourneyService {
     }
 
     private Instant completionTimestamp(JourneyStage stage, Enrollment enrollment, JourneyStageProgress stored) {
-        return stored == null ? null : stored.getCompletedAt();
+        if (stage.getCompletionRule() == JourneyCompletionRule.MANUAL) {
+            return stored == null ? null : stored.getCompletedAt();
+        }
+        if (stage.getActivity() == null) return null;
+        Collection<ActivitySubmissionStatus> accepted = stage.getCompletionRule() == JourneyCompletionRule.ACTIVITY_GRADED
+                ? List.of(ActivitySubmissionStatus.GRADED)
+                : List.of(ActivitySubmissionStatus.SUBMITTED, ActivitySubmissionStatus.UNDER_REVIEW, ActivitySubmissionStatus.GRADED);
+        return submissionRepository.findFirstByActivityIdAndEnrollmentIdAndStatusInOrderByUpdatedAtDesc(
+                        stage.getActivity().getId(), enrollment.getId(), accepted
+                )
+                .map(submission -> submission.getStatus() == ActivitySubmissionStatus.SUBMITTED && submission.getSubmittedAt() != null
+                        ? submission.getSubmittedAt()
+                        : submission.getUpdatedAt())
+                .orElse(null);
+    }
+
+    private String nextAction(JourneyStage stage, JourneyStageProgressStatus status) {
+        if (status == JourneyStageProgressStatus.LOCKED) return "WAIT_FOR_PREVIOUS_STAGE";
+        if (status == JourneyStageProgressStatus.COMPLETED) return "NONE";
+        if (stage.getActivity() != null) return "OPEN_ACTIVITY";
+        if (stage.getCompletionRule() == JourneyCompletionRule.MANUAL) return "COMPLETE_STAGE";
+        return "NONE";
     }
 
     private void applyStages(Journey journey, List<StageInput> inputs) {
@@ -319,5 +364,6 @@ public class JourneyService {
     public record JourneyView(UUID id, UUID classroomId, String title, String description, JourneyStatus status, List<StageView> stages, Instant createdAt, Instant updatedAt) {}
     public record StageView(UUID id, int position, String title, String description, UUID activityId, JourneyUnlockRule unlockRule, JourneyCompletionRule completionRule) {}
     public record JourneyProgressView(UUID journeyId, UUID enrollmentId, int completedStages, int totalStages, int percent, List<StageProgressView> stages) {}
-    public record StageProgressView(UUID stageId, int position, String title, UUID activityId, JourneyUnlockRule unlockRule, JourneyCompletionRule completionRule, JourneyStageProgressStatus status, Instant startedAt, Instant completedAt) {}
+    public record ParticipantJourneyView(UUID journeyId, String title, String description, int percent, int completedStages, int totalStages, StageProgressView currentStage, List<StageProgressView> stages) {}
+    public record StageProgressView(UUID stageId, int position, String title, String description, UUID activityId, JourneyUnlockRule unlockRule, JourneyCompletionRule completionRule, JourneyStageProgressStatus status, Instant startedAt, Instant completedAt, String nextAction) {}
 }
