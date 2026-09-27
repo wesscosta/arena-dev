@@ -2,7 +2,7 @@
 
 ## Status
 
-**Em execução** na branch `feat/v0.8-professor-arena-cockpit`.
+**Concluído na branch** `feat/v0.8-professor-arena-cockpit`; aguardando integração por PR.
 
 ## Problema
 

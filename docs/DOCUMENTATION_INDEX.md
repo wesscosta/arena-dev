@@ -5,7 +5,7 @@
 1. [`../README.md`](../README.md) — visão pública e operacional do projeto.
 2. [`STATUS_ATUAL.md`](STATUS_ATUAL.md) — estado técnico corrente.
 3. [`ROADMAP_0_8.md`](ROADMAP_0_8.md) — roadmap da linha ativa.
-4. [`INCREMENT_16_0.md`](INCREMENT_16_0.md) — execução do Professor Arena Experience.
+4. [`INCREMENT_16_0.md`](INCREMENT_16_0.md) — fechamento do Professor Arena Experience.
 5. [`ROADMAP_0_7.md`](ROADMAP_0_7.md) — fechamento histórico da linha de integrações.
 6. [`RELEASE_0_7.md`](RELEASE_0_7.md) — release publicada da v0.7.0.
 7. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
@@ -28,9 +28,9 @@
 
 ## Linha ativa — v0.8
 
-A execução atual é `16.0 — Professor Arena Experience`, na branch `feat/v0.8-professor-arena-cockpit`.
+O `16.0 — Professor Arena Experience` está concluído na branch `feat/v0.8-professor-arena-cockpit` e aguarda integração por PR.
 
-O foco corrente é consolidar o cockpit do professor e concluir o gate visual/funcional da nova Arena antes de iniciar `16.1 — Journey Core`.
+O próximo incremento da v0.8 é `16.1 — Journey Core`, que deve ser aberto somente após o merge do cockpit do professor.
 
 ## Histórico
 

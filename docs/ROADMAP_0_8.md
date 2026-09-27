@@ -2,7 +2,7 @@
 
 **Linha ativa:** v0.8  
 **Branch de execução:** `feat/v0.8-professor-arena-cockpit`  
-**Estado atual:** `16.0 — Professor Arena Experience` em execução.
+**Estado atual:** `16.0 — Professor Arena Experience` concluído na branch e aguardando PR.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
@@ -15,8 +15,8 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 
 | Incremento | Objetivo | Estado |
 | --- | --- | --- |
-| 16.0 | Professor Arena Experience | **Em execução** |
-| 16.1 | Journey Core | Planejado |
+| 16.0 | Professor Arena Experience | **Concluído na branch · aguardando PR** |
+| 16.1 | Journey Core | **Próximo** |
 | 16.2 | Learning Resources básico | Planejado |
 | 16.3 | Student Experience | Planejado |
 | 16.4 | Journey Map | Planejado |
@@ -74,15 +74,14 @@ Transformar a Arena em um cockpit desktop de aula ao vivo orientado por ações,
 - pulse curto de confirmação após o assentamento;
 - reduced motion preservado.
 
-### Em refinamento
+### Fechamento do incremento
 
-O núcleo visual/funcional do cockpit está consolidado. O fechamento do 16.0 concentra-se agora em:
-- revisão visual final entre as dinâmicas após o quality gate técnico — concluída no `16.0F.19`;
-- smoke test dos estados de erro de API em ambiente controlado — concluído no Projetor em `16.0F.20`;
-- revisão final do Projetor contra os novos estados da Arena — concluída no `16.0F.20`;
-- fechamento documental e PR do `16.0`.
+O `16.0` está concluído na branch de execução. Os últimos gates foram fechados em:
+- `16.0F.18` — quality gate técnico, responsividade, acessibilidade e limpeza do CSS legado;
+- `16.0F.19` — consistência visual e vocabulário de estados entre as dinâmicas;
+- `16.0F.20` — consistência do Projetor e recuperação após falha inicial do snapshot público.
 
-Esses ajustes são de apresentação, resiliência e acessibilidade. Não alteram a regra de sorteio nem a autoridade do backend.
+Não há implementação funcional pendente para o `16.0`; resta apenas integrar a branch por PR antes de abrir o `16.1`.
 
 ### Gates já preservados
 - XP continua baseado em `ScoreEvent`;
@@ -105,14 +104,15 @@ Docker frontend OK
 ```
 
 ## Critério de fechamento do 16.0
-O incremento 16.0 só deve ser marcado como concluído quando:
-- todas as dinâmicas principais ocuparem a mesma shell;
-- Sorteio atingir o gate visual aprovado;
-- Timer, Organização, Presença e Pontuação funcionarem sem navegação de página;
-- responsividade desktop/tablet estiver validada;
-- acessibilidade, focus e reduced motion permanecerem íntegros;
-- testes, typecheck e build estiverem verdes;
-- nenhuma regra de domínio tiver sido movida para o frontend.
+
+Critérios atendidos:
+- todas as dinâmicas principais ocupam a mesma shell;
+- Sorteio atingiu o gate visual aprovado;
+- Timer, Organização, Presença e Pontuação funcionam sem navegação de página;
+- responsividade desktop/tablet validada;
+- acessibilidade, foco e reduced motion preservados;
+- testes, typecheck, build e Docker verdes;
+- nenhuma regra de domínio foi movida para o frontend.
 
 ## Fora do 16.0
 

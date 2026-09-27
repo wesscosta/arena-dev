@@ -6,7 +6,7 @@
 >
 > **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Execução atual:** `16.0 — Professor Arena Experience` na branch `feat/v0.8-professor-arena-cockpit`.
+> **Execução atual:** `16.0 — Professor Arena Experience` concluído na branch `feat/v0.8-professor-arena-cockpit`, aguardando PR. Próximo incremento: `16.1 — Journey Core`.
 
 ## Modelo do produto
 
@@ -173,7 +173,7 @@ Detalhes de fechamento em `docs/RELEASE_0_7.md`.
 
 A v0.8 começa pela reestruturação da experiência do professor antes de avançar para a Jornada do aluno.
 
-Estado atual do `16.0 — Professor Arena Experience`:
+Estado final do `16.0 — Professor Arena Experience`:
 
 - Arena orientada por ações, sem as tabs antigas de Condução/Dinâmicas/Tempo/Organização;
 - sidebar persistente para Dinâmicas e Ferramentas;
