@@ -10,6 +10,7 @@ import {
   type ContentIngestionSource,
   type DraftItemType,
 } from "@/lib/content-ingestion-api";
+import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import styles from "./JourneyCreationWizard.module.css";
 
 type Props = {
@@ -47,6 +48,7 @@ export default function JourneyCreationWizard({
   onUseDraft,
   notify,
 }: Props) {
+  useBodyScrollLock(open);
   const [mode, setMode] = useState<Mode>("choose");
   const [importMode, setImportMode] = useState<ImportMode>("file");
   const [capabilities, setCapabilities] = useState<ContentIngestionCapabilities | null>(null);
@@ -74,8 +76,6 @@ export default function JourneyCreationWizard({
     setSourceLabel("");
     setDraft(null);
     setDragOver(false);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     queueMicrotask(() => closeRef.current?.focus());
     void fetchContentIngestionCapabilities()
       .then(setCapabilities)
@@ -108,7 +108,6 @@ export default function JourneyCreationWizard({
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
       openerRef.current?.focus();
     };
   }, [open, onClose]);

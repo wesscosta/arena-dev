@@ -67,6 +67,14 @@ Google Classroom          standby
 - CRUD HTTP completo de `LearningResource`, incluindo leitura individual e exclusão segura;
 - recurso vinculado a jornada não pode ser excluído e retorna conflito HTTP.
 
+## UX transversal — shell e participantes
+
+- páginas administrativas voltaram a crescer conforme o conteúdo, com scroll natural do documento;
+- confinamento `100dvh`/`overflow: hidden` ficou restrito à Arena ao vivo via `arena-fullscreen-shell`;
+- scroll lock de overlays centralizado e seguro para locks simultâneos;
+- tela de participantes simplificada com busca, nome de exibição sob demanda e ações por ícones;
+- regressão validada com 258 testes de frontend e build de produção.
+
 ## Professor Arena Experience — implementado
 
 - tabs antigas removidas da Arena;

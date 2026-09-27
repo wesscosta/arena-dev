@@ -187,3 +187,14 @@ wizard keyboard/focus         OK
 browser smoke 1440×900        OK
 Docker backend/frontend       healthy
 ```
+
+## Ajustes transversais de UX — participantes e viewport
+
+Durante a validação do 16.2 foram consolidados dois ajustes transversais no shell docente:
+
+- **Participantes** passou a priorizar leitura: busca por nome/nome de exibição, edição do nome de exibição sob demanda, estado inativo como exceção visual e ações frequentes expostas por ícones com rótulos acessíveis;
+- **scroll e viewport** foram separados por contexto. Páginas administrativas usam altura natural e scroll do documento; somente a Arena ao vivo recebe `arena-fullscreen-shell` e confinamento em `100dvh` no desktop.
+
+O bloqueio de scroll de overlays também foi centralizado em `useBodyScrollLock`/`body-scroll-lock`, com contagem de locks simultâneos, restauração do estado anterior do `body` e compensação da largura da scrollbar. Modais, wizard de jornada e Timer Focus não manipulam mais `document.body.style.overflow` de forma independente.
+
+A correção elimina o recorte de listas longas em Alunos e demais páginas sem abrir mão do cockpit full-screen da Arena.

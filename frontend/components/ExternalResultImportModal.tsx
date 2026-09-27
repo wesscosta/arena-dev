@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { EXTERNAL_PLATFORM_LABEL, parseExternalResultFile, type ExternalResultPlatform, type ParsedExternalReport } from "@/lib/external-results";
 import { applyStudentOverrides, fetchExternalResultImports, importExternalResults, mapImportedScoreEvents, previewExternalResults, type ExternalResultImportSummary, type ExternalResultPreview } from "@/lib/external-results-api";
 import type { Activity, ScoreEvent, Student } from "@/lib/types";
+import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 
 type Props = {
   open: boolean;
@@ -24,6 +25,7 @@ function formatScore(value?: number) {
 }
 
 export default function ExternalResultImportModal({ open, activity, students, onClose, onImported, notify }: Props) {
+  useBodyScrollLock(open);
   const [fileName, setFileName] = useState("");
   const [report, setReport] = useState<ParsedExternalReport>();
   const [platform, setPlatform] = useState<ExternalResultPlatform>("AUTO");
@@ -48,13 +50,10 @@ export default function ExternalResultImportModal({ open, activity, students, on
   useEffect(() => {
     if (!open) return;
 
-    const previousOverflow = document.body.style.overflow;
     const previousActive =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
-
-    document.body.style.overflow = "hidden";
 
     const focusableSelector = [
       "button:not(:disabled)",
@@ -107,7 +106,6 @@ export default function ExternalResultImportModal({ open, activity, students, on
 
     return () => {
       window.cancelAnimationFrame(frame);
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
       previousActive?.focus({ preventScroll: true });
     };

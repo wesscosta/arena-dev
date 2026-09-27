@@ -33,6 +33,7 @@ import {
 } from "@/components/ui";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
+import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName } from "@/lib/classroom-api";
 import { createSession as createSessionApi, fetchSessionDomain, fetchSessionParticipants, finishSession as finishSessionApi, releaseParticipantDevice, setParticipantPresence } from "@/lib/session-api";
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, fetchActivityDomain, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
@@ -367,7 +368,7 @@ export default function ArenaApp() {
   }
 
   return (
-    <div className="app-shell app-shell-no-sidebar">
+    <div className={`app-shell app-shell-no-sidebar ${view === "arena" && currentSession ? "arena-fullscreen-shell" : ""}`}>
       <a className="skip-link" href="#main-content">
         Pular para o conteúdo principal
       </a>
@@ -1248,7 +1249,11 @@ function StudentManager({
   const [entryMode, setEntryMode] = useState<"add" | "import" | null>(null);
   const [name, setName] = useState("");
   const [preferredName, setPreferredName] = useState("");
-  const [preferredDrafts, setPreferredDrafts] = useState<Record<string, string>>({});
+  const [preferredDrafts, setPreferredDrafts] = useState<
+    Record<string, string>
+  >({});
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -1256,14 +1261,32 @@ function StudentManager({
     .filter((enrollment) => enrollment.classroomId === classroomId)
     .map((enrollment) => ({
       enrollment,
-      student: data.students.find((student) => student.id === enrollment.studentId)!,
+      student: data.students.find(
+        (student) => student.id === enrollment.studentId,
+      )!,
     }))
     .filter((row) => row.student)
     .sort((a, b) => a.student.name.localeCompare(b.student.name));
   const activeCount = allRows.filter((row) => row.enrollment.active).length;
-  const importCount = bulk.split(/\r?\n|;/).map((item) => item.trim()).filter(Boolean).length;
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase("pt-BR");
+  const visibleRows = normalizedSearch
+    ? allRows.filter(({ student, enrollment }) =>
+        [student.name, student.nickname, enrollment.preferredName].some(
+          (value) =>
+            value?.toLocaleLowerCase("pt-BR").includes(normalizedSearch),
+        ),
+      )
+    : allRows;
+  const importCount = bulk
+    .split(/\r?\n|;/)
+    .map((item) => item.trim())
+    .filter(Boolean).length;
 
-  async function addStudent(studentName: string, studentPreferredName = "", silent = false) {
+  async function addStudent(
+    studentName: string,
+    studentPreferredName = "",
+    silent = false,
+  ) {
     if (!studentName.trim() || (!silent && busy)) return false;
     if (!silent) setBusy(true);
     try {
@@ -1293,7 +1316,10 @@ function StudentManager({
   }
 
   async function importStudents() {
-    const names = bulk.split(/\r?\n|;/).map((item) => item.trim()).filter(Boolean);
+    const names = bulk
+      .split(/\r?\n|;/)
+      .map((item) => item.trim())
+      .filter(Boolean);
     if (!names.length || busy) return;
     setBusy(true);
     let imported = 0;
@@ -1316,7 +1342,12 @@ function StudentManager({
 
   async function removeStudent(studentId: string, studentName: string) {
     if (busy) return;
-    if (!window.confirm(`Remover ${studentName} desta turma? O cadastro global do aluno será preservado.`)) return;
+    if (
+      !window.confirm(
+        `Remover ${studentName} desta turma? O cadastro global do aluno será preservado.`,
+      )
+    )
+      return;
     setBusy(true);
     try {
       await removeEnrollment(classroomId, studentId);
@@ -1340,7 +1371,8 @@ function StudentManager({
         delete next[studentId];
         return next;
       });
-      notify("Nome público atualizado.");
+      setEditingStudentId(null);
+      notify("Nome de exibição atualizado.");
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1354,7 +1386,9 @@ function StudentManager({
     try {
       await setEnrollmentActive(classroomId, studentId, !active);
       await refreshClassroomDomain(classroomId);
-      notify(active ? "Aluno inativado na turma." : "Aluno reativado na turma.");
+      notify(
+        active ? "Aluno inativado na turma." : "Aluno reativado na turma.",
+      );
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1364,96 +1398,248 @@ function StudentManager({
 
   const actions = (
     <div className="student-manager-header-actions">
-      <button className="button ghost" type="button" onClick={() => setEntryMode("import")}>Importar lista</button>
-      <button className="button primary" type="button" onClick={() => setEntryMode("add")}>+ Adicionar aluno</button>
+      <button
+        className="button ghost"
+        type="button"
+        onClick={() => setEntryMode("import")}
+      >
+        Importar
+      </button>
+      <button
+        className="button primary"
+        type="button"
+        onClick={() => setEntryMode("add")}
+      >
+        + Adicionar aluno
+      </button>
     </div>
   );
 
   return (
     <div className="student-manager stack-lg">
       {showPageHeader ? (
-        <div className="page-action-bar student-page-action-bar">
-          <div>
-            <span className="eyebrow accent">ALUNOS</span>
-            <h2>Participantes da turma</h2>
-            <p>Gerencie participantes, nomes públicos e vínculos sem poluir a área de trabalho.</p>
+        <div className="student-page-header">
+          <div className="student-page-heading">
+            <div className="student-page-title-row">
+              <h2>Participantes</h2>
+              <span className="student-count-badge">
+                {allRows.length} {allRows.length === 1 ? "aluno" : "alunos"}
+              </span>
+            </div>
+            <p>Gerencie quem participa da turma e como aparece na Arena.</p>
           </div>
           {actions}
         </div>
       ) : (
         <div className="student-manager-compact-actions">
-          <div><strong>Participantes</strong><small>{activeCount} ativos · {allRows.length} cadastrados</small></div>
+          <div>
+            <strong>Participantes</strong>
+            <small>{allRows.length} cadastrados</small>
+          </div>
           {actions}
         </div>
       )}
 
       {(showSummary || allRows.length > 0) && (
-        <Panel title="Alunos da turma" subtitle={`${activeCount} ativos · ${allRows.length} cadastrados`}>
-          {!allRows.length ? <MiniEmpty text="Nenhum aluno cadastrado nesta turma." /> : (
-            <div className="student-table student-table-v2">
-              <div className="table-head student-table-head-v2">
-                <span>Aluno</span><span>Nome público</span><span>Status</span><span>XP</span><span aria-label="Ações" />
+        <section className="student-roster" aria-label="Participantes da turma">
+          {allRows.length > 0 && (
+            <div className="student-roster-toolbar">
+              <label className="student-search">
+                <span aria-hidden="true">⌕</span>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Buscar por nome ou nome de exibição..."
+                  aria-label="Buscar participante"
+                />
+              </label>
+              {activeCount !== allRows.length && (
+                <span className="student-active-summary">
+                  {activeCount} ativos · {allRows.length - activeCount} inativos
+                </span>
+              )}
+            </div>
+          )}
+
+          {!allRows.length ? (
+            <MiniEmpty text="Nenhum participante nesta turma. Adicione um aluno ou importe uma lista." />
+          ) : !visibleRows.length ? (
+            <div className="student-search-empty">
+              <strong>Nenhum participante encontrado</strong>
+              <span>
+                Não encontramos resultados para “{searchQuery.trim()}”.
+              </span>
+              <button
+                className="text-button"
+                type="button"
+                onClick={() => setSearchQuery("")}
+              >
+                Limpar busca
+              </button>
+            </div>
+          ) : (
+            <div className="student-table student-table-v3">
+              <div className="table-head student-table-head-v3">
+                <span>Participante</span>
+                <span>Status</span>
+                <span>XP</span>
+                <span aria-label="Ações" />
               </div>
-              {allRows.map(({ student, enrollment }) => {
-                const xp = xpForStudent(data.scoreEvents, classroomId, student.id);
-                const draft = preferredDrafts[student.id] ?? enrollment.preferredName;
+              {visibleRows.map(({ student, enrollment }) => {
+                const xp = xpForStudent(
+                  data.scoreEvents,
+                  classroomId,
+                  student.id,
+                );
+                const draft =
+                  preferredDrafts[student.id] ?? enrollment.preferredName;
                 const dirty = draft !== enrollment.preferredName;
+                const isEditing = editingStudentId === student.id;
+                const displayName =
+                  enrollment.preferredName ||
+                  student.nickname ||
+                  "Não definido";
                 return (
-                  <div className="table-row student-table-row-v2" key={enrollment.id}>
-                    <div className="student-cell student-identity-v2">
+                  <div
+                    className={`table-row student-table-row-v3${enrollment.active ? "" : " is-inactive"}`}
+                    key={enrollment.id}
+                  >
+                    <div className="student-cell student-identity-v3">
                       <Avatar student={student} />
-                      <div><strong>{student.name}</strong><small>Exibição atual: {enrollment.preferredName || student.nickname || student.name}</small></div>
-                    </div>
-                    <div className="student-public-name-editor">
+                      <div className="student-identity-copy">
+                        <strong>{student.name}</strong>
+                        {isEditing ? (
+                          <div className="student-display-name-editor">
                       <input
                         className="input"
-                        aria-label={`Nome público de ${student.name}`}
+                              autoFocus
+                              aria-label={`Nome de exibição de ${student.name}`}
                         value={draft}
-                        onChange={(event) => setPreferredDrafts((current) => ({ ...current, [student.id]: event.target.value }))}
+                              onChange={(event) =>
+                                setPreferredDrafts((current) => ({
+                                  ...current,
+                                  [student.id]: event.target.value,
+                                }))
+                              }
                         onKeyDown={(event) => {
                           if (event.key === "Enter" && dirty && !busy) {
                             event.preventDefault();
                             void savePreferredName(student.id, draft);
                           }
+                                if (event.key === "Escape") {
+                                  event.preventDefault();
+                                  setPreferredDrafts((current) => ({
+                                    ...current,
+                                    [student.id]: enrollment.preferredName,
+                                  }));
+                                  setEditingStudentId(null);
+                                }
                         }}
-                        placeholder="Nome público"
+                              placeholder="Nome de exibição"
                         disabled={busy}
                       />
                       <button
-                        className="button ghost student-save-name-button"
+                              className="button ghost student-inline-save"
                         type="button"
                         disabled={busy || !dirty}
-                        onClick={() => { void savePreferredName(student.id, draft); }}
+                              onClick={() => {
+                                void savePreferredName(student.id, draft);
+                              }}
+                            >
+                              {busy ? "Salvando..." : "Salvar"}
+                            </button>
+                            <button
+                              className="text-button"
+                              type="button"
+                              disabled={busy}
+                              onClick={() => {
+                                setPreferredDrafts((current) => ({
+                                  ...current,
+                                  [student.id]: enrollment.preferredName,
+                                }));
+                                setEditingStudentId(null);
+                              }}
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="student-display-name"
+                            type="button"
+                            onClick={() => setEditingStudentId(student.id)}
+                            aria-label={`Editar nome de exibição de ${student.name}`}
+                          >
+                            <span>Nome de exibição: {displayName}</span>
+                            <span
+                              className="student-edit-icon"
+                              aria-hidden="true"
                       >
-                        Salvar
+                              ✎
+                            </span>
+                      </button>
+                        )}
+                    </div>
+                    </div>
+                    <span className={enrollment.active ? "student-status-normal" : "student-status-inactive"}>
+                      {enrollment.active ? null : "Inativo"}
+                    </span>
+                    <b className="student-xp">{xp} XP</b>
+                    <div className="student-row-actions">
+                      <button
+                        type="button"
+                        className="student-row-action"
+                        aria-label={enrollment.active ? `Desativar ${student.name}` : `Reativar ${student.name}`}
+                        title={enrollment.active ? "Desativar participante" : "Reativar participante"}
+                        onClick={() => { void toggleStudent(student.id, enrollment.active); }}
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v10M6.3 5.7a8 8 0 1 0 11.4 0" /></svg>
+                      </button>
+                      <button
+                        type="button"
+                        className="student-row-action danger"
+                        aria-label={`Remover ${student.name} da turma`}
+                        title="Remover da turma"
+                        onClick={() => { void removeStudent(student.id, student.name); }}
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5" /></svg>
                       </button>
                     </div>
-                    <span className={enrollment.active ? "status active" : "status"}>{enrollment.active ? "Ativo" : "Inativo"}</span>
-                    <b className="student-xp">{xp} XP</b>
-                    <Menu
-                      trigger={(triggerProps) => (
-                        <button {...triggerProps} type="button" className="student-row-menu-trigger" aria-label={`Ações de ${student.name}`}>⋯</button>
-                      )}
-                    >
-                      <MenuItem onSelect={() => { void toggleStudent(student.id, enrollment.active); }}>
-                        {enrollment.active ? "Inativar aluno" : "Reativar aluno"}
-                      </MenuItem>
-                      <MenuItem danger onSelect={() => { void removeStudent(student.id, student.name); }}>Remover da turma</MenuItem>
-                    </Menu>
                   </div>
                 );
               })}
             </div>
           )}
-        </Panel>
+        </section>
       )}
 
       {entryMode === "add" && (
-        <Modal open title="Adicionar aluno" subtitle="Cadastro individual" onClose={() => { if (!busy) setEntryMode(null); }} size="medium">
+        <Modal
+          open
+          title="Adicionar aluno"
+          subtitle="Cadastro individual"
+          onClose={() => {
+            if (!busy) setEntryMode(null);
+          }}
+          size="medium"
+        >
           <div className="modal-section-stack">
-            <label className="field"><span>Nome completo</span><input className="input" autoFocus placeholder="Ex.: Ana Luiza de Sousa" value={name} onChange={(event) => setName(event.target.value)} disabled={busy} /></label>
             <label className="field">
-              <span>Nome público <small>opcional</small></span>
+              <span>Nome completo</span>
+              <input
+                className="input"
+                autoFocus
+                placeholder="Ex.: Ana Luiza de Sousa"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                disabled={busy}
+              />
+            </label>
+            <label className="field">
+              <span>
+                Nome de exibição <small>opcional</small>
+              </span>
               <input
                 className="input"
                 placeholder="Como aparecerá nesta turma"
@@ -1469,28 +1655,81 @@ function StudentManager({
               />
             </label>
             <div className="modal-footer">
-              <button className="button ghost" onClick={() => setEntryMode(null)} disabled={busy}>Cancelar</button>
-              <button className="button primary" disabled={busy || !name.trim()} onClick={() => { void submitSingleStudent(); }}>{busy ? "Adicionando..." : "Adicionar aluno"}</button>
+              <button
+                className="button ghost"
+                onClick={() => setEntryMode(null)}
+                disabled={busy}
+              >
+                Cancelar
+              </button>
+              <button
+                className="button primary"
+                disabled={busy || !name.trim()}
+                onClick={() => {
+                  void submitSingleStudent();
+                }}
+              >
+                {busy ? "Adicionando..." : "Adicionar aluno"}
+              </button>
             </div>
           </div>
         </Modal>
       )}
 
       {entryMode === "import" && (
-        <Modal open title="Importar alunos" subtitle="Um aluno por linha" onClose={() => { if (!busy) setEntryMode(null); }} size="medium">
+        <Modal
+          open
+          title="Importar alunos"
+          subtitle="Um aluno por linha"
+          onClose={() => {
+            if (!busy) setEntryMode(null);
+          }}
+          size="medium"
+        >
           <div className="modal-section-stack">
             <label className="field">
               <span>Lista de nomes</span>
-              <textarea className="textarea student-import-textarea" rows={10} placeholder={"Ana Luiza\nCarlos Henrique\nJoão Pedro"} value={bulk} onChange={(event) => setBulk(event.target.value)} disabled={busy} />
+              <textarea
+                className="textarea student-import-textarea"
+                rows={10}
+                placeholder={"Ana Luiza\nCarlos Henrique\nJoão Pedro"}
+                value={bulk}
+                onChange={(event) => setBulk(event.target.value)}
+                disabled={busy}
+              />
             </label>
             <div className="inline-note">
-              {importCount
-                ? <><strong>{importCount} aluno(s) identificado(s)</strong><span>Revise a lista antes de importar.</span></>
-                : <span>Cole um nome por linha. Também aceitamos nomes separados por ponto e vírgula.</span>}
+              {importCount ? (
+                <>
+                  <strong>{importCount} aluno(s) identificado(s)</strong>
+                  <span>Revise a lista antes de importar.</span>
+                </>
+              ) : (
+                <span>
+                  Cole um nome por linha. Também aceitamos nomes separados por
+                  ponto e vírgula.
+                </span>
+              )}
             </div>
             <div className="modal-footer">
-              <button className="button ghost" onClick={() => setEntryMode(null)} disabled={busy}>Cancelar</button>
-              <button className="button primary" disabled={busy || !importCount} onClick={() => { void importStudents(); }}>{busy ? "Importando..." : `Importar ${importCount || ""} aluno(s)`}</button>
+              <button
+                className="button ghost"
+                onClick={() => setEntryMode(null)}
+                disabled={busy}
+              >
+                Cancelar
+              </button>
+              <button
+                className="button primary"
+                disabled={busy || !importCount}
+                onClick={() => {
+                  void importStudents();
+                }}
+              >
+                {busy
+                  ? "Importando..."
+                  : `Importar ${importCount || ""} aluno(s)`}
+              </button>
             </div>
           </div>
         </Modal>
@@ -4367,16 +4606,14 @@ function Modal({ open, title, subtitle, size = "medium", bodyClassName, onClose,
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  useBodyScrollLock(open);
   useEffect(() => {
     if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [open, onClose]);

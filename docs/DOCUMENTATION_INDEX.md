@@ -61,4 +61,4 @@ A execução atual é `16.2 — Learning Resources & Content Ingestion`, na bran
 
 Não reescrever documentação histórica para fabricar evidência retroativa. Quando houver divergência entre fechamento técnico e publicação externa, registrar explicitamente a evidência disponível.
 
-**Atualizado em 26/09/2026 para a execução da v0.8 / incremento 16.2.**
+**Atualizado em 28/09/2026 para a execução da v0.8 / incremento 16.2 e correções transversais de UX/viewport.**

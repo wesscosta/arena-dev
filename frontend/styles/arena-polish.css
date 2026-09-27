@@ -3996,13 +3996,13 @@
 }
 
 @media (min-width: 74.01rem) {
-  .app-shell-no-sidebar {
+  .app-shell-no-sidebar.arena-fullscreen-shell {
     height: 100dvh;
     min-height: 100dvh;
     overflow: hidden;
   }
 
-  .app-shell-no-sidebar .main-area {
+  .app-shell-no-sidebar.arena-fullscreen-shell .main-area {
     height: 100%;
     min-height: 0;
     overflow: hidden;
