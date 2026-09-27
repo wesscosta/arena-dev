@@ -166,12 +166,14 @@ Implementado neste passe:
 
 O passe `16.0F.18` concluiu o quality gate técnico do cockpit. As seis dinâmicas principais foram validadas em `1920×1080`, `1672×941`, `1440×900` e `1366×768` sem scroll da página principal; em `1024×768`, a Arena mantém o fluxo responsivo natural. Os drawers preservam foco, `Esc`, clique externo e retorno ao acionador; `prefers-reduced-motion` continua reconhecido. A implementação legada da roleta foi removida de `arena-polish.css`, deixando o SVG atual como única geometria da roleta.
 
+O passe `16.0F.19` iniciou a consolidação visual entre dinâmicas: Quiz, Votação e Nuvem de Palavras compartilham agora o estado `PREPARAR`, mesma escala de título e inset de 20 px; Buzzer e Boss Battle foram alinhados ao mesmo inset/tipografia sem perder suas identidades gamificadas.
+
 ## Validação técnica
 
 Último gate executado na branch:
 
 ```text
-244 testes frontend aprovados
+245 testes frontend aprovados
 npm run typecheck  OK
 npm run build      OK
 Docker frontend    OK

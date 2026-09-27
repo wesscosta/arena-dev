@@ -198,7 +198,7 @@ export default function QuizPanel({
             <p>Prepare uma questão e transforme a resposta da turma em feedback imediato.</p>
           </div>
           <div className={styles.headerActions}>
-            <span className={styles.modeBadge}>OBJETIVO</span>
+            <span className={styles.modeBadge}>PREPARAR</span>
             {round?.status === "CLOSED" && (
               <button className={styles.secondary} onClick={() => setCreating(false)}>
                 Ver resultado anterior

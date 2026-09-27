@@ -98,11 +98,14 @@ export default function PollPanel({ sessionId, state, onStateChange, notify, joi
               <h2>Votação</h2>
               <p>Crie uma decisão rápida da turma com leitura visual imediata.</p>
             </div>
-            {round?.status === "CLOSED" && (
-              <button className={styles.secondary} onClick={() => setCreating(false)}>
-                Ver rodada anterior
-              </button>
-            )}
+            <div className={styles.headerActions}>
+              <span className={styles.modeBadge}>PREPARAR</span>
+              {round?.status === "CLOSED" && (
+                <button className={styles.secondary} onClick={() => setCreating(false)}>
+                  Ver rodada anterior
+                </button>
+              )}
+            </div>
           </div>
 
           <div className={styles.prepareGrid}>

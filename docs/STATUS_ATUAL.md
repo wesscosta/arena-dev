@@ -55,7 +55,7 @@ Google Classroom          standby
 
 ## Em refinamento
 
-- revisão visual final entre todas as dinâmicas;
+- revisão visual final entre todas as dinâmicas — `16.0F.19` em execução;
 - smoke test controlado de erro de API;
 - revisão do Projetor com os novos estados da Arena;
 - fechamento documental e PR do `16.0`.
@@ -63,7 +63,7 @@ Google Classroom          standby
 ## Validação corrente
 
 ```text
-frontend tests      244 passed
+frontend tests      245 passed
 frontend typecheck  OK
 frontend build      OK
 frontend Docker     OK

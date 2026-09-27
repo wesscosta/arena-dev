@@ -162,11 +162,14 @@ export default function WordCloudPanel({
               <h2>Nuvem de Palavras</h2>
               <p>Transforme respostas curtas da turma em um painel visual coletivo.</p>
             </div>
-            {round?.status === "CLOSED" && (
-              <button className={styles.secondary} onClick={() => setCreating(false)}>
-                Ver rodada anterior
-              </button>
-            )}
+            <div className={styles.headerActions}>
+              <span className={styles.modeBadge}>PREPARAR</span>
+              {round?.status === "CLOSED" && (
+                <button className={styles.secondary} onClick={() => setCreating(false)}>
+                  Ver rodada anterior
+                </button>
+              )}
+            </div>
           </div>
 
           <div className={styles.prepareGrid}>

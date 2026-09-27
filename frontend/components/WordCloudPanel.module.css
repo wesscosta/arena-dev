@@ -1,5 +1,5 @@
 .shell {
-  padding: 24px;
+  padding: 20px;
   border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--surface);
@@ -303,7 +303,24 @@
 .heroHeader h2 {
   margin:.18rem 0 .16rem;
   font-size:clamp(1.7rem,2.6vw,2.4rem);
+  line-height:1.02;
   letter-spacing:-.045em;
+}
+.headerActions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:.55rem;
+  flex-wrap:wrap;
+}
+.modeBadge {
+  padding:.4rem .62rem;
+  border:1px solid color-mix(in srgb,var(--accent) 28%,var(--border));
+  border-radius:999px;
+  color:var(--accent);
+  font-size:.62rem;
+  font-weight:800;
+  letter-spacing:.08em;
 }
 .heroHeader p {
   margin:0;

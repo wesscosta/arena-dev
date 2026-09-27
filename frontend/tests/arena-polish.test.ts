@@ -621,6 +621,22 @@ test("Arena exposes explicit empty states for the roster and draw when nobody is
   assert.match(css, /\.arena-participant-empty\s*\{/);
 });
 
+test("Prepare-state dynamics share the same header badge and title scale", () => {
+  const quiz = read("components/QuizPanel.tsx");
+  const poll = read("components/PollPanel.tsx");
+  const wordCloud = read("components/WordCloudPanel.tsx");
+  const quizCss = read("components/QuizPanel.module.css");
+  const pollCss = read("components/PollPanel.module.css");
+  const wordCloudCss = read("components/WordCloudPanel.module.css");
+
+  assert.match(quiz, /className=\{styles\.modeBadge\}>PREPARAR/);
+  assert.match(poll, /className=\{styles\.modeBadge\}>PREPARAR/);
+  assert.match(wordCloud, /className=\{styles\.modeBadge\}>PREPARAR/);
+  assert.match(quizCss, /line-height:1\.02/);
+  assert.match(pollCss, /line-height:1\.02/);
+  assert.match(wordCloudCss, /line-height:1\.02/);
+});
+
 test("Quiz workspace fills the Arena cockpit height on desktop and returns to natural flow responsively", () => {
   const app = read("components/ArenaApp.tsx");
   const css = read("styles/arena-polish.css");
