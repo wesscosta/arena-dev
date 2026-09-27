@@ -1,0 +1,603 @@
+# Incremento 16.3 — Journey Study Experience
+
+**Status:** Planejado / próximo após integração do `16.2`  
+**Linha:** v0.8  
+**Decisão base:** [ADR-0045](adr/ADR-0045-jornada-e-estudo-sequencial-nao-workflow-de-atividades.md)
+
+## Objetivo
+
+Transformar Journey em uma experiência real de estudo sequencial e persistente, independente da sessão ao vivo e compartilhada visualmente por aluno e professor.
+
+O incremento deve provar o seguinte ciclo de produto:
+
+```text
+Professor cria/importa material
+        ↓
+Arena organiza em módulos + conteúdos
+        ↓
+Professor revisa e publica
+        ↓
+Aluno abre a jornada
+        ↓
+Estuda um conteúdo
+        ↓
+Conclui e continua
+        ↓
+Retorna depois no ponto correto
+```
+
+## Escopo funcional
+
+### Modelo mental exposto
+
+O frontend trabalhará somente com:
+
+```text
+Journey
+└── Module
+    └── Content
+        └── Progress
+```
+
+Não expor como conceitos primários:
+
+- `JourneyItemType`;
+- `JourneyUnlockRule`;
+- `JourneyCompletionRule`;
+- `activityId`;
+- quiz/desafio/checkpoint como tipos estruturais da Jornada.
+
+A infraestrutura existente será preservada por compatibilidade e encapsulada atrás dos novos contratos.
+
+## 16.3.0 — Domain cleanup e invariantes
+
+### Objetivo
+
+Fixar no código e na documentação a fronteira entre Jornada, Atividades e Arena antes de ampliar a UI.
+
+### Implementação
+
+- documentar e testar o default de conteúdo novo:
+  - `itemType = CONTENT`;
+  - `completionRule = MANUAL`;
+  - progressão derivada da posição;
+- Journey Builder deixa de oferecer tipos de Atividade/Quiz/Challenge/Checkpoint no fluxo principal;
+- regras avançadas existentes permanecem compatíveis, mas fora da experiência padrão;
+- seeds/demo do Journey devem usar apenas módulos e conteúdos;
+- manter dados legados sem migration destrutiva.
+
+### Gate
+
+- nenhuma tela principal da Jornada comunica “workflow de atividades”;
+- conteúdo novo é materializado como `LearningResource`;
+- documentação e testes expressam a fronteira do ADR-0045.
+
+## 16.3.1 — Study API independente de `/join`
+
+### Objetivo
+
+Separar estudo persistente de participação temporária em aula.
+
+### Nova camada
+
+```text
+JourneyService
+→ autoria/administração
+
+JourneyStudyService
+→ leitura/progresso/continuidade
+```
+
+### Contrato alvo
+
+```http
+GET  /api/learn/journeys
+GET  /api/learn/journeys/{journeyId}
+GET  /api/learn/journeys/{journeyId}/contents/{contentId}
+POST /api/learn/journeys/{journeyId}/contents/{contentId}/start
+POST /api/learn/journeys/{journeyId}/contents/{contentId}/complete
+```
+
+### DTOs
+
+```text
+JourneyStudySummary
+JourneyStudyView
+JourneyModuleView
+JourneyContentView
+JourneyContentDetailView
+JourneyProgressSummary
+```
+
+O frontend não consome entidades JPA nem `JourneyStageProgress` diretamente.
+
+### Estados expostos
+
+```text
+COMPLETED
+CURRENT
+AVAILABLE
+LOCKED
+```
+
+Os estados são projeções de estudo, não necessariamente novos estados persistidos.
+
+### Autorização
+
+- Jornada `DRAFT` não aparece para aluno;
+- Jornada `ARCHIVED` não aparece como percurso ativo;
+- aluno só acessa jornadas da própria matrícula/turma;
+- `contentId` precisa pertencer à Journey solicitada;
+- `/api/join/{code}/journeys` deixa de ser contrato canônico e permanece apenas por compatibilidade enquanto necessário.
+
+## 16.3.2 — Study shell `/learn`
+
+### Rotas
+
+```text
+/learn
+/learn/journeys/:journeyId
+/learn/journeys/:journeyId/content/:contentId
+```
+
+### `/learn`
+
+Tela de retomada, não dashboard complexo.
+
+Exibir:
+
+- **Continue estudando**;
+- jornada atual;
+- módulo/conteúdo atual;
+- percentual;
+- CTA `Continuar`;
+- demais jornadas publicadas disponíveis.
+
+### Navegação inicial
+
+Manter pequena:
+
+```text
+Início
+Jornadas
+```
+
+Atividades e Conquistas só entram quando houver necessidade real no Student Workspace; não copiar integralmente o protótipo de referência.
+
+## 16.3.3 — Journey Study View
+
+### Objetivo
+
+Substituir a prévia em cards por uma representação vertical, legível e estruturalmente equivalente ao percurso de estudo.
+
+### Hierarquia alvo
+
+```text
+Backend
+3 de 10 conteúdos concluídos                  30%
+────────────────────────────────────────────────
+
+01
+FUNDAMENTOS                                  CONCLUÍDO
+
+│ ✓ HTTP — Protocolo base da web
+│   Conceitos fundamentais do protocolo HTTP
+│
+│ ✓ REST — Arquitetura de APIs
+│
+│ ✓ JSON — Formato e parsing
+
+02
+CONSTRUINDO APIs
+
+│ ● Primeiro Endpoint                        CONTINUAR
+│
+│ ○ Validação de dados
+│
+│ ○ Banco de Dados
+
+03
+AUTENTICAÇÃO E SEGURANÇA
+
+│ 🔒 JWT e sessões
+│ 🔒 OAuth 2.0
+```
+
+### Regras de UI
+
+- evitar card dentro de card;
+- módulo é hierarquia, não container visual pesado;
+- cor não é o único indicador de estado;
+- `CURRENT` recebe o CTA principal;
+- `LOCKED` explica bloqueio sem CTA falso;
+- progressão global no topo;
+- progressão do módulo pode ser discreta;
+- nenhuma decoração deve competir com o conteúdo.
+
+## 16.3.4 — Content Reader
+
+### Componente central
+
+```text
+JourneyContentReader
+```
+
+### Layout
+
+```text
+← Fundamentos                              3 / 10
+
+REST — Arquitetura de APIs
+──────────────────────────────────────────────
+
+conteúdo de estudo
+
+──────────────────────────────────────────────
+
+← HTTP                    Concluir e continuar →
+```
+
+### Formatos do MVP
+
+- Markdown;
+- plain text;
+- link/recurso externo com tratamento seguro.
+
+O leitor deve suportar pelo menos:
+
+- headings;
+- parágrafos;
+- listas;
+- código;
+- citações;
+- tabelas quando o renderer permitir;
+- links.
+
+Não implementar editor rich-text sofisticado neste incremento.
+
+## 16.3.5 — Progressão e continuidade
+
+### Default
+
+Progressão sequencial.
+
+```text
+conteúdo 1 = CURRENT
+conteúdo 2 = LOCKED
+conteúdo 3 = LOCKED
+
+concluir conteúdo 1
+        ↓
+conteúdo 1 = COMPLETED
+conteúdo 2 = CURRENT
+```
+
+### Ações
+
+- abrir conteúdo disponível registra início quando necessário;
+- `Concluir e continuar` conclui o conteúdo e direciona ao próximo;
+- percentual deriva do total de conteúdos;
+- conclusão do último conteúdo conclui o módulo;
+- retorno posterior aponta para o primeiro conteúdo não concluído/disponível.
+
+Não adicionar branching no MVP.
+
+## 16.3.6 — Professor usa a mesma experiência
+
+### Princípio
+
+Não criar telas diferentes de consumo.
+
+```text
+JourneyStudyView
+├── aluno: leitura + progresso
+└── professor: mesma leitura + capacidade Editar jornada
+```
+
+### Professor
+
+- pode abrir qualquer Jornada da turma;
+- visualiza a mesma estrutura e o mesmo conteúdo;
+- recebe CTA `Editar jornada`;
+- não cria progresso pessoal persistente no MVP.
+
+Não criar `Enrollment` falso para professor.
+
+### Entrada pelo workspace da turma
+
+```text
+Jornadas
+→ Ver jornada
+→ /learn/journeys/{id}?preview=teacher
+```
+
+O parâmetro é capability/contexto de acesso, não uma UI paralela.
+
+## 16.3.7 — Simplificação do Journey Builder
+
+Essa fatia ocorre **depois** da Study View estar utilizável, para que a autoria seja guiada pela experiência real de consumo.
+
+### Editor alvo
+
+```text
+Backend                                      [Ver jornada]
+
+Título
+Descrição
+
+01  Fundamentos
+    ≡ HTTP — Protocolo base da web
+    ≡ REST — Arquitetura de APIs
+    ≡ JSON — Formato e parsing
+    + Adicionar conteúdo
+
+02  Construindo APIs
+    ≡ Primeiro Endpoint
+    ≡ Validação de dados
+    ≡ Banco de Dados
+    + Adicionar conteúdo
+
++ Adicionar módulo
+```
+
+### Remover da UI padrão
+
+- tipo do item;
+- atividade vinculada;
+- critério de conclusão;
+- regra de desbloqueio;
+- controles de workflow.
+
+Esses detalhes ficam encapsulados como defaults ou compatibilidade legada.
+
+## 16.3.8 — Ingestão/IA alinhada ao novo escopo
+
+O wizard do `16.2` permanece, mas toda fonte converge para:
+
+```text
+Source
+  ↓
+Draft
+  ↓
+Sections
+  ↓
+Contents
+```
+
+Não gerar quiz/desafio/checkpoint como estrutura de Journey.
+
+### Saída esperada da IA
+
+```json
+{
+  "sections": [
+    {
+      "title": "Fundamentos",
+      "items": [
+        {
+          "title": "HTTP",
+          "body": "..."
+        }
+      ]
+    }
+  ]
+}
+```
+
+A IA continua sem autoridade de publicação.
+
+## Identidade e acesso
+
+### Problema atual
+
+O aluno atual é identificado temporariamente por sessão via `/join` e `X-Participant-Token`. Isso não representa identidade persistente para estudo assíncrono.
+
+### Estratégia de entrega
+
+Separar em duas etapas:
+
+```text
+16.3A
+Study API + Study UI + teacher preview/test access
+
+16.3B
+Persistent Student Access
+```
+
+O desenvolvimento da UX não fica bloqueado pelo redesenho de autenticação.
+
+Antes de release para aluno real, `/learn` precisa de identidade persistente baseada no usuário/matrícula, sem depender de sessão ativa.
+
+## Componentização alvo
+
+```text
+LearnLayout
+├── LearnNavigation
+└── JourneyStudyPage
+    ├── JourneyHeader
+    ├── JourneyProgress
+    └── JourneyModuleList
+        └── JourneyModule
+            └── JourneyContentRow
+
+JourneyContentPage
+├── ContentBreadcrumb
+├── ContentHeader
+├── ContentRenderer
+├── ContentNavigation
+└── CompleteContentButton
+```
+
+Não reutilizar o atual `JourneyMapPreview` como componente final. Ele poderá ser removido quando `JourneyStudyView` estiver validado.
+
+## Responsividade
+
+### Desktop
+
+- navegação persistente discreta;
+- coluna de leitura com largura confortável;
+- sem necessidade de mapa horizontal.
+
+### Tablet
+
+- navegação compacta;
+- conteúdo continua vertical.
+
+### Mobile
+
+- topbar;
+- conteúdo full width;
+- capítulos e conteúdos permanecem lineares;
+- nenhum horizontal scrolling obrigatório para percorrer a Journey.
+
+## Acessibilidade
+
+- status sempre combina texto/ícone/semântica, nunca apenas cor;
+- progresso usa `role="progressbar"` e atributos `aria-*`;
+- conteúdo bloqueado não é um CTA acionável;
+- teclado percorre conteúdos em ordem natural;
+- foco após `Concluir e continuar` precisa cair no título do próximo conteúdo;
+- `prefers-reduced-motion` continua respeitado.
+
+## Testes backend
+
+Cobertura mínima:
+
+```text
+published journey visible to enrollment
+DRAFT hidden
+ARCHIVED not active
+first content CURRENT/AVAILABLE
+next content LOCKED
+start content
+complete content
+completion unlocks next
+module completion derived
+journey percentage correct
+cross-classroom access denied
+content belongs to requested journey
+LearningResource returned correctly
+```
+
+## Testes frontend
+
+### Componentes
+
+- módulos renderizados na ordem;
+- conteúdo concluído;
+- conteúdo atual;
+- conteúdo bloqueado;
+- percentual;
+- CTA `Continuar`;
+- aluno não recebe `Editar jornada`;
+- professor recebe `Editar jornada`.
+
+### E2E
+
+Fluxo obrigatório:
+
+```text
+/learn
+→ abrir Journey
+→ abrir conteúdo atual
+→ concluir
+→ próximo conteúdo liberado
+→ sair
+→ retornar
+→ continuar do conteúdo correto
+```
+
+## Seed/demo de validação
+
+Criar uma Journey representativa:
+
+```text
+Backend
+
+Fundamentos
+├── HTTP
+├── REST
+└── JSON
+
+Construindo APIs
+├── Primeiro Endpoint
+├── Validação de dados
+└── Banco de Dados
+
+Autenticação e Segurança
+├── JWT e sessões
+├── OAuth 2.0
+└── Proteção de rotas
+
+Deploy e Produção
+├── Docker
+└── Observabilidade
+```
+
+Cada item precisa possuir conteúdo suficiente para testar leitura real, não apenas título placeholder.
+
+## Fora do 16.3
+
+Não implementar neste incremento:
+
+- branching/árvore de escolhas;
+- skill tree;
+- mapa ilustrado separado;
+- Boss Battle na Jornada;
+- Quiz/Votação/Buzzer/Nuvem como tipos de Journey;
+- ranking específico de Journey;
+- streak;
+- badges por conteúdo;
+- certificado;
+- SCORM/LTI;
+- editor rich-text avançado;
+- colaboração em tempo real;
+- progresso pessoal persistente do professor;
+- Teams/Classroom como requisito do estudo;
+- gamificação ornamental sem evidência de valor.
+
+## Critério de conclusão
+
+O incremento está concluído quando o cenário abaixo funciona de ponta a ponta:
+
+```text
+Professor
+→ importa/cria material
+→ Arena organiza módulos + conteúdos
+→ professor revisa
+→ publica
+
+Aluno
+→ acessa /learn sem sessão ao vivo
+→ abre a Journey
+→ estuda o conteúdo atual
+→ conclui
+→ próximo conteúdo é liberado
+→ sai
+
+Aluno posteriormente
+→ retorna a /learn
+→ vê o progresso anterior
+→ Continuar leva ao ponto correto
+
+Professor
+→ abre a mesma Journey
+→ vê a mesma experiência de leitura
+→ possui Editar jornada
+```
+
+## Ordem de execução
+
+1. `16.3.0` — Domain cleanup e invariantes;
+2. `16.3.1` — Study API independente de `/join`;
+3. `16.3.2` — `/learn` e Study shell;
+4. `16.3.3` — Journey Study View;
+5. `16.3.4` — Content Reader;
+6. `16.3.5` — progresso e continuidade;
+7. `16.3.6` — acesso do professor na mesma experiência;
+8. `16.3.7` — simplificação do Builder;
+9. `16.3.8` — alinhamento final de ingestão e IA.
+
+## Gate antes de implementar funcionalidade posterior
+
+Não iniciar Mastery, achievements ou uma visualização gamificada adicional enquanto o fluxo básico de estudo não estiver validado com usuários reais. O valor da Journey precisa ser demonstrado primeiro como experiência de aprendizagem, não como quantidade de mecânicas.

@@ -6,7 +6,7 @@
 
 **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 
-**Incremento em fechamento:** `16.2 — Learning Resources & Content Ingestion` concluído na branch; `16.3 — Student Experience` é o próximo incremento após merge.
+**Incremento em fechamento:** `16.2 — Learning Resources & Content Ingestion` concluído na branch; `16.3 — Journey Study Experience` é o próximo incremento após merge.
 
 **Branch ativa:** `feat/v0.8-content-ingestion`.
 
@@ -24,7 +24,8 @@ O `16.0 — Professor Arena Experience` e o `16.1 — Journey Core` foram integr
 baseline publicada        v0.7.0
 linha ativa               v0.8
 último incremento          16.1 · mergeado no PR #22
-incremento atual           16.2
+incremento atual           16.2 · fechamento
+próximo incremento         16.3 · Journey Study Experience
 branch                    feat/v0.8-content-ingestion
 schema                    Flyway V1–V31
 provider operacional      Microsoft Teams
@@ -46,7 +47,7 @@ Google Classroom          standby
 - contrato de progresso expõe etapa atual, próxima ação e timestamps de conclusão derivados das entregas;
 - jornadas publicadas usam visualização compacta de leitura no painel do professor.
 
-## Learning Resources & Content Ingestion — em execução
+## Learning Resources & Content Ingestion — concluído na branch
 
 - `LearningResource` separado de `Activity`;
 - módulos persistidos por `JourneySection`;
@@ -66,6 +67,23 @@ Google Classroom          standby
 - extração validada com arquivos binários reais PDF/DOCX/PPTX;
 - CRUD HTTP completo de `LearningResource`, incluindo leitura individual e exclusão segura;
 - recurso vinculado a jornada não pode ser excluído e retorna conflito HTTP.
+
+
+## Correção de produto — fronteira da Jornada
+
+A direção do `16.3` foi corrigida antes de ampliar a implementação. O Journey Builder do `16.2` havia começado a expor atividade, quiz, desafio e checkpoint como tipos equivalentes de Journey, aproximando a feature de um segundo workflow de Atividades.
+
+A decisão vigente é o [`ADR-0045`](adr/ADR-0045-jornada-e-estudo-sequencial-nao-workflow-de-atividades.md):
+
+```text
+Jornada     → o que estudar e onde continuar
+Atividades  → o que fazer/entregar
+Arena       → o que acontece ao vivo
+```
+
+A experiência de Journey passa a expor somente **módulos/capítulos, conteúdos e progresso**. Tipos e regras já existentes permanecem internamente por compatibilidade até que haja evidência para uma migração de domínio, mas deixam de orientar a UI padrão.
+
+A rota `/join` continua sendo participação temporária em sessão ao vivo e não será o acesso canônico ao estudo. O `16.3` criará `/learn` e uma API própria de estudo.
 
 ## UX transversal — shell e participantes
 
@@ -117,10 +135,11 @@ Flyway              V1–V31 OK
 
 ## Próximo gate
 
-Revisar e integrar a branch do `16.2`. Após o merge, iniciar `16.3 — Student Experience`, conectando o mapa da jornada ao progresso real de cada aluno.
+Revisar e integrar a branch do `16.2`. Após o merge, iniciar `16.3 — Journey Study Experience`: Journey passa a significar módulos/capítulos + conteúdos + progresso, com API independente de `/join`, rota `/learn`, leitor de conteúdo e a mesma experiência de consumo para professor e aluno.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)
+- [`INCREMENT_16_3.md`](INCREMENT_16_3.md)
 - [`INCREMENT_16_2.md`](INCREMENT_16_2.md)
 - [`INCREMENT_16_1.md`](INCREMENT_16_1.md)
 - [`INCREMENT_16_0.md`](INCREMENT_16_0.md)

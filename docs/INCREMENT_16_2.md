@@ -198,3 +198,9 @@ Durante a validação do 16.2 foram consolidados dois ajustes transversais no sh
 O bloqueio de scroll de overlays também foi centralizado em `useBodyScrollLock`/`body-scroll-lock`, com contagem de locks simultâneos, restauração do estado anterior do `body` e compensação da largura da scrollbar. Modais, wizard de jornada e Timer Focus não manipulam mais `document.body.style.overflow` de forma independente.
 
 A correção elimina o recorte de listas longas em Alunos e demais páginas sem abrir mão do cockpit full-screen da Arena.
+
+## Correção de produto posterior ao fechamento técnico
+
+Durante a revisão que antecede o `16.3`, ficou definido que os tipos heterogêneos introduzidos no `16.2` não devem orientar a experiência final da Jornada. O suporte técnico existente permanece por compatibilidade, mas o produto passa a seguir o [`ADR-0045`](adr/ADR-0045-jornada-e-estudo-sequencial-nao-workflow-de-atividades.md): Journey expõe módulos/capítulos + conteúdos + progresso; Atividades e dinâmicas Ao Vivo continuam em seus próprios domínios.
+
+O `Journey Builder V2` será simplificado no `16.3` **depois** da experiência real de estudo estar funcional, evitando otimizar novamente um editor antes de validar o consumo.

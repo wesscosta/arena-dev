@@ -2,12 +2,12 @@
 
 **Linha ativa:** v0.8
 **Branch de execução:** `feat/v0.8-content-ingestion`
-**Estado atual:** `16.2 — Learning Resources & Content Ingestion` em execução.
+**Estado atual:** `16.2` concluído na branch; `16.3 — Journey Study Experience` é o próximo incremento.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
 - **Professor / Ao Vivo:** cockpit operacional para condução da aula;
-- **Aluno / Jornada:** progressão persistente, missões, evidências e domínio.
+- **Aluno / Jornada:** estudo sequencial persistente, organizado em módulos/capítulos e conteúdos.
 
 A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor de produto antes de avançar para Journey, Mastery e gamificação persistente.
 
@@ -18,8 +18,8 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | 16.0 | Professor Arena Experience | **Concluído · PR #21 mergeado** |
 | 16.1 | Journey Core | **Concluído · PR #22 mergeado** |
 | 16.2 | Learning Resources & Content Ingestion | **Concluído na branch · aguardando merge** |
-| 16.3 | Student Experience | Próximo |
-| 16.4 | Journey Map | Planejado |
+| 16.3 | Journey Study Experience | **Próximo** |
+| 16.4 | Journey Map | **Absorvido pelo 16.3; sem incremento separado no MVP** |
 | 16.5 | Question Attempts & Skills | Planejado |
 | 16.6 | Mastery básico | Planejado |
 | 16.7 | Review | Planejado |
@@ -207,4 +207,52 @@ O fluxo não pressupõe que o professor mantenha um segundo cérebro, Markdown o
 - preview estrutural consolidado como referência visual, sem antecipar estados reais do aluno;
 - adapter autorizado para Notion permanece como evolução posterior e não bloqueia o Journey MVP.
 
-Com esses gates atendidos, o próximo incremento é `16.3 — Student Experience`.
+Com esses gates atendidos, o próximo incremento é `16.3 — Journey Study Experience`, regido pelo ADR-0045. A Jornada passa a ser tratada como estudo sequencial de conteúdo, não como workflow de Atividades ou dinâmicas da Arena.
+
+## 16.3 — Journey Study Experience
+
+### Correção de direção
+
+O `16.3` substitui a formulação genérica **Student Experience** por uma fronteira explícita de produto:
+
+> Jornada é um material de estudo estruturado, sequencial e acompanhável, organizado em módulos/capítulos e conteúdos.
+
+A implementação seguirá [`INCREMENT_16_3.md`](INCREMENT_16_3.md) e [`ADR-0045`](adr/ADR-0045-jornada-e-estudo-sequencial-nao-workflow-de-atividades.md).
+
+### Escopo central
+
+```text
+Journey
+└── Module / Chapter
+    └── Content
+        └── Progress
+```
+
+- nova API de estudo independente de `/join`;
+- rota `/learn`;
+- visualização vertical de módulos e conteúdos;
+- leitor de conteúdo;
+- progresso e continuidade;
+- professor consumindo a mesma experiência com capacidade extra de edição;
+- simplificação posterior do Builder para módulos + conteúdos;
+- ingestão/IA convergindo somente para conteúdo revisável.
+
+### Limites
+
+O incremento não transforma Journey em uma segunda área de Atividades e não incorpora Quiz, Votação, Buzzer, Boss Battle ou outras dinâmicas como tipos estruturais do percurso. Também não exige mapa ilustrado, skill tree ou branching para fechar o MVP.
+
+### Sequência técnica
+
+1. `16.3.0` Domain cleanup;
+2. `16.3.1` Study API;
+3. `16.3.2` Study shell `/learn`;
+4. `16.3.3` Journey Study View;
+5. `16.3.4` Content Reader;
+6. `16.3.5` Progressão e continuidade;
+7. `16.3.6` mesma experiência para professor;
+8. `16.3.7` simplificação do Builder;
+9. `16.3.8` alinhamento de ingestão/IA.
+
+## 16.4 — Journey Map
+
+O incremento separado deixa de ser obrigatório no MVP. O mapa cognitivo será inicialmente a própria estrutura vertical de módulos e conteúdos do `16.3`. Qualquer visualização mais lúdica ou espacial passa a depender de evidência de uso após validação da experiência básica de estudo.

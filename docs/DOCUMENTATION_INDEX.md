@@ -5,14 +5,15 @@
 1. [`../README.md`](../README.md) — visão pública e operacional do projeto.
 2. [`STATUS_ATUAL.md`](STATUS_ATUAL.md) — estado técnico corrente.
 3. [`ROADMAP_0_8.md`](ROADMAP_0_8.md) — roadmap da linha ativa.
-4. [`INCREMENT_16_2.md`](INCREMENT_16_2.md) — execução de Learning Resources & Content Ingestion.
-5. [`INCREMENT_16_1.md`](INCREMENT_16_1.md) — fechamento do Journey Core.
-6. [`INCREMENT_16_0.md`](INCREMENT_16_0.md) — fechamento do Professor Arena Experience.
-7. [`ROADMAP_0_7.md`](ROADMAP_0_7.md) — fechamento histórico da linha de integrações.
-8. [`RELEASE_0_7.md`](RELEASE_0_7.md) — release publicada da v0.7.0.
-9. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
-10. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
-11. [`adr/README.md`](adr/README.md).
+4. [`INCREMENT_16_3.md`](INCREMENT_16_3.md) — plano técnico de Journey Study Experience.
+5. [`INCREMENT_16_2.md`](INCREMENT_16_2.md) — fechamento de Learning Resources & Content Ingestion.
+6. [`INCREMENT_16_1.md`](INCREMENT_16_1.md) — fechamento do Journey Core.
+7. [`INCREMENT_16_0.md`](INCREMENT_16_0.md) — fechamento do Professor Arena Experience.
+8. [`ROADMAP_0_7.md`](ROADMAP_0_7.md) — fechamento histórico da linha de integrações.
+9. [`RELEASE_0_7.md`](RELEASE_0_7.md) — release publicada da v0.7.0.
+10. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+11. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
+12. [`adr/README.md`](adr/README.md).
 
 ## Baseline encerrada — v0.6
 
@@ -32,7 +33,7 @@
 
 Os incrementos `16.0 — Professor Arena Experience` e `16.1 — Journey Core` foram integrados à `main` pelos PRs #21 e #22.
 
-A execução atual é `16.2 — Learning Resources & Content Ingestion`, na branch `feat/v0.8-content-ingestion`.
+O `16.2 — Learning Resources & Content Ingestion` está em fechamento na branch `feat/v0.8-content-ingestion`. O próximo incremento é `16.3 — Journey Study Experience`, orientado pelo ADR-0045.
 
 ## Histórico
 
@@ -55,10 +56,11 @@ A execução atual é `16.2 — Learning Resources & Content Ingestion`, na bran
 1. código, migrations e configuração da branch ativa;
 2. `STATUS_ATUAL.md`;
 3. `ROADMAP_0_8.md`;
-4. `INCREMENT_16_2.md`;
-5. ADRs aceitos;
-6. documentos históricos.
+4. `INCREMENT_16_3.md`;
+5. `INCREMENT_16_2.md`;
+6. ADRs aceitos;
+7. documentos históricos.
 
 Não reescrever documentação histórica para fabricar evidência retroativa. Quando houver divergência entre fechamento técnico e publicação externa, registrar explicitamente a evidência disponível.
 
-**Atualizado em 28/09/2026 para a execução da v0.8 / incremento 16.2 e correções transversais de UX/viewport.**
+**Atualizado em 27/09/2026 para o fechamento do 16.2 e redefinição técnica do 16.3 — Journey Study Experience.**

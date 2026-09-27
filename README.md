@@ -175,7 +175,7 @@ O `16.1 — Journey Core` introduziu a base persistente de progressão: jornadas
 
 O `16.2 — Learning Resources & Content Ingestion` está concluído na branch ativa e adota criação **agnóstica à fonte**: o professor pode começar com IA, modelo, material existente ou em branco. PDF, Word, PowerPoint, texto, Markdown e links entram pelo mesmo pipeline de rascunho; documentos sem headings recebem segmentação heurística revisável, páginas do Notion são reconhecidas dentro do fluxo de links e nada é publicado sem revisão. O Journey Builder V2 organiza a autoria por módulos/itens, oferece a prévia **Visualizar como aluno** e o contrato `LearningResource` possui CRUD HTTP completo.
 
-A v0.8 começa pela reestruturação da experiência do professor antes de avançar para a Jornada do aluno.
+A v0.8 começa pela reestruturação da experiência do professor e avança agora para `16.3 — Journey Study Experience`. Jornada é definida como estudo sequencial por módulos/capítulos e conteúdos; Atividades e dinâmicas Ao Vivo permanecem domínios separados.
 
 Estado final do `16.0 — Professor Arena Experience`:
 
@@ -191,7 +191,7 @@ Estado final do `16.0 — Professor Arena Experience`:
 - Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle ocupando a altura disponível do cockpit em desktop;
 - quality gate técnico `16.0F.18` concluído: CSS legado da roleta removido, responsividade desktop validada, estados vazios explícitos e drawers com contenção/retorno de foco; os passes `16.0F.19/20` fecharam consistência visual e Projetor antes do merge no PR #21.
 
-Roadmap e estado detalhado em `docs/ROADMAP_0_8.md` e `docs/INCREMENT_16_2.md`.
+Roadmap e estado detalhado em `docs/ROADMAP_0_8.md`, `docs/INCREMENT_16_3.md` e `docs/INCREMENT_16_2.md`.
 
 ## Executando localmente
 
