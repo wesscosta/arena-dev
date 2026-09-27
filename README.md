@@ -6,7 +6,7 @@
 >
 > **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Execução atual:** `16.1 — Journey Core` na branch `feat/v0.8-journey-core`. O `16.0 — Professor Arena Experience` foi integrado à `main` pelo PR #21.
+> **Execução atual:** `16.1 — Journey Core` concluído na branch `feat/v0.8-journey-core`, aguardando PR. Próximo incremento: `16.2 — Learning Resources & Content Ingestion`.
 
 ## Modelo do produto
 

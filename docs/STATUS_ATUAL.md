@@ -6,7 +6,7 @@
 
 **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 
-**Incremento ativo:** `16.1 — Journey Core`.
+**Incremento concluído na branch:** `16.1 — Journey Core`.
 
 **Branch ativa:** `feat/v0.8-journey-core`.
 
@@ -24,7 +24,8 @@ O Sorteio Inteligente 2.0 é a referência visual da nova shell e está funciona
 baseline publicada        v0.7.0
 linha ativa               v0.8
 último incremento          16.0 · mergeado no PR #21
-incremento atual           16.1
+incremento concluído      16.1
+próximo incremento        16.2
 branch                    feat/v0.8-journey-core
 schema                    Flyway V1–V28
 provider operacional      Microsoft Teams
@@ -88,7 +89,7 @@ frontend Docker     OK
 
 ## Próximo gate
 
-Consolidar o `16.1 — Journey Core`: domínio, persistência, API e editor mínimo do professor antes de avançar para `16.2 — Learning Resources básico`.
+Integrar `16.1 — Journey Core` por PR. Depois, abrir `16.2 — Learning Resources & Content Ingestion`, mantendo a ingestão agnóstica à fonte e sem exigir Markdown, Notion ou qualquer fluxo técnico específico do professor.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)

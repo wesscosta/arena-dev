@@ -2,7 +2,7 @@
 
 **Linha ativa:** v0.8
 **Branch de execução:** `feat/v0.8-journey-core`
-**Estado atual:** `16.1 — Journey Core` em execução.
+**Estado atual:** `16.1 — Journey Core` concluído na branch; próximo: `16.2 — Learning Resources & Content Ingestion`.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
@@ -16,8 +16,8 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | Incremento | Objetivo | Estado |
 | --- | --- | --- |
 | 16.0 | Professor Arena Experience | **Concluído · PR #21 mergeado** |
-| 16.1 | Journey Core | **Em execução** |
-| 16.2 | Learning Resources básico | Planejado |
+| 16.1 | Journey Core | **Concluído na branch · aguardando PR** |
+| 16.2 | Learning Resources & Content Ingestion | **Próximo** |
 | 16.3 | Student Experience | Planejado |
 | 16.4 | Journey Map | Planejado |
 | 16.5 | Question Attempts & Skills | Planejado |

@@ -2,7 +2,7 @@
 
 ## Status
 
-**Em execução** na branch `feat/v0.8-journey-core`.
+**Concluído na branch** `feat/v0.8-journey-core`; pronto para integração por PR.
 
 O `16.0 — Professor Arena Experience` foi integrado à `main` pelo PR #21. O `16.1` inicia o domínio persistente da Jornada sem antecipar Mastery, badges, economia adicional de XP ou a experiência final do aluno.
 
