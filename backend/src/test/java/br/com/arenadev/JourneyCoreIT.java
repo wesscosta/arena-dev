@@ -167,6 +167,41 @@ class JourneyCoreIT {
     }
 
     @Test
+    void draftAuthoringGroupsStagesIntoModulesAndPersistsModuleRename() {
+        Fixture fixture = fixture("Builder", "JRNY-BLD");
+        JourneyService.JourneyView created = journeyService.create(new JourneyService.JourneyInput(
+                fixture.classroom().getId(),
+                "Backend",
+                null,
+                List.of(
+                        new JourneyService.StageInput(null, "HTTP", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, "Fundamentos", JourneyItemType.CONTENT, null),
+                        new JourneyService.StageInput(null, "REST", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL, null, "Fundamentos", JourneyItemType.CONTENT, null)
+                )
+        ));
+
+        assertThat(created.stages()).extracting(JourneyService.StageView::sectionTitle)
+                .containsExactly("Fundamentos", "Fundamentos");
+        assertThat(created.stages().getFirst().sectionId()).isNotNull();
+        assertThat(created.stages().get(1).sectionId()).isEqualTo(created.stages().getFirst().sectionId());
+
+        String sectionId = created.stages().getFirst().sectionId().toString();
+        JourneyService.JourneyView updated = journeyService.update(created.id(), new JourneyService.JourneyInput(
+                fixture.classroom().getId(),
+                "Backend",
+                null,
+                List.of(
+                        new JourneyService.StageInput(created.stages().getFirst().id().toString(), "HTTP", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, sectionId, "Fundamentos da Web", JourneyItemType.CONTENT, null),
+                        new JourneyService.StageInput(created.stages().get(1).id().toString(), "REST", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL, sectionId, "Fundamentos da Web", JourneyItemType.CONTENT, null)
+                )
+        ));
+
+        assertThat(updated.stages()).extracting(JourneyService.StageView::sectionTitle)
+                .containsExactly("Fundamentos da Web", "Fundamentos da Web");
+        assertThat(updated.stages()).extracting(JourneyService.StageView::itemType)
+                .containsExactly(JourneyItemType.CONTENT, JourneyItemType.CONTENT);
+    }
+
+    @Test
     void publishedJourneyRejectsStructuralStageChanges() {
         Fixture fixture = fixture("Imutabilidade", "JRNY-I");
         JourneyService.JourneyView published = createPublishedJourney(fixture,
@@ -177,7 +212,7 @@ class JourneyCoreIT {
                 "Título atualizado",
                 null,
                 List.of(
-                        new JourneyService.StageInput(published.stages().getFirst().id().toString(), "Etapa única", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL),
+                        new JourneyService.StageInput(published.stages().getFirst().id().toString(), "Etapa única", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, null, null, null),
                         stage("Etapa extra", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL)
                 )
         )))
@@ -198,7 +233,7 @@ class JourneyCoreIT {
             JourneyUnlockRule unlockRule,
             JourneyCompletionRule completionRule
     ) {
-        return new JourneyService.StageInput(null, title, null, activityId, unlockRule, completionRule);
+        return new JourneyService.StageInput(null, title, null, activityId, unlockRule, completionRule, null, null, null, null);
     }
 
     private Fixture fixture(String classroomName, String classroomCode) {

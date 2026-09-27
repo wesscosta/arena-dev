@@ -82,6 +82,8 @@ public class Journey {
         sections.add(section);
     }
 
+    public void removeSection(JourneySection section) { sections.remove(section); }
+
     public UUID getId() { return id; }
     public Classroom getClassroom() { return classroom; }
     public String getTitle() { return title; }

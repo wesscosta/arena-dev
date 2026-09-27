@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Activity } from "@/lib/types";
 import { materializeContentDraft, type ContentDraft } from "@/lib/content-ingestion-api";
 import JourneyCreationWizard from "@/components/JourneyCreationWizard";
+import JourneyMapPreview from "@/components/JourneyMapPreview";
 import {
   archiveJourney,
   createJourney,
@@ -26,10 +27,7 @@ type Props = {
 };
 
 type DraftStage = JourneyStageInput & {
-  sectionId?: string | null;
-  sectionTitle?: string | null;
   itemType?: Journey["stages"][number]["itemType"];
-  learningResourceId?: string | null;
 };
 
 type Draft = {
@@ -53,10 +51,10 @@ function toDraft(journey: Journey): Draft {
       activityId: stage.activityId ?? undefined,
       unlockRule: stage.unlockRule,
       completionRule: stage.completionRule,
-      sectionId: stage.sectionId,
-      sectionTitle: stage.sectionTitle,
+      sectionId: stage.sectionId ?? undefined,
+      sectionTitle: stage.sectionTitle ?? undefined,
       itemType: stage.itemType,
-      learningResourceId: stage.learningResourceId,
+      learningResourceId: stage.learningResourceId ?? undefined,
     })),
   };
 }
@@ -96,6 +94,7 @@ export default function JourneyManager({ classroomId, classroomName, activities,
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [creationOpen, setCreationOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"structure" | "preview">("structure");
 
   useEffect(() => {
     let active = true;
@@ -109,12 +108,25 @@ export default function JourneyManager({ classroomId, classroomName, activities,
 
   const selected = useMemo(() => draft?.id ? journeys.find((journey) => journey.id === draft.id) : undefined, [draft?.id, journeys]);
   const structuralLocked = draft?.status !== "DRAFT";
+  const stageGroups = useMemo(() => {
+    if (!draft) return [];
+    const groups = new Map<string, { key: string; title: string; entries: Array<{ stage: DraftStage; index: number }> }>();
+    draft.stages.forEach((stage, index) => {
+      const key = stage.sectionId || stage.sectionTitle || "default";
+      const title = stage.sectionTitle || "Jornada principal";
+      const group = groups.get(key) ?? { key, title, entries: [] };
+      group.entries.push({ stage, index });
+      groups.set(key, group);
+    });
+    return [...groups.values()];
+  }, [draft]);
 
-  function selectJourney(journey: Journey) { setDraft(toDraft(journey)); }
+  function selectJourney(journey: Journey) { setDraft(toDraft(journey)); setViewMode("structure"); }
   function newJourney() { setCreationOpen(true); }
 
   function startBlankJourney() {
     setDraft(emptyDraft());
+    setViewMode("structure");
   }
 
   async function useContentDraft(contentDraft: ContentDraft) {
@@ -124,6 +136,7 @@ export default function JourneyManager({ classroomId, classroomName, activities,
       const saved = await materializeContentDraft(classroomId, contentDraft);
       setJourneys((current) => [saved, ...current.filter((journey) => journey.id !== saved.id)]);
       setDraft(toDraft(saved));
+      setViewMode("structure");
       notify("Estrutura criada como rascunho. Revise antes de publicar.");
     } catch (error) {
       notify(error instanceof Error ? error.message : "Não foi possível criar a jornada a partir do rascunho.");
@@ -133,34 +146,53 @@ export default function JourneyManager({ classroomId, classroomName, activities,
     }
   }
 
-  function addStage() {
+  function addStage(sectionTitle?: string, sectionId?: string) {
     if (!draft || structuralLocked) return;
     const first = draft.stages.length === 0;
     setDraft({
       ...draft,
       stages: [...draft.stages, {
-        title: "",
+        title: "Nova etapa",
         description: "",
         unlockRule: first ? "IMMEDIATE" : "PREVIOUS_STAGE_COMPLETED",
         completionRule: "MANUAL",
+        itemType: "CONTENT",
+        sectionId,
+        sectionTitle: sectionTitle ?? draft.stages.at(-1)?.sectionTitle ?? "Módulo 1",
       }],
     });
   }
 
-  function patchStage(index: number, patch: Partial<JourneyStageInput>) {
+  function addModule() {
+    if (!draft || structuralLocked) return;
+    const moduleCount = new Set(draft.stages.map((stage) => stage.sectionTitle).filter(Boolean)).size;
+    addStage(`Módulo ${moduleCount + 1}`);
+  }
+
+  function patchStage(index: number, patch: Partial<DraftStage>) {
     if (!draft || structuralLocked) return;
     const stages = draft.stages.map((stage, current) => current === index ? { ...stage, ...patch } : stage);
     if (stages[0]) stages[0] = { ...stages[0], unlockRule: "IMMEDIATE" };
     setDraft({ ...draft, stages });
   }
 
-  function moveStage(index: number, delta: number) {
-    if (!draft || structuralLocked) return;
-    const next = index + delta;
-    if (next < 0 || next >= draft.stages.length) return;
+  function moveStageTo(index: number, targetIndex: number) {
+    if (!draft || structuralLocked || index === targetIndex || targetIndex < 0 || targetIndex >= draft.stages.length) return;
     const stages = [...draft.stages];
-    [stages[index], stages[next]] = [stages[next], stages[index]];
+    const [moved] = stages.splice(index, 1);
+    stages.splice(targetIndex, 0, moved);
     stages[0] = { ...stages[0], unlockRule: "IMMEDIATE" };
+    setDraft({ ...draft, stages });
+  }
+
+  function moveModule(groupIndex: number, delta: number) {
+    if (!draft || structuralLocked) return;
+    const next = groupIndex + delta;
+    if (next < 0 || next >= stageGroups.length) return;
+    const groups = stageGroups.map((group) => group.entries.map(({ stage }) => stage));
+    [groups[groupIndex], groups[next]] = [groups[next], groups[groupIndex]];
+    const stages = groups.flat();
+    if (stages[0]) stages[0] = { ...stages[0], unlockRule: "IMMEDIATE" };
     setDraft({ ...draft, stages });
   }
 
@@ -168,6 +200,15 @@ export default function JourneyManager({ classroomId, classroomName, activities,
     if (!draft || structuralLocked) return;
     const stages = draft.stages.filter((_, current) => current !== index);
     if (stages[0]) stages[0] = { ...stages[0], unlockRule: "IMMEDIATE" };
+    setDraft({ ...draft, stages });
+  }
+
+  function renameModule(groupKey: string, title: string) {
+    if (!draft || structuralLocked) return;
+    const stages = draft.stages.map((stage) => {
+      const key = stage.sectionId || stage.sectionTitle || "default";
+      return key === groupKey ? { ...stage, sectionTitle: title } : stage;
+    });
     setDraft({ ...draft, stages });
   }
 
@@ -195,6 +236,10 @@ export default function JourneyManager({ classroomId, classroomName, activities,
         activityId: stage.activityId,
         unlockRule: index === 0 ? "IMMEDIATE" : stage.unlockRule,
         completionRule: stage.completionRule,
+        sectionId: stage.sectionId ?? undefined,
+        sectionTitle: stage.sectionTitle ?? undefined,
+        itemType: stage.itemType ?? "ACTIVITY",
+        learningResourceId: stage.learningResourceId ?? undefined,
       })),
     };
   }
@@ -290,74 +335,187 @@ export default function JourneyManager({ classroomId, classroomName, activities,
                 </div>
               </div>
 
-              {structuralLocked ? (
-                <div className={styles.publishedSummary}>
-                  <div><span>Título</span><strong>{draft.title}</strong></div>
-                  <div><span>Descrição</span><p>{draft.description || "Sem descrição."}</p></div>
-                </div>
-              ) : (
-                <div className={styles.fields}>
-                  <label className={styles.field}><span>Título</span><input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Ex.: Fundamentos de Backend" /></label>
-                  <label className={`${styles.field} ${styles.full}`}><span>Descrição</span><textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Objetivo e contexto da jornada." /></label>
-                </div>
-              )}
-
-              <div className={styles.stageSection}>
-                <div className={styles.stageHeader}>
-                  <div><h4>Etapas</h4><span className={styles.ruleHint}>A ordem define a progressão. Regras baseadas em atividade usam a entrega existente como fonte de verdade.</span></div>
-                  <button className={styles.secondary} type="button" disabled={structuralLocked} onClick={addStage}>+ Adicionar etapa</button>
-                </div>
-
-                <div className={styles.stageList}>
-                  {draft.stages.map((stage, index) => {
-                    const activity = activities.find((item) => item.id === stage.activityId);
-                    return structuralLocked ? (
-                      <article className={`${styles.stage} ${styles.stageReadOnly}`} key={stage.id ?? `new-${index}`}>
-                        <div className={styles.stageIndex}>{index + 1}</div>
-                        <div className={styles.stageBody}>
-                          <div className={styles.stageContext}>
-                            {stage.sectionTitle && <span>{stage.sectionTitle}</span>}
-                            {stage.itemType && <b>{itemTypeLabel(stage.itemType)}</b>}
-                          </div>
-                          <div className={styles.readOnlyStageHead}>
-                            <div><strong>{stage.title}</strong>{stage.description && <p>{stage.description}</p>}</div>
-                            <span>{completionLabel(stage.completionRule)}</span>
-                          </div>
-                          <div className={styles.readOnlyMeta}>
-                            <span><b>Desbloqueio</b>{unlockLabel(index === 0 ? "IMMEDIATE" : stage.unlockRule)}</span>
-                            <span><b>Atividade</b>{activity?.title ?? "Sem atividade vinculada"}</span>
-                          </div>
-                        </div>
-                      </article>
-                    ) : (
-                      <article className={styles.stage} key={stage.id ?? `new-${index}`}>
-                        <div className={styles.stageIndex}>{index + 1}</div>
-                        <div className={styles.stageBody}>
-                          {(stage.sectionTitle || stage.itemType) && (
-                            <div className={styles.stageContext}>
-                              {stage.sectionTitle && <span>{stage.sectionTitle}</span>}
-                              {stage.itemType && <b>{itemTypeLabel(stage.itemType)}</b>}
-                            </div>
-                          )}
-                          <label className={styles.field}><span>Título da etapa</span><input value={stage.title} onChange={(event) => patchStage(index, { title: event.target.value })} /></label>
-                          <div className={styles.stageGrid}>
-                            <label className={styles.field}><span>Atividade vinculada</span><select value={stage.activityId ?? ""} onChange={(event) => patchStage(index, { activityId: event.target.value || undefined })}><option value="">Nenhuma</option>{activities.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
-                            <label className={styles.field}><span>Critério de conclusão</span><select value={stage.completionRule} onChange={(event) => patchStage(index, { completionRule: event.target.value as JourneyCompletionRule })}><option value="MANUAL">Manual</option><option value="ACTIVITY_SUBMITTED">Atividade enviada</option><option value="ACTIVITY_GRADED">Atividade corrigida</option></select></label>
-                            <label className={styles.field}><span>Desbloqueio</span><select value={index === 0 ? "IMMEDIATE" : stage.unlockRule} disabled={index === 0} onChange={(event) => patchStage(index, { unlockRule: event.target.value as JourneyUnlockRule })}><option value="IMMEDIATE">Imediato</option><option value="PREVIOUS_STAGE_COMPLETED">Após etapa anterior</option></select></label>
-                            <label className={styles.field}><span>Descrição opcional</span><input value={stage.description ?? ""} onChange={(event) => patchStage(index, { description: event.target.value })} /></label>
-                          </div>
-                        </div>
-                        <div className={styles.stageActions} aria-label={`Organizar etapa ${index + 1}`}>
-                          <button type="button" title="Mover para cima" disabled={index === 0} onClick={() => moveStage(index, -1)}>↑</button>
-                          <button type="button" title="Mover para baixo" disabled={index === draft.stages.length - 1} onClick={() => moveStage(index, 1)}>↓</button>
-                          <button type="button" title="Remover etapa" onClick={() => removeStage(index)}>×</button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                  {draft.stages.length === 0 && <div className={styles.emptyCatalog}>Adicione a primeira etapa para definir o início da jornada.</div>}
-                </div>
+              <div className={styles.viewTabs} role="tablist" aria-label="Visualização da jornada">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={viewMode === "structure"}
+                  className={viewMode === "structure" ? styles.viewTabActive : styles.viewTab}
+                  onClick={() => setViewMode("structure")}
+                >
+                  Estrutura
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={viewMode === "preview"}
+                  className={viewMode === "preview" ? styles.viewTabActive : styles.viewTab}
+                  onClick={() => setViewMode("preview")}
+                >
+                  Visualizar como aluno
+                </button>
               </div>
+
+              {viewMode === "preview" ? (
+                <JourneyMapPreview
+                  title={draft.title}
+                  description={draft.description}
+                  stages={draft.stages.map((stage, index) => ({
+                    id: stage.id ?? `draft-${index}`,
+                    title: stage.title,
+                    description: stage.description ?? null,
+                    sectionId: stage.sectionId ?? null,
+                    sectionTitle: stage.sectionTitle ?? null,
+                    itemType: stage.itemType ?? "ACTIVITY",
+                  }))}
+                />
+              ) : (
+                <>
+                  {structuralLocked ? (
+                    <div className={styles.publishedSummary}>
+                      <div><span>Título</span><strong>{draft.title}</strong></div>
+                      <div><span>Descrição</span><p>{draft.description || "Sem descrição."}</p></div>
+                    </div>
+                  ) : (
+                    <div className={styles.fields}>
+                      <label className={styles.field}><span>Título</span><input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Ex.: Fundamentos de Backend" /></label>
+                      <label className={`${styles.field} ${styles.full}`}><span>Descrição</span><textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Objetivo e contexto da jornada." /></label>
+                    </div>
+                  )}
+
+                  <div className={styles.builderSection}>
+                    <div className={styles.builderHeader}>
+                      <div>
+                        <h4>Estrutura da jornada</h4>
+                        <span>Organize por módulos. Cada item pode ser conteúdo, atividade, quiz, desafio, checkpoint ou recurso.</span>
+                      </div>
+                      {!structuralLocked && (
+                        <div className={styles.builderActions}>
+                          <button className={styles.secondary} type="button" onClick={() => addStage()}>+ Item</button>
+                          <button className={styles.primary} type="button" onClick={addModule}>+ Módulo</button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={styles.moduleList}>
+                      {stageGroups.map((group, groupIndex) => (
+                        <section className={styles.moduleCard} key={group.key}>
+                          <header className={styles.moduleHeader}>
+                            <div className={styles.moduleNumber}>{String(groupIndex + 1).padStart(2, "0")}</div>
+                            <div className={styles.moduleIdentity}>
+                              <span>MÓDULO {String(groupIndex + 1).padStart(2, "0")}</span>
+                              {structuralLocked ? (
+                                <h4>{group.title}</h4>
+                              ) : (
+                                <input
+                                  value={group.title}
+                                  aria-label={`Título do módulo ${groupIndex + 1}`}
+                                  onChange={(event) => renameModule(group.key, event.target.value)}
+                                />
+                              )}
+                            </div>
+                            <div className={styles.moduleMeta}>
+                              <span>{group.entries.length} {group.entries.length === 1 ? "item" : "itens"}</span>
+                              {!structuralLocked && (
+                                <div className={styles.moduleControls}>
+                                  <button type="button" title="Mover módulo para cima" disabled={groupIndex === 0} onClick={() => moveModule(groupIndex, -1)}>↑</button>
+                                  <button type="button" title="Mover módulo para baixo" disabled={groupIndex === stageGroups.length - 1} onClick={() => moveModule(groupIndex, 1)}>↓</button>
+                                  <button type="button" onClick={() => addStage(group.title, group.entries[0]?.stage.sectionId)}>+ adicionar item</button>
+                                </div>
+                              )}
+                            </div>
+                          </header>
+
+                          <div className={styles.moduleItems}>
+                            {group.entries.map(({ stage, index }, entryIndex) => {
+                              const activity = activities.find((item) => item.id === stage.activityId);
+                              return structuralLocked ? (
+                                <article className={styles.builderItemReadOnly} key={stage.id ?? `new-${index}`}>
+                                  <div className={styles.itemTypeIcon}>{itemTypeLabel(stage.itemType)}</div>
+                                  <div className={styles.itemMain}>
+                                    <strong>{stage.title}</strong>
+                                    {stage.description && <p>{stage.description}</p>}
+                                    <div className={styles.itemMetaLine}>
+                                      <span>{completionLabel(stage.completionRule)}</span>
+                                      <span>{unlockLabel(index === 0 ? "IMMEDIATE" : stage.unlockRule)}</span>
+                                      {activity && <span>{activity.title}</span>}
+                                    </div>
+                                  </div>
+                                </article>
+                              ) : (
+                                <article className={styles.builderItem} key={stage.id ?? `new-${index}`}>
+                                  <div className={styles.itemOrder}>{index + 1}</div>
+                                  <div className={styles.itemMain}>
+                                    <div className={styles.itemTopRow}>
+                                      <select
+                                        className={styles.itemTypeSelect}
+                                        value={stage.itemType ?? "CONTENT"}
+                                        aria-label={`Tipo do item ${index + 1}`}
+                                        onChange={(event) => patchStage(index, { itemType: event.target.value as DraftStage["itemType"] })}
+                                      >
+                                        <option value="CONTENT">Conteúdo</option>
+                                        <option value="ACTIVITY">Atividade</option>
+                                        <option value="QUIZ">Quiz</option>
+                                        <option value="CHALLENGE">Desafio</option>
+                                        <option value="CHECKPOINT">Checkpoint</option>
+                                        <option value="EXTERNAL_RESOURCE">Recurso externo</option>
+                                      </select>
+                                      <input
+                                        className={styles.itemTitleInput}
+                                        value={stage.title}
+                                        aria-label={`Título do item ${index + 1}`}
+                                        onChange={(event) => patchStage(index, { title: event.target.value })}
+                                      />
+                                    </div>
+                                    <input
+                                      className={styles.itemDescriptionInput}
+                                      value={stage.description ?? ""}
+                                      aria-label={`Descrição do item ${index + 1}`}
+                                      onChange={(event) => patchStage(index, { description: event.target.value })}
+                                      placeholder="Descrição opcional"
+                                    />
+                                    <details className={styles.itemAdvanced}>
+                                      <summary>Regras e vínculo</summary>
+                                      <div className={styles.itemAdvancedGrid}>
+                                        <label className={styles.field}><span>Atividade vinculada</span><select value={stage.activityId ?? ""} onChange={(event) => patchStage(index, { activityId: event.target.value || undefined })}><option value="">Nenhuma</option>{activities.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+                                        <label className={styles.field}><span>Critério de conclusão</span><select value={stage.completionRule} onChange={(event) => patchStage(index, { completionRule: event.target.value as JourneyCompletionRule })}><option value="MANUAL">Manual</option><option value="ACTIVITY_SUBMITTED">Atividade enviada</option><option value="ACTIVITY_GRADED">Atividade corrigida</option></select></label>
+                                        <label className={styles.field}><span>Desbloqueio</span><select value={index === 0 ? "IMMEDIATE" : stage.unlockRule} disabled={index === 0} onChange={(event) => patchStage(index, { unlockRule: event.target.value as JourneyUnlockRule })}><option value="IMMEDIATE">Imediato</option><option value="PREVIOUS_STAGE_COMPLETED">Após etapa anterior</option></select></label>
+                                      </div>
+                                    </details>
+                                  </div>
+                                  <div className={styles.itemActions} aria-label={`Organizar item ${index + 1}`}>
+                                    <button
+                                      type="button"
+                                      title="Mover para cima"
+                                      disabled={entryIndex === 0}
+                                      onClick={() => moveStageTo(index, group.entries[entryIndex - 1]?.index ?? index)}
+                                    >↑</button>
+                                    <button
+                                      type="button"
+                                      title="Mover para baixo"
+                                      disabled={entryIndex === group.entries.length - 1}
+                                      onClick={() => moveStageTo(index, group.entries[entryIndex + 1]?.index ?? index)}
+                                    >↓</button>
+                                    <button type="button" title="Remover item" onClick={() => removeStage(index)}>×</button>
+                                  </div>
+                                </article>
+                              );
+                            })}
+                          </div>
+                        </section>
+                      ))}
+
+                      {draft.stages.length === 0 && (
+                        <div className={styles.builderEmpty}>
+                          <strong>Sua jornada ainda está vazia.</strong>
+                          <span>Comece criando um módulo ou adicionando o primeiro item.</span>
+                          {!structuralLocked && <button className={styles.primary} type="button" onClick={addModule}>Criar primeiro módulo</button>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
         </section>

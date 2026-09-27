@@ -173,7 +173,7 @@ Detalhes de fechamento em `docs/RELEASE_0_7.md`.
 
 O `16.1 — Journey Core` introduziu a base persistente de progressão: jornadas por turma, etapas ordenadas, regras de desbloqueio, critérios de conclusão e progresso por matrícula.
 
-O `16.2 — Learning Resources & Content Ingestion` está em execução e adota criação **agnóstica à fonte**: o professor pode começar com IA, modelo, material existente ou em branco. PDF, Word, PowerPoint, texto, Markdown e links entram pelo mesmo pipeline de rascunho; páginas do Notion são reconhecidas dentro do fluxo de links e nada é publicado sem revisão.
+O `16.2 — Learning Resources & Content Ingestion` está em execução e adota criação **agnóstica à fonte**: o professor pode começar com IA, modelo, material existente ou em branco. PDF, Word, PowerPoint, texto, Markdown e links entram pelo mesmo pipeline de rascunho; páginas do Notion são reconhecidas dentro do fluxo de links e nada é publicado sem revisão. O Journey Builder V2 organiza a autoria por módulos/itens e oferece uma prévia **Visualizar como aluno** baseada em capítulos e nós de progressão.
 
 A v0.8 começa pela reestruturação da experiência do professor antes de avançar para a Jornada do aluno.
 

@@ -36,6 +36,10 @@ export type JourneyStageInput = {
   activityId?: string;
   unlockRule: JourneyUnlockRule;
   completionRule: JourneyCompletionRule;
+  sectionId?: string;
+  sectionTitle?: string;
+  itemType?: JourneyStage["itemType"];
+  learningResourceId?: string;
 };
 
 export type JourneyInput = {

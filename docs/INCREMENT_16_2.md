@@ -121,11 +121,22 @@ A aba **Jornadas** continua sendo o ponto de entrada. O botão **+ Nova jornada*
 
 O onboarding evita expor Markdown/Notion como modelo mental principal: o professor vê IA, modelo, material ou autoria em branco. Dentro de material, encontra Arquivo, Texto e Link; formatos técnicos e fontes específicas são tratados como adaptadores. Esse desenho atende tanto professores com acervo estruturado quanto quem possui apenas slides, PDF, Word, um link, uma ideia ou nenhum material prévio.
 
+### Journey Builder V2
+
+Após a materialização, a autoria deixa de ser uma sequência plana de formulários. O professor trabalha por **módulos** e **itens tipados**, com duas visões complementares:
+
+- **Estrutura** — edição eficiente de módulos, itens, tipos, ordem, regras e vínculos;
+- **Visualizar como aluno** — prévia estrutural da jornada em capítulos e nós de progressão.
+
+A prévia não simula progresso real: o primeiro item aparece apenas como ponto inicial da demonstração e os demais como próximos nós. Estados individuais continuam sendo responsabilidade do contrato de progresso por aluno do Journey Core.
+
+O backend administrativo agora persiste alterações de `sectionId`, `sectionTitle`, `itemType` e `learningResourceId`, permitindo que módulos criados/importados continuem editáveis sem perder a relação com `JourneySection` e `LearningResource`.
+
 ## Fora desta fatia
 
 Ainda não fazem parte do 16.2:
 
-- mapa visual gamificado final do aluno;
+- mapa visual gamificado **final** do aluno; o 16.2 contém apenas a prévia estrutural do professor;
 - sincronização automática com Notion;
 - busca/ingestão remota de URLs arbitrárias;
 - geração automática de atividades avaliativas sem revisão;
@@ -135,9 +146,9 @@ Ainda não fazem parte do 16.2:
 ## Gates atuais
 
 ```text
-backend tests                 98 passed
+backend tests                 99 passed
 Flyway                        V1–V31 OK
-frontend tests                255 passed
+frontend tests                256 passed
 frontend typecheck            OK
 frontend production build     OK
 file ingestion                PDF/DOC/DOCX/PPT/PPTX/MD/TXT

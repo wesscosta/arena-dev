@@ -39,9 +39,25 @@ test("journey API exposes draft authoring and lifecycle endpoints", () => {
 test("published journey switches from form controls to a compact read-only representation", () => {
   assert.match(manager, /structuralLocked \? \(/);
   assert.match(manager, /publishedSummary/);
-  assert.match(manager, /stageReadOnly/);
+  assert.match(manager, /builderItemReadOnly/);
   assert.match(manager, /completionLabel/);
   assert.match(manager, /unlockLabel/);
+});
+
+test("Journey Builder exposes module-based authoring and a student preview", () => {
+  const preview = readFileSync(resolve(process.cwd(), "components/JourneyMapPreview.tsx"), "utf8");
+
+  assert.match(manager, /Visualizar como aluno/);
+  assert.match(manager, /<JourneyMapPreview/);
+  assert.match(manager, /addModule/);
+  assert.match(manager, /renameModule/);
+  assert.match(manager, /sectionTitle/);
+  assert.match(manager, /Conteúdo/);
+  assert.match(manager, /Checkpoint/);
+  assert.match(preview, /PRÉVIA DA EXPERIÊNCIA DO ALUNO/);
+  assert.match(preview, /CAPÍTULO/);
+  assert.match(preview, /Comece aqui/);
+  assert.match(preview, /Prévia estrutural/);
 });
 
 

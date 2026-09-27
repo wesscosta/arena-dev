@@ -57,7 +57,11 @@ Google Classroom          standby
 - links tratados como recurso externo; Notion é reconhecido automaticamente dentro do fluxo de links, sem scraping do HTML público;
 - prévia editável antes da materialização, incluindo estrutura, tipo, corpo/instruções e URL de recursos externos;
 - conteúdo de IA permanece rascunho até revisão explícita do professor;
-- upload multipart validado no navegador com preservação correta do boundary HTTP.
+- upload multipart validado no navegador com preservação correta do boundary HTTP;
+- Journey Builder V2 com módulos visuais e itens tipados;
+- visão **Estrutura / Visualizar como aluno** implementada;
+- prévia estrutural por capítulos/nós validada em 1440×900 sem scroll global;
+- persistência administrativa de módulo, tipo do item e recurso vinculável consolidada no Journey Core.
 
 ## Professor Arena Experience — implementado
 
@@ -90,8 +94,8 @@ Google Classroom          standby
 ## Validação corrente
 
 ```text
-backend tests       98 passed
-frontend tests      255 passed
+backend tests       99 passed
+frontend tests      256 passed
 frontend typecheck  OK
 frontend build      OK
 Flyway              V1–V31 OK
@@ -99,7 +103,7 @@ Flyway              V1–V31 OK
 
 ## Próximo gate
 
-Consolidar o `16.2 — Learning Resources & Content Ingestion`: validar o wizard no navegador/Docker, fechar a documentação e completar o contrato de recursos antes de avançar para `16.3 — Student Experience`.
+Consolidar o `16.2 — Learning Resources & Content Ingestion`: validar ingestão com documentos reais, fechar API/CRUD de `LearningResource` e estabilizar o Journey Builder V2 antes de avançar para `16.3 — Student Experience`.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)

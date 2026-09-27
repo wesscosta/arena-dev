@@ -48,6 +48,13 @@ public class JourneySection {
         updatedAt = Instant.now();
     }
 
+    public void update(String title, String description, int position) {
+        this.title = title;
+        this.description = description;
+        this.position = position;
+        this.updatedAt = Instant.now();
+    }
+
     public UUID getId() { return id; }
     public Journey getJourney() { return journey; }
     public int getPosition() { return position; }

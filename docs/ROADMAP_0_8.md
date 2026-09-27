@@ -190,7 +190,10 @@ Permitir que a jornada represente conteúdo real e que o professor comece pelo f
 - IA configurável no backend para gerar apenas `DraftView`;
 - prévia editável antes da criação persistente;
 - prévia permite adicionar, remover e reordenar módulos/itens e revisar corpo/instruções/URL antes da materialização;
-- materialização sempre cria jornada em rascunho.
+- materialização sempre cria jornada em rascunho;
+- Journey Builder V2 organiza autoria por módulos e itens tipados;
+- alternância **Estrutura / Visualizar como aluno** com prévia em capítulos e nós;
+- edição administrativa preserva `JourneySection`, tipo do item e `LearningResource` no backend.
 
 ### Princípio de mercado
 
@@ -202,4 +205,5 @@ O fluxo não pressupõe que o professor mantenha um segundo cérebro, Markdown o
 - melhorar segmentação heurística de documentos sem headings;
 - preparar adapter autorizado para Notion sem acoplamento a HTML público;
 - fechar API/CRUD de `LearningResource` e testes HTTP;
+- consolidar o preview estrutural como contrato visual de referência, sem antecipar estados reais do aluno;
 - somente então avançar para `16.3 — Student Experience`.
