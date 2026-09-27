@@ -22,9 +22,9 @@ type Props = {
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 function statusLabel(status: string) {
-  if (status === "OPEN") return "Aberta";
-  if (status === "REVEALED") return "Revelada";
-  return "Encerrada";
+  if (status === "OPEN") return "AO VIVO";
+  if (status === "REVEALED") return "RESULTADO";
+  return "ENCERRADO";
 }
 
 export default function PollPanel({ sessionId, state, onStateChange, notify, joinCode, publicBaseUrl, realtimeStatus, connectedCount, presentCount, showAccessCard = true }: Props) {
@@ -250,7 +250,7 @@ export default function PollPanel({ sessionId, state, onStateChange, notify, joi
           {round.status === "OPEN" && !round.publicResultsVisible && (
             <button className={styles.secondary} disabled={busy} onClick={() => void reveal()}>Revelar resultados</button>
           )}
-          <button className={styles.secondary} onClick={project}>Abrir Projetor</button>
+          <button className={styles.secondary} onClick={project}>Projetar ↗</button>
           {round.status !== "CLOSED"
             ? <button className={styles.danger} disabled={busy} onClick={() => void close()}>Encerrar votação</button>
             : <button className={styles.primary} onClick={() => setCreating(true)}>Nova votação</button>}

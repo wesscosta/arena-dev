@@ -26,9 +26,9 @@ type Props = {
 };
 
 function statusLabel(status: string) {
-  if (status === "COLLECTING") return "Coletando";
-  if (status === "REVEALED") return "Revelada";
-  return "Encerrada";
+  if (status === "COLLECTING") return "AO VIVO";
+  if (status === "REVEALED") return "RESULTADO";
+  return "ENCERRADO";
 }
 
 export default function WordCloudPanel({
@@ -318,7 +318,7 @@ export default function WordCloudPanel({
 
         <div className={styles.actions}>
           <button className={styles.secondary} disabled={!joinCode} onClick={projectWordCloud}>
-            Projetar Nuvem ↗
+            Projetar ↗
           </button>
           {round.status === "COLLECTING" && !round.liveReveal && (
             <button className={styles.primary} disabled={busy} onClick={() => void reveal()}>

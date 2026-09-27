@@ -77,7 +77,7 @@ Transformar a Arena em um cockpit desktop de aula ao vivo orientado por ações,
 ### Em refinamento
 
 O núcleo visual/funcional do cockpit está consolidado. O fechamento do 16.0 concentra-se agora em:
-- revisão visual final entre as dinâmicas após o quality gate técnico — em execução no `16.0F.19`;
+- revisão visual final entre as dinâmicas após o quality gate técnico — concluída no `16.0F.19`;
 - smoke test dos estados de erro de API em ambiente controlado;
 - revisão final do Projetor contra os novos estados da Arena;
 - fechamento documental e PR do `16.0`.
@@ -98,7 +98,7 @@ Esses ajustes são de apresentação, resiliência e acessibilidade. Não altera
 
 ```text
 frontend
-npm test       245 passed
+npm test       246 passed
 npm typecheck  OK
 npm build      OK
 Docker frontend OK

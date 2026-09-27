@@ -265,7 +265,7 @@ test("Nuvem de Palavras 2.0 preserves reveal, projector and close controls", () 
   const cloud = read("components/WordCloudPanel.tsx");
 
   assert.match(cloud, /Revelar respostas/);
-  assert.match(cloud, /Projetar Nuvem/);
+  assert.match(cloud, /Projetar ↗/);
   assert.match(cloud, /Encerrar rodada/);
   assert.match(cloud, /window\.confirm/);
   assert.match(cloud, /Coleta protegida/);
@@ -277,7 +277,7 @@ test("Boss Battle 2.0 uses a gamified collective challenge workspace", () => {
   const css = read("styles/arena-polish.css");
 
   assert.match(app, /className="arena-dynamic-workspace boss-workspace"/);
-  assert.match(app, /DESAFIO COLETIVO/);
+  assert.match(app, /DINÂMICA AO VIVO[\s\S]*?<h2>Boss Battle<\/h2>/);
   assert.match(app, /CONTROLE DE COMBATE/);
   assert.match(app, /HP DO BOSS/);
   assert.match(app, /BOSS DERROTADO/);
@@ -635,6 +635,25 @@ test("Prepare-state dynamics share the same header badge and title scale", () =>
   assert.match(quizCss, /line-height:1\.02/);
   assert.match(pollCss, /line-height:1\.02/);
   assert.match(wordCloudCss, /line-height:1\.02/);
+});
+
+test("Arena dynamics use a shared lifecycle vocabulary without erasing domain-specific state", () => {
+  const app = read("components/ArenaApp.tsx");
+  const quiz = read("components/QuizPanel.tsx");
+  const poll = read("components/PollPanel.tsx");
+  const wordCloud = read("components/WordCloudPanel.tsx");
+
+  for (const source of [quiz, poll, wordCloud]) {
+    assert.match(source, /AO VIVO/);
+    assert.match(source, /RESULTADO/);
+    assert.match(source, /ENCERRADO/);
+  }
+
+  assert.match(app, /buzzerState\.status === "OPEN" \? "● AO VIVO"/);
+  assert.match(app, /buzzerState\.status === "CLOSED" \? "ENCERRADO" : "PREPARAR"/);
+  assert.match(app, /const bossLifecycle = !currentSession\?\.boss[\s\S]*?"PREPARAR"[\s\S]*?"RESULTADO"[\s\S]*?"AO VIVO"/);
+  assert.match(app, /<small>\{bossPhase\}<\/small>/);
+  assert.match(app, /DINÂMICA AO VIVO[\s\S]*?<h2>Boss Battle<\/h2>/);
 });
 
 test("Quiz workspace fills the Arena cockpit height on desktop and returns to natural flow responsively", () => {

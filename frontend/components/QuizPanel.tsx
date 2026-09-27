@@ -28,11 +28,10 @@ type Props = {
 };
 
 function statusLabel(status: string) {
-  if (status === "READY") return "Preparado";
-  if (status === "OPEN") return "Respondendo";
-  if (status === "LOCKED") return "Bloqueado";
-  if (status === "REVEALED") return "Revelado";
-  return "Encerrado";
+  if (status === "READY") return "PREPARAR";
+  if (status === "OPEN") return "AO VIVO";
+  if (status === "LOCKED" || status === "REVEALED") return "RESULTADO";
+  return "ENCERRADO";
 }
 
 function typeLabel(type: ActivityQuestion["type"]) {

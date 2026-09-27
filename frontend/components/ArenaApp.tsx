@@ -2603,6 +2603,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         : bossHpPercent <= 70
           ? "Enfraquecido"
           : "Inteiro";
+  const bossLifecycle = !currentSession?.boss
+    ? "PREPARAR"
+    : currentSession.boss.currentHp === 0
+      ? "RESULTADO"
+      : "AO VIVO";
   const visibleParticipants = sessionParticipants.filter((participant) => {
     if (participantFilter === "present" && !currentSession?.presentStudentIds.includes(participant.studentId)) {
       return false;
@@ -3117,7 +3122,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                     <p>Velocidade com ordem oficial definida pelo servidor.</p>
                   </div>
                   <span className={`buzzer-status-badge ${buzzerState.status.toLowerCase()}`}>
-                    {buzzerState.status === "OPEN" ? "● VALENDO" : buzzerState.status === "CLOSED" ? "FECHADO" : "AGUARDANDO"}
+                    {buzzerState.status === "OPEN" ? "● AO VIVO" : buzzerState.status === "CLOSED" ? "ENCERRADO" : "PREPARAR"}
                   </span>
                 </div>
 
@@ -3223,16 +3228,16 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <section className="boss-hero">
                 <div className="boss-titlebar">
                   <div>
-                    <span className="eyebrow accent">DESAFIO COLETIVO</span>
+                    <span className="eyebrow accent">DINÂMICA AO VIVO</span>
                     <h2>Boss Battle</h2>
                     <p>Transforme desafios da aula em dano coletivo contra um objetivo compartilhado.</p>
                   </div>
                   <div className="boss-title-actions">
                     <span className={`boss-phase-badge ${currentSession.boss?.currentHp === 0 ? "defeated" : currentSession.boss ? "active" : "idle"}`}>
-                      {bossPhase}
+                      {bossLifecycle}
                     </span>
                     <button type="button" className="smart-draw-settings" onClick={openProjector} disabled={!joinCode}>
-                      Projetor ↗
+                      Projetar ↗
                     </button>
                   </div>
                 </div>
