@@ -161,13 +161,17 @@ test("Arena contextual tools open without replacing the primary dynamic", () => 
   assert.match(app, /open=\{activeTool === "attendance"\}/);
 });
 
-test("Arena tool drawer is modal, keyboard dismissible and mobile aware", () => {
+test("Arena tool drawer is modal, keyboard dismissible, focus-contained and mobile aware", () => {
   const drawer = read("components/ArenaToolDrawer.tsx");
   const css = read("components/ArenaToolDrawer.module.css");
 
   assert.match(drawer, /role="dialog"/);
   assert.match(drawer, /aria-modal="true"/);
   assert.match(drawer, /event\.key === "Escape"/);
+  assert.match(drawer, /event\.key !== "Tab"/);
+  assert.match(drawer, /drawerRef\.current\?\.querySelectorAll<HTMLElement>/);
+  assert.match(drawer, /openerRef\.current\?\.focus\(\)/);
+  assert.match(drawer, /ref=\{drawerRef\}/);
   assert.match(css, /@media \(max-width: 48rem\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 });
@@ -584,6 +588,37 @@ test("Word cloud, poll, buzzer and boss share the full-height Arena dynamic work
   assert.match(app, /className="arena-dynamic-workspace boss-workspace"/);
   assert.match(css, /\.arena-dynamic-workspace\s*\{[\s\S]*?height:\s*100%/);
   assert.match(css, /@media \(max-width: 74rem\)[\s\S]*?\.arena-dynamic-workspace/);
+});
+
+test("Arena polish no longer carries the legacy CSS wheel implementation", () => {
+  const css = read("styles/arena-polish.css");
+
+  for (const legacy of [
+    "draw-wheel-semicircle",
+    "draw-wheel-student",
+    "draw-wheel-student-face",
+    "draw-wheel-ring",
+    "draw-wheel-zone",
+    "draw-wheel-center",
+    "draw-wheel-viewport",
+    "selected-coverage",
+    "selected-student-tools",
+  ]) {
+    assert.doesNotMatch(css, new RegExp("\\." + legacy + "(?![A-Za-z0-9_-])"));
+  }
+
+  assert.doesNotMatch(css, /(^|[^A-Za-z0-9_-])\.draw-wheel(?![A-Za-z0-9_-])/m);
+});
+
+test("Arena exposes explicit empty states for the roster and draw when nobody is present", () => {
+  const app = read("components/ArenaApp.tsx");
+  const css = read("styles/arena-polish.css");
+
+  assert.match(app, /Nenhum aluno presente/);
+  assert.match(app, /Marque a presença dos alunos para habilitar o sorteio\./);
+  assert.match(app, /className="arena-participant-empty" role="status"/);
+  assert.match(app, /Use Presença para incluir alunos na dinâmica\./);
+  assert.match(css, /\.arena-participant-empty\s*\{/);
 });
 
 test("Quiz workspace fills the Arena cockpit height on desktop and returns to natural flow responsively", () => {

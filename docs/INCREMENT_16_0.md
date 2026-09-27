@@ -114,7 +114,7 @@ O Sorteio e o cockpit devem ser validados pelo menos em:
 
 ## Estado do polish
 
-A estrutura funcional está consolidada e os passes de fidelidade `16.0F.5/16.0F.6/16.0F.7/16.0F.8/16.0F.9` aproximaram a Arena da referência aprovada sem alterar a autoridade do backend.
+A estrutura funcional está consolidada e os passes de fidelidade `16.0F.5` a `16.0F.18` aproximaram a Arena da referência aprovada sem alterar a autoridade do backend.
 
 Implementado neste passe:
 - topbar operacional única durante a sessão ao vivo;
@@ -158,16 +158,20 @@ Implementado neste passe:
 - lista de participantes rolando internamente para manter código e QR visíveis;
 - tipografia funcional elevada para os tokens mínimos do Design System;
 - rail de participantes, resultado e pontuação rápida com densidade revisada;
-- ação `Encerrar sessão` preservada também nos breakpoints compactos.
+- ação `Encerrar sessão` preservada também nos breakpoints compactos;
+- no passe `16.0F.18`, foram removidas 141 regras CSS legadas da implementação anterior da roleta, reduzindo `arena-polish.css` em 832 linhas sem regressão funcional;
+- drawers contextuais passaram a conter o foco via `Tab`/`Shift+Tab` e devolver o foco ao acionador ao fechar, preservando `Esc` e clique real no backdrop;
+- Sorteio e rail de participantes ganharam estados vazios explícitos para sessões sem alunos presentes ou buscas sem resultado;
+- o gate responsivo confirmou ausência de scroll da página principal em `1920×1080`, `1672×941`, `1440×900` e `1366×768` para Sorteio, Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle; em `1024×768` o fluxo responsivo volta deliberadamente ao scroll natural.
 
-O passe `16.0F.17` foi validado visualmente em `1672×941` e `1366×768` no tema escuro, ambos sem scroll da página principal. Os selects de `Organizar turma` e `Pontuação rápida` permanecem estáveis após alteração de valor, o QR ampliado abre a partir de `Presença e acesso`, e o Quiz ocupa toda a altura disponível do cockpit em desktop. Em `1024×768`, a Arena mantém o comportamento responsivo de tablet com fluxo natural e scroll da página quando necessário, evitando comprimir controles abaixo dos mínimos de usabilidade. Permanece pendente apenas a remoção consolidada dos seletores legados da roleta antiga em `arena-polish.css`.
+O passe `16.0F.18` concluiu o quality gate técnico do cockpit. As seis dinâmicas principais foram validadas em `1920×1080`, `1672×941`, `1440×900` e `1366×768` sem scroll da página principal; em `1024×768`, a Arena mantém o fluxo responsivo natural. Os drawers preservam foco, `Esc`, clique externo e retorno ao acionador; `prefers-reduced-motion` continua reconhecido. A implementação legada da roleta foi removida de `arena-polish.css`, deixando o SVG atual como única geometria da roleta.
 
 ## Validação técnica
 
 Último gate executado na branch:
 
 ```text
-242 testes frontend aprovados
+244 testes frontend aprovados
 npm run typecheck  OK
 npm run build      OK
 Docker frontend    OK

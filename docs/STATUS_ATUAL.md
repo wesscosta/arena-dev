@@ -16,7 +16,7 @@ A v0.7.0 está encerrada e publicada. A execução atual está concentrada na ex
 
 O cockpit da Arena já migrou para uma arquitetura orientada por ações, com navegação lateral, workspace de dinâmica, ferramentas contextuais e rail persistente de participantes/sessão.
 
-O Sorteio Inteligente 2.0 é a referência visual da nova shell e está funcional, com seleção autoritativa no backend, marcador fixo, roleta SVG circular adaptativa, histórico, cobertura e pontuação rápida. O cockpit também consolidou filtros de participantes, QR ampliável, drawers estáveis e altura integral para Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle. O `16.0` permanece aberto apenas para o gate final de polish, responsividade, acessibilidade e limpeza técnica.
+O Sorteio Inteligente 2.0 é a referência visual da nova shell e está funcional, com seleção autoritativa no backend, marcador fixo, roleta SVG circular adaptativa, histórico, cobertura e pontuação rápida. O cockpit também consolidou filtros de participantes, QR ampliável, drawers estáveis e altura integral para Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle. O quality gate técnico do `16.0` foi concluído no passe `16.0F.18`: responsividade desktop validada, CSS legado da roleta removido, estados vazios explícitos e drawers com contenção/retorno de foco. O incremento permanece aberto apenas para revisão visual final, smoke test controlado de erro de API, verificação do Projetor e fechamento documental/PR.
 
 ## Baselines
 
@@ -55,16 +55,15 @@ Google Classroom          standby
 
 ## Em refinamento
 
-- limpeza de CSS legado da roleta;
 - revisão visual final entre todas as dinâmicas;
-- estados vazios, erro e carregamento;
-- acessibilidade de teclado/foco nos controles contextuais;
-- gate responsivo final da Arena.
+- smoke test controlado de erro de API;
+- revisão do Projetor com os novos estados da Arena;
+- fechamento documental e PR do `16.0`.
 
 ## Validação corrente
 
 ```text
-frontend tests      242 passed
+frontend tests      244 passed
 frontend typecheck  OK
 frontend build      OK
 frontend Docker     OK
@@ -72,7 +71,7 @@ frontend Docker     OK
 
 ## Próximo gate
 
-Executar o gate final do `16.0`: limpeza técnica, estados de exceção, acessibilidade e validação responsiva completa. Com esse gate aprovado, encerrar o incremento e iniciar `16.1 — Journey Core`.
+Executar o fechamento do `16.0`: revisão visual final, smoke test controlado de falha de API, verificação do Projetor e PR. Com esse fechamento aprovado, iniciar `16.1 — Journey Core`.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)

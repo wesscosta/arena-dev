@@ -185,7 +185,7 @@ Estado atual do `16.0 — Professor Arena Experience`:
 - rail de participantes com filtro Presentes/Todos e ferramentas contextuais estáveis para Timer, Organização, Presença e Pontuação Rápida;
 - QR ampliável, indicadores de online/presença consolidados e selects com contraste consistente no tema escuro;
 - Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle ocupando a altura disponível do cockpit em desktop;
-- polish visual e responsivo do 16.0 em fase final de consolidação.
+- quality gate técnico `16.0F.18` concluído: CSS legado da roleta removido, responsividade desktop validada, estados vazios explícitos e drawers com contenção/retorno de foco; resta apenas o fechamento visual/Projetor/PR do 16.0.
 
 Roadmap e estado detalhado em `docs/ROADMAP_0_8.md` e `docs/INCREMENT_16_0.md`.
 

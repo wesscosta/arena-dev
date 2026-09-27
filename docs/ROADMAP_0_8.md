@@ -77,11 +77,10 @@ Transformar a Arena em um cockpit desktop de aula ao vivo orientado por ações,
 ### Em refinamento
 
 O núcleo visual/funcional do cockpit está consolidado. O fechamento do 16.0 concentra-se agora em:
-- limpeza dos seletores CSS legados da roleta antiga;
-- revisão visual final de todas as dinâmicas na mesma densidade do Sorteio/Quiz;
-- validação responsiva final em 1366×768, 1440×900, 1672×941 e 1920×1080;
-- revisão de estados vazios, carregamento, erro e ausência de participantes;
-- gate de acessibilidade/teclado dos drawers, selects, popovers e controles da Arena.
+- revisão visual final entre as dinâmicas após o quality gate técnico;
+- smoke test dos estados de erro de API em ambiente controlado;
+- revisão final do Projetor contra os novos estados da Arena;
+- fechamento documental e PR do `16.0`.
 
 Esses ajustes são de apresentação, resiliência e acessibilidade. Não alteram a regra de sorteio nem a autoridade do backend.
 
@@ -99,7 +98,7 @@ Esses ajustes são de apresentação, resiliência e acessibilidade. Não altera
 
 ```text
 frontend
-npm test       242 passed
+npm test       244 passed
 npm typecheck  OK
 npm build      OK
 Docker frontend OK

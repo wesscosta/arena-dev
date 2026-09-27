@@ -2936,8 +2936,17 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                       <>
                         <div className="draw-result-placeholder" aria-hidden="true">◎</div>
                         <div className="selected-student-copy">
-                          <h3>Aguardando o próximo sorteio</h3>
-                          <p>O resultado aparecerá aqui e poderá ser pontuado imediatamente.</p>
+                          {currentSession.presentStudentIds.length === 0 ? (
+                            <>
+                              <h3>Nenhum aluno presente</h3>
+                              <p>Marque a presença dos alunos para habilitar o sorteio.</p>
+                            </>
+                          ) : (
+                            <>
+                              <h3>Aguardando o próximo sorteio</h3>
+                              <p>O resultado aparecerá aqui e poderá ser pontuado imediatamente.</p>
+                            </>
+                          )}
                         </div>
                       </>
                     )}
@@ -3405,6 +3414,12 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             </label>
 
             <div className="arena-participant-list">
+              {visibleParticipants.length === 0 && (
+                <div className="arena-participant-empty" role="status">
+                  <strong>{participantSearch.trim() ? "Nenhum participante encontrado" : participantFilter === "present" ? "Nenhum aluno presente" : "Nenhum participante disponível"}</strong>
+                  <span>{participantSearch.trim() ? "Tente outro termo de busca." : participantFilter === "present" ? "Use Presença para incluir alunos na dinâmica." : "A turma ainda não possui participantes."}</span>
+                </div>
+              )}
               {visibleParticipants.slice(0, 12).map((participant) => {
                 const student = data.students.find((item) => item.id === participant.studentId);
                 if (!student) return null;
