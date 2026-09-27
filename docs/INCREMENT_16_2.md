@@ -107,6 +107,8 @@ A prévia gerada/importada é editável antes da materialização. O professor p
 - remover módulos;
 - renomear itens;
 - trocar tipo de item;
+- revisar e editar o corpo/instruções do item;
+- revisar a URL de recursos externos;
 - remover itens;
 - adicionar e reordenar módulos;
 - adicionar e reordenar itens.

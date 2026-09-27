@@ -489,3 +489,60 @@
   line-height: 1.45;
   background: color-mix(in srgb, var(--surface-2, var(--surface)) 90%, transparent);
 }
+
+.itemDetails {
+  margin-top: .18rem;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: .62rem;
+  background: color-mix(in srgb, var(--surface-2, var(--surface)) 84%, transparent);
+  overflow: hidden;
+}
+
+.itemDetails summary {
+  cursor: pointer;
+  list-style: none;
+  padding: .46rem .55rem;
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 760;
+}
+
+.itemDetails summary::-webkit-details-marker { display: none; }
+.itemDetails summary::after { content: "⌄"; float: right; color: var(--accent); }
+.itemDetails[open] summary::after { content: "⌃"; }
+
+.itemDetailsBody {
+  display: grid;
+  gap: .5rem;
+  padding: .55rem;
+  border-top: 1px solid var(--border);
+}
+
+.itemDetailsBody label {
+  display: grid;
+  gap: .25rem;
+}
+
+.itemDetailsBody label > span {
+  color: var(--muted);
+  font-size: .64rem;
+  font-weight: 740;
+}
+
+.itemDetailsBody textarea,
+.itemDetailsBody input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: .55rem;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  padding: .48rem .55rem;
+}
+
+.itemDetailsBody textarea {
+  min-height: 6rem;
+  resize: vertical;
+  font-size: .72rem;
+  line-height: 1.45;
+}

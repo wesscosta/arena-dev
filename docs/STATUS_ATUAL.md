@@ -55,7 +55,7 @@ Google Classroom          standby
 - ingestão de texto e Markdown;
 - upload de PDF, DOC/DOCX, PPT/PPTX, Markdown e TXT até 20 MB;
 - links tratados como recurso externo; Notion é reconhecido automaticamente dentro do fluxo de links, sem scraping do HTML público;
-- prévia editável antes da materialização, incluindo adicionar/remover/reordenar módulos e itens;
+- prévia editável antes da materialização, incluindo estrutura, tipo, corpo/instruções e URL de recursos externos;
 - conteúdo de IA permanece rascunho até revisão explícita do professor;
 - upload multipart validado no navegador com preservação correta do boundary HTTP.
 

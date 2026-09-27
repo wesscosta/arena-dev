@@ -189,7 +189,7 @@ Permitir que a jornada represente conteúdo real e que o professor comece pelo f
 - links externos preservados como referências; URLs do Notion são reconhecidas automaticamente dentro do mesmo fluxo, sem scraping;
 - IA configurável no backend para gerar apenas `DraftView`;
 - prévia editável antes da criação persistente;
-- prévia permite adicionar, remover e reordenar módulos/itens;
+- prévia permite adicionar, remover e reordenar módulos/itens e revisar corpo/instruções/URL antes da materialização;
 - materialização sempre cria jornada em rascunho.
 
 ### Princípio de mercado

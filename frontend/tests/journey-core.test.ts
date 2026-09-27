@@ -71,6 +71,11 @@ test("new journey onboarding is source-agnostic and review-first", () => {
   assert.match(wizard, /Remover módulo/);
   assert.match(wizard, /Adicionar módulo/);
   assert.match(wizard, /Adicionar item/);
+  assert.match(wizard, /Conteúdo e instruções/);
+  assert.match(wizard, /Recurso e origem/);
+  assert.match(wizard, /URL do recurso/);
+  assert.match(wizard, /patchItem\(sectionIndex, itemIndex, \{ body:/);
+  assert.match(wizard, /patchItem\(sectionIndex, itemIndex, \{ sourceUrl:/);
   assert.match(ingestion, /\/api\/content-ingestion\/preview/);
   assert.match(ingestion, /\/api\/content-ingestion\/file-preview/);
   assert.match(manager, /<JourneyCreationWizard/);

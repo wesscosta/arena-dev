@@ -421,6 +421,32 @@ export default function JourneyCreationWizard({
                         <div className={styles.itemIdentity}>
                           <input value={item.title} onChange={(event) => patchItem(sectionIndex, itemIndex, { title: event.target.value })} aria-label={`Título do item ${itemIndex + 1}`} />
                           <input value={item.description ?? ""} onChange={(event) => patchItem(sectionIndex, itemIndex, { description: event.target.value || null })} placeholder="Descrição opcional" aria-label={`Descrição do item ${itemIndex + 1}`} />
+                          <details className={styles.itemDetails} open={Boolean(item.body || item.sourceUrl)}>
+                            <summary>{item.type === "EXTERNAL_RESOURCE" ? "Recurso e origem" : "Conteúdo e instruções"}</summary>
+                            <div className={styles.itemDetailsBody}>
+                              {item.type === "EXTERNAL_RESOURCE" && (
+                                <label>
+                                  <span>URL do recurso</span>
+                                  <input
+                                    type="url"
+                                    value={item.sourceUrl ?? ""}
+                                    onChange={(event) => patchItem(sectionIndex, itemIndex, { sourceUrl: event.target.value || null })}
+                                    placeholder="https://..."
+                                    aria-label={`URL do item ${itemIndex + 1}`}
+                                  />
+                                </label>
+                              )}
+                              <label>
+                                <span>{item.type === "CONTENT" ? "Conteúdo" : "Instruções ou conteúdo opcional"}</span>
+                                <textarea
+                                  value={item.body ?? ""}
+                                  onChange={(event) => patchItem(sectionIndex, itemIndex, { body: event.target.value || null })}
+                                  placeholder={item.type === "CONTENT" ? "Revise ou complemente o conteúdo deste item." : "Adicione instruções, briefing ou material de apoio."}
+                                  aria-label={`Conteúdo do item ${itemIndex + 1}`}
+                                />
+                              </label>
+                            </div>
+                          </details>
                         </div>
                         <div className={styles.orderActions}>
                           <button type="button" className={styles.iconAction} disabled={itemIndex === 0} onClick={() => moveItem(sectionIndex, itemIndex, -1)} aria-label={`Mover item ${item.title} para cima`}>↑</button>
