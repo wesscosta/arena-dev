@@ -14,10 +14,7 @@ import type { WordCloudState } from "@/lib/word-cloud-api";
 import type { PollState } from "@/lib/poll-api";
 import { quizOptionMatchesAnswer, type QuizState } from "@/lib/quiz-api";
 import { reconnectDelayMs, type PublicBossState, type PublicBuzzerState, type PublicRuntimeSnapshot } from "@/lib/runtime-snapshot";
-import {
-  wordCloudFontSize,
-  wordCloudStatusLabel,
-} from "@/lib/word-cloud-visual";
+import { wordCloudFontSize } from "@/lib/word-cloud-visual";
 import {
   effectiveTimerStatus,
   formatTimer,
@@ -30,6 +27,36 @@ function errorMessage(error: unknown) {
   return error instanceof Error
     ? error.message
     : "Não foi possível abrir o modo projetor.";
+}
+
+function quizLifecycleLabel(status: string) {
+  if (status === "READY") return "PREPARAR";
+  if (status === "OPEN") return "AO VIVO";
+  if (status === "LOCKED" || status === "REVEALED") return "RESULTADO";
+  return "ENCERRADO";
+}
+
+function pollLifecycleLabel(status: string) {
+  if (status === "OPEN") return "AO VIVO";
+  if (status === "REVEALED") return "RESULTADO";
+  return "ENCERRADO";
+}
+
+function wordCloudLifecycleLabel(status: string) {
+  if (status === "COLLECTING") return "AO VIVO";
+  if (status === "REVEALED") return "RESULTADO";
+  return "ENCERRADO";
+}
+
+function buzzerLifecycleLabel(status: string) {
+  if (status === "OPEN") return "AO VIVO";
+  if (status === "CLOSED") return "RESULTADO";
+  return "PREPARAR";
+}
+
+function bossLifecycleLabel(boss: PublicBossState | null) {
+  if (!boss) return "PREPARAR";
+  return boss.currentHp === 0 ? "RESULTADO" : "AO VIVO";
 }
 
 function slideLines(content: string) {
@@ -55,6 +82,7 @@ export default function ProjectorView() {
   const [realtimeVersion, setRealtimeVersion] = useState(0);
   const [error, setError] = useState("");
   const [sessionFinished, setSessionFinished] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const reconnectAttemptRef = useRef(0);
 
   useEffect(() => {
@@ -110,7 +138,7 @@ export default function ProjectorView() {
     return () => {
       active = false;
     };
-  }, [code]);
+  }, [code, loadAttempt]);
 
   useEffect(() => {
     if (!snapshot || !code || sessionFinished) return;
@@ -289,6 +317,7 @@ export default function ProjectorView() {
     );
     setCode(normalized);
     setDraftCode(normalized);
+    setLoadAttempt((attempt) => attempt + 1);
   }
 
   async function requestFullscreen() {
@@ -465,15 +494,7 @@ export default function ProjectorView() {
               </div>
               <div className={styles.quizMeta}>
                 <strong>{quizRound.totalAnswers} resposta(s)</strong>
-                <span>
-                  {quizRound.status === "OPEN"
-                    ? "RESPONDENDO"
-                    : quizRound.status === "LOCKED"
-                      ? "BLOQUEADO"
-                      : quizRound.status === "REVEALED"
-                        ? "REVELADO"
-                        : "ENCERRADO"}
-                </span>
+                <span>{quizLifecycleLabel(quizRound.status)}</span>
               </div>
             </div>
 
@@ -538,7 +559,7 @@ export default function ProjectorView() {
           </div>
         ) : showBoss ? (
           <div className={styles.bossStage}>
-            <span className={styles.eyebrow}>BOSS BATTLE</span>
+            <span className={styles.eyebrow}>BOSS BATTLE · {bossLifecycleLabel(bossState)}</span>
             <h1>{bossState?.name || "Desafio em andamento"}</h1>
             {bossState ? (
               <div className="public-live-boss">
@@ -565,7 +586,7 @@ export default function ProjectorView() {
           <div className={styles.buzzerStage}>
             <div className={styles.buzzerHeading}>
               <div>
-                <span className={styles.eyebrow}>BUZZER</span>
+                <span className={styles.eyebrow}>BUZZER · {buzzerLifecycleLabel(buzzerState.status)}</span>
                 <h1>{buzzerState.status === "OPEN" ? "Valendo!" : buzzerState.status === "CLOSED" ? "Rodada encerrada" : "Aguardando rodada"}</h1>
               </div>
               {showTimerOverlay && timer && status && (
@@ -599,7 +620,7 @@ export default function ProjectorView() {
               </div>
               <div className={styles.wordCloudTopMeta}>
                 <span className={`${styles.wordCloudStatus} ${styles[wordCloudRound.status.toLowerCase()]}`}>
-                  {wordCloudStatusLabel(wordCloudRound.status)}
+                  {wordCloudLifecycleLabel(wordCloudRound.status)}
                 </span>
                 <small>
                   {wordCloudRound.participantCount} responderam · {wordCloudRound.submissionCount} respostas
@@ -652,7 +673,7 @@ export default function ProjectorView() {
           <div className={styles.pollStage}>
             <div className={styles.pollTop}>
               <div><span className={styles.eyebrow}>VOTAÇÃO</span><h1>{pollRound.prompt}</h1></div>
-              <div className={styles.pollMeta}><strong>{pollRound.totalVotes} voto(s)</strong><span>{pollRound.status === "OPEN" ? "ABERTA" : pollRound.status === "REVEALED" ? "REVELADA" : "ENCERRADA"}</span></div>
+              <div className={styles.pollMeta}><strong>{pollRound.totalVotes} voto(s)</strong><span>{pollLifecycleLabel(pollRound.status)}</span></div>
             </div>
             {showTimerOverlay && timer && status && <div className={styles.miniTimer}><span>{timer.title}</span><strong>{formatTimer(remaining)}</strong></div>}
             {pollRound.publicResultsVisible ? (

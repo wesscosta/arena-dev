@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import TeacherLogin from "@/components/TeacherLogin";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import ActivityStepEditor from "@/components/ActivityStepEditor";
@@ -8,6 +8,8 @@ import ActivitySubmissionDashboard from "@/components/ActivitySubmissionDashboar
 import LiveFlowConductor from "@/components/LiveFlowConductor";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
+import ArenaToolDrawer from "@/components/ArenaToolDrawer";
+import DrawWheel from "@/components/arena/draw/DrawWheel";
 import WordCloudPanel from "@/components/WordCloudPanel";
 import PollPanel from "@/components/PollPanel";
 import QuizPanel from "@/components/QuizPanel";
@@ -51,7 +53,8 @@ import {
   type LiveFlowState,
 } from "@/lib/mechanics-api";
 import { createScoreEvent as createScoreEventApi, createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
-import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
+import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
+import { fetchSessionEventsBySession, type SessionEvent } from "@/lib/session-event-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
 import type { TimerState } from "@/lib/timer-api";
 import { fetchWordCloudState, type WordCloudState } from "@/lib/word-cloud-api";
@@ -76,6 +79,52 @@ import {
 
 type View = "dashboard" | "classroom" | "classroom-settings" | "arena" | "integrations" | "settings";
 type ClassroomTab = "home" | "students" | "activities" | "ranking" | "history";
+type ArenaDynamic = "runbook" | "draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss";
+type ArenaTool = "timer" | "groups" | "attendance" | "score" | null;
+
+const ARENA_DYNAMIC_LABELS: Record<ArenaDynamic, string> = {
+  runbook: "Roteiro da aula",
+  draw: "Sorteio",
+  wordcloud: "Nuvem de Palavras",
+  poll: "Votação",
+  quiz: "Quiz",
+  buzzer: "Buzzer",
+  boss: "Boss Battle",
+};
+
+type ArenaGlyphName =
+  | "arena"
+  | "draw"
+  | "quiz"
+  | "poll"
+  | "wordcloud"
+  | "buzzer"
+  | "boss"
+  | "runbook"
+  | "timer"
+  | "groups"
+  | "attendance"
+  | "score";
+
+function ArenaGlyph({ name }: { name: ArenaGlyphName }) {
+  const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+      {name === "draw" && <><circle {...common} cx="12" cy="12" r="7" /><circle {...common} cx="12" cy="12" r="2.5" /><path {...common} d="M12 2v3M19 5l-2 2M22 12h-3" /></>}
+      {name === "quiz" && <><path {...common} d="M9.5 9a2.7 2.7 0 1 1 4.7 1.8c-1.2 1-2.2 1.4-2.2 3" /><path {...common} d="M12 18h.01" /><circle {...common} cx="12" cy="12" r="9" /></>}
+      {name === "poll" && <><circle {...common} cx="12" cy="12" r="8" /><path {...common} d="M12 4v8h8M12 12l-5.6 5.6" /></>}
+      {name === "wordcloud" && <path {...common} d="M7.5 18h9.2a4.3 4.3 0 0 0 .8-8.5A5.8 5.8 0 0 0 6.6 8.2 4.8 4.8 0 0 0 7.5 18Z" />}
+      {name === "buzzer" && <path {...common} d="m13.5 2-7 11h5l-1 9 7-12h-5l1-8Z" />}
+      {name === "boss" && <><path {...common} d="m12 3 7 4-7 4-7-4 7-4Z" /><path {...common} d="m5 7 7 4 7-4v10l-7 4-7-4V7Z" /><path {...common} d="M12 11v10" /></>}
+      {name === "runbook" && <><rect {...common} x="4" y="4" width="16" height="16" rx="2" /><path {...common} d="m10 8 5 4-5 4V8Z" /></>}
+      {name === "timer" && <><circle {...common} cx="12" cy="13" r="7" /><path {...common} d="M12 13V9M9 2h6M12 6V4" /></>}
+      {name === "groups" && <><circle {...common} cx="9" cy="9" r="3" /><circle {...common} cx="17" cy="10" r="2.3" /><path {...common} d="M3.5 19a5.5 5.5 0 0 1 11 0M14 18a4 4 0 0 1 6.5-3.1" /></>}
+      {name === "attendance" && <><rect {...common} x="5" y="3" width="14" height="18" rx="2" /><path {...common} d="m8.5 12 2.2 2.2 4.8-5" /></>}
+      {name === "score" && <><circle {...common} cx="12" cy="12" r="8" /><path {...common} d="M12 8v8M8 12h8" /></>}
+      {name === "arena" && <><path {...common} d="M7 9h10a4 4 0 0 1 3.7 5.5l-1 2.5a2 2 0 0 1-3.2.8L14.8 16H9.2l-1.7 1.8a2 2 0 0 1-3.2-.8l-1-2.5A4 4 0 0 1 7 9Z" /><path {...common} d="M8 12v3M6.5 13.5h3M16 12h.01M18 14h.01" /></>}
+    </svg>
+  );
+}
 
 const VIEW_LABEL: Record<View, string> = {
   dashboard: "Visão geral",
@@ -114,6 +163,14 @@ function todayTitle() {
     month: "2-digit",
     year: "numeric",
   }).format(new Date());
+}
+
+function formatSessionElapsed(startedAt: string, now: number) {
+  const elapsedSeconds = Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000));
+  const hours = Math.floor(elapsedSeconds / 3600);
+  const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+  const seconds = elapsedSeconds % 60;
+  return [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
 }
 
 function errorMessage(error: unknown) {
@@ -314,7 +371,7 @@ export default function ArenaApp() {
       </a>
       <LiveRegion>{toast}</LiveRegion>
       <main id="main-content" className="main-area" tabIndex={-1}>
-        <header className="topbar app-topbar contextual-topbar">
+        <header className={`topbar app-topbar contextual-topbar ${view === "arena" && currentSession ? "arena-root-topbar-hidden" : ""}`}>
           <button
             type="button"
             className="topbar-brand"
@@ -446,7 +503,7 @@ export default function ArenaApp() {
           </div>
         </header>
 
-        <section className="content">
+        <section className={view === "arena" ? "content arena-content-full" : "content"}>
           {apiError && <div className="api-alert" role="alert" aria-live="assertive"><strong>API indisponível.</strong><span>{apiError}</span><button className="text-button" onClick={() => { void refreshClassroomDomain(); }}>Tentar novamente</button></div>}
 
           {view === "dashboard" && (
@@ -574,6 +631,17 @@ export default function ArenaApp() {
                 sessionParticipants={data.sessionParticipants.filter((item) => item.sessionId === currentSession?.id)}
                 preferredActivityId={arenaActivityId}
                 onPreferredActivityChange={setArenaActivityId}
+                onBack={() => openClassroom("home")}
+                onGoDashboard={() => setView("dashboard")}
+                teacherUsername={teacherSession.username}
+                onOpenSettings={() => setView("settings")}
+                onLogout={() => {
+                  void logoutTeacher().finally(() => {
+                    setTeacherSession(null);
+                    setData(EMPTY_DATA);
+                    setHydrated(false);
+                  });
+                }}
                 onSessionEnded={() => {
                   openClassroom("home");
                 }}
@@ -1825,7 +1893,7 @@ function ClassroomManagementPage({
 }
 
 
-function ArenaView({ data, classroomId, students, currentSession, sessionParticipants, preferredActivityId, onPreferredActivityChange, onSessionEnded, patch, notify }: {
+function ArenaView({ data, classroomId, students, currentSession, sessionParticipants, preferredActivityId, onPreferredActivityChange, onBack, onGoDashboard, teacherUsername, onOpenSettings, onLogout, onSessionEnded, patch, notify }: {
   data: ArenaData;
   classroomId: string;
   students: Student[];
@@ -1833,20 +1901,27 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   sessionParticipants: SessionParticipant[];
   preferredActivityId?: string;
   onPreferredActivityChange: (activityId?: string) => void;
+  onBack: () => void;
+  onGoDashboard: () => void;
+  teacherUsername: string;
+  onOpenSettings: () => void;
+  onLogout: () => void;
   onSessionEnded: () => void;
   patch: (updater: (current: ArenaData) => ArenaData) => void;
   notify: (message: string) => void;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
-  const [arenaTab, setArenaTab] = useState<"live" | "interactions" | "timer" | "groups">("live");
-  const [interactionTool, setInteractionTool] = useState<"draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss">("draw");
-  const [accessOpen, setAccessOpen] = useState(false);
-  const [checkinRosterExpanded, setCheckinRosterExpanded] = useState(true);
+  const [activeDynamic, setActiveDynamic] = useState<ArenaDynamic>("draw");
+  const [activeTool, setActiveTool] = useState<ArenaTool>(null);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
   const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
+  const [drawSettingsOpen, setDrawSettingsOpen] = useState(false);
+  const [sessionQrOpen, setSessionQrOpen] = useState(false);
   const [reason, setReason] = useState("Resposta correta");
   const [customPoints, setCustomPoints] = useState(10);
+  const [customScoreOpen, setCustomScoreOpen] = useState(false);
+  const [scoreFeedback, setScoreFeedback] = useState(false);
   const [groups, setGroups] = useState<string[][]>(currentSession?.groups ?? []);
   const [groupSize, setGroupSize] = useState(currentSession?.groupSize ?? 2);
   const [bossName, setBossName] = useState("Spaghetti Code");
@@ -1866,6 +1941,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [realtimeBusy, setRealtimeBusy] = useState(false);
   const [liveFlowState, setLiveFlowState] = useState<LiveFlowState | null>(null);
   const [liveFlowBusy, setLiveFlowBusy] = useState(false);
+  const [sessionEvents, setSessionEvents] = useState<SessionEvent[]>([]);
+  const [participantSearch, setParticipantSearch] = useState("");
+  const [participantFilter, setParticipantFilter] = useState<"present" | "all">("present");
+  const [sessionNow, setSessionNow] = useState(() => Date.now());
+  const classroom = data.classrooms.find((item) => item.id === classroomId);
   const classActivities = useMemo(
     () => data.activities.filter((activity) => activity.classroomId === classroomId),
     [data.activities, classroomId],
@@ -1875,6 +1955,44 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   useEffect(() => {
     if (typeof window !== "undefined") setPublicBaseUrl(window.location.origin);
   }, []);
+
+  useEffect(() => {
+    if (!sessionQrOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSessionQrOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [sessionQrOpen]);
+
+  useEffect(() => {
+    if (!currentSession) return;
+    setSessionNow(Date.now());
+    const intervalId = window.setInterval(() => setSessionNow(Date.now()), 1000);
+    return () => window.clearInterval(intervalId);
+  }, [currentSession?.id]);
+
+  useEffect(() => {
+    if (!currentSession) {
+      setSessionEvents([]);
+      return;
+    }
+
+    let active = true;
+    void fetchSessionEventsBySession(currentSession.id)
+      .then((events) => {
+        if (active) setSessionEvents(events);
+      })
+      .catch(() => {
+        if (active) setSessionEvents([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [currentSession?.id]);
 
   useEffect(() => {
     if (!currentSession) {
@@ -2038,7 +2156,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         ],
         currentSessionId: started.id,
       }));
-      setArenaTab("live");
+      setActiveDynamic(activityId ? "runbook" : "draw");
+      setActiveTool(null);
       notify("Arena iniciada. Sessão e mecânicas estão no PostgreSQL.");
     } catch (error) {
       notify(errorMessage(error));
@@ -2068,7 +2187,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }));
       setSelectedId(undefined);
       setGroups([]);
-      setArenaTab("live");
+      setActiveDynamic("draw");
+      setActiveTool(null);
       setLiveFlowState(null);
       onPreferredActivityChange(undefined);
       notify("Sessão encerrada e persistida.");
@@ -2125,21 +2245,39 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
   async function draw() {
     if (!currentSession || drawPhase === "drawing" || mechanicsBusy) return;
+    const participants = students.filter((student) => currentSession.presentStudentIds.includes(student.id));
+    if (!participants.length) {
+      notify("Nenhum aluno presente está disponível para o sorteio.");
+      return;
+    }
+
     setDrawPhase("drawing");
     setMechanicsBusy(true);
     setSelectedId(undefined);
+
     try {
-      const [result] = await Promise.all([
-        drawStudentApi(currentSession.id),
-        new Promise((resolve) => window.setTimeout(resolve, 900)),
-      ]);
-      setSelectedId(result.studentId);
+      const result = await drawStudentApi(currentSession.id);
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
       patch((current) => ({
         ...current,
         sessions: current.sessions.map((session) => session.id === currentSession.id
           ? mergeSessionMechanics(session, result.runtime)
           : session),
       }));
+
+      if (reducedMotion) {
+        setSelectedId(result.studentId);
+        await new Promise((resolve) => window.setTimeout(resolve, 80));
+      } else {
+        await new Promise((resolve) => window.setTimeout(resolve, 850));
+        setSelectedId(result.studentId);
+        await new Promise((resolve) => window.setTimeout(resolve, 950));
+      }
+
+      void fetchSessionEventsBySession(currentSession.id)
+        .then(setSessionEvents)
+        .catch(() => undefined);
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -2163,6 +2301,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         questionId: currentSession.currentQuestionId,
       });
       patch((current) => ({ ...current, scoreEvents: [...current.scoreEvents, event] }));
+      setScoreFeedback(true);
+      window.setTimeout(() => setScoreFeedback(false), 900);
       notify(`${points >= 0 ? "+" : ""}${points} XP registrado no PostgreSQL.`);
     } catch (error) {
       notify(errorMessage(error));
@@ -2406,6 +2546,20 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     }
   }
 
+  async function copySessionCode() {
+    if (!joinCode) {
+      notify("Aguarde a geração do código da sessão.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(joinCode.code);
+      notify("Código da sessão copiado.");
+    } catch {
+      notify("Não foi possível copiar o código automaticamente.");
+    }
+  }
+
   function openProjector() {
     if (!joinCode) {
       notify("Aguarde a geração do código da sessão.");
@@ -2419,6 +2573,56 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const selectedXp = selected ? xpForStudent(data.scoreEvents, classroomId, selected.id) : 0;
   const activeActivity = data.activities.find((activity) => activity.id === (currentSession?.activityId ?? activityId));
   const currentQuestion = activeActivity?.questions?.find((question) => question.id === currentSession?.currentQuestionId);
+  const recentDrawEvents = sessionEvents
+    .filter((event) => event.eventType === "DRAW_COMPLETED")
+    .sort((a, b) => b.sequenceNo - a.sequenceNo);
+  const presentStudentIdSet = new Set(currentSession?.presentStudentIds ?? []);
+  const drawnStudentIds = new Set(
+    Object.entries(currentSession?.drawCounts ?? {})
+      .filter(([studentId, count]) => count > 0 && presentStudentIdSet.has(studentId))
+      .map(([studentId]) => studentId),
+  );
+  const drawCoverage = currentSession?.presentStudentIds.length
+    ? Math.round((drawnStudentIds.size / currentSession.presentStudentIds.length) * 100)
+    : 0;
+  const selectedDrawEvent = selectedId
+    ? recentDrawEvents.find((event) => event.payload.studentId === selectedId)
+    : undefined;
+  const bossHpPercent = currentSession?.boss
+    ? Math.max(0, Math.round((currentSession.boss.currentHp / currentSession.boss.maxHp) * 100))
+    : 0;
+  const bossDamageTotal = currentSession?.boss
+    ? currentSession.boss.maxHp - currentSession.boss.currentHp
+    : 0;
+  const bossPhase = !currentSession?.boss
+    ? "Aguardando"
+    : currentSession.boss.currentHp === 0
+      ? "Derrotado"
+      : bossHpPercent <= 30
+        ? "Crítico"
+        : bossHpPercent <= 70
+          ? "Enfraquecido"
+          : "Inteiro";
+  const bossLifecycle = !currentSession?.boss
+    ? "PREPARAR"
+    : currentSession.boss.currentHp === 0
+      ? "RESULTADO"
+      : "AO VIVO";
+  const visibleParticipants = sessionParticipants.filter((participant) => {
+    if (participantFilter === "present" && !currentSession?.presentStudentIds.includes(participant.studentId)) {
+      return false;
+    }
+
+    const student = data.students.find((item) => item.id === participant.studentId);
+    const query = participantSearch.trim().toLowerCase();
+    if (!query) return true;
+    return [
+      student?.name,
+      student?.nickname,
+      participant.displayName,
+      participant.preferredName,
+    ].some((value) => value?.toLowerCase().includes(query));
+  });
 
   if (!currentSession) {
     return (
@@ -2472,21 +2676,37 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
   return (
     <div className="stack-lg arena-session-workspace">
-      <div className="arena-header compact">
-        <div>
-          <div className="arena-session-title-row">
-            <h2>{currentSession.title}</h2>
-            <Badge variant="live" dot>AO VIVO</Badge>
-          </div>
-        </div>
+      <header className="topbar app-topbar arena-live-topbar">
+        <button
+          type="button"
+          className="topbar-brand arena-live-brand"
+          onClick={onGoDashboard}
+          title="Voltar para a Visão geral"
+        >
+          <span className="topbar-brand-mark">A</span>
+          <span>
+            <strong>ARENA DEV</strong>
+            <small>Classroom Edition</small>
+          </span>
+        </button>
+
+        <nav className="arena-live-context" aria-label="Contexto da sessão">
+          <button type="button" onClick={onGoDashboard}>Turmas</button>
+          <span aria-hidden="true">›</span>
+          <button type="button" onClick={onBack}>{classroom?.name ?? "Turma"}</button>
+          <span aria-hidden="true">›</span>
+          <strong>{currentSession.title}</strong>
+          <Badge variant="live" dot>AO VIVO</Badge>
+        </nav>
+
         <div className="topbar-actions arena-session-actions">
-          <Button
-            variant={accessOpen ? "primary" : "secondary"}
-            onClick={() => setAccessOpen((open) => !open)}
-            disabled={!joinCode}
-          >
-            {accessOpen ? "Fechar check-in" : "Check-in"}
-          </Button>
+          <div className="arena-session-elapsed" aria-label={`Tempo de sessão ${formatSessionElapsed(currentSession.startedAt, sessionNow)}`}>
+            <span aria-hidden="true">◷</span>
+            <div>
+              <strong>{formatSessionElapsed(currentSession.startedAt, sessionNow)}</strong>
+              <small>Tempo de sessão</small>
+            </div>
+          </div>
           <Button
             variant="secondary"
             onClick={openProjector}
@@ -2502,146 +2722,96 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           >
             Encerrar sessão
           </Button>
-        </div>
-      </div>
-
-      {accessOpen && (
-        <div className={`arena-checkin-workspace ${checkinRosterExpanded ? "" : "roster-collapsed"}`}>
-          <div className="arena-checkin-access">
-            <SessionAccessCard
-              sessionId={currentSession.id}
-              joinCode={joinCode}
-              publicBaseUrl={publicBaseUrl}
-              notify={notify}
-              realtimeStatus={realtimeStatus}
-              connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
-              presentCount={sessionParticipants.filter((participant) => participant.present).length}
-              onRotate={rotateSessionCode}
-              rotateBusy={realtimeBusy}
-              title="Check-in dos alunos"
-              subtitle="O login realiza o check-in automaticamente. Você pode ajustar a presença manualmente."
-            />
-          </div>
-
-          <aside
-            className={`arena-checkin-roster ${checkinRosterExpanded ? "" : "is-collapsed"}`}
-            aria-label="Check-in da turma"
-          >
-            {checkinRosterExpanded ? (
-              <>
-                <div className="arena-checkin-roster-head">
-                  <div>
-                    <strong>Participantes</strong>
-                    <small>
-                      {currentSession.presentStudentIds.length} de {sessionParticipants.length} presentes
-                    </small>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="arena-checkin-roster-toggle"
-                    onClick={() => setCheckinRosterExpanded(false)}
-                    aria-expanded="true"
-                    aria-label="Recolher lista de alunos"
-                    title="Recolher"
-                  >
-                    ›
-                  </button>
-                </div>
-
-                <div className="arena-checkin-roster-list">
-                  {sessionParticipants.map((participant) => {
-                    const student = data.students.find((item) => item.id === participant.studentId);
-                    if (!student) return null;
-
-                    const statusLabel = participant.connected
-                      ? "online"
-                      : "offline";
-
-                    const statusClass = participant.connected
-                      ? "is-online"
-                      : "is-offline";
-
-                    return (
-                      <div key={participant.id} className="arena-checkin-row">
-                        <Avatar student={student} />
-
-                        <div className="arena-checkin-student-copy">
-                          <strong>{student.name}</strong>
-                          <small className={statusClass}>
-                            <i />
-                            {statusLabel}
-                          </small>
-                        </div>
-
-                        <label
-                          className="arena-checkin-presence-control"
-                          title={participant.present ? "Desmarcar presença" : "Marcar presença"}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={participant.present}
-                            disabled={presenceBusyId === participant.id}
-                            onChange={(event) => {
-                              void changePresence(participant, event.target.checked);
-                            }}
-                          />
-                          <span aria-hidden="true" />
-                          <small>{participant.present ? "Presente" : "Ausente"}</small>
-                        </label>
-
-                        {participant.connected && (
-                          <button
-                            type="button"
-                            className="arena-checkin-release"
-                            onClick={() => { void releaseDevice(participant); }}
-                            title="Liberar dispositivo deste aluno"
-                            aria-label={`Liberar dispositivo de ${student.name}`}
-                          >
-                            ⋯
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
+          <Menu
+            trigger={(triggerProps) => (
               <button
+                {...triggerProps}
                 type="button"
-                className="arena-checkin-rail"
-                onClick={() => setCheckinRosterExpanded(true)}
-                aria-label={`Expandir participantes. ${currentSession.presentStudentIds.length} presentes`}
-                title="Expandir participantes"
+                className="topbar-profile arena-live-profile"
+                aria-label="Abrir menu do professor"
               >
-                <span className="arena-checkin-rail-icon">◎</span>
-                <strong>{currentSession.presentStudentIds.length}</strong>
-                <small>presentes</small>
-                <span className="arena-checkin-rail-arrow">‹</span>
+                <span className="topbar-profile-avatar">
+                  {teacherUsername.trim().charAt(0).toUpperCase() || "P"}
+                </span>
+                <span className="topbar-profile-copy">
+                  <strong>{teacherUsername}</strong>
+                  <small>Professor</small>
+                </span>
+                <span className="topbar-profile-chevron">⌄</span>
               </button>
             )}
-          </aside>
+          >
+            <MenuItem icon="⚙" description="Perfil, sistema e backup" onSelect={onOpenSettings}>
+              Configurações
+            </MenuItem>
+            <MenuItem icon="↪" danger description="Encerrar sessão do professor" onSelect={onLogout}>
+              Sair
+            </MenuItem>
+          </Menu>
         </div>
-      )}
+      </header>
 
-      <Tabs
-        className="arena-tabs-six"
-        label="Ferramentas da sessão"
-        activeId={arenaTab}
-        onChange={(id) => {
-          setArenaTab(
-            id as "live" | "interactions" | "timer" | "groups"
-          );
-        }}
-        items={[
-          { id: "live", label: "Condução" },
-          { id: "interactions", label: "Dinâmicas" },
-          { id: "timer", label: "Tempo" },
-          { id: "groups", label: "Organização" },
-        ] satisfies TabItem[]}
-      />
+      <div className="arena-cockpit">
+        <aside className="arena-cockpit-nav" aria-label="Ferramentas da Arena">
+          <div className="arena-nav-context">
+            <div className="arena-nav-arena-card" aria-current="page">
+              <span className="arena-nav-arena-icon" aria-hidden="true"><ArenaGlyph name="arena" /></span>
+              <div>
+                <strong>Arena</strong>
+                <small>Condução ao vivo</small>
+              </div>
+            </div>
+          </div>
 
-      {arenaTab === "live" && (
+          <div className="arena-cockpit-nav-group">
+            <span className="arena-cockpit-nav-label">DINÂMICAS</span>
+            {([
+              ["draw", "draw", "Sorteio"],
+              ["quiz", "quiz", "Quiz"],
+              ["poll", "poll", "Votação"],
+              ["wordcloud", "wordcloud", "Nuvem de Palavras"],
+              ["buzzer", "buzzer", "Buzzer"],
+              ["boss", "boss", "Boss Battle"],
+            ] as const).map(([id, icon, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={activeDynamic === id ? "active" : ""}
+                aria-current={activeDynamic === id ? "page" : undefined}
+                onClick={() => {
+                  setActiveDynamic(id);
+                  setActiveTool(null);
+                }}
+              >
+                <span aria-hidden="true"><ArenaGlyph name={icon} /></span>
+                <strong>{label}</strong>
+              </button>
+            ))}
+          </div>
+
+          <div className="arena-cockpit-nav-group">
+            <span className="arena-cockpit-nav-label">FERRAMENTAS</span>
+            <button type="button" className={activeDynamic === "runbook" ? "active" : ""} onClick={() => { setActiveDynamic("runbook"); setActiveTool(null); }}>
+              <span aria-hidden="true"><ArenaGlyph name="runbook" /></span><strong>Roteiro da aula</strong>
+            </button>
+            <button type="button" className={activeTool === "timer" ? "active" : ""} onClick={() => setActiveTool("timer")}>
+              <span aria-hidden="true"><ArenaGlyph name="timer" /></span><strong>Timer</strong>
+            </button>
+            <button type="button" className={activeTool === "groups" ? "active" : ""} onClick={() => setActiveTool("groups")}>
+              <span aria-hidden="true"><ArenaGlyph name="groups" /></span><strong>Organizar turma</strong>
+            </button>
+            <button type="button" className={activeTool === "attendance" ? "active" : ""} onClick={() => setActiveTool("attendance")}>
+              <span aria-hidden="true"><ArenaGlyph name="attendance" /></span><strong>Presença</strong>
+            </button>
+            <button type="button" className={activeTool === "score" ? "active" : ""} onClick={() => setActiveTool("score")}>
+              <span aria-hidden="true"><ArenaGlyph name="score" /></span><strong>Pontuação rápida</strong>
+            </button>
+          </div>
+        </aside>
+
+        <main className="arena-cockpit-main">
+
+      {activeDynamic === "runbook" && (
         <div className="stack-lg arena-tab-content">
           <div className="arena-activity-strip">
             <div>
@@ -2665,8 +2835,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 onPrevious={() => { void movePreparedFlow("previous"); }}
                 onNext={() => { void movePreparedFlow("next"); }}
                 onOpenWordCloud={() => {
-                  setArenaTab("interactions");
-                  setInteractionTool("wordcloud");
+                  setActiveDynamic("wordcloud");
+                  setActiveTool(null);
                 }}
               />
             ) : activeActivity ? (
@@ -2721,264 +2891,850 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </div>
       )}
 
-      {arenaTab === "timer" && (
+      {activeDynamic !== "runbook" && (
+        <div className="stack-lg arena-tab-content">
+          {activeDynamic === "draw" ? (
+          <div className="smart-draw-workspace">
+            <div className="smart-draw-hero">
+              <div className="smart-draw-titlebar">
+                <div className="smart-draw-title-copy">
+                  <span className="smart-draw-title-icon" aria-hidden="true"><ArenaGlyph name="draw" /></span>
+                  <div>
+                    <span className="eyebrow accent">DINÂMICA AO VIVO</span>
+                    <h2>Sorteio Inteligente</h2>
+                    <p>Escolha um aluno de forma justa e dinâmica, mantendo toda a turma em jogo.</p>
+                  </div>
+                </div>
+                <button type="button" className="smart-draw-settings" onClick={() => setDrawSettingsOpen(true)}>
+                  ⚙ Ajustes
+                </button>
+              </div>
+
+              <div className="draw-wheel-hero-stage">
+                <DrawWheel
+                  participants={students.filter((student) => currentSession.presentStudentIds.includes(student.id))}
+                  selectedStudentId={selectedId}
+                  drawing={drawPhase === "drawing"}
+                  onDraw={() => { void draw(); }}
+                />
+              </div>
+
+              <div className={selected ? "selected-student-bar active" : "selected-student-bar"}>
+                <div className="selected-student-primary">
+                  <div className="selected-student-main">
+                    {selected ? (
+                      <>
+                        <Avatar student={selected} large />
+                        <div className="selected-student-copy">
+                          <div className="selected-student-name-row">
+                            <h3>{selected.nickname || selected.name}</h3>
+                            <span>🏆 Sorteado agora</span>
+                          </div>
+                          <p>
+                            Participações nesta sessão: {currentSession.drawCounts[selected.id] ?? 0}
+                            <b>·</b>
+                            <em>+{selectedXp} XP</em>
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="draw-result-placeholder" aria-hidden="true">◎</div>
+                        <div className="selected-student-copy">
+                          {currentSession.presentStudentIds.length === 0 ? (
+                            <>
+                              <h3>Nenhum aluno presente</h3>
+                              <p>Marque a presença dos alunos para habilitar o sorteio.</p>
+                            </>
+                          ) : (
+                            <>
+                              <h3>Aguardando o próximo sorteio</h3>
+                              <p>O resultado aparecerá aqui e poderá ser pontuado imediatamente.</p>
+                            </>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {selected && (
+                    <button type="button" className={scoreFeedback ? "selected-student-cta success" : "selected-student-cta"} onClick={() => { setReason("Participação"); void addScore(5, "COLLABORATION", "Participação"); }}>
+                      {scoreFeedback ? "✓ Pontuado" : "Confirmar e pontuar →"}
+                    </button>
+                  )}
+                </div>
+
+                <section className="draw-coverage-summary" aria-label={`Cobertura do sorteio: ${drawnStudentIds.size} de ${currentSession.presentStudentIds.length}, ${drawCoverage}%`}>
+                  <div className="draw-coverage-count">
+                    <span className="draw-coverage-badge">já sorteados</span>
+                    <details className="draw-history-popover draw-history-inline">
+                      <summary aria-label="Exibir últimos sorteados" title="Exibir últimos sorteados">
+                        <strong>{drawnStudentIds.size}/{currentSession.presentStudentIds.length}</strong>
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                          <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </summary>
+                      <div className="draw-history-menu" aria-label="Últimos sorteados">
+                        {recentDrawEvents.length > 0 ? recentDrawEvents.slice(0, 10).map((event, index) => {
+                          const studentId = typeof event.payload.studentId === "string" ? event.payload.studentId : "";
+                          const student = students.find((item) => item.id === studentId);
+                          return (
+                            <span key={event.id} title={dateTime(event.occurredAt)}>
+                              {index > 0 && <i aria-hidden="true">·</i>}
+                              {student?.nickname || student?.name?.split(" ")[0] || "Aluno"}
+                            </span>
+                          );
+                        }) : (
+                          <small>Nenhum sorteio registrado nesta sessão.</small>
+                        )}
+                      </div>
+                    </details>
+                  </div>
+
+                  <div
+                    className="draw-coverage-ring"
+                    style={{ "--coverage-angle": `${drawCoverage * 3.6}deg` } as CSSProperties}
+                    aria-hidden="true"
+                  >
+                    <span>{drawCoverage}%</span>
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            <section className="quick-score-dock" aria-label="Ações rápidas de pontuação">
+              <div className="quick-score-head">
+                <div>
+                  <strong>Ações rápidas</strong>
+                  <small>Pontue o aluno selecionado.</small>
+                </div>
+                <label className="quick-score-student">
+                  <span className="sr-only">Aluno para pontuação</span>
+                  {selected ? <Avatar student={selected} /> : <span className="quick-score-student-placeholder" aria-hidden="true">—</span>}
+                  <select
+                    className="select"
+                    aria-label="Aluno para pontuação"
+                    value={selectedId ?? ""}
+                    onChange={(e) => setSelectedId(e.target.value || undefined)}
+                  >
+                    <option value="">Selecionar aluno</option>
+                    {students.filter((student) => currentSession.presentStudentIds.includes(student.id)).map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
+                  </select>
+                </label>
+              </div>
+
+              <div className="quick-score-presets">
+                {SCORE_PRESETS.map((preset) => (
+                  <button key={`${preset.points}-${preset.label}`} disabled={!selected} onClick={() => { setReason(preset.label); void addScore(preset.points, preset.category, preset.label); }}>
+                    <b>+{preset.points}</b><span>{preset.points === 5 ? "Participação" : preset.label}</span>
+                  </button>
+                ))}
+                <div className="quick-score-custom-wrap">
+                  <button
+                    type="button"
+                    className={customScoreOpen ? "quick-score-custom-trigger active" : "quick-score-custom-trigger"}
+                    disabled={!selected}
+                    aria-expanded={customScoreOpen}
+                    onClick={() => {
+                      setReason("Outra pontuação");
+                      setCustomScoreOpen((open) => !open);
+                    }}
+                  >
+                    <b>✎</b><span>Personalizar</span>
+                  </button>
+                  {customScoreOpen && (
+                    <div className="quick-score-custom-popover">
+                      <label>
+                        <span>Pontos</span>
+                        <input className="input compact" type="number" value={customPoints} onChange={(e) => setCustomPoints(Number(e.target.value))} />
+                      </label>
+                      <label>
+                        <span>Motivo ou observação</span>
+                        <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ex.: colaboração excepcional" />
+                      </label>
+                      <button
+                        className="button primary"
+                        disabled={!selected || !reason.trim()}
+                        onClick={() => {
+                          void addScore(customPoints, "ADJUSTMENT", reason);
+                          setCustomScoreOpen(false);
+                        }}
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          </div>
+          ) : activeDynamic === "wordcloud" ? (
+            <div className="arena-dynamic-workspace">
+              <WordCloudPanel
+                sessionId={currentSession.id}
+                state={wordCloudState}
+                onStateChange={setWordCloudState}
+                notify={notify}
+                joinCode={joinCode}
+                publicBaseUrl={publicBaseUrl}
+                realtimeStatus={realtimeStatus}
+                connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+                presentCount={sessionParticipants.filter((participant) => participant.present).length}
+                showAccessCard={false}
+              />
+            </div>
+          ) : activeDynamic === "poll" ? (
+            <div className="arena-dynamic-workspace">
+              <PollPanel
+                sessionId={currentSession.id}
+                state={pollState}
+                onStateChange={setPollState}
+                notify={notify}
+                joinCode={joinCode}
+                publicBaseUrl={publicBaseUrl}
+                realtimeStatus={realtimeStatus}
+                connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
+                presentCount={sessionParticipants.filter((participant) => participant.present).length}
+                showAccessCard={false}
+              />
+            </div>
+          ) : activeDynamic === "quiz" ? (
+            <div className="arena-quiz-workspace">
+              <QuizPanel
+                sessionId={currentSession.id}
+                state={quizState}
+                onStateChange={setQuizState}
+                questions={activeActivity?.questions ?? []}
+                presentCount={sessionParticipants.filter((participant) => participant.present).length}
+                joinCode={joinCode}
+                notify={notify}
+                canAdvanceFlow={Boolean(liveFlowState?.started && liveFlowState.hasNext)}
+                onContinue={() => movePreparedFlow("next")}
+              />
+            </div>
+          ) : activeDynamic === "buzzer" ? (
+            <div className="arena-dynamic-workspace buzzer-workspace">
+              <section className="buzzer-hero">
+                <div className="buzzer-titlebar">
+                  <div>
+                    <span className="eyebrow accent">DINÂMICA AO VIVO</span>
+                    <h2>Buzzer</h2>
+                    <p>Velocidade com ordem oficial definida pelo servidor.</p>
+                  </div>
+                  <span className={`buzzer-status-badge ${buzzerState.status.toLowerCase()}`}>
+                    {buzzerState.status === "OPEN" ? "● AO VIVO" : buzzerState.status === "CLOSED" ? "ENCERRADO" : "PREPARAR"}
+                  </span>
+                </div>
+
+                <div className="buzzer-stage">
+                  <div className={`buzzer-orb ${buzzerState.status.toLowerCase()}`}>
+                    <span className="buzzer-orb-icon" aria-hidden="true">⚡</span>
+                    <strong>
+                      {buzzerState.status === "OPEN"
+                        ? "VALENDO!"
+                        : buzzerState.status === "CLOSED"
+                          ? "RODADA ENCERRADA"
+                          : "PRONTO"}
+                    </strong>
+                    <small>
+                      {buzzerState.status === "OPEN"
+                        ? "Aguardando o primeiro clique"
+                        : buzzerState.status === "CLOSED"
+                          ? `${buzzerState.presses.length} resposta(s) registradas`
+                          : "Abra uma rodada quando quiser"}
+                    </small>
+                  </div>
+
+                  <div className="buzzer-stage-actions">
+                    <button
+                      type="button"
+                      className="button primary buzzer-primary-action"
+                      onClick={() => { void toggleBuzzer(true); }}
+                      disabled={realtimeBusy}
+                    >
+                      {buzzerState.status === "OPEN" ? "Nova rodada" : "Abrir Buzzer"}
+                    </button>
+                    <button
+                      type="button"
+                      className="button danger-outline"
+                      onClick={() => { void toggleBuzzer(false); }}
+                      disabled={realtimeBusy || buzzerState.status !== "OPEN"}
+                    >
+                      Encerrar rodada
+                    </button>
+                  </div>
+
+                  <div className="buzzer-metrics">
+                    <div>
+                      <strong>{sessionParticipants.filter((participant) => participant.connected).length}</strong>
+                      <span>conectados</span>
+                    </div>
+                    <div>
+                      <strong>{buzzerState.presses.length}</strong>
+                      <span>cliques</span>
+                    </div>
+                    <div>
+                      <strong>{buzzerState.openedAt ? dateTime(buzzerState.openedAt) : "—"}</strong>
+                      <span>abertura</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="buzzer-ranking-card">
+                <div className="buzzer-ranking-head">
+                  <div>
+                    <span className="eyebrow accent">ORDEM OFICIAL</span>
+                    <h3>Quem apertou primeiro?</h3>
+                  </div>
+                  <span>{buzzerState.presses.length} resposta(s)</span>
+                </div>
+
+                {buzzerState.presses.length > 0 ? (
+                  <div className="buzzer-podium-list">
+                    {buzzerState.presses.map((press) => {
+                      const student = students.find((item) => item.id === press.studentId);
+                      return (
+                        <div className={press.position === 1 ? "buzzer-podium-row winner" : "buzzer-podium-row"} key={press.id}>
+                          <div className="buzzer-position">#{press.position}</div>
+                          {student ? <Avatar student={student} /> : <div className="buzzer-avatar-fallback">{(press.displayName || press.nickname || press.name).slice(0, 1)}</div>}
+                          <div className="buzzer-student-copy">
+                            <strong>{press.displayName || press.nickname || press.name}</strong>
+                            <small>{press.position === 1 ? "Primeiro clique confirmado pelo servidor" : dateTime(press.receivedAt)}</small>
+                          </div>
+                          {press.position === 1 ? (
+                            <div className="buzzer-winner-actions">
+                              <button type="button" onClick={() => { void addBuzzerScore(press.studentId, 5); }}>+5 XP</button>
+                              <button type="button" onClick={() => { void addBuzzerScore(press.studentId, 10); }}>+10 XP</button>
+                            </div>
+                          ) : (
+                            <span className="buzzer-order-time">{dateTime(press.receivedAt)}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="buzzer-empty-state">
+                    <span aria-hidden="true">⚡</span>
+                    <strong>{buzzerState.status === "OPEN" ? "Aguardando o primeiro clique" : "Nenhuma rodada disputada ainda"}</strong>
+                    <p>{buzzerState.status === "OPEN" ? "Assim que alguém apertar, a ordem aparecerá aqui em tempo real." : "Abra o Buzzer quando quiser transformar uma pergunta em disputa ao vivo."}</p>
+                  </div>
+                )}
+              </section>
+            </div>
+          ) : (
+            <div className="arena-dynamic-workspace boss-workspace">
+              <section className="boss-hero">
+                <div className="boss-titlebar">
+                  <div>
+                    <span className="eyebrow accent">DINÂMICA AO VIVO</span>
+                    <h2>Boss Battle</h2>
+                    <p>Transforme desafios da aula em dano coletivo contra um objetivo compartilhado.</p>
+                  </div>
+                  <div className="boss-title-actions">
+                    <span className={`boss-phase-badge ${currentSession.boss?.currentHp === 0 ? "defeated" : currentSession.boss ? "active" : "idle"}`}>
+                      {bossLifecycle}
+                    </span>
+                    <button type="button" className="smart-draw-settings" onClick={openProjector} disabled={!joinCode}>
+                      Projetar ↗
+                    </button>
+                  </div>
+                </div>
+
+                {currentSession.boss ? (
+                  <div className="boss-live-grid">
+                    <section className="boss-stage" aria-label={`Boss ${currentSession.boss.name}`}>
+                      <div className={`boss-core ${currentSession.boss.currentHp === 0 ? "defeated" : bossHpPercent <= 30 ? "critical" : ""}`}>
+                        <span className="boss-core-rune" aria-hidden="true">◆</span>
+                        <span className="boss-core-label">BOSS</span>
+                        <strong>{currentSession.boss.name}</strong>
+                        <small>{bossPhase}</small>
+                      </div>
+
+                      <div className="boss-hp-panel">
+                        <div className="boss-hp-head">
+                          <span>HP DO BOSS</span>
+                          <strong>{currentSession.boss.currentHp} / {currentSession.boss.maxHp}</strong>
+                        </div>
+                        <div className="boss-hp-track" role="progressbar" aria-label="Vida do Boss" aria-valuemin={0} aria-valuemax={currentSession.boss.maxHp} aria-valuenow={currentSession.boss.currentHp}>
+                          <span style={{ width: `${bossHpPercent}%` }} />
+                        </div>
+                        <div className="boss-hp-foot">
+                          <span>{bossHpPercent}% restante</span>
+                          <span>{bossDamageTotal} de dano acumulado</span>
+                        </div>
+                      </div>
+
+                      <div className="boss-session-metrics">
+                        <div><strong>{currentSession.presentStudentIds.length}</strong><span>heróis presentes</span></div>
+                        <div><strong>{bossDamageTotal}</strong><span>dano causado</span></div>
+                        <div><strong>{bossPhase}</strong><span>estado atual</span></div>
+                      </div>
+
+                      {currentSession.boss.currentHp === 0 && (
+                        <div className="boss-victory-banner" role="status">
+                          <span aria-hidden="true">🏆</span>
+                          <div>
+                            <strong>BOSS DERROTADO</strong>
+                            <p>Objetivo coletivo concluído. A vitória já foi persistida na sessão.</p>
+                          </div>
+                        </div>
+                      )}
+                    </section>
+
+                    <aside className="boss-combat-panel">
+                      <div className="boss-combat-head">
+                        <div>
+                          <span className="eyebrow accent">CONTROLE DE COMBATE</span>
+                          <h3>Aplicar dano</h3>
+                        </div>
+                        <span>manual</span>
+                      </div>
+
+                      <p className="boss-combat-note">
+                        Dano manual nesta versão — Quiz e XP não reduzem HP automaticamente.
+                      </p>
+
+                      <div className="boss-attacks">
+                        <button type="button" disabled={mechanicsBusy || currentSession.boss.currentHp === 0} onClick={() => { void damageBoss(10); }}>
+                          <span>⚔</span><strong>−10 HP</strong><small>Ataque leve</small>
+                        </button>
+                        <button type="button" disabled={mechanicsBusy || currentSession.boss.currentHp === 0} onClick={() => { void damageBoss(20); }}>
+                          <span>⚡</span><strong>−20 HP</strong><small>Ataque médio</small>
+                        </button>
+                        <button type="button" disabled={mechanicsBusy || currentSession.boss.currentHp === 0} onClick={() => { void damageBoss(30); }}>
+                          <span>✦</span><strong>−30 HP</strong><small>Ataque crítico</small>
+                        </button>
+                      </div>
+
+                      <div className="boss-rule-card">
+                        <strong>Regra desta versão</strong>
+                        <p>O professor decide quando um desafio foi cumprido e aplica o dano. O backend persiste HP, derrota e sincroniza participantes e Projetor.</p>
+                      </div>
+
+                      {currentSession.boss.currentHp === 0 && (
+                        <div className="boss-next-challenge">
+                          <span className="eyebrow accent">PRÓXIMO DESAFIO</span>
+                          <input className="input" value={bossName} onChange={(event) => setBossName(event.target.value)} placeholder="Nome do novo Boss" />
+                          <div className="boss-hp-config">
+                            <input className="input" type="number" min="10" value={bossHp} onChange={(event) => setBossHp(Math.max(10, Number(event.target.value)))} aria-label="HP do novo Boss" />
+                            <button className="button primary" disabled={mechanicsBusy} onClick={() => { void createBoss(); }}>Iniciar novo Boss</button>
+                          </div>
+                        </div>
+                      )}
+                    </aside>
+                  </div>
+                ) : (
+                  <div className="boss-setup-grid">
+                    <section className="boss-setup-card">
+                      <span className="eyebrow accent">PREPARAR BATALHA</span>
+                      <h3>Crie o objetivo coletivo</h3>
+                      <p>Defina um nome memorável e a quantidade de HP. O Boss será sincronizado com toda a sessão.</p>
+
+                      <label>
+                        <span>Nome do Boss</span>
+                        <input className="input" value={bossName} onChange={(event) => setBossName(event.target.value)} placeholder="Ex.: Spaghetti Code" />
+                      </label>
+
+                      <label>
+                        <span>HP inicial</span>
+                        <input className="input" type="number" min="10" value={bossHp} onChange={(event) => setBossHp(Math.max(10, Number(event.target.value)))} />
+                      </label>
+
+                      <div className="boss-hp-presets" aria-label="Atalhos de HP">
+                        {[50, 100, 150, 200].map((hp) => (
+                          <button key={hp} type="button" className={bossHp === hp ? "active" : ""} onClick={() => setBossHp(hp)}>
+                            {hp} HP
+                          </button>
+                        ))}
+                      </div>
+
+                      <button className="button primary boss-start-button" disabled={mechanicsBusy || !bossName.trim()} onClick={() => { void createBoss(); }}>
+                        {mechanicsBusy ? "Invocando..." : "Iniciar Boss Battle"}
+                      </button>
+                    </section>
+
+                    <aside className="boss-preview-card">
+                      <span className="eyebrow accent">PREVIEW</span>
+                      <div className="boss-core preview">
+                        <span className="boss-core-rune" aria-hidden="true">◆</span>
+                        <span className="boss-core-label">BOSS</span>
+                        <strong>{bossName.trim() || "Seu Boss"}</strong>
+                        <small>{bossHp} HP</small>
+                      </div>
+                      <div className="boss-rule-card">
+                        <strong>Objetivo compartilhado</strong>
+                        <p>Todos acompanham a mesma vida do Boss. Cada ataque aplicado pelo professor é persistido e transmitido em tempo real.</p>
+                      </div>
+                    </aside>
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
+        </div>
+      )}
+
+
+        </main>
+
+        <aside className="arena-context-rail" aria-label="Contexto da sessão">
+          <section className="arena-participants-card">
+            <div className="arena-context-head">
+              <div>
+                <strong>Participantes</strong>
+                <small>{currentSession.presentStudentIds.length}/{sessionParticipants.length}</small>
+              </div>
+              <button type="button" onClick={() => setActiveTool("attendance")}>Presença</button>
+            </div>
+
+            <div className="arena-participant-filter" role="group" aria-label="Filtrar participantes">
+              <button
+                type="button"
+                className={participantFilter === "present" ? "active" : ""}
+                aria-pressed={participantFilter === "present"}
+                onClick={() => setParticipantFilter("present")}
+              >
+                Presentes <span>{currentSession.presentStudentIds.length}</span>
+              </button>
+              <button
+                type="button"
+                className={participantFilter === "all" ? "active" : ""}
+                aria-pressed={participantFilter === "all"}
+                onClick={() => setParticipantFilter("all")}
+              >
+                Todos <span>{sessionParticipants.length}</span>
+              </button>
+            </div>
+
+            <label className="arena-participant-search">
+              <span aria-hidden="true">⌕</span>
+              <input
+                value={participantSearch}
+                onChange={(event) => setParticipantSearch(event.target.value)}
+                placeholder="Buscar aluno..."
+                aria-label="Buscar participante"
+              />
+            </label>
+
+            <div className="arena-participant-list">
+              {visibleParticipants.length === 0 && (
+                <div className="arena-participant-empty" role="status">
+                  <strong>{participantSearch.trim() ? "Nenhum participante encontrado" : participantFilter === "present" ? "Nenhum aluno presente" : "Nenhum participante disponível"}</strong>
+                  <span>{participantSearch.trim() ? "Tente outro termo de busca." : participantFilter === "present" ? "Use Presença para incluir alunos na dinâmica." : "A turma ainda não possui participantes."}</span>
+                </div>
+              )}
+              {visibleParticipants.slice(0, 12).map((participant) => {
+                const student = data.students.find((item) => item.id === participant.studentId);
+                if (!student) return null;
+                return (
+                  <div className="arena-participant-row" key={participant.id}>
+                    <Avatar student={student} />
+                    <div>
+                      <strong>{student.nickname || student.name}</strong>
+                      <small>
+                        {participant.connected
+                          ? "Online"
+                          : participant.present
+                            ? "Presente · offline"
+                            : "Ausente"}
+                      </small>
+                    </div>
+                    <span
+                      className={participant.connected ? "arena-status-dot online" : participant.present ? "arena-status-dot present" : "arena-status-dot offline"}
+                      aria-label={participant.connected ? "Online" : participant.present ? "Presente, offline" : "Ausente"}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {visibleParticipants.length > 12 && (
+              <button className="arena-context-more" type="button" onClick={() => setActiveTool("attendance")}>
+                Ver todos ({visibleParticipants.length}) →
+              </button>
+            )}
+          </section>
+
+          <section className="arena-session-code-card">
+            <div>
+              <span className="arena-context-label">CÓDIGO DA SESSÃO</span>
+              <div className="arena-session-code-row">
+                <strong>{joinCode?.code ?? "------"}</strong>
+                <button
+                  type="button"
+                  onClick={() => { void copySessionCode(); }}
+                  disabled={!joinCode}
+                  aria-label="Copiar código da sessão"
+                  title="Copiar código"
+                >
+                  ⧉
+                </button>
+              </div>
+              <small>Aponte a câmera para participar</small>
+            </div>
+            {joinCode && publicBaseUrl ? (
+              <button
+                type="button"
+                className="arena-session-qr-trigger"
+                onClick={() => setSessionQrOpen(true)}
+                aria-label="Ampliar QR Code da sessão"
+                title="Ampliar QR Code"
+              >
+                <img
+                  src={joinQrImageUrl(currentSession.id, publicBaseUrl, joinCode.code, 180)}
+                  alt={`QR Code da sessão ${joinCode.code}`}
+                />
+              </button>
+            ) : (
+              <div className="arena-qr-placeholder">QR</div>
+            )}
+          </section>
+        </aside>
+      </div>
+
+      {sessionQrOpen && joinCode && publicBaseUrl && (
+        <div
+          className="arena-session-qr-modal"
+          role="presentation"
+          onClick={() => setSessionQrOpen(false)}
+        >
+          <section
+            className="arena-session-qr-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="arena-session-qr-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="arena-session-qr-close"
+              onClick={() => setSessionQrOpen(false)}
+              aria-label="Fechar QR Code ampliado"
+            >
+              ×
+            </button>
+            <span className="arena-session-qr-eyebrow">ENTRE NA ARENA</span>
+            <h2 id="arena-session-qr-title">Escaneie para participar</h2>
+            <div className="arena-session-qr-large">
+              <img
+                src={joinQrImageUrl(currentSession.id, publicBaseUrl, joinCode.code, 720)}
+                alt={`QR Code ampliado da sessão ${joinCode.code}`}
+              />
+            </div>
+            <strong>{joinCode.code}</strong>
+            <p>Aponte a câmera do celular para acessar a sessão.</p>
+          </section>
+        </div>
+      )}
+
+      <ArenaToolDrawer
+        open={drawSettingsOpen}
+        title="Configurações do Sorteio"
+        subtitle="Entenda as políticas ativas sem ocupar o palco da dinâmica."
+        onClose={() => setDrawSettingsOpen(false)}
+      >
+        <div className="draw-settings-panel">
+          <section className="draw-settings-mode">
+            <span className="draw-settings-label">MODO ATIVO</span>
+            <div className="draw-settings-mode-card">
+              <span className="draw-mode-radio" aria-hidden="true" />
+              <div>
+                <strong>Balanceado</strong>
+                <p>Prioriza quem foi sorteado menos vezes durante a sessão.</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="draw-settings-rules">
+            <span className="draw-settings-label">POLÍTICAS DO BACKEND</span>
+            <div className="draw-settings-rule">
+              <span aria-hidden="true">✓</span>
+              <div>
+                <strong>Apenas presentes</strong>
+                <p>Somente alunos marcados como presentes entram no sorteio.</p>
+              </div>
+            </div>
+            <div className="draw-settings-rule">
+              <span aria-hidden="true">✓</span>
+              <div>
+                <strong>Evita repetição imediata</strong>
+                <p>Quando há mais de um participante, o último sorteado não é escolhido novamente na rodada seguinte.</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="draw-settings-explainer">
+            <strong>Como o balanceamento funciona</strong>
+            <p>
+              Todos continuam com chance de serem sorteados, mas o peso aumenta para quem participou menos.
+              A decisão final continua sendo feita pelo servidor.
+            </p>
+          </section>
+        </div>
+      </ArenaToolDrawer>
+
+      <ArenaToolDrawer
+        open={activeTool === "timer"}
+        title="Timer"
+        subtitle="Controle o tempo sem sair da dinâmica atual."
+        onClose={() => setActiveTool(null)}
+      >
         <TimerPanel
           sessionId={currentSession.id}
           state={timerState}
           onStateChange={setTimerState}
           notify={notify}
         />
-      )}
+      </ArenaToolDrawer>
 
-      {arenaTab === "interactions" && (
-        <div className="stack-lg arena-tab-content">
-          <div className="arena-interaction-switch" role="tablist" aria-label="Tipo de dinâmica">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "draw"}
-              className={interactionTool === "draw" ? "active" : ""}
-              onClick={() => setInteractionTool("draw")}
-            >
-              <span>◎</span>
-              <div>
-                <strong>Sorteio</strong>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "wordcloud"}
-              className={interactionTool === "wordcloud" ? "active" : ""}
-              onClick={() => setInteractionTool("wordcloud")}
-            >
-              <span>☁</span>
-              <div>
-                <strong>Nuvem de Palavras</strong>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "poll"}
-              className={interactionTool === "poll" ? "active" : ""}
-              onClick={() => setInteractionTool("poll")}
-            >
-              <span>◉</span>
-              <div>
-                <strong>Votação</strong>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "quiz"}
-              className={interactionTool === "quiz" ? "active" : ""}
-              onClick={() => setInteractionTool("quiz")}
-            >
-              <span>?</span>
-              <div>
-                <strong>Quiz</strong>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "buzzer"}
-              className={interactionTool === "buzzer" ? "active" : ""}
-              onClick={() => setInteractionTool("buzzer")}
-            >
-              <span>⚡</span>
-              <div>
-                <strong>Buzzer</strong>
-              </div>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={interactionTool === "boss"}
-              className={interactionTool === "boss" ? "active" : ""}
-              onClick={() => setInteractionTool("boss")}
-            >
-              <span>◆</span>
-              <div>
-                <strong>Boss Battle</strong>
-              </div>
+      <ArenaToolDrawer
+        open={activeTool === "groups"}
+        title="Organizar turma"
+        subtitle="Monte duplas e grupos mantendo a dinâmica principal visível."
+        onClose={() => setActiveTool(null)}
+      >
+        <div className="arena-tool-groups">
+          <div className="group-controls">
+            <label>
+              Formato
+              <select className="select" value={groupSize} onChange={(event) => setGroupSize(Number(event.target.value))}>
+                <option value={1}>Individual</option>
+                <option value={2}>Duplas</option>
+                <option value={3}>Trios</option>
+                <option value={4}>Grupos de 4</option>
+                <option value={5}>Grupos de 5</option>
+              </select>
+            </label>
+            <button className="button primary" onClick={() => { void createGroups(); }}>
+              {groupSize === 1 ? "Ativar individual" : "Organizar turma"}
             </button>
           </div>
-
-          {interactionTool === "draw" ? (
-          <div className="arena-grid">
-            <div className="arena-main-card">
-              <span className="eyebrow accent">SORTEIO INTELIGENTE</span>
-              <div className={drawPhase === "drawing" ? "draw-stage spinning" : "draw-stage"}>
-                {drawPhase === "drawing" ? (
-                  <div className="draw-loading"><span /><span /><span /></div>
-                ) : selected ? (
-                  <>
-                    <Avatar student={selected} large />
-                    <h3>{selected.nickname || selected.name}</h3>
-                    <p>{selected.name}</p>
-                    <div className="xp-badge">{selectedXp} XP · {getLevel(selectedXp).name}</div>
-                  </>
-                ) : (
-                  <><div className="target-mark">+</div><h3>Pronto para sortear</h3><p>O backend prioriza quem participou menos.</p></>
-                )}
-              </div>
-              <button className="button primary huge" onClick={() => { void draw(); }} disabled={drawPhase === "drawing"}>SORTEAR DEV</button>
-              {selected && <small className="draw-count">Sorteado nesta sessão: {currentSession.drawCounts[selected.id] ?? 0} vez(es)</small>}
-            </div>
-
-            <div className="score-card">
-              <div className="panel-heading"><div><h3>Pontuação rápida</h3><p>{selected ? `Aplicar a ${selected.nickname || selected.name}` : "Sorteie ou selecione um aluno"}</p></div></div>
-              <div className="score-presets">
-                {currentQuestion && <button disabled={!selected} onClick={() => addScore(currentQuestion.points, "QUESTION", `Questão: ${currentQuestion.statement}`)}><b>+{currentQuestion.points}</b><span>Questão atual</span></button>}
-                {SCORE_PRESETS.map((preset) => (
-                  <button key={`${preset.points}-${preset.label}`} disabled={!selected} onClick={() => { setReason(preset.label); addScore(preset.points, preset.category, preset.label); }}>
-                    <b>+{preset.points}</b><span>{preset.label}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="custom-score">
-                <input className="input compact" type="number" value={customPoints} onChange={(e) => setCustomPoints(Number(e.target.value))} />
-                <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo" />
-                <button className="button" disabled={!selected || !reason.trim()} onClick={() => addScore(customPoints, "ADJUSTMENT", reason)}>Aplicar</button>
-              </div>
-              <div className="student-select-list">
-                <span className="field-label">Selecionar manualmente</span>
-                <select className="select full" value={selectedId ?? ""} onChange={(e) => setSelectedId(e.target.value || undefined)}>
-                  <option value="">Selecione um aluno</option>
-                  {students.filter((student) => currentSession.presentStudentIds.includes(student.id)).map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
-                </select>
-              </div>
-            </div>
-          </div>
-          ) : interactionTool === "wordcloud" ? (
-            <WordCloudPanel
-              sessionId={currentSession.id}
-              state={wordCloudState}
-              onStateChange={setWordCloudState}
-              notify={notify}
-              joinCode={joinCode}
-              publicBaseUrl={publicBaseUrl}
-              realtimeStatus={realtimeStatus}
-              connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
-              presentCount={sessionParticipants.filter((participant) => participant.present).length}
-              showAccessCard={false}
-            />
-          ) : interactionTool === "poll" ? (
-            <PollPanel
-              sessionId={currentSession.id}
-              state={pollState}
-              onStateChange={setPollState}
-              notify={notify}
-              joinCode={joinCode}
-              publicBaseUrl={publicBaseUrl}
-              realtimeStatus={realtimeStatus}
-              connectedCount={sessionParticipants.filter((participant) => participant.connected).length}
-              presentCount={sessionParticipants.filter((participant) => participant.present).length}
-              showAccessCard={false}
-            />
-          ) : interactionTool === "quiz" ? (
-            <QuizPanel
-              sessionId={currentSession.id}
-              state={quizState}
-              onStateChange={setQuizState}
-              questions={activeActivity?.questions ?? []}
-              presentCount={sessionParticipants.filter((participant) => participant.present).length}
-              joinCode={joinCode}
-              notify={notify}
-              canAdvanceFlow={Boolean(liveFlowState?.started && liveFlowState.hasNext)}
-              onContinue={() => movePreparedFlow("next")}
-            />
-          ) : interactionTool === "buzzer" ? (
-            <Panel title="Buzzer" subtitle="O backend define oficialmente a ordem de chegada">
-              <div className={`teacher-buzzer-state ${buzzerState.status.toLowerCase()}`}>
-                <div className="teacher-buzzer-head">
-                  <div>
-                    <span className="eyebrow accent">RODADA</span>
-                    <h3>{buzzerState.status === "OPEN" ? "Buzzer aberto" : buzzerState.status === "CLOSED" ? "Rodada encerrada" : "Pronto para abrir"}</h3>
-                  </div>
-                  <span className={`buzzer-status-pill ${buzzerState.status.toLowerCase()}`}>
-                    {buzzerState.status === "OPEN" ? "VALENDO" : buzzerState.status === "CLOSED" ? "FECHADO" : "AGUARDANDO"}
-                  </span>
-                </div>
-                <div className="inline-actions solid-actions">
-                  <button className="button primary" onClick={() => { void toggleBuzzer(true); }} disabled={realtimeBusy}>
-                    {buzzerState.status === "OPEN" ? "Nova rodada" : "Abrir Buzzer"}
-                  </button>
-                  <button className="button danger-outline" onClick={() => { void toggleBuzzer(false); }} disabled={realtimeBusy || buzzerState.status !== "OPEN"}>
-                    Fechar
-                  </button>
-                </div>
-              </div>
-
-              {buzzerState.presses.length > 0 ? (
-                <div className="buzzer-order-list">
-                  {buzzerState.presses.map((press) => (
-                    <div className={press.position === 1 ? "buzzer-order-row winner" : "buzzer-order-row"} key={press.id}>
-                      <b>#{press.position}</b>
-                      <div>
-                        <strong>{press.displayName || press.nickname || press.name}</strong>
-                        <small>{press.position === 1 ? "Primeiro clique confirmado pelo servidor" : dateTime(press.receivedAt)}</small>
-                      </div>
-                      {press.position === 1 && (
-                        <div className="buzzer-score-actions">
-                          <button onClick={() => { void addBuzzerScore(press.studentId, 5); }}>+5</button>
-                          <button onClick={() => { void addBuzzerScore(press.studentId, 10); }}>+10</button>
-                        </div>
-                      )}
-                    </div>
+          {groups.length > 0 ? (
+            <div className="groups-grid arena-tool-groups-grid">
+              {groups.map((group, index) => (
+                <div className="group-card" key={index}>
+                  <b>{groupSize === 1 ? `INDIVIDUAL ${String(index + 1).padStart(2, "0")}` : `GRUPO ${String(index + 1).padStart(2, "0")}`}</b>
+                  {group.map((id) => (
+                    <span key={id}>
+                      {students.find((student) => student.id === id)?.nickname || students.find((student) => student.id === id)?.name}
+                    </span>
                   ))}
                 </div>
-              ) : (
-                <MiniEmpty text={buzzerState.status === "OPEN" ? "Aguardando o primeiro clique dos alunos conectados." : "Abra uma rodada quando quiser usar o Buzzer."} />
-              )}
-            </Panel>
+              ))}
+            </div>
           ) : (
-            <Panel title="Boss Battle" subtitle="Objetivo coletivo sincronizado com participantes e Projetor">
-              <div className="boss-guide">
-                <strong>Como funciona nesta versão</strong>
-                <p>
-                  Defina um Boss e seus pontos de vida. Conforme a turma cumpre desafios,
-                  aplique o dano manualmente. Todos acompanham o HP sincronizado.
-                </p>
-                <small>Dano manual nesta versão — Quiz e XP não reduzem HP automaticamente.</small>
-              </div>
-              {currentSession.boss ? (
-                <div className="boss-box">
-                  <div className="boss-head"><div><span className="eyebrow accent">BOSS</span><h3>{currentSession.boss.name}</h3></div><b>{currentSession.boss.currentHp}/{currentSession.boss.maxHp} HP</b></div>
-                  <div className="hp-track"><span style={{ width: `${(currentSession.boss.currentHp / currentSession.boss.maxHp) * 100}%` }} /></div>
-                  <div className="damage-buttons"><button onClick={() => { void damageBoss(10); }}>−10 HP</button><button onClick={() => { void damageBoss(20); }}>−20 HP</button><button onClick={() => { void damageBoss(30); }}>−30 HP</button></div>
-                  {currentSession.boss.currentHp === 0 && <div className="boss-defeated">BOSS DERROTADO · objetivo coletivo concluído</div>}
-                </div>
-              ) : (
-                <div className="boss-create">
-                  <input className="input" value={bossName} onChange={(e) => setBossName(e.target.value)} placeholder="Nome do Boss" />
-                  <input className="input" type="number" min="10" value={bossHp} onChange={(e) => setBossHp(Math.max(10, Number(e.target.value)))} />
-                  <button className="button" onClick={() => { void createBoss(); }}>Criar Boss</button>
-                </div>
-              )}
-            </Panel>
+            <MiniEmpty text="Escolha um formato e organize a turma quando precisar." />
           )}
         </div>
-      )}
+      </ArenaToolDrawer>
 
+      <ArenaToolDrawer
+        open={activeTool === "attendance"}
+        title="Presença e acesso"
+        subtitle="Gerencie check-in, presença e dispositivos sem abandonar a dinâmica."
+        size="wide"
+        onClose={() => setActiveTool(null)}
+      >
+        <div className="arena-tool-attendance">
+          <SessionAccessCard
+            sessionId={currentSession.id}
+            joinCode={joinCode}
+            publicBaseUrl={publicBaseUrl}
+            notify={notify}
+            onRotate={rotateSessionCode}
+            rotateBusy={realtimeBusy}
+            compact
+            drawer
+            title="Entrada dos alunos"
+            subtitle=""
+            onExpandQr={() => setSessionQrOpen(true)}
+          />
 
-      {arenaTab === "groups" && (
-        <Panel title="Organização da turma" subtitle="Alterne entre individual, duplas e grupos sem encerrar a sessão">
-          <div className="group-controls">
-            <label>Formato<select className="select" value={groupSize} onChange={(e) => setGroupSize(Number(e.target.value))}><option value={1}>Individual</option><option value={2}>Duplas</option><option value={3}>Trios</option><option value={4}>Grupos de 4</option><option value={5}>Grupos de 5</option></select></label>
-            <button className="button" onClick={() => { void createGroups(); }}>{groupSize === 1 ? "Voltar ao individual" : "Organizar turma"}</button>
+          <div className="arena-tool-roster">
+            <div className="arena-tool-roster-head">
+              <strong>Participantes</strong>
+              <div className="arena-tool-roster-badges">
+                <span className="online">{sessionParticipants.filter((participant) => participant.connected).length} online</span>
+                <span>{currentSession.presentStudentIds.length}/{sessionParticipants.length} presentes</span>
+              </div>
+            </div>
+            {sessionParticipants.map((participant) => {
+              const student = data.students.find((item) => item.id === participant.studentId);
+              if (!student) return null;
+              return (
+                <div key={participant.id} className="arena-tool-roster-row">
+                  <Avatar student={student} />
+                  <div>
+                    <strong>{student.name}</strong>
+                    <small>{participant.connected ? "online" : "offline"}</small>
+                  </div>
+                  <label className="arena-checkin-presence-control">
+                    <input
+                      type="checkbox"
+                      checked={participant.present}
+                      disabled={presenceBusyId === participant.id}
+                      onChange={(event) => { void changePresence(participant, event.target.checked); }}
+                    />
+                    <span aria-hidden="true" />
+                    <small>{participant.present ? "Presente" : "Ausente"}</small>
+                  </label>
+                  {participant.connected && (
+                    <button
+                      type="button"
+                      className="arena-tool-release"
+                      onClick={() => { void releaseDevice(participant); }}
+                      aria-label={`Liberar dispositivo de ${student.name}`}
+                      title="Liberar dispositivo"
+                    >
+                      ⋯
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          {groups.length > 0 ? <div className="groups-grid">{groups.map((group, index) => <div className="group-card" key={index}><b>{groupSize === 1 ? `INDIVIDUAL ${String(index + 1).padStart(2, "0")}` : `GRUPO ${String(index + 1).padStart(2, "0")}`}</b>{group.map((id) => <span key={id}>{students.find((student) => student.id === id)?.nickname || students.find((student) => student.id === id)?.name}</span>)}</div>)}</div> : <MiniEmpty text="Escolha como a turma deve se organizar nesta etapa da aula." />}
-        </Panel>
-      )}
+        </div>
+      </ArenaToolDrawer>
 
+      <ArenaToolDrawer
+        open={activeTool === "score"}
+        title="Pontuação rápida"
+        subtitle="Aplique XP mantendo a dinâmica principal no palco."
+        onClose={() => setActiveTool(null)}
+      >
+        <div className="arena-tool-score">
+          <label className="field-label">Aluno</label>
+          <select className="select full" value={selectedId ?? ""} onChange={(event) => setSelectedId(event.target.value || undefined)}>
+            <option value="">Selecione um aluno</option>
+            {students
+              .filter((student) => currentSession.presentStudentIds.includes(student.id))
+              .map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
+          </select>
+
+          <div className="score-presets arena-tool-score-presets">
+            {SCORE_PRESETS.map((preset) => (
+              <button
+                key={`${preset.points}-${preset.label}`}
+                disabled={!selected}
+                onClick={() => { setReason(preset.label); void addScore(preset.points, preset.category, preset.label); }}
+              >
+                <b>+{preset.points}</b>
+                <span>{preset.points === 5 ? "Participação" : preset.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="custom-score arena-tool-score-custom">
+            <input className="input compact" type="number" value={customPoints} onChange={(event) => setCustomPoints(Number(event.target.value))} />
+            <input className="input" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Motivo ou observação" />
+            <button className="button primary" disabled={!selected || !reason.trim()} onClick={() => addScore(customPoints, "ADJUSTMENT", reason)}>
+              Aplicar
+            </button>
+          </div>
+        </div>
+      </ArenaToolDrawer>
     </div>
   );
 }
