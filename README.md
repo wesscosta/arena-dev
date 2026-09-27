@@ -6,7 +6,7 @@
 >
 > **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Execução atual:** `16.0 — Professor Arena Experience` concluído na branch `feat/v0.8-professor-arena-cockpit`, aguardando PR. Próximo incremento: `16.1 — Journey Core`.
+> **Execução atual:** `16.1 — Journey Core` concluído na branch `feat/v0.8-journey-core`, aguardando PR. Próximo incremento: `16.2 — Learning Resources & Content Ingestion`.
 
 ## Modelo do produto
 
@@ -170,6 +170,8 @@ Schema consolidado da linha: **Flyway V1–V25**.
 Detalhes de fechamento em `docs/RELEASE_0_7.md`.
 
 ## v0.8 — linha ativa
+
+O `16.1 — Journey Core` introduz a base persistente de progressão: jornadas por turma, etapas ordenadas, regras de desbloqueio, critérios de conclusão e progresso por matrícula. A primeira interface administrativa está disponível na aba **Jornadas** da turma.
 
 A v0.8 começa pela reestruturação da experiência do professor antes de avançar para a Jornada do aluno.
 
