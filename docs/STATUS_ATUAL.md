@@ -43,7 +43,8 @@ Google Classroom          standby
 - aba **Jornadas** e editor mínimo do professor implementados;
 - criação e publicação validadas no ambiente Docker;
 - leitura pública de jornadas publicada protegida por `X-Participant-Token`;
-- contrato de progresso expõe etapa atual, próxima ação e timestamps de conclusão derivados das entregas.
+- contrato de progresso expõe etapa atual, próxima ação e timestamps de conclusão derivados das entregas;
+- jornadas publicadas usam visualização compacta de leitura no painel do professor.
 
 ## Professor Arena Experience — implementado
 

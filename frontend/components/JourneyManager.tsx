@@ -58,6 +58,16 @@ function statusLabel(status: Journey["status"]) {
   return "RASCUNHO";
 }
 
+function completionLabel(rule: JourneyCompletionRule) {
+  if (rule === "ACTIVITY_SUBMITTED") return "Atividade enviada";
+  if (rule === "ACTIVITY_GRADED") return "Atividade corrigida";
+  return "Conclusão manual";
+}
+
+function unlockLabel(rule: JourneyUnlockRule) {
+  return rule === "IMMEDIATE" ? "Disponível imediatamente" : "Após concluir a etapa anterior";
+}
+
 export default function JourneyManager({ classroomId, classroomName, activities, notify }: Props) {
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -235,10 +245,17 @@ export default function JourneyManager({ classroomId, classroomName, activities,
                 </div>
               </div>
 
-              <div className={styles.fields}>
-                <label className={styles.field}><span>Título</span><input value={draft.title} disabled={structuralLocked} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Ex.: Fundamentos de Backend" /></label>
-                <label className={`${styles.field} ${styles.full}`}><span>Descrição</span><textarea value={draft.description} disabled={structuralLocked} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Objetivo e contexto da jornada." /></label>
-              </div>
+              {structuralLocked ? (
+                <div className={styles.publishedSummary}>
+                  <div><span>Título</span><strong>{draft.title}</strong></div>
+                  <div><span>Descrição</span><p>{draft.description || "Sem descrição."}</p></div>
+                </div>
+              ) : (
+                <div className={styles.fields}>
+                  <label className={styles.field}><span>Título</span><input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Ex.: Fundamentos de Backend" /></label>
+                  <label className={`${styles.field} ${styles.full}`}><span>Descrição</span><textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Objetivo e contexto da jornada." /></label>
+                </div>
+              )}
 
               <div className={styles.stageSection}>
                 <div className={styles.stageHeader}>
@@ -247,25 +264,42 @@ export default function JourneyManager({ classroomId, classroomName, activities,
                 </div>
 
                 <div className={styles.stageList}>
-                  {draft.stages.map((stage, index) => (
-                    <article className={styles.stage} key={stage.id ?? `new-${index}`}>
-                      <div className={styles.stageIndex}>{index + 1}</div>
-                      <div className={styles.stageBody}>
-                        <label className={styles.field}><span>Título da etapa</span><input value={stage.title} disabled={structuralLocked} onChange={(event) => patchStage(index, { title: event.target.value })} /></label>
-                        <div className={styles.stageGrid}>
-                          <label className={styles.field}><span>Atividade vinculada</span><select value={stage.activityId ?? ""} disabled={structuralLocked} onChange={(event) => patchStage(index, { activityId: event.target.value || undefined })}><option value="">Nenhuma</option>{activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}</select></label>
-                          <label className={styles.field}><span>Critério de conclusão</span><select value={stage.completionRule} disabled={structuralLocked} onChange={(event) => patchStage(index, { completionRule: event.target.value as JourneyCompletionRule })}><option value="MANUAL">Manual</option><option value="ACTIVITY_SUBMITTED">Atividade enviada</option><option value="ACTIVITY_GRADED">Atividade corrigida</option></select></label>
-                          <label className={styles.field}><span>Desbloqueio</span><select value={index === 0 ? "IMMEDIATE" : stage.unlockRule} disabled={structuralLocked || index === 0} onChange={(event) => patchStage(index, { unlockRule: event.target.value as JourneyUnlockRule })}><option value="IMMEDIATE">Imediato</option><option value="PREVIOUS_STAGE_COMPLETED">Após etapa anterior</option></select></label>
-                          <label className={styles.field}><span>Descrição opcional</span><input value={stage.description ?? ""} disabled={structuralLocked} onChange={(event) => patchStage(index, { description: event.target.value })} /></label>
+                  {draft.stages.map((stage, index) => {
+                    const activity = activities.find((item) => item.id === stage.activityId);
+                    return structuralLocked ? (
+                      <article className={`${styles.stage} ${styles.stageReadOnly}`} key={stage.id ?? `new-${index}`}>
+                        <div className={styles.stageIndex}>{index + 1}</div>
+                        <div className={styles.stageBody}>
+                          <div className={styles.readOnlyStageHead}>
+                            <div><strong>{stage.title}</strong>{stage.description && <p>{stage.description}</p>}</div>
+                            <span>{completionLabel(stage.completionRule)}</span>
+                          </div>
+                          <div className={styles.readOnlyMeta}>
+                            <span><b>Desbloqueio</b>{unlockLabel(index === 0 ? "IMMEDIATE" : stage.unlockRule)}</span>
+                            <span><b>Atividade</b>{activity?.title ?? "Sem atividade vinculada"}</span>
+                          </div>
                         </div>
-                      </div>
-                      <div className={styles.stageActions} aria-label={`Organizar etapa ${index + 1}`}>
-                        <button type="button" title="Mover para cima" disabled={structuralLocked || index === 0} onClick={() => moveStage(index, -1)}>↑</button>
-                        <button type="button" title="Mover para baixo" disabled={structuralLocked || index === draft.stages.length - 1} onClick={() => moveStage(index, 1)}>↓</button>
-                        <button type="button" title="Remover etapa" disabled={structuralLocked} onClick={() => removeStage(index)}>×</button>
-                      </div>
-                    </article>
-                  ))}
+                      </article>
+                    ) : (
+                      <article className={styles.stage} key={stage.id ?? `new-${index}`}>
+                        <div className={styles.stageIndex}>{index + 1}</div>
+                        <div className={styles.stageBody}>
+                          <label className={styles.field}><span>Título da etapa</span><input value={stage.title} onChange={(event) => patchStage(index, { title: event.target.value })} /></label>
+                          <div className={styles.stageGrid}>
+                            <label className={styles.field}><span>Atividade vinculada</span><select value={stage.activityId ?? ""} onChange={(event) => patchStage(index, { activityId: event.target.value || undefined })}><option value="">Nenhuma</option>{activities.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+                            <label className={styles.field}><span>Critério de conclusão</span><select value={stage.completionRule} onChange={(event) => patchStage(index, { completionRule: event.target.value as JourneyCompletionRule })}><option value="MANUAL">Manual</option><option value="ACTIVITY_SUBMITTED">Atividade enviada</option><option value="ACTIVITY_GRADED">Atividade corrigida</option></select></label>
+                            <label className={styles.field}><span>Desbloqueio</span><select value={index === 0 ? "IMMEDIATE" : stage.unlockRule} disabled={index === 0} onChange={(event) => patchStage(index, { unlockRule: event.target.value as JourneyUnlockRule })}><option value="IMMEDIATE">Imediato</option><option value="PREVIOUS_STAGE_COMPLETED">Após etapa anterior</option></select></label>
+                            <label className={styles.field}><span>Descrição opcional</span><input value={stage.description ?? ""} onChange={(event) => patchStage(index, { description: event.target.value })} /></label>
+                          </div>
+                        </div>
+                        <div className={styles.stageActions} aria-label={`Organizar etapa ${index + 1}`}>
+                          <button type="button" title="Mover para cima" disabled={index === 0} onClick={() => moveStage(index, -1)}>↑</button>
+                          <button type="button" title="Mover para baixo" disabled={index === draft.stages.length - 1} onClick={() => moveStage(index, 1)}>↓</button>
+                          <button type="button" title="Remover etapa" onClick={() => removeStage(index)}>×</button>
+                        </div>
+                      </article>
+                    );
+                  })}
                   {draft.stages.length === 0 && <div className={styles.emptyCatalog}>Adicione a primeira etapa para definir o início da jornada.</div>}
                 </div>
               </div>

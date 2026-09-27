@@ -34,3 +34,12 @@ test("journey API exposes draft authoring and lifecycle endpoints", () => {
   assert.match(api, /\/archive/);
   assert.match(api, /JourneyCompletionRule/);
 });
+
+
+test("published journey switches from form controls to a compact read-only representation", () => {
+  assert.match(manager, /structuralLocked \? \(/);
+  assert.match(manager, /publishedSummary/);
+  assert.match(manager, /stageReadOnly/);
+  assert.match(manager, /completionLabel/);
+  assert.match(manager, /unlockLabel/);
+});

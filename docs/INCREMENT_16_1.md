@@ -100,7 +100,7 @@ A turma ganhou a seção **Jornadas**, com editor mínimo para:
 - publicar;
 - arquivar.
 
-A interface bloqueia reestruturação após publicação, acompanhando a regra do backend.
+A interface bloqueia reestruturação após publicação, acompanhando a regra do backend. Jornadas publicadas/arquivadas passaram a usar uma visualização compacta de leitura, em vez de manter formulários desabilitados, deixando título, descrição, regra de desbloqueio, atividade e critério de conclusão legíveis sem sugerir editabilidade.
 
 ## Fora do 16.1
 
@@ -120,9 +120,9 @@ Não entram neste incremento:
 ```text
 backend compile                OK
 backend JourneyCoreIT          OK
-backend test suite             86 passed
+backend test suite             88 passed
 Flyway V1–V28                  OK
-frontend tests                 252 passed
+frontend tests                 253 passed
 frontend typecheck             OK
 frontend production build      OK
 participant journey contract   OK
