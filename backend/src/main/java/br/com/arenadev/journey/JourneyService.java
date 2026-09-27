@@ -346,7 +346,11 @@ public class JourneyService {
                 journey.getStages().stream().map(stage -> new StageView(
                         stage.getId(), stage.getPosition(), stage.getTitle(), stage.getDescription(),
                         stage.getActivity() == null ? null : stage.getActivity().getId(),
-                        stage.getUnlockRule(), stage.getCompletionRule()
+                        stage.getUnlockRule(), stage.getCompletionRule(),
+                        stage.getSection() == null ? null : stage.getSection().getId(),
+                        stage.getSection() == null ? null : stage.getSection().getTitle(),
+                        stage.getItemType(),
+                        stage.getLearningResource() == null ? null : stage.getLearningResource().getId()
                 )).toList(),
                 journey.getCreatedAt(), journey.getUpdatedAt()
         );
@@ -362,7 +366,19 @@ public class JourneyService {
     public record JourneyInput(UUID classroomId, String title, String description, List<StageInput> stages) {}
     public record StageInput(String id, String title, String description, UUID activityId, JourneyUnlockRule unlockRule, JourneyCompletionRule completionRule) {}
     public record JourneyView(UUID id, UUID classroomId, String title, String description, JourneyStatus status, List<StageView> stages, Instant createdAt, Instant updatedAt) {}
-    public record StageView(UUID id, int position, String title, String description, UUID activityId, JourneyUnlockRule unlockRule, JourneyCompletionRule completionRule) {}
+    public record StageView(
+            UUID id,
+            int position,
+            String title,
+            String description,
+            UUID activityId,
+            JourneyUnlockRule unlockRule,
+            JourneyCompletionRule completionRule,
+            UUID sectionId,
+            String sectionTitle,
+            JourneyItemType itemType,
+            UUID learningResourceId
+    ) {}
     public record JourneyProgressView(UUID journeyId, UUID enrollmentId, int completedStages, int totalStages, int percent, List<StageProgressView> stages) {}
     public record ParticipantJourneyView(UUID journeyId, String title, String description, int percent, int completedStages, int totalStages, StageProgressView currentStage, List<StageProgressView> stages) {}
     public record StageProgressView(UUID stageId, int position, String title, String description, UUID activityId, JourneyUnlockRule unlockRule, JourneyCompletionRule completionRule, JourneyStageProgressStatus status, Instant startedAt, Instant completedAt, String nextAction) {}

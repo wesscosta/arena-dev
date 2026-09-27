@@ -1,8 +1,8 @@
 # Roadmap v0.8 — Professor Experience & Journey MVP
 
 **Linha ativa:** v0.8
-**Branch de execução:** `feat/v0.8-journey-core`
-**Estado atual:** `16.1 — Journey Core` concluído na branch; próximo: `16.2 — Learning Resources & Content Ingestion`.
+**Branch de execução:** `feat/v0.8-content-ingestion`
+**Estado atual:** `16.2 — Learning Resources & Content Ingestion` em execução.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
@@ -16,8 +16,8 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | Incremento | Objetivo | Estado |
 | --- | --- | --- |
 | 16.0 | Professor Arena Experience | **Concluído · PR #21 mergeado** |
-| 16.1 | Journey Core | **Concluído na branch · aguardando PR** |
-| 16.2 | Learning Resources & Content Ingestion | **Próximo** |
+| 16.1 | Journey Core | **Concluído · PR #22 mergeado** |
+| 16.2 | Learning Resources & Content Ingestion | **Em execução** |
 | 16.3 | Student Experience | Planejado |
 | 16.4 | Journey Map | Planejado |
 | 16.5 | Question Attempts & Skills | Planejado |
@@ -169,3 +169,37 @@ Docker backend/frontend     OK
 - testes de autorização do contrato público — cobertura unitária adicionada; testes HTTP completos do `JourneyController` ainda pendentes;
 - refinamento do editor de jornada publicado para modo de leitura mais compacto — concluído;
 - fechamento documental do incremento antes do `16.2`.
+
+## 16.2 — Learning Resources & Content Ingestion
+
+### Objetivo
+
+Permitir que a jornada represente conteúdo real e que o professor comece pelo fluxo que já possui — ou por nenhum material — sem tornar Markdown, Notion ou outra ferramenta uma dependência conceitual do produto.
+
+### Primeira fatia implementada
+
+- `LearningResource` e migration V29;
+- `JourneySection` e migration V30;
+- tipos `CONTENT`, `ACTIVITY`, `QUIZ`, `CHALLENGE`, `CHECKPOINT` e `EXTERNAL_RESOURCE`;
+- wizard **Nova jornada** com quatro entradas: IA, modelo, importar material e em branco;
+- modelos pedagógicos iniciais: sequência, projeto integrador, preparação para avaliação e desafios;
+- parser heurístico de texto;
+- parser estrutural de Markdown;
+- upload de PDF, DOC/DOCX, PPT/PPTX, Markdown e TXT até 20 MB via Apache Tika;
+- links externos e Notion preservados como referências, sem scraping;
+- IA configurável no backend para gerar apenas `DraftView`;
+- prévia editável antes da criação persistente;
+- prévia permite adicionar, remover e reordenar módulos/itens;
+- materialização sempre cria jornada em rascunho.
+
+### Princípio de mercado
+
+O fluxo não pressupõe que o professor mantenha um segundo cérebro, Markdown ou Notion. Essas fontes são adaptadores opcionais. A experiência principal também atende quem possui apenas documentos Office/PDF, texto solto, um briefing ou nenhuma estrutura anterior.
+
+### Próximas fatias
+
+- validar ingestão com amostras reais de PDF/DOCX/PPTX;
+- melhorar segmentação heurística de documentos sem headings;
+- preparar adapter autorizado para Notion sem acoplamento a HTML público;
+- fechar API/CRUD de `LearningResource` e testes HTTP;
+- somente então avançar para `16.3 — Student Experience`.

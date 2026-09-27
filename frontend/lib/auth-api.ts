@@ -48,7 +48,10 @@ async function csrfToken() {
 
 export async function apiFetch(path: string, init?: RequestInit, credentials: RequestCredentials = "include") {
   const headers = new Headers(init?.headers);
-  headers.set("Content-Type", "application/json");
+  const multipart = typeof FormData !== "undefined" && init?.body instanceof FormData;
+  if (!multipart && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
   if (credentials === "include" && requiresCsrf(init?.method)) {
     headers.set("X-XSRF-TOKEN", await csrfToken());
   }

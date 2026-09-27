@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Activity } from "@/lib/types";
+import { materializeContentDraft, type ContentDraft } from "@/lib/content-ingestion-api";
+import JourneyCreationWizard from "@/components/JourneyCreationWizard";
 import {
   archiveJourney,
   createJourney,
@@ -23,12 +25,19 @@ type Props = {
   notify: (message: string) => void;
 };
 
+type DraftStage = JourneyStageInput & {
+  sectionId?: string | null;
+  sectionTitle?: string | null;
+  itemType?: Journey["stages"][number]["itemType"];
+  learningResourceId?: string | null;
+};
+
 type Draft = {
   id?: string;
   title: string;
   description: string;
   status: Journey["status"];
-  stages: JourneyStageInput[];
+  stages: DraftStage[];
 };
 
 function toDraft(journey: Journey): Draft {
@@ -44,6 +53,10 @@ function toDraft(journey: Journey): Draft {
       activityId: stage.activityId ?? undefined,
       unlockRule: stage.unlockRule,
       completionRule: stage.completionRule,
+      sectionId: stage.sectionId,
+      sectionTitle: stage.sectionTitle,
+      itemType: stage.itemType,
+      learningResourceId: stage.learningResourceId,
     })),
   };
 }
@@ -68,11 +81,21 @@ function unlockLabel(rule: JourneyUnlockRule) {
   return rule === "IMMEDIATE" ? "Disponível imediatamente" : "Após concluir a etapa anterior";
 }
 
+function itemTypeLabel(type: DraftStage["itemType"]) {
+  if (type === "CONTENT") return "Conteúdo";
+  if (type === "QUIZ") return "Quiz";
+  if (type === "CHALLENGE") return "Desafio";
+  if (type === "CHECKPOINT") return "Checkpoint";
+  if (type === "EXTERNAL_RESOURCE") return "Recurso externo";
+  return "Atividade";
+}
+
 export default function JourneyManager({ classroomId, classroomName, activities, notify }: Props) {
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [creationOpen, setCreationOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -88,7 +111,27 @@ export default function JourneyManager({ classroomId, classroomName, activities,
   const structuralLocked = draft?.status !== "DRAFT";
 
   function selectJourney(journey: Journey) { setDraft(toDraft(journey)); }
-  function newJourney() { setDraft(emptyDraft()); }
+  function newJourney() { setCreationOpen(true); }
+
+  function startBlankJourney() {
+    setDraft(emptyDraft());
+  }
+
+  async function useContentDraft(contentDraft: ContentDraft) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const saved = await materializeContentDraft(classroomId, contentDraft);
+      setJourneys((current) => [saved, ...current.filter((journey) => journey.id !== saved.id)]);
+      setDraft(toDraft(saved));
+      notify("Estrutura criada como rascunho. Revise antes de publicar.");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível criar a jornada a partir do rascunho.");
+      throw error;
+    } finally {
+      setBusy(false);
+    }
+  }
 
   function addStage() {
     if (!draft || structuralLocked) return;
@@ -146,10 +189,12 @@ export default function JourneyManager({ classroomId, classroomName, activities,
       title: draft.title.trim(),
       description: draft.description.trim() || undefined,
       stages: draft.stages.map((stage, index) => ({
-        ...stage,
+        id: stage.id,
         title: stage.title.trim(),
         description: stage.description?.trim() || undefined,
+        activityId: stage.activityId,
         unlockRule: index === 0 ? "IMMEDIATE" : stage.unlockRule,
+        completionRule: stage.completionRule,
       })),
     };
   }
@@ -202,9 +247,9 @@ export default function JourneyManager({ classroomId, classroomName, activities,
     <div className={styles.workspace}>
       <header className={styles.header}>
         <div>
-          <span className={styles.eyebrow}>JOURNEY CORE · 16.1</span>
+          <span className={styles.eyebrow}>JORNADAS · CONTEÚDOS · 16.2</span>
           <h2>Jornadas de aprendizagem</h2>
-          <p>Estruture a sequência da turma, defina como cada etapa é desbloqueada e qual evidência conclui o avanço.</p>
+          <p>Comece do zero, use um modelo ou transforme o material que você já possui em um rascunho de jornada.</p>
         </div>
         <button className={styles.primary} type="button" onClick={newJourney}>+ Nova jornada</button>
       </header>
@@ -270,6 +315,10 @@ export default function JourneyManager({ classroomId, classroomName, activities,
                       <article className={`${styles.stage} ${styles.stageReadOnly}`} key={stage.id ?? `new-${index}`}>
                         <div className={styles.stageIndex}>{index + 1}</div>
                         <div className={styles.stageBody}>
+                          <div className={styles.stageContext}>
+                            {stage.sectionTitle && <span>{stage.sectionTitle}</span>}
+                            {stage.itemType && <b>{itemTypeLabel(stage.itemType)}</b>}
+                          </div>
                           <div className={styles.readOnlyStageHead}>
                             <div><strong>{stage.title}</strong>{stage.description && <p>{stage.description}</p>}</div>
                             <span>{completionLabel(stage.completionRule)}</span>
@@ -284,6 +333,12 @@ export default function JourneyManager({ classroomId, classroomName, activities,
                       <article className={styles.stage} key={stage.id ?? `new-${index}`}>
                         <div className={styles.stageIndex}>{index + 1}</div>
                         <div className={styles.stageBody}>
+                          {(stage.sectionTitle || stage.itemType) && (
+                            <div className={styles.stageContext}>
+                              {stage.sectionTitle && <span>{stage.sectionTitle}</span>}
+                              {stage.itemType && <b>{itemTypeLabel(stage.itemType)}</b>}
+                            </div>
+                          )}
                           <label className={styles.field}><span>Título da etapa</span><input value={stage.title} onChange={(event) => patchStage(index, { title: event.target.value })} /></label>
                           <div className={styles.stageGrid}>
                             <label className={styles.field}><span>Atividade vinculada</span><select value={stage.activityId ?? ""} onChange={(event) => patchStage(index, { activityId: event.target.value || undefined })}><option value="">Nenhuma</option>{activities.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
@@ -307,6 +362,14 @@ export default function JourneyManager({ classroomId, classroomName, activities,
           )}
         </section>
       </div>
+      <JourneyCreationWizard
+        open={creationOpen}
+        classroomId={classroomId}
+        onClose={() => setCreationOpen(false)}
+        onBlank={startBlankJourney}
+        onUseDraft={useContentDraft}
+        notify={notify}
+      />
     </div>
   );
 }

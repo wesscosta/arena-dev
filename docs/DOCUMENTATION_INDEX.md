@@ -5,13 +5,14 @@
 1. [`../README.md`](../README.md) — visão pública e operacional do projeto.
 2. [`STATUS_ATUAL.md`](STATUS_ATUAL.md) — estado técnico corrente.
 3. [`ROADMAP_0_8.md`](ROADMAP_0_8.md) — roadmap da linha ativa.
-4. [`INCREMENT_16_1.md`](INCREMENT_16_1.md) — execução do Journey Core.
-5. [`INCREMENT_16_0.md`](INCREMENT_16_0.md) — fechamento do Professor Arena Experience.
-6. [`ROADMAP_0_7.md`](ROADMAP_0_7.md) — fechamento histórico da linha de integrações.
-7. [`RELEASE_0_7.md`](RELEASE_0_7.md) — release publicada da v0.7.0.
-8. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
-9. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
-10. [`adr/README.md`](adr/README.md).
+4. [`INCREMENT_16_2.md`](INCREMENT_16_2.md) — execução de Learning Resources & Content Ingestion.
+5. [`INCREMENT_16_1.md`](INCREMENT_16_1.md) — fechamento do Journey Core.
+6. [`INCREMENT_16_0.md`](INCREMENT_16_0.md) — fechamento do Professor Arena Experience.
+7. [`ROADMAP_0_7.md`](ROADMAP_0_7.md) — fechamento histórico da linha de integrações.
+8. [`RELEASE_0_7.md`](RELEASE_0_7.md) — release publicada da v0.7.0.
+9. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+10. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
+11. [`adr/README.md`](adr/README.md).
 
 ## Baseline encerrada — v0.6
 
@@ -29,9 +30,9 @@
 
 ## Linha ativa — v0.8
 
-O `16.0 — Professor Arena Experience` foi integrado à `main` pelo PR #21.
+Os incrementos `16.0 — Professor Arena Experience` e `16.1 — Journey Core` foram integrados à `main` pelos PRs #21 e #22.
 
-A execução atual é `16.1 — Journey Core`, na branch `feat/v0.8-journey-core`.
+A execução atual é `16.2 — Learning Resources & Content Ingestion`, na branch `feat/v0.8-content-ingestion`.
 
 ## Histórico
 
@@ -54,10 +55,10 @@ A execução atual é `16.1 — Journey Core`, na branch `feat/v0.8-journey-core
 1. código, migrations e configuração da branch ativa;
 2. `STATUS_ATUAL.md`;
 3. `ROADMAP_0_8.md`;
-4. `INCREMENT_16_0.md`;
+4. `INCREMENT_16_2.md`;
 5. ADRs aceitos;
 6. documentos históricos.
 
 Não reescrever documentação histórica para fabricar evidência retroativa. Quando houver divergência entre fechamento técnico e publicação externa, registrar explicitamente a evidência disponível.
 
-**Atualizado em 24/09/2026 para a execução da v0.8 / incremento 16.0.**
+**Atualizado em 26/09/2026 para a execução da v0.8 / incremento 16.2.**

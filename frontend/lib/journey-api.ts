@@ -12,6 +12,10 @@ export type JourneyStage = {
   activityId: string | null;
   unlockRule: JourneyUnlockRule;
   completionRule: JourneyCompletionRule;
+  sectionId?: string | null;
+  sectionTitle?: string | null;
+  itemType?: "CONTENT" | "ACTIVITY" | "QUIZ" | "CHALLENGE" | "CHECKPOINT" | "EXTERNAL_RESOURCE";
+  learningResourceId?: string | null;
 };
 
 export type Journey = {

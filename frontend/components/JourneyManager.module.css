@@ -181,3 +181,31 @@
   .readOnlyStageHead { flex-direction: column; }
   .readOnlyMeta { grid-template-columns: 1fr; }
 }
+
+.stageContext {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  flex-wrap: wrap;
+  margin-bottom: -.15rem;
+}
+
+.stageContext span,
+.stageContext b {
+  padding: .2rem .4rem;
+  border-radius: 999px;
+  font-size: .6rem;
+  line-height: 1.1;
+}
+
+.stageContext span {
+  border: 1px solid var(--border);
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+}
+
+.stageContext b {
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  color: var(--accent);
+  font-weight: 800;
+}

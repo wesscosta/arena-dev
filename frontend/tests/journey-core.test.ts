@@ -43,3 +43,29 @@ test("published journey switches from form controls to a compact read-only repre
   assert.match(manager, /completionLabel/);
   assert.match(manager, /unlockLabel/);
 });
+
+
+test("new journey onboarding is source-agnostic and review-first", () => {
+  const wizard = readFileSync(resolve(process.cwd(), "components/JourneyCreationWizard.tsx"), "utf8");
+  const ingestion = readFileSync(resolve(process.cwd(), "lib/content-ingestion-api.ts"), "utf8");
+
+  assert.match(wizard, /Criar com IA/);
+  assert.match(wizard, /Usar um modelo/);
+  assert.match(wizard, /Importar material/);
+  assert.match(wizard, /Começar em branco/);
+  assert.match(wizard, /PDF, Word, PowerPoint, Markdown e TXT/);
+  assert.match(wizard, /Notion/);
+  assert.match(wizard, /Nada é publicado automaticamente/);
+  assert.match(wizard, /patchSection/);
+  assert.match(wizard, /patchItem/);
+  assert.match(wizard, /addSection/);
+  assert.match(wizard, /moveSection/);
+  assert.match(wizard, /addItem/);
+  assert.match(wizard, /moveItem/);
+  assert.match(wizard, /Remover módulo/);
+  assert.match(wizard, /Adicionar módulo/);
+  assert.match(wizard, /Adicionar item/);
+  assert.match(ingestion, /\/api\/content-ingestion\/preview/);
+  assert.match(ingestion, /\/api\/content-ingestion\/file-preview/);
+  assert.match(manager, /<JourneyCreationWizard/);
+});

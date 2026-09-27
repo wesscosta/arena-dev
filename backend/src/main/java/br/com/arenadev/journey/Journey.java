@@ -39,6 +39,10 @@ public class Journey {
     @OrderBy("position ASC")
     private List<JourneyStage> stages = new ArrayList<>();
 
+    @OneToMany(mappedBy = "journey", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("position ASC")
+    private List<JourneySection> sections = new ArrayList<>();
+
     protected Journey() {}
 
     public Journey(Classroom classroom, String title) {
@@ -73,6 +77,11 @@ public class Journey {
 
     public void removeStage(JourneyStage stage) { stages.remove(stage); }
 
+    public void addSection(JourneySection section) {
+        section.attachTo(this);
+        sections.add(section);
+    }
+
     public UUID getId() { return id; }
     public Classroom getClassroom() { return classroom; }
     public String getTitle() { return title; }
@@ -81,4 +90,5 @@ public class Journey {
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public List<JourneyStage> getStages() { return stages; }
+    public List<JourneySection> getSections() { return sections; }
 }

@@ -6,28 +6,27 @@
 
 **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 
-**Incremento concluído na branch:** `16.1 — Journey Core`.
+**Incremento ativo:** `16.2 — Learning Resources & Content Ingestion`.
 
-**Branch ativa:** `feat/v0.8-journey-core`.
+**Branch ativa:** `feat/v0.8-content-ingestion`.
 
 ## Estado resumido
 
-A v0.7.0 está encerrada e publicada. O `16.0 — Professor Arena Experience` também foi integrado à `main`; a execução atual está concentrada no `16.1 — Journey Core`.
+A v0.7.0 está encerrada e publicada. Os incrementos `16.0` e `16.1` foram integrados à `main`; a execução atual está concentrada no `16.2 — Learning Resources & Content Ingestion`.
 
 O cockpit da Arena já migrou para uma arquitetura orientada por ações, com navegação lateral, workspace de dinâmica, ferramentas contextuais e rail persistente de participantes/sessão.
 
-O Sorteio Inteligente 2.0 é a referência visual da nova shell e está funcional, com seleção autoritativa no backend, marcador fixo, roleta SVG circular adaptativa, histórico, cobertura e pontuação rápida. O cockpit também consolidou filtros de participantes, QR ampliável, drawers estáveis e altura integral para Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle. Os passes `16.0F.18`, `16.0F.19` e `16.0F.20` fecharam respectivamente os gates técnico, de consistência visual e de Projetor/resiliência. O `16.0` foi integrado à `main` pelo PR #21; a branch ativa agora é a do Journey Core.
+O `16.0 — Professor Arena Experience` e o `16.1 — Journey Core` foram integrados à `main` pelos PRs #21 e #22. A branch ativa trabalha o `16.2`, expandindo a jornada para conteúdo real e criação agnóstica à fonte.
 
 ## Baselines
 
 ```text
 baseline publicada        v0.7.0
 linha ativa               v0.8
-último incremento          16.0 · mergeado no PR #21
-incremento concluído      16.1
-próximo incremento        16.2
-branch                    feat/v0.8-journey-core
-schema                    Flyway V1–V28
+último incremento          16.1 · mergeado no PR #22
+incremento atual           16.2
+branch                    feat/v0.8-content-ingestion
+schema                    Flyway V1–V31
 provider operacional      Microsoft Teams
 Google Classroom          standby
 ```
@@ -46,6 +45,19 @@ Google Classroom          standby
 - leitura pública de jornadas publicada protegida por `X-Participant-Token`;
 - contrato de progresso expõe etapa atual, próxima ação e timestamps de conclusão derivados das entregas;
 - jornadas publicadas usam visualização compacta de leitura no painel do professor.
+
+## Learning Resources & Content Ingestion — em execução
+
+- `LearningResource` separado de `Activity`;
+- módulos persistidos por `JourneySection`;
+- itens de jornada tipados como conteúdo, atividade, quiz, desafio, checkpoint ou recurso externo;
+- wizard **Nova jornada** com IA, modelos, importação e autoria em branco;
+- ingestão de texto e Markdown;
+- upload de PDF, DOC/DOCX, PPT/PPTX, Markdown e TXT até 20 MB;
+- URL/Notion preservados como referência sem scraping do HTML público;
+- prévia editável antes da materialização, incluindo adicionar/remover/reordenar módulos e itens;
+- conteúdo de IA permanece rascunho até revisão explícita do professor;
+- upload multipart validado no navegador com preservação correta do boundary HTTP.
 
 ## Professor Arena Experience — implementado
 
@@ -70,27 +82,27 @@ Google Classroom          standby
 - selects nativos com contraste dark consistente;
 - Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle em workspace de altura integral no desktop.
 
-## Fechamento do 16.0
+## Fechamentos anteriores
 
-- quality gate técnico concluído em `16.0F.18`;
-- consistência visual e estados concluídos em `16.0F.19`;
-- Projetor e recuperação de falha concluídos em `16.0F.20`;
-- documentação de fechamento concluída;
-- pendência operacional: PR/merge da branch.
+- `16.0` concluído e mergeado no PR #21;
+- `16.1` concluído e mergeado no PR #22.
 
 ## Validação corrente
 
 ```text
-frontend tests      248 passed
+backend tests       98 passed
+frontend tests      255 passed
 frontend typecheck  OK
 frontend build      OK
-frontend Docker     OK
+Flyway              V1–V31 OK
 ```
 
 ## Próximo gate
 
-Integrar `16.1 — Journey Core` por PR. Depois, abrir `16.2 — Learning Resources & Content Ingestion`, mantendo a ingestão agnóstica à fonte e sem exigir Markdown, Notion ou qualquer fluxo técnico específico do professor.
+Consolidar o `16.2 — Learning Resources & Content Ingestion`: validar o wizard no navegador/Docker, fechar a documentação e completar o contrato de recursos antes de avançar para `16.3 — Student Experience`.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)
+- [`INCREMENT_16_2.md`](INCREMENT_16_2.md)
+- [`INCREMENT_16_1.md`](INCREMENT_16_1.md)
 - [`INCREMENT_16_0.md`](INCREMENT_16_0.md)

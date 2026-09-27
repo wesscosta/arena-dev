@@ -6,7 +6,7 @@
 >
 > **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Execução atual:** `16.1 — Journey Core` concluído na branch `feat/v0.8-journey-core`, aguardando PR. Próximo incremento: `16.2 — Learning Resources & Content Ingestion`.
+> **Execução atual:** `16.2 — Learning Resources & Content Ingestion` na branch `feat/v0.8-content-ingestion`. O `16.1 — Journey Core` foi integrado à `main` pelo PR #22.
 
 ## Modelo do produto
 
@@ -117,7 +117,7 @@ flowchart LR
     P["Projetor"] --> F
     F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
     F <-->|"WebSocket"| B
-    B --> D["PostgreSQL 17 + Flyway V1–V27"]
+    B --> D["PostgreSQL 17 + Flyway V1–V31"]
 ```
 
 Princípios:
@@ -171,7 +171,9 @@ Detalhes de fechamento em `docs/RELEASE_0_7.md`.
 
 ## v0.8 — linha ativa
 
-O `16.1 — Journey Core` introduz a base persistente de progressão: jornadas por turma, etapas ordenadas, regras de desbloqueio, critérios de conclusão e progresso por matrícula. A primeira interface administrativa está disponível na aba **Jornadas** da turma.
+O `16.1 — Journey Core` introduziu a base persistente de progressão: jornadas por turma, etapas ordenadas, regras de desbloqueio, critérios de conclusão e progresso por matrícula.
+
+O `16.2 — Learning Resources & Content Ingestion` está em execução e adota criação **agnóstica à fonte**: o professor pode começar com IA, modelo, arquivo, texto, link/Notion ou em branco. PDF, Word, PowerPoint, Markdown e TXT entram pelo mesmo pipeline de rascunho e nada é publicado sem revisão.
 
 A v0.8 começa pela reestruturação da experiência do professor antes de avançar para a Jornada do aluno.
 
@@ -187,9 +189,9 @@ Estado final do `16.0 — Professor Arena Experience`:
 - rail de participantes com filtro Presentes/Todos e ferramentas contextuais estáveis para Timer, Organização, Presença e Pontuação Rápida;
 - QR ampliável, indicadores de online/presença consolidados e selects com contraste consistente no tema escuro;
 - Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle ocupando a altura disponível do cockpit em desktop;
-- quality gate técnico `16.0F.18` concluído: CSS legado da roleta removido, responsividade desktop validada, estados vazios explícitos e drawers com contenção/retorno de foco; resta apenas o fechamento visual/Projetor/PR do 16.0.
+- quality gate técnico `16.0F.18` concluído: CSS legado da roleta removido, responsividade desktop validada, estados vazios explícitos e drawers com contenção/retorno de foco; os passes `16.0F.19/20` fecharam consistência visual e Projetor antes do merge no PR #21.
 
-Roadmap e estado detalhado em `docs/ROADMAP_0_8.md` e `docs/INCREMENT_16_0.md`.
+Roadmap e estado detalhado em `docs/ROADMAP_0_8.md` e `docs/INCREMENT_16_2.md`.
 
 ## Executando localmente
 
