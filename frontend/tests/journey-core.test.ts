@@ -53,9 +53,15 @@ test("new journey onboarding is source-agnostic and review-first", () => {
   assert.match(wizard, /Usar um modelo/);
   assert.match(wizard, /Importar material/);
   assert.match(wizard, /Começar em branco/);
-  assert.match(wizard, /PDF, Word, PowerPoint, Markdown e TXT/);
-  assert.match(wizard, /Notion/);
+  assert.match(wizard, /PDF, Word, PowerPoint e texto entram no mesmo fluxo/);
+  assert.match(wizard, /Markdown também são aceitos, mas não são exigidos/);
+  assert.match(wizard, /Links do Notion são reconhecidos automaticamente/);
+  assert.doesNotMatch(wizard, /\["notion", "Notion"\]/);
   assert.match(wizard, /Nada é publicado automaticamente/);
+  assert.match(wizard, /handleDrop/);
+  assert.match(wizard, /event\.key === "Escape"/);
+  assert.match(wizard, /event\.key !== "Tab"/);
+  assert.match(wizard, /openerRef\.current\?\.focus\(\)/);
   assert.match(wizard, /patchSection/);
   assert.match(wizard, /patchItem/);
   assert.match(wizard, /addSection/);

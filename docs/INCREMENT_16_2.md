@@ -18,7 +18,7 @@ A ação **Nova jornada** oferece quatro caminhos equivalentes:
 
 1. **Criar com IA** — professor descreve turma, objetivo, tempo e contexto; a IA produz apenas um rascunho;
 2. **Usar um modelo** — estruturas pedagógicas prontas para sequência de aulas, projeto integrador, preparação para avaliação e aprendizagem por desafios;
-3. **Importar material** — arquivo, texto colado, URL ou referência do Notion;
+3. **Importar material** — arquivo, texto colado ou link; links do Notion são reconhecidos automaticamente como uma fonte possível, sem criar um fluxo principal separado;
 4. **Começar em branco** — autoria manual completa.
 
 Nenhum caminho publica conteúdo automaticamente.
@@ -76,7 +76,7 @@ A migration V31 amplia o constraint de procedência de `LearningResource` para `
 
 ### Arquivos
 
-O backend aceita arquivos de até 20 MB e extrai texto sem persistir o arquivo original:
+O wizard aceita seleção ou arrastar-e-soltar. O backend recebe arquivos de até 20 MB e extrai texto sem persistir o arquivo original:
 
 - PDF;
 - DOC / DOCX;
@@ -90,7 +90,7 @@ A extração usa Apache Tika apenas como adaptador de leitura. O resultado entra
 
 Nesta fatia, URLs são preservadas como `EXTERNAL_RESOURCE`.
 
-Para Notion, a Arena **não raspa HTML público**. O link é preservado como referência e o fluxo comunica que leitura automática deve ocorrer futuramente por integração autorizada. Isso evita acoplamento ao frontend público do Notion.
+Links comuns entram como `EXTERNAL_RESOURCE`. Se a URL indicar Notion, o wizard reconhece a origem automaticamente e preserva a página como referência; a Arena **não raspa HTML público**. A leitura automática deve ocorrer futuramente por integração autorizada, evitando acoplamento ao frontend público do Notion.
 
 ### IA
 
@@ -115,9 +115,9 @@ Somente a ação **Usar esta estrutura** cria um rascunho persistente de jornada
 
 ## Interface do professor
 
-A aba **Jornadas** continua sendo o ponto de entrada. O botão **+ Nova jornada** abre o wizard source-agnostic em vez de assumir autoria manual.
+A aba **Jornadas** continua sendo o ponto de entrada. O botão **+ Nova jornada** abre o wizard source-agnostic em vez de assumir autoria manual. O modal contém foco, fecha com `Esc`, devolve foco ao acionador e bloqueia o scroll da página enquanto está aberto.
 
-Esse desenho atende tanto professores com acervo estruturado quanto quem possui apenas slides, PDF, Word, um link, uma ideia ou nenhum material prévio.
+O onboarding evita expor Markdown/Notion como modelo mental principal: o professor vê IA, modelo, material ou autoria em branco. Dentro de material, encontra Arquivo, Texto e Link; formatos técnicos e fontes específicas são tratados como adaptadores. Esse desenho atende tanto professores com acervo estruturado quanto quem possui apenas slides, PDF, Word, um link, uma ideia ou nenhum material prévio.
 
 ## Fora desta fatia
 
@@ -141,5 +141,7 @@ frontend production build     OK
 file ingestion                PDF/DOC/DOCX/PPT/PPTX/MD/TXT
 multipart boundary handling   OK
 review-before-materialize     OK
+wizard keyboard/focus         OK
+browser smoke 1440×900        OK
 Docker backend/frontend       healthy
 ```

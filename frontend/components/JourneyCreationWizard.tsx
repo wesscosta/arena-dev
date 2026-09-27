@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import {
   fetchContentIngestionCapabilities,
   previewContentFile,
@@ -22,7 +22,7 @@ type Props = {
 };
 
 type Mode = "choose" | "ai" | "template" | "import" | "preview";
-type ImportMode = "file" | "text" | "url" | "notion";
+type ImportMode = "file" | "text" | "url";
 
 const TEMPLATE_OPTIONS = [
   { key: "SEQUENCE", title: "Sequência de aulas", text: "Introdução, desenvolvimento e consolidação." },
@@ -57,9 +57,14 @@ export default function JourneyCreationWizard({
   const [sourceLabel, setSourceLabel] = useState("");
   const [draft, setDraft] = useState<ContentDraft | null>(null);
   const [busy, setBusy] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const dialogRef = useRef<HTMLElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setMode("choose");
     setImportMode("file");
     setTitle("");
@@ -68,10 +73,45 @@ export default function JourneyCreationWizard({
     setSourceUrl("");
     setSourceLabel("");
     setDraft(null);
+    setDragOver(false);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    queueMicrotask(() => closeRef.current?.focus());
     void fetchContentIngestionCapabilities()
       .then(setCapabilities)
       .catch(() => setCapabilities(null));
-  }, [open]);
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((element) => !element.hasAttribute("hidden") && element.getAttribute("aria-hidden") !== "true");
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      openerRef.current?.focus();
+    };
+  }, [open, onClose]);
 
   const itemCount = useMemo(
     () => draft?.sections.reduce((sum, section) => sum + section.items.length, 0) ?? 0,
@@ -188,9 +228,8 @@ export default function JourneyCreationWizard({
       setBusy(false);
     }
   }
-  async function handleFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file || busy) return;
+  async function analyzeFile(file: File) {
+    if (busy) return;
     setBusy(true);
     try {
       const result = await previewContentFile(classroomId, file, title);
@@ -201,8 +240,21 @@ export default function JourneyCreationWizard({
       notify(error instanceof Error ? error.message : "Não foi possível analisar o arquivo.");
     } finally {
       setBusy(false);
-      event.target.value = "";
+      setDragOver(false);
     }
+  }
+
+  async function handleFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) await analyzeFile(file);
+    event.target.value = "";
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDragOver(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) void analyzeFile(file);
   }
 
   function chooseBlank() {
@@ -227,32 +279,32 @@ export default function JourneyCreationWizard({
     <div className={styles.backdrop} role="presentation" onMouseDown={(event) => {
       if (event.target === event.currentTarget) onClose();
     }}>
-      <section className={styles.dialog} role="dialog" aria-modal="true" aria-label="Criar jornada">
+      <section ref={dialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-label="Criar jornada">
         <header className={styles.dialogHeader}>
           <div>
             <span className={styles.eyebrow}>NOVA JORNADA</span>
             <h3>{mode === "choose" ? "Como você quer começar?" : mode === "preview" ? "Revise a estrutura sugerida" : "Prepare o ponto de partida"}</h3>
             <p>A Arena adapta o fluxo ao material que você já tem — inclusive nenhum.</p>
           </div>
-          <button className={styles.close} type="button" onClick={onClose} aria-label="Fechar">×</button>
+          <button ref={closeRef} className={styles.close} type="button" onClick={onClose} aria-label="Fechar">×</button>
         </header>
         {mode === "choose" && (
           <div className={styles.choiceGrid}>
             <button type="button" className={styles.choice} onClick={() => setMode("ai")}>
               <span className={styles.choiceIcon}>✦</span>
               <strong>Criar com IA</strong>
-              <small>Descreva turma, objetivo e tempo disponível. A Arena propõe um rascunho para revisão.</small>
+              <small>Comece mesmo sem material pronto: descreva turma, objetivo e tempo. A Arena propõe um rascunho para revisão.</small>
               {!capabilities?.aiConfigured && <em>Requer configuração do provedor de IA</em>}
             </button>
             <button type="button" className={styles.choice} onClick={() => setMode("template")}>
               <span className={styles.choiceIcon}>◫</span>
               <strong>Usar um modelo</strong>
-              <small>Parta de uma estrutura pedagógica pronta e adapte ao seu contexto.</small>
+              <small>Escolha uma estrutura pedagógica pronta e adapte ao seu conteúdo e à sua turma.</small>
             </button>
             <button type="button" className={styles.choice} onClick={() => setMode("import")}>
               <span className={styles.choiceIcon}>↑</span>
               <strong>Importar material</strong>
-              <small>Use texto, Markdown, arquivo, link ou uma referência do Notion.</small>
+              <small>Aproveite PDF, Word, PowerPoint, texto ou link. A Arena organiza o material para você revisar.</small>
             </button>
             <button type="button" className={styles.choice} onClick={chooseBlank}>
               <span className={styles.choiceIcon}>＋</span>
@@ -292,7 +344,6 @@ export default function JourneyCreationWizard({
                 ["file", "Arquivo"],
                 ["text", "Colar texto"],
                 ["url", "Link"],
-                ["notion", "Notion"],
               ] as const).map(([key, label]) => (
                 <button key={key} type="button" className={importMode === key ? styles.activeTab : ""} onClick={() => setImportMode(key)}>{label}</button>
               ))}
@@ -300,11 +351,17 @@ export default function JourneyCreationWizard({
             {importMode === "file" && (
               <>
                 <label><span>Título opcional</span><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Se vazio, a Arena usa o conteúdo do material" /></label>
-                <div className={styles.dropZone}>
-                  <strong>{busy ? "Analisando material..." : "Selecione um material"}</strong>
-                  <p>PDF, Word, PowerPoint, Markdown e TXT são convertidos em texto para gerar um rascunho revisável. O arquivo não é publicado automaticamente.</p>
+                <div
+                  className={`${styles.dropZone} ${dragOver ? styles.dropZoneActive : ""}`}
+                  onDragEnter={(event) => { event.preventDefault(); setDragOver(true); }}
+                  onDragOver={(event) => { event.preventDefault(); setDragOver(true); }}
+                  onDragLeave={(event) => { if (event.currentTarget === event.target) setDragOver(false); }}
+                  onDrop={handleDrop}
+                >
+                  <strong>{busy ? "Analisando material..." : dragOver ? "Solte o arquivo aqui" : "Arraste um material ou escolha um arquivo"}</strong>
+                  <p>PDF, Word, PowerPoint e texto entram no mesmo fluxo de análise. Formatos como Markdown também são aceitos, mas não são exigidos.</p>
                   <label className={styles.fileButton}>Escolher arquivo<input type="file" disabled={busy} accept=".pdf,.doc,.docx,.ppt,.pptx,.md,.markdown,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/markdown" onChange={(event) => void handleFile(event)} /></label>
-                  <small className={styles.supportedFiles}>Até 20 MB · {(capabilities?.supportedFileExtensions ?? ["PDF", "DOCX", "PPTX", "MD", "TXT"]).join(" · ")}</small>
+                  <small className={styles.supportedFiles}>Até 20 MB · {(capabilities?.supportedFileExtensions ?? ["PDF", "DOCX", "PPTX", "TXT", "MD"]).join(" · ")}</small>
                 </div>
               </>
             )}
@@ -314,19 +371,19 @@ export default function JourneyCreationWizard({
                 <label><span>Cole seu material</span><textarea className={styles.largeText} value={textContent} onChange={(event) => setTextContent(event.target.value)} placeholder="Cole roteiro de aula, apostila, plano, anotações ou qualquer texto." /></label>
               </>
             )}
-            {(importMode === "url" || importMode === "notion") && (
+            {importMode === "url" && (
               <>
                 <label><span>Título opcional</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-                <label><span>{importMode === "notion" ? "Página do Notion" : "URL do material"}</span><input type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://..." /></label>
-                <label><span>Identificação opcional</span><input value={sourceLabel} onChange={(event) => setSourceLabel(event.target.value)} placeholder={importMode === "notion" ? "Ex.: Página Banco de Dados" : "Ex.: Material de referência"} /></label>
-                {importMode === "notion" && <div className={styles.notice}>A Arena preserva o link sem raspar a página. A leitura automática virá por integração autorizada, evitando depender do HTML público do Notion.</div>}
+                <label><span>URL do material</span><input type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://..." /></label>
+                <label><span>Identificação opcional</span><input value={sourceLabel} onChange={(event) => setSourceLabel(event.target.value)} placeholder="Ex.: Material de referência" /></label>
+                {sourceUrl.toLowerCase().includes("notion") && <div className={styles.notice}>Link do Notion reconhecido. Nesta versão a Arena preserva a referência sem raspar HTML público; leitura automática será feita por integração autorizada.</div>}
+                <div className={styles.sourceHint}>Links comuns viram recursos externos. Links do Notion são reconhecidos automaticamente, sem exigir um fluxo separado.</div>
               </>
             )}
             <div className={styles.footer}>
               <button className={styles.secondary} onClick={() => setMode("choose")}>Voltar</button>
               {importMode === "text" && <button className={styles.primary} disabled={busy || !textContent.trim()} onClick={() => void preview({ source: "TEXT", content: textContent, sourceLabel: "Texto colado" })}>{busy ? "Analisando..." : "Analisar material"}</button>}
-              {importMode === "url" && <button className={styles.primary} disabled={busy || !sourceUrl.trim()} onClick={() => void preview({ source: "URL", sourceUrl, sourceLabel })}>Usar link</button>}
-              {importMode === "notion" && <button className={styles.primary} disabled={busy || !sourceUrl.trim()} onClick={() => void preview({ source: "NOTION", sourceUrl, sourceLabel })}>Vincular página</button>}
+              {importMode === "url" && <button className={styles.primary} disabled={busy || !sourceUrl.trim()} onClick={() => void preview({ source: sourceUrl.toLowerCase().includes("notion") ? "NOTION" : "URL", sourceUrl, sourceLabel })}>{sourceUrl.toLowerCase().includes("notion") ? "Vincular página" : "Usar link"}</button>}
             </div>
           </div>
         )}

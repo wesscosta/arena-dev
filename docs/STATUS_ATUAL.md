@@ -51,10 +51,10 @@ Google Classroom          standby
 - `LearningResource` separado de `Activity`;
 - módulos persistidos por `JourneySection`;
 - itens de jornada tipados como conteúdo, atividade, quiz, desafio, checkpoint ou recurso externo;
-- wizard **Nova jornada** com IA, modelos, importação e autoria em branco;
+- wizard **Nova jornada** com IA, modelos, importação e autoria em branco, sem exigir que o professor conheça Markdown/Notion;
 - ingestão de texto e Markdown;
 - upload de PDF, DOC/DOCX, PPT/PPTX, Markdown e TXT até 20 MB;
-- URL/Notion preservados como referência sem scraping do HTML público;
+- links tratados como recurso externo; Notion é reconhecido automaticamente dentro do fluxo de links, sem scraping do HTML público;
 - prévia editável antes da materialização, incluindo adicionar/remover/reordenar módulos e itens;
 - conteúdo de IA permanece rascunho até revisão explícita do professor;
 - upload multipart validado no navegador com preservação correta do boundary HTTP.

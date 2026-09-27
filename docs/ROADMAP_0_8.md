@@ -181,12 +181,12 @@ Permitir que a jornada represente conteúdo real e que o professor comece pelo f
 - `LearningResource` e migration V29;
 - `JourneySection` e migration V30;
 - tipos `CONTENT`, `ACTIVITY`, `QUIZ`, `CHALLENGE`, `CHECKPOINT` e `EXTERNAL_RESOURCE`;
-- wizard **Nova jornada** com quatro entradas: IA, modelo, importar material e em branco;
+- wizard **Nova jornada** com quatro entradas: IA, modelo, importar material e em branco, mantendo fontes específicas fora do modelo mental principal;
 - modelos pedagógicos iniciais: sequência, projeto integrador, preparação para avaliação e desafios;
 - parser heurístico de texto;
 - parser estrutural de Markdown;
-- upload de PDF, DOC/DOCX, PPT/PPTX, Markdown e TXT até 20 MB via Apache Tika;
-- links externos e Notion preservados como referências, sem scraping;
+- upload/drag-and-drop de PDF, DOC/DOCX, PPT/PPTX, Markdown e TXT até 20 MB via Apache Tika;
+- links externos preservados como referências; URLs do Notion são reconhecidas automaticamente dentro do mesmo fluxo, sem scraping;
 - IA configurável no backend para gerar apenas `DraftView`;
 - prévia editável antes da criação persistente;
 - prévia permite adicionar, remover e reordenar módulos/itens;
