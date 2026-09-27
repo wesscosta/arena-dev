@@ -56,14 +56,14 @@ Google Classroom          standby
 ## Em refinamento
 
 - revisão visual final entre todas as dinâmicas — concluída no `16.0F.19`;
-- smoke test controlado de erro de API;
-- revisão do Projetor com os novos estados da Arena;
+- smoke test controlado de erro de API — Projetor validado em `16.0F.20`;
+- revisão do Projetor com os novos estados da Arena — concluída no `16.0F.20`;
 - fechamento documental e PR do `16.0`.
 
 ## Validação corrente
 
 ```text
-frontend tests      246 passed
+frontend tests      248 passed
 frontend typecheck  OK
 frontend build      OK
 frontend Docker     OK
@@ -71,7 +71,7 @@ frontend Docker     OK
 
 ## Próximo gate
 
-Executar o fechamento do `16.0`: revisão visual final, smoke test controlado de falha de API, verificação do Projetor e PR. Com esse fechamento aprovado, iniciar `16.1 — Journey Core`.
+Executar o fechamento documental e o PR do `16.0`. Os gates de revisão visual, erro controlado e Projetor foram concluídos nos passes `16.0F.19` e `16.0F.20`. Após o PR, iniciar `16.1 — Journey Core`.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)

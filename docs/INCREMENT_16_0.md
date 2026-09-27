@@ -168,12 +168,14 @@ O passe `16.0F.18` concluiu o quality gate técnico do cockpit. As seis dinâmic
 
 O passe `16.0F.19` consolidou a linguagem visual e de estado entre dinâmicas: Quiz, Votação e Nuvem de Palavras compartilham `PREPARAR`, mesma escala de título e inset de 20 px; os estados ativos convergem para `AO VIVO`, leitura pós-interação para `RESULTADO` e término para `ENCERRADO`. Buzzer e Boss Battle usam o mesmo vocabulário no cabeçalho, preservando estados de domínio como `Crítico`, `Enfraquecido` e a ordem oficial do Buzzer dentro do conteúdo.
 
+O passe `16.0F.20` levou o mesmo vocabulário para o Projetor e corrigiu a recuperação após falha inicial do snapshot público: o mesmo código de sessão pode ser reenviado para uma nova tentativa sem precisar alterar a URL ou recarregar manualmente a página. O smoke test controlado confirmou falha inicial, mensagem de erro e recuperação posterior com o mesmo código.
+
 ## Validação técnica
 
 Último gate executado na branch:
 
 ```text
-246 testes frontend aprovados
+248 testes frontend aprovados
 npm run typecheck  OK
 npm run build      OK
 Docker frontend    OK
