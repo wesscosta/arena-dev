@@ -14,6 +14,7 @@ import WordCloudPanel from "@/components/WordCloudPanel";
 import PollPanel from "@/components/PollPanel";
 import QuizPanel from "@/components/QuizPanel";
 import SessionAccessCard from "@/components/SessionAccessCard";
+import JourneyManager from "@/components/JourneyManager";
 import SessionTimeline from "@/components/SessionTimeline";
 import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
 import MicrosoftIntegrationConsole from "@/components/MicrosoftIntegrationConsole";
@@ -78,7 +79,7 @@ import {
 } from "@/lib/classroom-theme";
 
 type View = "dashboard" | "classroom" | "classroom-settings" | "arena" | "integrations" | "settings";
-type ClassroomTab = "home" | "students" | "activities" | "ranking" | "history";
+type ClassroomTab = "home" | "students" | "activities" | "journeys" | "ranking" | "history";
 type ArenaDynamic = "runbook" | "draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss";
 type ArenaTool = "timer" | "groups" | "attendance" | "score" | null;
 
@@ -139,6 +140,7 @@ const CLASSROOM_TABS: { id: ClassroomTab; label: string; icon: string }[] = [
   { id: "home", label: "Home", icon: "⌂" },
   { id: "students", label: "Alunos", icon: "◎" },
   { id: "activities", label: "Atividades", icon: "✓" },
+  { id: "journeys", label: "Jornadas", icon: "◈" },
   { id: "ranking", label: "Ranking", icon: "▲" },
   { id: "history", label: "Histórico", icon: "≡" },
 ];
@@ -558,6 +560,14 @@ export default function ArenaApp() {
                     students={classStudents}
                     onUseInArena={(activityId) => { setArenaActivityId(activityId); setView("arena"); }}
                     patch={patch}
+                    notify={notify}
+                  />
+                )}
+                {classroomTab === "journeys" && (
+                  <JourneyManager
+                    classroomId={activeClassroom.id}
+                    classroomName={activeClassroom.name}
+                    activities={data.activities.filter((activity) => activity.classroomId === activeClassroom.id)}
                     notify={notify}
                   />
                 )}
