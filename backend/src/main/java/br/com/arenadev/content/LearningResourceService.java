@@ -32,6 +32,11 @@ public class LearningResourceService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public ResourceView get(UUID id) {
+        return view(requireResource(id));
+    }
+
     @Transactional
     public ResourceView create(ResourceInput input) {
         validate(input);
@@ -66,6 +71,15 @@ public class LearningResourceService {
                 clean(input.sourceLabel())
         );
         return view(resource);
+    }
+
+    @Transactional
+    public void delete(UUID id) {
+        LearningResource resource = requireResource(id);
+        if (resources.isReferencedByJourneyStage(id)) {
+            throw new LearningResourceInUseException("O conteúdo está vinculado a uma jornada e não pode ser excluído.");
+        }
+        resources.delete(resource);
     }
 
     private void validate(ResourceInput input) {

@@ -140,6 +140,72 @@ class ContentIngestionServiceTest {
 
 
     @Test
+    void infersModulesFromOfficeStyleHeadingsWithoutMarkdown() {
+        UUID classroomId = classroom();
+        String content = """
+                MÓDULO 1 — FUNDAMENTOS
+
+                Conceitos iniciais de banco de dados e persistência.
+
+                Modelagem conceitual com entidades, atributos e relacionamentos.
+
+                MÓDULO 2 — NORMALIZAÇÃO
+
+                Primeira, segunda e terceira forma normal.
+
+                Dependências funcionais e redução de redundância.
+                """;
+
+        var draft = service.preview(new ContentIngestionService.PreviewRequest(
+                classroomId,
+                ContentIngestionSource.FILE,
+                "Banco de Dados",
+                null,
+                null,
+                content,
+                null,
+                "apostila.docx"
+        ));
+
+        assertThat(draft.sections()).extracting(ContentIngestionService.DraftSection::title)
+                .containsExactly("FUNDAMENTOS", "NORMALIZAÇÃO");
+        assertThat(draft.sections().getFirst().items()).hasSize(2);
+        assertThat(draft.sections().get(1).items()).hasSize(2);
+    }
+
+    @Test
+    void groupsLongHeadinglessDocumentsIntoReviewablePartsInsteadOfOneFlatList() {
+        UUID classroomId = classroom();
+        String content = String.join("\n\n",
+                "Introdução aos bancos de dados relacionais e ao papel do SGBD.",
+                "Entidades representam objetos relevantes do domínio analisado.",
+                "Atributos descrevem propriedades que pertencem às entidades.",
+                "Relacionamentos conectam entidades e expressam regras do negócio.",
+                "Chaves primárias identificam unicamente cada ocorrência.",
+                "Chaves estrangeiras materializam relacionamentos no modelo relacional.",
+                "A primeira forma normal elimina grupos repetitivos e valores não atômicos.",
+                "A segunda forma normal remove dependências parciais da chave.",
+                "A terceira forma normal reduz dependências transitivas."
+        );
+
+        var draft = service.preview(new ContentIngestionService.PreviewRequest(
+                classroomId,
+                ContentIngestionSource.FILE,
+                "Modelagem de Dados",
+                null,
+                null,
+                content,
+                null,
+                "material.pdf"
+        ));
+
+        assertThat(draft.sections()).hasSize(3);
+        assertThat(draft.sections()).allSatisfy(section -> assertThat(section.items()).hasSize(3));
+        assertThat(draft.sections()).extracting(ContentIngestionService.DraftSection::title)
+                .allSatisfy(title -> assertThat(title).isNotBlank());
+    }
+
+    @Test
     void turnsExtractedOfficeOrPdfTextIntoAReviewableDraft() {
         UUID classroomId = classroom();
         var file = mock(org.springframework.web.multipart.MultipartFile.class);

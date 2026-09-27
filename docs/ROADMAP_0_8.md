@@ -17,8 +17,8 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | --- | --- | --- |
 | 16.0 | Professor Arena Experience | **Concluído · PR #21 mergeado** |
 | 16.1 | Journey Core | **Concluído · PR #22 mergeado** |
-| 16.2 | Learning Resources & Content Ingestion | **Em execução** |
-| 16.3 | Student Experience | Planejado |
+| 16.2 | Learning Resources & Content Ingestion | **Concluído na branch · aguardando merge** |
+| 16.3 | Student Experience | Próximo |
 | 16.4 | Journey Map | Planejado |
 | 16.5 | Question Attempts & Skills | Planejado |
 | 16.6 | Mastery básico | Planejado |
@@ -199,11 +199,12 @@ Permitir que a jornada represente conteúdo real e que o professor comece pelo f
 
 O fluxo não pressupõe que o professor mantenha um segundo cérebro, Markdown ou Notion. Essas fontes são adaptadores opcionais. A experiência principal também atende quem possui apenas documentos Office/PDF, texto solto, um briefing ou nenhuma estrutura anterior.
 
-### Próximas fatias
+### Gate de fechamento
 
-- validar ingestão com amostras reais de PDF/DOCX/PPTX;
-- melhorar segmentação heurística de documentos sem headings;
-- preparar adapter autorizado para Notion sem acoplamento a HTML público;
-- fechar API/CRUD de `LearningResource` e testes HTTP;
-- consolidar o preview estrutural como contrato visual de referência, sem antecipar estados reais do aluno;
-- somente então avançar para `16.3 — Student Experience`.
+- ingestão validada com binários reais de PDF, DOCX e PPTX;
+- segmentação heurística de documentos sem headings implementada;
+- API/CRUD de `LearningResource` fechada com cobertura HTTP e proteção contra exclusão de recurso em uso;
+- preview estrutural consolidado como referência visual, sem antecipar estados reais do aluno;
+- adapter autorizado para Notion permanece como evolução posterior e não bloqueia o Journey MVP.
+
+Com esses gates atendidos, o próximo incremento é `16.3 — Student Experience`.

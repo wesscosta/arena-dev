@@ -2,7 +2,7 @@
 
 ## Status
 
-**Em execução** na branch `feat/v0.8-content-ingestion`.
+**Implementação concluída na branch** `feat/v0.8-content-ingestion`; pronta para revisão/merge antes do início do `16.3`.
 
 O `16.1 — Journey Core` foi integrado à `main` pelo PR #22. O `16.2` amplia a jornada para representar conteúdo de aprendizagem real e cria um onboarding de criação que não depende do professor usar Markdown, Notion ou qualquer ferramenta específica.
 
@@ -84,13 +84,37 @@ O wizard aceita seleção ou arrastar-e-soltar. O backend recebe arquivos de at�
 - Markdown;
 - TXT.
 
-A extração usa Apache Tika apenas como adaptador de leitura. O resultado entra no mesmo contrato de rascunho das demais fontes.
+A extração usa Apache Tika apenas como adaptador de leitura. O resultado entra no mesmo contrato de rascunho das demais fontes. O gate inclui arquivos binários reais gerados em teste para **PDF, DOCX e PPTX**, além de TXT/Markdown, verificando a extração de conteúdo pelos parsers efetivos e não apenas mocks.
 
 ### URL e Notion
 
 Nesta fatia, URLs são preservadas como `EXTERNAL_RESOURCE`.
 
 Links comuns entram como `EXTERNAL_RESOURCE`. Se a URL indicar Notion, o wizard reconhece a origem automaticamente e preserva a página como referência; a Arena **não raspa HTML público**. A leitura automática deve ocorrer futuramente por integração autorizada, evitando acoplamento ao frontend público do Notion.
+
+### Segmentação heurística de documentos
+
+Documentos Office/PDF sem headings Markdown não são mais convertidos em uma lista plana de parágrafos. O pipeline agora:
+
+- reconhece títulos típicos como `MÓDULO`, `CAPÍTULO`, `UNIDADE`, `AULA`, `TEMA`, `ETAPA`, `SEÇÃO` e títulos numerados;
+- remove prefixos estruturais da apresentação (`MÓDULO 1 — FUNDAMENTOS` → `FUNDAMENTOS`);
+- cria módulos a partir desses sinais quando existem;
+- quando não existem headings suficientes, agrupa documentos longos em partes revisáveis de até três itens, evitando uma única lista extensa;
+- mantém documentos curtos em um único módulo para não criar estrutura artificial.
+
+A heurística continua sendo apenas uma sugestão: o professor revisa a estrutura antes da materialização.
+
+### LearningResource CRUD
+
+O contrato administrativo de recursos está completo e protegido por autenticação docente:
+
+- `GET /api/learning-resources?classroomId=...`;
+- `GET /api/learning-resources/{id}`;
+- `POST /api/learning-resources`;
+- `PUT /api/learning-resources/{id}`;
+- `DELETE /api/learning-resources/{id}`.
+
+A exclusão retorna conflito quando o recurso já está ligado a uma etapa de jornada, preservando integridade referencial. O frontend possui contrato tipado correspondente em `learning-resource-api.ts`.
 
 ### IA
 
@@ -146,12 +170,17 @@ Ainda não fazem parte do 16.2:
 ## Gates atuais
 
 ```text
-backend tests                 99 passed
+backend unit tests            107 passed
+backend integration tests     76 passed
+backend total                 183 passed
 Flyway                        V1–V31 OK
-frontend tests                256 passed
+frontend tests                258 passed
 frontend typecheck            OK
 frontend production build     OK
 file ingestion                PDF/DOC/DOCX/PPT/PPTX/MD/TXT
+real binary samples           PDF/DOCX/PPTX OK
+headingless segmentation      OK
+LearningResource HTTP CRUD    OK
 multipart boundary handling   OK
 review-before-materialize     OK
 wizard keyboard/focus         OK

@@ -161,29 +161,124 @@ public class ContentIngestionService {
 
     private DraftView fromText(PreviewRequest request, ContentIngestionSource source) {
         String content = requireContent(request);
-        List<String> blocks = List.of(content.trim().split("\\n\\s*\\n"));
-        String title = valueOr(request.title(), summarize(blocks.getFirst(), 70));
-        List<DraftItem> items = new ArrayList<>();
-        for (String block : blocks) {
-            String normalized = block.trim();
-            if (normalized.isEmpty()) continue;
-            items.add(new DraftItem(
-                    summarize(normalized, 72),
-                    summarize(normalized, 180),
-                    DraftItemType.CONTENT,
-                    normalized,
-                    null
-            ));
-            if (items.size() >= 12) break;
-        }
+        List<TextBlock> blocks = textBlocks(content);
+        String title = valueOr(request.title(), blocks.isEmpty() ? "Jornada importada" : summarize(blocks.getFirst().text(), 70));
+        List<DraftSection> sections = inferSections(blocks);
         return new DraftView(
                 title,
-                valueOr(request.description(), "Estrutura sugerida a partir do texto fornecido."),
+                valueOr(request.description(), "Estrutura sugerida a partir do material fornecido."),
                 source,
                 clean(request.sourceLabel()),
-                List.of(new DraftSection("Conteúdo", null, items))
+                sections
         );
     }
+
+    private List<TextBlock> textBlocks(String content) {
+        List<TextBlock> blocks = new ArrayList<>();
+        String normalized = content.replace("\r\n", "\n").replace('\r', '\n').trim();
+        for (String paragraph : normalized.split("\n\s*\n")) {
+            String text = paragraph.trim();
+            if (text.isEmpty()) continue;
+            String[] lines = text.split("\n");
+            if (lines.length > 1 && looksLikeHeading(lines[0].trim())) {
+                blocks.add(new TextBlock(lines[0].trim(), true));
+                String remainder = String.join("\n", java.util.Arrays.copyOfRange(lines, 1, lines.length)).trim();
+                if (!remainder.isEmpty()) blocks.add(new TextBlock(remainder, false));
+            } else {
+                blocks.add(new TextBlock(text, looksLikeHeading(text)));
+            }
+            if (blocks.size() >= 48) break;
+        }
+        return blocks;
+    }
+
+    private List<DraftSection> inferSections(List<TextBlock> blocks) {
+        if (blocks.isEmpty()) return List.of(new DraftSection("Conteúdo", null, List.of()));
+        long headingCount = blocks.stream().filter(TextBlock::heading).count();
+        if (headingCount >= 2) return sectionsFromHeadings(blocks);
+
+        List<DraftItem> items = blocks.stream()
+                .filter(block -> !block.heading())
+                .map(block -> contentItem(block.text()))
+                .limit(18)
+                .toList();
+        if (items.isEmpty()) items = List.of(contentItem(blocks.getFirst().text()));
+        if (items.size() <= 6) return List.of(new DraftSection("Conteúdo", null, items));
+
+        List<DraftSection> sections = new ArrayList<>();
+        for (int start = 0; start < items.size(); start += 3) {
+            int end = Math.min(start + 3, items.size());
+            List<DraftItem> slice = List.copyOf(items.subList(start, end));
+            String sectionTitle = inferSectionTitle(slice.getFirst().title(), sections.size() + 1);
+            sections.add(new DraftSection(sectionTitle, "Agrupamento sugerido a partir da estrutura do documento.", slice));
+            if (sections.size() >= 6) break;
+        }
+        return sections;
+    }
+
+    private List<DraftSection> sectionsFromHeadings(List<TextBlock> blocks) {
+        List<DraftSection> sections = new ArrayList<>();
+        String sectionTitle = "Introdução";
+        List<DraftItem> items = new ArrayList<>();
+        for (TextBlock block : blocks) {
+            if (block.heading()) {
+                if (!items.isEmpty()) {
+                    sections.add(new DraftSection(sectionTitle, null, List.copyOf(items)));
+                    items.clear();
+                    if (sections.size() >= 6) break;
+                }
+                sectionTitle = cleanHeading(block.text());
+            } else {
+                items.add(contentItem(block.text()));
+                if (items.size() >= 4) {
+                    sections.add(new DraftSection(sectionTitle, null, List.copyOf(items)));
+                    items.clear();
+                    sectionTitle = sectionTitle + " · continuação";
+                    if (sections.size() >= 6) break;
+                }
+            }
+        }
+        if (!items.isEmpty() && sections.size() < 6) {
+            sections.add(new DraftSection(sectionTitle, null, List.copyOf(items)));
+        }
+        return sections.isEmpty() ? List.of(new DraftSection("Conteúdo", null, blocks.stream().map(block -> contentItem(block.text())).limit(12).toList())) : sections;
+    }
+
+    private DraftItem contentItem(String text) {
+        String normalized = text.trim();
+        String firstLine = normalized.lines().findFirst().orElse(normalized);
+        String itemTitle = summarize(firstLine.replaceFirst("^[•▪◦*-]\\s*", ""), 72);
+        return new DraftItem(itemTitle, summarize(normalized, 180), DraftItemType.CONTENT, normalized, null);
+    }
+
+    private boolean looksLikeHeading(String value) {
+        String text = value == null ? "" : value.replaceAll("\\s+", " ").trim();
+        if (text.isEmpty() || text.length() > 90 || text.contains("\n")) return false;
+        if (text.matches("(?i)^(m[oó]dulo|cap[ií]tulo|unidade|aula|tema|etapa|se[cç][aã]o|parte)\\s+[A-ZÀ-Ú0-9IVXLC].*")) return true;
+        if (text.matches("^\\d+(?:\\.\\d+){0,3}[).:-]?\\s+.{2,70}$")) return true;
+        int letters = 0;
+        int upper = 0;
+        for (char c : text.toCharArray()) {
+            if (Character.isLetter(c)) { letters++; if (Character.isUpperCase(c)) upper++; }
+        }
+        return letters >= 4 && upper >= Math.ceil(letters * .82) && !text.endsWith(".");
+    }
+
+    private String cleanHeading(String heading) {
+        String clean = heading
+                .replaceFirst("(?iu)^(m[oó]dulo|cap[ií]tulo|unidade|aula|tema|etapa|se[cç][aã]o|parte)\\s+", "")
+                .replaceFirst("^[0-9IVXLC.-]+\\s*[—–:-]?\\s*", "")
+                .replaceFirst("^\\d+(?:\\.\\d+){0,3}[).:-]?\\s+", "")
+                .trim();
+        return summarize(clean.isBlank() ? heading : clean, 80);
+    }
+
+    private String inferSectionTitle(String firstItemTitle, int index) {
+        String title = summarize(firstItemTitle, 54);
+        return title.isBlank() ? "Parte " + index : title;
+    }
+
+    private record TextBlock(String text, boolean heading) {}
 
     private DraftView fromMarkdown(PreviewRequest request) {
         String markdown = requireContent(request);

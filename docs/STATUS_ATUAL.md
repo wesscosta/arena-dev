@@ -1,22 +1,22 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 26 de setembro de 2026
+**Última sincronização documental:** 27 de setembro de 2026
 
 **Baseline publicada:** `v0.7.0 — Educational Integrations`.
 
 **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 
-**Incremento ativo:** `16.2 — Learning Resources & Content Ingestion`.
+**Incremento em fechamento:** `16.2 — Learning Resources & Content Ingestion` concluído na branch; `16.3 — Student Experience` é o próximo incremento após merge.
 
 **Branch ativa:** `feat/v0.8-content-ingestion`.
 
 ## Estado resumido
 
-A v0.7.0 está encerrada e publicada. Os incrementos `16.0` e `16.1` foram integrados à `main`; a execução atual está concentrada no `16.2 — Learning Resources & Content Ingestion`.
+A v0.7.0 está encerrada e publicada. Os incrementos `16.0` e `16.1` foram integrados à `main`; o `16.2 — Learning Resources & Content Ingestion` concluiu seus gates técnicos na branch ativa e aguarda revisão/merge.
 
 O cockpit da Arena já migrou para uma arquitetura orientada por ações, com navegação lateral, workspace de dinâmica, ferramentas contextuais e rail persistente de participantes/sessão.
 
-O `16.0 — Professor Arena Experience` e o `16.1 — Journey Core` foram integrados à `main` pelos PRs #21 e #22. A branch ativa trabalha o `16.2`, expandindo a jornada para conteúdo real e criação agnóstica à fonte.
+O `16.0 — Professor Arena Experience` e o `16.1 — Journey Core` foram integrados à `main` pelos PRs #21 e #22. A branch ativa fecha o `16.2`, com conteúdo real, criação agnóstica à fonte, Journey Builder V2 e contrato completo de recursos.
 
 ## Baselines
 
@@ -61,7 +61,11 @@ Google Classroom          standby
 - Journey Builder V2 com módulos visuais e itens tipados;
 - visão **Estrutura / Visualizar como aluno** implementada;
 - prévia estrutural por capítulos/nós validada em 1440×900 sem scroll global;
-- persistência administrativa de módulo, tipo do item e recurso vinculável consolidada no Journey Core.
+- persistência administrativa de módulo, tipo do item e recurso vinculável consolidada no Journey Core;
+- segmentação heurística reconhece títulos Office/PDF e agrupa documentos longos sem headings;
+- extração validada com arquivos binários reais PDF/DOCX/PPTX;
+- CRUD HTTP completo de `LearningResource`, incluindo leitura individual e exclusão segura;
+- recurso vinculado a jornada não pode ser excluído e retorna conflito HTTP.
 
 ## Professor Arena Experience — implementado
 
@@ -94,8 +98,10 @@ Google Classroom          standby
 ## Validação corrente
 
 ```text
-backend tests       99 passed
-frontend tests      256 passed
+backend unit        107 passed
+backend integration 76 passed
+backend total       183 passed
+frontend tests      258 passed
 frontend typecheck  OK
 frontend build      OK
 Flyway              V1–V31 OK
@@ -103,7 +109,7 @@ Flyway              V1–V31 OK
 
 ## Próximo gate
 
-Consolidar o `16.2 — Learning Resources & Content Ingestion`: validar ingestão com documentos reais, fechar API/CRUD de `LearningResource` e estabilizar o Journey Builder V2 antes de avançar para `16.3 — Student Experience`.
+Revisar e integrar a branch do `16.2`. Após o merge, iniciar `16.3 — Student Experience`, conectando o mapa da jornada ao progresso real de cada aluno.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)

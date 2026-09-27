@@ -20,6 +20,11 @@ public class LearningResourceController {
         return service.list(classroomId);
     }
 
+    @GetMapping("/{id}")
+    public LearningResourceService.ResourceView get(@PathVariable UUID id) {
+        return service.get(id);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public LearningResourceService.ResourceView create(
@@ -34,5 +39,11 @@ public class LearningResourceController {
             @RequestBody LearningResourceService.ResourceInput input
     ) {
         return service.update(id, input);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable UUID id) {
+        service.delete(id);
     }
 }
