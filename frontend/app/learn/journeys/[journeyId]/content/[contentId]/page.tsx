@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import JourneyContentReader from "@/components/study/JourneyContentReader";
-import { completeStudyContent, fetchStudyContent, fetchStudyJourney, startStudyContent, studyDeviceClaims, type JourneyContentDetailView, type JourneyStudyView } from "@/lib/study-api";
+import { completeStudyContent, fetchStudyContent, fetchStudyJourney, fetchTeacherContentPreview, fetchTeacherStudyPreview, startStudyContent, studyDeviceClaims, type JourneyContentDetailView, type JourneyStudyView } from "@/lib/study-api";
 import styles from "../../../../study.module.css";
 
 type ReaderData = { token: string; journey: JourneyStudyView; content: JourneyContentDetailView };
@@ -12,11 +12,20 @@ type ReaderData = { token: string; journey: JourneyStudyView; content: JourneyCo
 export default function ContentReaderPage() {
   const { journeyId, contentId } = useParams<{ journeyId: string; contentId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const teacherPreview = searchParams.get("preview") === "teacher";
   const [data, setData] = useState<ReaderData | null>(null);
   const [error, setError] = useState("");
   const [completing, setCompleting] = useState(false);
 
   useEffect(() => { let active = true; (async () => {
+    if (teacherPreview) {
+      try {
+        const [journey, content] = await Promise.all([fetchTeacherStudyPreview(journeyId), fetchTeacherContentPreview(journeyId, contentId)]);
+        if (active) setData({ token: "", journey, content });
+      } catch { if (active) setError("Não foi possível abrir a prévia deste conteúdo."); }
+      return;
+    }
     for (const claim of studyDeviceClaims()) {
       try {
         const [journey, content] = await Promise.all([fetchStudyJourney(journeyId, claim.token), fetchStudyContent(journeyId, contentId, claim.token)]);
@@ -26,7 +35,7 @@ export default function ContentReaderPage() {
       } catch {}
     }
     if (active) setError("Não foi possível abrir este conteúdo. Ele pode estar bloqueado ou sua identificação de estudo pode ter expirado.");
-  })(); return () => { active = false; }; }, [journeyId, contentId]);
+  })(); return () => { active = false; }; }, [journeyId, contentId, teacherPreview]);
 
   const navigation = useMemo(() => {
     if (!data) return { previous: null, next: null, position: 0, total: 0, moduleTitle: "Jornada" };
@@ -50,13 +59,14 @@ export default function ContentReaderPage() {
   if (!data) return <div className={styles.empty}>Carregando conteúdo…</div>;
 
   return <div className={styles.readerView}>
-    <header className={styles.readerTopbar}><Link href={`/learn/journeys/${journeyId}`}>← {navigation.moduleTitle}</Link><span>{navigation.position} / {navigation.total}</span></header>
+    {teacherPreview && <div className={styles.teacherPreviewBar}><span><strong>Prévia do professor</strong> · leitura sem registrar progresso</span><a href={`/?journey=${journeyId}`}>Editar jornada</a></div>}
+    <header className={styles.readerTopbar}><Link href={`/learn/journeys/${journeyId}${teacherPreview ? "?preview=teacher" : ""}`}>← {navigation.moduleTitle}</Link><span>{navigation.position} / {navigation.total}</span></header>
     <div className={styles.readerHeading}><p className={styles.eyebrow}>Conteúdo de estudo</p><h1>{data.content.title}</h1>{data.content.description && <p>{data.content.description}</p>}</div>
     <JourneyContentReader content={data.content} />
     {error && <div className={styles.error}>{error}</div>}
     <footer className={styles.readerFooter}>
-      <div>{navigation.previous && navigation.previous.state !== "LOCKED" ? <Link href={`/learn/journeys/${journeyId}/content/${navigation.previous.id}`}><span>Anterior</span><strong>← {navigation.previous.title}</strong></Link> : <span />}</div>
-      <div>{data.content.state === "COMPLETED" ? (navigation.next && navigation.next.state !== "LOCKED" ? <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}/content/${navigation.next.id}`}>Próximo conteúdo →</Link> : <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}`}>Voltar à jornada</Link>) : <button type="button" className={styles.readerPrimary} disabled={completing} onClick={conclude}>{completing ? "Concluindo…" : navigation.next ? "Concluir e continuar →" : "Concluir conteúdo"}</button>}</div>
+      <div>{navigation.previous ? <Link href={`/learn/journeys/${journeyId}/content/${navigation.previous.id}${teacherPreview ? "?preview=teacher" : ""}`}><span>Anterior</span><strong>← {navigation.previous.title}</strong></Link> : <span />}</div>
+      <div>{teacherPreview ? (navigation.next ? <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}/content/${navigation.next.id}?preview=teacher`}>Próximo conteúdo →</Link> : <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}?preview=teacher`}>Voltar à jornada</Link>) : data.content.state === "COMPLETED" ? (navigation.next && navigation.next.state !== "LOCKED" ? <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}/content/${navigation.next.id}`}>Próximo conteúdo →</Link> : <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}`}>Voltar à jornada</Link>) : <button type="button" className={styles.readerPrimary} disabled={completing} onClick={conclude}>{completing ? "Concluindo…" : navigation.next ? "Concluir e continuar →" : "Concluir conteúdo"}</button>}</div>
     </footer>
   </div>;
 }

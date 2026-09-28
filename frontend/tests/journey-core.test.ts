@@ -132,3 +132,16 @@ test("study home resumes the persisted current content directly", () => {
   assert.match(home, /Continuar/);
   assert.match(api, /lastStudiedAt/);
 });
+
+test("teacher preview reuses study routes without student progress actions", () => {
+  const journey = readFileSync(resolve(process.cwd(), "app/learn/journeys/[journeyId]/page.tsx"), "utf8");
+  const reader = readFileSync(resolve(process.cwd(), "app/learn/journeys/[journeyId]/content/[contentId]/page.tsx"), "utf8");
+  const manager = readFileSync(resolve(process.cwd(), "components/JourneyManager.tsx"), "utf8");
+  assert.match(journey, /preview.*teacher/);
+  assert.match(journey, /fetchTeacherStudyPreview/);
+  assert.match(journey, /Editar jornada/);
+  assert.match(reader, /fetchTeacherContentPreview/);
+  assert.match(reader, /teacherPreview \?/);
+  assert.match(manager, /Ver jornada/);
+  assert.match(manager, /preview=teacher/);
+});

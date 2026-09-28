@@ -259,6 +259,32 @@ class JourneyCoreIT {
     }
 
     @Test
+    void teacherPreviewUsesStudyProjectionWithoutCreatingEnrollmentProgress() {
+        Fixture fixture = fixture("Preview docente", "JRNY-PREVIEW");
+        LearningResource resource = learningResourceRepository.save(new LearningResource(fixture.classroom(), "Leitura docente"));
+        JourneyService.JourneyView draft = journeyService.create(new JourneyService.JourneyInput(
+                fixture.classroom().getId(), "Prévia", "Mesma experiência", List.of(
+                        new JourneyService.StageInput(null, "Primeiro", null, null, JourneyUnlockRule.IMMEDIATE,
+                                JourneyCompletionRule.MANUAL, null, "Módulo", JourneyItemType.CONTENT, resource.getId()),
+                        new JourneyService.StageInput(null, "Segundo", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED,
+                                JourneyCompletionRule.MANUAL, null, "Módulo", JourneyItemType.CONTENT, resource.getId())
+                )
+        ));
+
+        long progressBefore = progressRepository.count();
+        long enrollmentsBefore = enrollmentRepository.count();
+        var preview = journeyStudyService.preview(draft.id());
+        var content = journeyStudyService.previewContent(draft.id(), draft.stages().getFirst().id());
+
+        assertThat(preview.modules().getFirst().contents())
+                .extracting(JourneyStudyService.JourneyContentView::state)
+                .containsOnly(JourneyStudyService.StudyState.CURRENT);
+        assertThat(content.title()).isEqualTo("Primeiro");
+        assertThat(progressRepository.count()).isEqualTo(progressBefore);
+        assertThat(enrollmentRepository.count()).isEqualTo(enrollmentsBefore);
+    }
+
+    @Test
     void studyApiHidesDraftsAndRejectsAnotherEnrollmentClassroom() {
         Fixture source = fixture("Fonte estudo", "JRNY-SOURCE");
         Fixture other = fixture("Outra turma estudo", "JRNY-OTHER");

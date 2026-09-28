@@ -328,6 +328,7 @@ export default function JourneyManager({ classroomId, classroomName, activities,
                   <p>{structuralLocked ? "Estrutura protegida após publicação para preservar o progresso." : "Rascunho editável. A primeira etapa fica disponível imediatamente."}</p>
                 </div>
                 <div className={styles.actions}>
+                  {draft.id && <a className={styles.secondary} href={`/learn/journeys/${draft.id}?preview=teacher`}>Ver jornada</a>}
                   <button className={styles.secondary} type="button" disabled={busy} onClick={() => setDraft(null)}>Fechar</button>
                   {draft.status === "DRAFT" && <button className={styles.primary} type="button" disabled={busy} onClick={() => void save()}>{busy ? "Salvando..." : "Salvar"}</button>}
                   {draft.id && draft.status === "DRAFT" && <button className={styles.ghost} type="button" disabled={busy || draft.stages.length === 0} onClick={() => void publish()}>Publicar</button>}

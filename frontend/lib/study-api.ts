@@ -77,3 +77,17 @@ export function studyDeviceClaims(): Array<{ classroomId: string; token: string 
   }
   return result;
 }
+
+async function teacherPreviewRequest<T>(path: string): Promise<T> {
+  const { apiFetch } = await import("./auth-api");
+  const response = await apiFetch(path);
+  if (!response.ok) throw new StudyApiError(`Falha ao abrir prévia da jornada (${response.status}).`, response.status);
+  return (await response.json()) as T;
+}
+
+export function fetchTeacherStudyPreview(journeyId: string) {
+  return teacherPreviewRequest<JourneyStudyView>(`/api/journeys/${encodeURIComponent(journeyId)}/study-preview`);
+}
+export function fetchTeacherContentPreview(journeyId: string, contentId: string) {
+  return teacherPreviewRequest<JourneyContentDetailView>(`/api/journeys/${encodeURIComponent(journeyId)}/study-preview/contents/${encodeURIComponent(contentId)}`);
+}

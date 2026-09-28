@@ -366,6 +366,8 @@ Não adicionar branching no MVP.
 
 ## 16.3.6 — Professor usa a mesma experiência
 
+**Status:** concluído na branch em 28/09/2026.
+
 ### Princípio
 
 Não criar telas diferentes de consumo.
@@ -394,6 +396,17 @@ Jornadas
 ```
 
 O parâmetro é capability/contexto de acesso, não uma UI paralela.
+
+### Resultado aplicado
+
+- `JourneyStudyService` passou a oferecer projeção `preview` read-only para professor, reutilizando os mesmos DTOs de Journey, módulo, conteúdo e Reader;
+- endpoints docentes vivem sob `/api/journeys/{journeyId}/study-preview/**`, portanto continuam protegidos pela sessão `ROLE_TEACHER`; não foi criado token de aluno, matrícula fictícia ou `JourneyStageProgress` para professor;
+- preview permite inclusive Journey em rascunho, para que o docente valide o material antes da publicação;
+- no contexto docente todos os conteúdos ficam navegáveis; `CURRENT/LOCKED` não simulam progresso inexistente e nenhum comando `start/complete` é exposto;
+- `/learn/journeys/{id}?preview=teacher` reutiliza exatamente a `JourneyStudyView`, acrescentando somente uma barra contextual discreta e CTA `Editar jornada`;
+- o Reader reutiliza a mesma rota com `?preview=teacher`, preserva anterior/próximo e não chama `start` nem `complete`;
+- Journey Manager recebeu `Ver jornada`, criando a entrada direta do workspace docente para a experiência real de estudo;
+- testes garantem que preview não altera quantidade de matrículas nem registros de progresso.
 
 ## 16.3.7 — Simplificação do Journey Builder
 

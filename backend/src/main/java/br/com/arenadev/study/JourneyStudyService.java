@@ -51,6 +51,20 @@ public class JourneyStudyService {
         );
     }
 
+
+    @Transactional(readOnly = true)
+    public JourneyStudyView preview(UUID journeyId) {
+        Journey journey = requireJourney(journeyId);
+        return previewView(journey);
+    }
+
+    @Transactional(readOnly = true)
+    public JourneyContentDetailView previewContent(UUID journeyId, UUID contentId) {
+        Journey journey = requireJourney(journeyId);
+        JourneyStage stage = requireContent(journey, contentId);
+        return detail(stage, StudyState.CURRENT);
+    }
+
     @Transactional(readOnly = true)
     public JourneyContentDetailView content(UUID journeyId, UUID contentId, StudyPrincipal principal) {
         Enrollment enrollment = requireEnrollment(principal);
@@ -95,6 +109,14 @@ public class JourneyStudyService {
         entity.complete(Instant.now());
         progress.save(entity);
         return view(journey, enrollment);
+    }
+
+
+    private JourneyStudyView previewView(Journey journey) {
+        Map<UUID, StudyState> states = new LinkedHashMap<>();
+        journey.getStages().forEach(stage -> states.put(stage.getId(), StudyState.CURRENT));
+        return new JourneyStudyView(journey.getId(), journey.getTitle(), journey.getDescription(),
+                new JourneyProgressSummary(0, journey.getStages().size(), 0), modules(journey, states));
     }
 
     private JourneyStudyView view(Journey journey, Enrollment enrollment) {
@@ -192,6 +214,12 @@ public class JourneyStudyService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "A identidade de estudo não pertence a esta matrícula.");
         }
         return enrollment;
+    }
+
+
+    private Journey requireJourney(UUID journeyId) {
+        return journeys.findById(journeyId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Jornada não encontrada."));
     }
 
     private Journey requirePublishedJourney(UUID journeyId, StudyPrincipal principal) {
