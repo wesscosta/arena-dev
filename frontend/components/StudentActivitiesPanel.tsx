@@ -60,6 +60,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [savedAt, setSavedAt] = useState<string>("");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [questionIndex, setQuestionIndex] = useState(0);
 
   async function load() {
@@ -96,6 +97,8 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
       if (generic) setGenericKind(generic.kind);
       setDrafts(restored);
       setQuestionIndex(0);
+      setSaveState("idle");
+      setSavedAt("");
       setOpenId(next.id);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível iniciar a atividade.");
@@ -104,7 +107,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
 
   async function saveQuestion(question: ParticipantQuestion, value: string) {
     if (!open?.submissionId || open.submissionStatus !== "IN_PROGRESS") return;
-    setBusy(true); setError("");
+    setBusy(true); setError(""); setSaveState("saving");
     try {
       const existing = open.items.find((item) => item.questionId === question.id);
       const next = await saveParticipantSubmissionItem(
@@ -114,7 +117,8 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
       );
       replaceActivity(next);
       setSavedAt(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Falha no autosave."); }
+      setSaveState("saved");
+    } catch (caught) { setSaveState("error"); setError(caught instanceof Error ? caught.message : "Falha no autosave."); }
     finally { setBusy(false); }
   }
 
@@ -174,7 +178,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
   return <section className={styles.shell}>
     <header className={styles.head}>
       <div><span className={styles.kicker}>MINHAS ATIVIDADES</span><h2>Entregas da turma</h2><p>Abra, continue e envie atividades sem sair da experiência do aluno.</p></div>
-      <button type="button" className={styles.refresh} disabled={busy} onClick={() => void load()}>{busy ? "Atualizando..." : "Atualizar"}</button>
+      <button type="button" className={styles.refresh} disabled={busy} onClick={() => void load()}>{busy ? "Atualizando..." : "↻ Atualizar"}</button>
     </header>
 
     {error && <div className={styles.error} role="alert">{error}</div>}
@@ -207,7 +211,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
               <div className={styles.runnerProgress}>
                 <div><strong>{questionIndex + 1}</strong><span>/ {total}</span></div>
                 <div className={styles.runnerTrack}><span style={{ width: `${total ? ((questionIndex + 1) / total) * 100 : 0}%` }} /></div>
-                <small>{savedAt ? `Salvo às ${savedAt}` : editable ? "Salvamento automático" : statusLabel(open.submissionStatus)}</small>
+                <small className={styles.saveState} role="status" aria-live="polite">{!editable ? statusLabel(open.submissionStatus) : saveState === "saving" ? "Salvando…" : saveState === "error" ? "Falha ao salvar" : saveState === "saved" ? `✓ Salvo${savedAt ? ` às ${savedAt}` : ""}` : "✓ Autosave ativo"}</small>
               </div>
 
               {question ? <section className={styles.runnerQuestion}>
@@ -220,7 +224,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
 
             <footer className={styles.runnerFooter}>
               <button type="button" className={styles.runnerSecondary} disabled={busy || questionIndex === 0} onClick={() => void goToQuestion(questionIndex - 1)}>← Anterior</button>
-              <span>{questionIndex + 1} / {total}</span>
+              <span aria-hidden="true" />
               {!isLast ? <button type="button" className={styles.runnerPrimary} disabled={busy} onClick={() => void goToQuestion(questionIndex + 1)}>Próxima →</button> : editable ? <button type="button" className={styles.runnerPrimary} disabled={busy} onClick={async () => { await persistCurrentQuestion(); void submit(); }}>{busy ? "Salvando..." : "Revisar e enviar"}</button> : <button type="button" className={styles.runnerPrimary} onClick={() => setOpenId(null)}>Concluir</button>}
             </footer>
           </div>;

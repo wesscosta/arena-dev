@@ -3236,3 +3236,35 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
   min-height: 100vh;
   overflow: visible;
 }
+
+/* Join stabilization — responsive student shell */
+@media (min-width: 721px) {
+  .student-join-shell:has(.student-live-view) { place-items:start center; padding:clamp(24px,4vh,48px); }
+  .student-join-card:has(.student-live-view) { width:min(1180px,calc(100vw - 48px)); padding:clamp(26px,3vw,38px); }
+  .student-join-card:has(.student-live-view)>.student-brand { margin-bottom:22px; }
+  .student-live-view { gap:18px; }
+  .student-live-top { align-items:center; padding-bottom:20px; border-bottom:1px solid var(--border); }
+  .student-buzzer-state { min-height:0; padding:clamp(24px,4vw,42px); }
+  .student-buzzer-state.open:not(:has(.student-buzzer-button)):not(:has(.public-live-boss)) { min-height:210px; }
+  .student-buzzer-state.finished { min-height:160px; }
+}
+
+/* Student Experience Polish — authenticated lobby becomes a workspace */
+@media (min-width: 721px) {
+  .student-join-shell:has(.student-live-view){display:block;padding:clamp(28px,5vh,56px) 24px;background:radial-gradient(circle at 50% -10%,rgba(88,243,167,.10),transparent 34%),#06100c}
+  .student-join-card:has(.student-live-view){width:min(1120px,calc(100vw - 48px));margin:0 auto;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+  .student-join-card:has(.student-live-view)>.student-brand{margin-bottom:32px}
+  .student-live-view{gap:28px}
+  .student-live-top{align-items:center;padding-bottom:26px;border-bottom:1px solid var(--border)}
+  .student-live-top h1{font-size:clamp(28px,2.2vw,34px)}
+  .student-live-top p{font-size:14px}
+  .student-live-kicker{font-size:11px}
+  .student-connection{padding:8px 11px;font-size:11px}
+  .student-buzzer-state{min-height:0;padding:24px 28px;align-items:flex-start;text-align:left;border-radius:14px}
+  .student-buzzer-state.open:not(:has(.student-buzzer-button)):not(:has(.public-live-boss)){min-height:0}
+  .student-buzzer-state.finished{min-height:0}
+  .student-buzzer-state h2{margin:5px 0 2px;font-size:24px}
+  .student-buzzer-state p{max-width:620px;font-size:13px}
+  .student-session-footer{font-size:11px}
+}
+.student-session-footer span:last-child{color:var(--muted)}
