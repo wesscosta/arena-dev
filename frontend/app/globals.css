@@ -3268,3 +3268,13 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
   .student-session-footer{font-size:11px}
 }
 .student-session-footer span:last-child{color:var(--muted)}
+
+.classroom-study-access { width:100%; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:16px; border:1px solid var(--border); border-radius:14px; background:var(--surface-2); color:inherit; text-align:left; cursor:pointer; }
+.classroom-study-access:disabled { opacity:.65; cursor:wait; }
+.classroom-study-access > span { display:grid; gap:4px; }
+.classroom-study-access strong { font-size:14px; }
+.classroom-study-access small { color:var(--muted); font-size:12px; }
+.classroom-study-access > i { position:relative; flex:0 0 auto; width:44px; height:24px; border-radius:999px; background:var(--border); transition:.2s ease; }
+.classroom-study-access > i b { position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:var(--text); transition:.2s ease; }
+.classroom-study-access > i.active { background:var(--accent); }
+.classroom-study-access > i.active b { transform:translateX(20px); background:white; }

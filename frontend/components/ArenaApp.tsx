@@ -864,6 +864,7 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, onOpenIntegr
         name: classroom.name,
         code: classroom.code,
         active: !classroom.active,
+        studentStudyAccessEnabled: classroom.studentStudyAccessEnabled ?? false,
       });
       await refreshClassroomDomain(classroom.id);
       notify(classroom.active ? "Turma desativada." : "Turma reativada.");
@@ -1859,6 +1860,7 @@ function ClassroomManagementPage({
         active: classroom.active !== false,
         themeColor,
         themeIcon,
+        studentStudyAccessEnabled: classroom.studentStudyAccessEnabled ?? false,
       });
       await refreshClassroomDomain(classroom.id);
       notify("Configurações da turma salvas.");
@@ -1880,10 +1882,35 @@ function ClassroomManagementPage({
         active: !archived,
         themeColor: classroom.themeColor ?? "emerald",
         themeIcon: classroom.themeIcon ?? "code",
+        studentStudyAccessEnabled: classroom.studentStudyAccessEnabled ?? false,
       });
       await refreshClassroomDomain(classroom.id);
       notify(archived ? "Turma arquivada. O histórico foi preservado." : "Turma reativada.");
       setManagementAction(null);
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function setStudyAccess(enabled: boolean) {
+    if (busy || enabled === classroom.studentStudyAccessEnabled) return;
+    setBusy(true);
+    try {
+      await updateClassroomApi({
+        id: classroom.id,
+        name: classroom.name,
+        code: classroom.code,
+        active: classroom.active !== false,
+        themeColor: classroom.themeColor ?? "emerald",
+        themeIcon: classroom.themeIcon ?? "code",
+        studentStudyAccessEnabled: enabled,
+      });
+      await refreshClassroomDomain(classroom.id);
+      notify(enabled
+        ? "Espaço de estudo disponibilizado aos alunos."
+        : "As Jornadas foram ocultadas. O progresso dos alunos foi preservado.");
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -2003,6 +2030,28 @@ function ClassroomManagementPage({
                 </div>
               </div>
             </div>
+          </section>
+
+          <section className="classroom-settings-card">
+            <div className="classroom-settings-section-heading">
+              <span className="eyebrow accent">ESPAÇO DE ESTUDO</span>
+              <h3>Jornadas dos alunos</h3>
+              <p>Controle se as Jornadas publicadas desta turma aparecem no espaço persistente de estudo. Isso não interfere no /join nem nas experiências ao vivo.</p>
+            </div>
+            <button
+              className="classroom-study-access"
+              type="button"
+              role="switch"
+              aria-checked={classroom.studentStudyAccessEnabled}
+              disabled={busy}
+              onClick={() => { void setStudyAccess(!classroom.studentStudyAccessEnabled); }}
+            >
+              <span>
+                <strong>Disponibilizar Jornadas para os alunos</strong>
+                <small>{classroom.studentStudyAccessEnabled ? "Disponível no espaço de estudo" : "Oculto do espaço de estudo"}</small>
+              </span>
+              <i className={classroom.studentStudyAccessEnabled ? "active" : ""} aria-hidden><b /></i>
+            </button>
           </section>
         </div>
 

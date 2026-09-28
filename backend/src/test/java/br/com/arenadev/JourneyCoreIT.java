@@ -49,9 +49,16 @@ class JourneyCoreIT {
     @Autowired private EnrollmentRepository enrollmentRepository;
     @Autowired private StudentRepository studentRepository;
     @Autowired private ClassroomRepository classroomRepository;
+    @Autowired private JourneyRedemptionService redemptionService;
+    @Autowired private JourneyRedemptionCodeRepository redemptionCodeRepository;
+    @Autowired private StudentJourneyAccessRepository studentJourneyAccessRepository;
+    @Autowired private StudentJourneyStageProgressRepository studentJourneyProgressRepository;
 
     @BeforeEach
     void cleanDatabase() {
+        studentJourneyProgressRepository.deleteAll();
+        studentJourneyAccessRepository.deleteAll();
+        redemptionCodeRepository.deleteAll();
         progressRepository.deleteAll();
         journeyRepository.deleteAll();
         learningResourceRepository.deleteAll();
@@ -307,6 +314,78 @@ class JourneyCoreIT {
     }
 
     @Test
+    void studyVisibilityIsMultiClassroomAndPreservesProgressWhenDisabled() {
+        Fixture source = fixture("Estudo A", "STUDY-A");
+        JourneyService.JourneyView journeyA = createPublishedJourney(source, List.of(
+                stage("A1", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL),
+                stage("A2", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL)
+        ));
+        Classroom classroomB = new Classroom("Estudo B", "STUDY-B");
+        classroomB.setStudentStudyAccessEnabled(true);
+        classroomB = classroomRepository.save(classroomB);
+        enrollmentRepository.save(new Enrollment(classroomB, source.enrollment().getStudent()));
+        JourneyService.JourneyView journeyB = journeyService.publish(journeyService.create(
+                new JourneyService.JourneyInput(classroomB.getId(), "Jornada B", null,
+                        List.of(stage("B1", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL)))
+        ).id());
+
+        StudyPrincipal principal = new StudyPrincipal(
+                source.enrollment().getStudent().getId(), source.enrollment().getId(),
+                source.classroom().getId(), StudyPrincipal.Role.STUDENT
+        );
+        assertThat(journeyStudyService.list(principal)).extracting(JourneyStudyService.JourneyStudySummary::id)
+                .containsExactlyInAnyOrder(journeyA.id(), journeyB.id());
+
+        journeyStudyService.complete(journeyA.id(), journeyA.stages().getFirst().id(), principal);
+        assertThat(journeyStudyService.get(journeyA.id(), principal).progress().percent()).isEqualTo(50);
+
+        source.classroom().setStudentStudyAccessEnabled(false);
+        classroomRepository.saveAndFlush(source.classroom());
+        assertThat(journeyStudyService.list(principal)).extracting(JourneyStudyService.JourneyStudySummary::id)
+                .containsExactly(journeyB.id());
+        assertThatThrownBy(() -> journeyStudyService.get(journeyA.id(), principal))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .hasMessageContaining("404");
+
+        source.classroom().setStudentStudyAccessEnabled(true);
+        classroomRepository.saveAndFlush(source.classroom());
+        assertThat(journeyStudyService.get(journeyA.id(), principal).progress().percent()).isEqualTo(50);
+    }
+
+    @Test
+    void newClassroomStartsWithStudyAccessDisabled() {
+        Classroom classroom = new Classroom("Nova turma", "STUDY-OFF");
+        assertThat(classroom.isStudentStudyAccessEnabled()).isFalse();
+    }
+
+    @Test
+    void redeemedJourneyPersistsOutsideClassroomVisibilityAndKeepsItsOwnProgress() {
+        Fixture fixture = fixture("Resgate", "JRNY-R");
+        JourneyService.JourneyView journey = createPublishedJourney(fixture, List.of(
+                stage("Conteúdo 1", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL),
+                stage("Conteúdo 2", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL)
+        ));
+        var code = redemptionService.enable(journey.id());
+        StudyPrincipal principal = new StudyPrincipal(
+                fixture.enrollment().getStudent().getId(), fixture.enrollment().getId(),
+                fixture.classroom().getId(), StudyPrincipal.Role.STUDENT
+        );
+
+        fixture.classroom().setStudentStudyAccessEnabled(false);
+        classroomRepository.saveAndFlush(fixture.classroom());
+        assertThat(journeyStudyService.list(principal)).isEmpty();
+
+        var redeemed = redemptionService.redeem(code.code(), principal);
+        assertThat(redeemed.journeyId()).isEqualTo(journey.id());
+        assertThat(journeyStudyService.list(principal)).extracting(JourneyStudyService.JourneyStudySummary::id).containsExactly(journey.id());
+
+        journeyStudyService.complete(journey.id(), journey.stages().getFirst().id(), principal);
+        redemptionService.disable(journey.id());
+        assertThat(journeyStudyService.get(journey.id(), principal).progress().percent()).isEqualTo(50);
+        assertThat(redemptionService.status(journey.id()).redeemedCount()).isEqualTo(1);
+    }
+
+    @Test
     void draftAuthoringGroupsStagesIntoModulesAndPersistsModuleRename() {
         Fixture fixture = fixture("Builder", "JRNY-BLD");
         JourneyService.JourneyView created = journeyService.create(new JourneyService.JourneyInput(
@@ -377,7 +456,9 @@ class JourneyCoreIT {
     }
 
     private Fixture fixture(String classroomName, String classroomCode) {
-        Classroom classroom = classroomRepository.save(new Classroom(classroomName, classroomCode));
+        Classroom classroom = new Classroom(classroomName, classroomCode);
+        classroom.setStudentStudyAccessEnabled(true);
+        classroom = classroomRepository.save(classroom);
         Student student = studentRepository.save(new Student("REG-" + classroomCode, "Aluno " + classroomCode, null));
         Enrollment enrollment = enrollmentRepository.save(new Enrollment(classroom, student));
         Activity activity = activityRepository.save(new Activity(classroom, "Atividade " + classroomCode));

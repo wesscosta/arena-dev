@@ -48,6 +48,7 @@ type ClassroomView = {
   active: boolean;
   themeColor: ClassroomThemeColor;
   themeIcon: ClassroomThemeIcon;
+  studentStudyAccessEnabled: boolean;
   createdAt: string;
 };
 
@@ -80,6 +81,7 @@ function mapClassroom(item: ClassroomView): Classroom {
     active: item.active,
     themeColor: item.themeColor ?? "emerald",
     themeIcon: item.themeIcon ?? "code",
+    studentStudyAccessEnabled: item.studentStudyAccessEnabled ?? false,
     createdAt: item.createdAt,
   };
 }
@@ -158,6 +160,7 @@ export async function updateClassroom(input: {
   active: boolean;
   themeColor?: ClassroomThemeColor;
   themeIcon?: ClassroomThemeIcon;
+  studentStudyAccessEnabled: boolean;
 }): Promise<Classroom> {
   const result = await request<ClassroomView>(`/api/classrooms/${input.id}`, {
     method: "PUT",
@@ -167,6 +170,7 @@ export async function updateClassroom(input: {
       active: input.active,
       themeColor: input.themeColor ?? null,
       themeIcon: input.themeIcon ?? null,
+      studentStudyAccessEnabled: input.studentStudyAccessEnabled,
     }),
   });
   return mapClassroom(result);

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import JourneyContentReader from "@/components/study/JourneyContentReader";
 import { completeStudyContent, fetchStudyContent, fetchStudyJourney, fetchTeacherContentPreview, fetchTeacherStudyPreview, startStudyContent, studyDeviceClaims, type JourneyContentDetailView, type JourneyStudyView } from "@/lib/study-api";
 import styles from "../../../../study.module.css";
+import { studyExcerpt } from "@/lib/study-excerpt";
 
 type ReaderData = { token: string; journey: JourneyStudyView; content: JourneyContentDetailView };
 
@@ -17,7 +18,6 @@ export default function ContentReaderPage() {
   const [data, setData] = useState<ReaderData | null>(null);
   const [error, setError] = useState("");
   const [completing, setCompleting] = useState(false);
-
   useEffect(() => { let active = true; (async () => {
     if (teacherPreview) {
       try {
@@ -60,9 +60,14 @@ export default function ContentReaderPage() {
 
   return <div className={styles.readerView}>
     {teacherPreview && <div className={styles.teacherPreviewBar}><span><strong>Prévia do professor</strong> · leitura sem registrar progresso</span><a href={`/?journey=${journeyId}`}>Editar jornada</a></div>}
-    <header className={styles.readerTopbar}><Link href={`/learn/journeys/${journeyId}${teacherPreview ? "?preview=teacher" : ""}`}>← {navigation.moduleTitle}</Link><span>{navigation.position} / {navigation.total}</span></header>
-    <div className={styles.readerHeading}><p className={styles.eyebrow}>Conteúdo de estudo</p><h1>{data.content.title}</h1>{data.content.description && <p>{data.content.description}</p>}</div>
-    <JourneyContentReader content={data.content} />
+    <header className={styles.readerTopbar}>
+      <Link href={`/learn/journeys/${journeyId}${teacherPreview ? "?preview=teacher" : ""}`}>← {navigation.moduleTitle}</Link>
+      <span>{navigation.position} / {navigation.total}</span>
+    </header>
+    <div className={styles.readerScaled}>
+      <div className={styles.readerHeading}><p className={styles.eyebrow}>Conteúdo de estudo</p><h1>{data.content.title}</h1>{studyExcerpt(data.content.description, 220) && <p>{studyExcerpt(data.content.description, 220)}</p>}</div>
+      <JourneyContentReader content={data.content} />
+    </div>
     {error && <div className={styles.error}>{error}</div>}
     <footer className={styles.readerFooter}>
       <div>{navigation.previous ? <Link href={`/learn/journeys/${journeyId}/content/${navigation.previous.id}${teacherPreview ? "?preview=teacher" : ""}`}><span>Anterior</span><strong>← {navigation.previous.title}</strong></Link> : <span />}</div>

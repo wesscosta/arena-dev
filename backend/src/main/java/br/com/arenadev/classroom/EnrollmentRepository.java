@@ -11,5 +11,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
     List<Enrollment> findByClassroomIdAndActiveTrueOrderByStudentNameAsc(UUID classroomId);
     Optional<Enrollment> findByClassroomIdAndStudentId(UUID classroomId, UUID studentId);
     List<Enrollment> findByStudentIdAndActiveTrue(UUID studentId);
+    Optional<Enrollment> findByStudentIdAndClassroomIdAndActiveTrue(UUID studentId, UUID classroomId);
     void deleteByClassroomId(UUID classroomId);
 }

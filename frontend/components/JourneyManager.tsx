@@ -9,6 +9,11 @@ import {
   fetchJourneys,
   publishJourney,
   updateJourney,
+  fetchJourneyRedemption,
+  enableJourneyRedemption,
+  regenerateJourneyRedemption,
+  disableJourneyRedemption,
+  type JourneyRedemptionCode,
   type Journey,
   type JourneyInput,
   type JourneyStageInput,
@@ -71,6 +76,14 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
   const [busy, setBusy] = useState(false);
   const [creationOpen, setCreationOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [redemption, setRedemption] = useState<JourneyRedemptionCode | null>(null);
+
+  useEffect(() => {
+    if (!draft?.id || draft.status !== "PUBLISHED") { setRedemption(null); return; }
+    let active = true;
+    void fetchJourneyRedemption(draft.id).then((value) => { if (active) setRedemption(value); }).catch(() => { if (active) setRedemption(null); });
+    return () => { active = false; };
+  }, [draft?.id, draft?.status]);
 
   useEffect(() => {
     let active = true;
@@ -310,6 +323,13 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
                       <div className={styles.publishedTitle}><strong>{draft.title}</strong><span className={`${styles.status} ${styles[draft.status.toLowerCase()]}`}>{statusLabel(draft.status)}</span></div>
                       <p>{draft.description || "Sem descrição."}</p>
                       <div className={styles.publishedMeta}><span>{stageGroups.length} {stageGroups.length === 1 ? "módulo" : "módulos"}</span><span>{draft.stages.length} {draft.stages.length === 1 ? "conteúdo" : "conteúdos"}</span></div>
+                      <div className={styles.redemptionBox}>
+                        <div><span>ACESSO POR CÓDIGO</span><strong>{redemption?.active && redemption.code ? redemption.code : "Não disponibilizado"}</strong><small>{redemption?.redeemedCount ?? 0} resgate(s) · o código adiciona a Jornada ao perfil do aluno.</small></div>
+                        <div className={styles.redemptionActions}>
+                          {!redemption?.active && <button type="button" className={styles.secondary} disabled={busy} onClick={async()=>{if(!draft.id)return;setBusy(true);try{setRedemption(await enableJourneyRedemption(draft.id));notify("Código da Jornada disponibilizado.");}catch(e){notify(e instanceof Error?e.message:"Não foi possível gerar o código.");}finally{setBusy(false);}}}>Gerar código</button>}
+                          {redemption?.active && <><button type="button" className={styles.secondary} disabled={busy} onClick={async()=>{if(!draft.id||!window.confirm("Gerar um novo código? O anterior deixará de aceitar novos resgates."))return;setBusy(true);try{setRedemption(await regenerateJourneyRedemption(draft.id));notify("Código regenerado. Acessos existentes foram preservados.");}catch(e){notify(e instanceof Error?e.message:"Não foi possível regenerar o código.");}finally{setBusy(false);}}}>Regenerar</button><button type="button" className={styles.ghost} disabled={busy} onClick={async()=>{if(!draft.id)return;setBusy(true);try{await disableJourneyRedemption(draft.id);setRedemption(redemption?{...redemption,active:false}:null);notify("Novos resgates foram desativados. Acessos existentes permanecem.");}catch(e){notify(e instanceof Error?e.message:"Não foi possível desativar o código.");}finally{setBusy(false);}}}>Desativar</button></>}
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className={styles.fields}>

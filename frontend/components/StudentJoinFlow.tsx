@@ -34,8 +34,8 @@ function messageOf(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a operação.";
 }
 
-export default function StudentJoinFlow({ embedded = false }: { embedded?: boolean }) {
-  const [code, setCode] = useState("");
+export default function StudentJoinFlow({ embedded = false, initialCode = "" }: { embedded?: boolean; initialCode?: string }) {
+  const [code, setCode] = useState(() => normalizeJoinCode(initialCode));
   const [session, setSession] = useState<PublicSession | null>(null);
   const [identity, setIdentity] = useState("");
   const [access, setAccess] = useState<StudentJoinAccess | null>(null);
@@ -144,8 +144,9 @@ export default function StudentJoinFlow({ embedded = false }: { embedded?: boole
 
   useEffect(() => {
     const queryCode = new URLSearchParams(window.location.search).get("code");
-    if (queryCode) void resolveCode(queryCode);
-  }, []);
+    const entryCode = queryCode || initialCode;
+    if (entryCode) void resolveCode(entryCode);
+  }, [initialCode]);
 
   useEffect(() => {
     if (!access || sessionFinished) return;
@@ -395,7 +396,7 @@ export default function StudentJoinFlow({ embedded = false }: { embedded?: boole
   return (
     <main className="student-join-shell">
       <section className="student-join-card">
-        <div className="student-brand"><span>A</span><div><strong>ARENA DEV</strong><small>Participação ao vivo</small></div></div>
+        {!embedded && <div className="student-brand"><span>A</span><div><strong>ARENA DEV</strong><small>Participação ao vivo</small></div></div>}
 
         {!session && (
           <form className="student-join-form" onSubmit={submitCode}>
