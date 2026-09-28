@@ -6,7 +6,7 @@
 >
 > **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Execução atual:** `16.2 — Learning Resources & Content Ingestion` na branch `feat/v0.8-content-ingestion`. O `16.1 — Journey Core` foi integrado à `main` pelo PR #22.
+> **Execução atual:** `16.3 — Journey Study Experience` na branch `feat/v0.8-content-ingestion`. `16.3.0–16.3.7C` estão concluídos e `16.3.8.0–16.3.8.3` implementam a base de importação estruturada por Markdown.
 
 ## Modelo do produto
 
@@ -173,9 +173,9 @@ Detalhes de fechamento em `docs/RELEASE_0_7.md`.
 
 O `16.1 — Journey Core` introduziu a base persistente de progressão: jornadas por turma, etapas ordenadas, regras de desbloqueio, critérios de conclusão e progresso por matrícula.
 
-O `16.2 — Learning Resources & Content Ingestion` está concluído na branch ativa e adota criação **agnóstica à fonte**: o professor pode começar com IA, modelo, material existente ou em branco. PDF, Word, PowerPoint, texto, Markdown e links entram pelo mesmo pipeline de rascunho; documentos sem headings recebem segmentação heurística revisável, páginas do Notion são reconhecidas dentro do fluxo de links e nada é publicado sem revisão. O Journey Builder V2 organiza a autoria por módulos/itens, oferece a prévia **Visualizar como aluno** e o contrato `LearningResource` possui CRUD HTTP completo.
+O `16.2 — Learning Resources & Content Ingestion` consolidou `LearningResource`, ingestão e preview revisável. O `16.3` já entrega `/learn`, Study API independente de `/join`, Reader, progresso/retomada, prévia do professor, Builder simplificado e Journey Progression UX.
 
-A v0.8 começa pela reestruturação da experiência do professor e avança agora para `16.3 — Journey Study Experience`. Jornada é definida como estudo sequencial por módulos/capítulos e conteúdos; Atividades e dinâmicas Ao Vivo permanecem domínios separados.
+A fatia atual `16.3.8 — Content Ingestion & Structured Import` torna a ingestão mais previsível: Markdown estruturado é interpretado deterministicamente (`H1 → título`, `H2 → módulo`, `H3 → conteúdo`, `H4–H6 → estrutura interna`), sem gastar IA para reinterpretar hierarquia explícita. O wizard possui entrada Markdown própria e todo resultado continua como Draft revisável. Notion permanece um adaptador possível: exportações/conversões para Markdown já podem usar o pipeline; integração nativa autorizada fica para avaliação posterior. O MVP usa importação **snapshot**, sem sincronização bidirecional.
 
 Estado final do `16.0 — Professor Arena Experience`:
 
@@ -241,6 +241,8 @@ O histórico detalhado de release permanece em `docs/RELEASE_0_6.md`. A document
 
 - [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
 - [`docs/ROADMAP_0_8.md`](docs/ROADMAP_0_8.md)
+- [`docs/INCREMENT_16_3.md`](docs/INCREMENT_16_3.md)
+- [`docs/INCREMENT_16_2.md`](docs/INCREMENT_16_2.md)
 - [`docs/INCREMENT_16_0.md`](docs/INCREMENT_16_0.md)
 - [`docs/ROADMAP_0_7.md`](docs/ROADMAP_0_7.md)
 - [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md)
@@ -262,7 +264,7 @@ Histórico da v0.6:
 - `v0.5.0` — histórica;
 - `v0.6.0` — baseline técnica encerrada e congelada;
 - `v0.7.0` — Educational Integrations; publicada e encerrada;
-- `v0.8` — Professor Experience & Journey MVP; linha ativa, `16.0` em execução.
+- `v0.8` — Professor Experience & Journey MVP; linha ativa, `16.3.8 — Content Ingestion & Structured Import` em execução.
 
 ## Licença
 

@@ -33,7 +33,7 @@
 
 Os incrementos `16.0 — Professor Arena Experience` e `16.1 — Journey Core` foram integrados à `main` pelos PRs #21 e #22.
 
-O `16.2 — Learning Resources & Content Ingestion` está em fechamento na branch `feat/v0.8-content-ingestion`. O próximo incremento é `16.3 — Journey Study Experience`, orientado pelo ADR-0045.
+O `16.2 — Learning Resources & Content Ingestion` está concluído na branch `feat/v0.8-content-ingestion`. O `16.3 — Journey Study Experience` está em execução: `16.3.0–16.3.7C` concluídos e `16.3.8.0–16.3.8.3` implementam a base determinística de Structured Import por Markdown.
 
 ## Histórico
 
@@ -63,4 +63,4 @@ O `16.2 — Learning Resources & Content Ingestion` está em fechamento na branc
 
 Não reescrever documentação histórica para fabricar evidência retroativa. Quando houver divergência entre fechamento técnico e publicação externa, registrar explicitamente a evidência disponível.
 
-**Atualizado em 27/09/2026 para o fechamento do 16.2 e redefinição técnica do 16.3 — Journey Study Experience.**
+**Atualizado em 28/09/2026 para o estado corrente do 16.3 e início do 16.3.8 — Content Ingestion & Structured Import.**

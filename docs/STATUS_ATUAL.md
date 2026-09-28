@@ -1,89 +1,64 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 27 de setembro de 2026
+**Última sincronização documental:** 28 de setembro de 2026
 
 **Baseline publicada:** `v0.7.0 — Educational Integrations`.
 
 **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 
-**Incremento em fechamento:** `16.2 — Learning Resources & Content Ingestion` concluído na branch; `16.3 — Journey Study Experience` é o próximo incremento após merge.
+**Incremento atual:** `16.3 — Journey Study Experience`; `16.3.0–16.3.7C` concluídos e `16.3.8.0–16.3.8.3` implementados na branch ativa.
 
 **Branch ativa:** `feat/v0.8-content-ingestion`.
 
 ## Estado resumido
 
-A v0.7.0 está encerrada e publicada. Os incrementos `16.0` e `16.1` foram integrados à `main`; o `16.2 — Learning Resources & Content Ingestion` concluiu seus gates técnicos na branch ativa e aguarda revisão/merge.
+A v0.7.0 está encerrada e publicada. `16.0` e `16.1` foram integrados à `main`; a branch ativa acumula o fechamento do `16.2` e a execução do `16.3`.
 
-O cockpit da Arena já migrou para uma arquitetura orientada por ações, com navegação lateral, workspace de dinâmica, ferramentas contextuais e rail persistente de participantes/sessão.
+A Journey já possui Study API própria, `/learn`, Reader, progresso e retomada, prévia do professor na mesma experiência, Builder reduzido a módulos + conteúdos e Progression UX com estados `COMPLETED`, `CURRENT` e `LOCKED`.
 
-O `16.0 — Professor Arena Experience` e o `16.1 — Journey Core` foram integrados à `main` pelos PRs #21 e #22. A branch ativa fecha o `16.2`, com conteúdo real, criação agnóstica à fonte, Journey Builder V2 e contrato completo de recursos.
+A frente atual é `16.3.8 — Content Ingestion & Structured Import`. A base Markdown determinística já preserva hierarquia explícita sem depender de IA e sempre produz um Draft revisável antes da materialização.
 
 ## Baselines
 
 ```text
 baseline publicada        v0.7.0
 linha ativa               v0.8
-último incremento          16.1 · mergeado no PR #22
-incremento atual           16.2 · fechamento
-próximo incremento         16.3 · Journey Study Experience
+último integrado à main   16.1 · PR #22
+incremento atual           16.3 · Journey Study Experience
+fatia atual                16.3.8 · Structured Import
 branch                    feat/v0.8-content-ingestion
 schema                    Flyway V1–V31
 provider operacional      Microsoft Teams
 Google Classroom          standby
 ```
 
-## Journey Core — implementação atual
+## Journey Study Experience — implementação atual
 
-- Flyway V28 com `journeys`, `journey_stages` e `journey_stage_progress`;
-- jornadas pertencem à turma e passam por `DRAFT`, `PUBLISHED` e `ARCHIVED`;
-- etapas ordenadas podem vincular uma atividade existente;
-- desbloqueio imediato ou dependente da etapa anterior;
-- conclusão manual ou derivada de `ActivitySubmission`;
-- progresso calculado por matrícula sem duplicar o estado das entregas;
-- estrutura protegida após publicação;
-- aba **Jornadas** e editor mínimo do professor implementados;
-- criação e publicação validadas no ambiente Docker;
-- leitura pública de jornadas publicada protegida por `X-Participant-Token`;
-- contrato de progresso expõe etapa atual, próxima ação e timestamps de conclusão derivados das entregas;
-- jornadas publicadas usam visualização compacta de leitura no painel do professor.
+- `/learn` e Study API independentes da sessão ao vivo;
+- Reader de `LearningResource` com Markdown/GFM e texto simples;
+- progresso persistente e retomada do conteúdo `CURRENT`;
+- estados `COMPLETED`, `CURRENT` e `LOCKED` como fonte de verdade da progressão;
+- CTA **Continue de onde parou** derivado do estado real, sem progresso inventado;
+- mesma experiência de estudo para aluno e professor, com modo de prévia sem registrar progresso;
+- Journey Builder simplificado para módulos/capítulos + conteúdos;
+- UI convergida com a referência visual e timeline com semântica de progresso;
+- atividades, Quiz e dinâmicas permanecem fora da estrutura da Journey.
 
-## Learning Resources & Content Ingestion — concluído na branch
+## Content Ingestion & Structured Import — 16.3.8
 
-- `LearningResource` separado de `Activity`;
-- módulos persistidos por `JourneySection`;
-- itens de jornada tipados como conteúdo, atividade, quiz, desafio, checkpoint ou recurso externo;
-- wizard **Nova jornada** com IA, modelos, importação e autoria em branco, sem exigir que o professor conheça Markdown/Notion;
-- ingestão de texto e Markdown;
-- upload de PDF, DOC/DOCX, PPT/PPTX, Markdown e TXT até 20 MB;
-- links tratados como recurso externo; Notion é reconhecido automaticamente dentro do fluxo de links, sem scraping do HTML público;
-- prévia editável antes da materialização, incluindo estrutura, tipo, corpo/instruções e URL de recursos externos;
-- conteúdo de IA permanece rascunho até revisão explícita do professor;
-- upload multipart validado no navegador com preservação correta do boundary HTTP;
-- Journey Builder V2 com módulos visuais e itens tipados;
-- visão **Estrutura / Visualizar como aluno** implementada;
-- prévia estrutural por capítulos/nós validada em 1440×900 sem scroll global;
-- persistência administrativa de módulo, tipo do item e recurso vinculável consolidada no Journey Core;
-- segmentação heurística reconhece títulos Office/PDF e agrupa documentos longos sem headings;
-- extração validada com arquivos binários reais PDF/DOCX/PPTX;
-- CRUD HTTP completo de `LearningResource`, incluindo leitura individual e exclusão segura;
-- recurso vinculado a jornada não pode ser excluído e retorna conflito HTTP.
+- fontes convergem para `Draft → módulos → conteúdos → revisão humana → materialização`;
+- Markdown possui entrada explícita no wizard;
+- `H1` sugere o título, `H2` vira módulo e `H3` vira conteúdo;
+- `H4–H6` permanecem dentro do corpo do conteúdo;
+- headings dentro de code fences não alteram a estrutura;
+- `H2` sem `H3` e com corpo vira um único conteúdo, sem hierarquia inventada;
+- Markdown estruturado não chama IA para reinterpretar estrutura explícita;
+- PDF/Office/texto continuam suportados pelo pipeline do 16.2;
+- Notion não é dependência: Markdown exportado/conversão já reutiliza o mesmo pipeline;
+- integração nativa autorizada com Notion permanece evolução posterior;
+- MVP de importação é snapshot, sem sincronização contínua/bidirecional;
+- IA permanece opcional para material ambíguo e sem autoridade de publicação.
 
-
-## Correção de produto — fronteira da Jornada
-
-A direção do `16.3` foi corrigida antes de ampliar a implementação. O Journey Builder do `16.2` havia começado a expor atividade, quiz, desafio e checkpoint como tipos equivalentes de Journey, aproximando a feature de um segundo workflow de Atividades.
-
-A decisão vigente é o [`ADR-0045`](adr/ADR-0045-jornada-e-estudo-sequencial-nao-workflow-de-atividades.md):
-
-```text
-Jornada     → o que estudar e onde continuar
-Atividades  → o que fazer/entregar
-Arena       → o que acontece ao vivo
-```
-
-A experiência de Journey passa a expor somente **módulos/capítulos, conteúdos e progresso**. Tipos e regras já existentes permanecem internamente por compatibilidade até que haja evidência para uma migração de domínio, mas deixam de orientar a UI padrão.
-
-A rota `/join` continua sendo participação temporária em sessão ao vivo e não será o acesso canônico ao estudo. O `16.3` criará `/learn` e uma API própria de estudo.
 
 ## UX transversal — shell e participantes
 
@@ -127,7 +102,7 @@ A rota `/join` continua sendo participação temporária em sessão ao vivo e n�
 backend unit        107 passed
 backend integration 76 passed
 backend total       183 passed
-frontend tests      258 passed
+frontend tests      263 passed
 frontend typecheck  OK
 frontend build      OK
 Flyway              V1–V31 OK
@@ -135,7 +110,7 @@ Flyway              V1–V31 OK
 
 ## Próximo gate
 
-Revisar e integrar a branch do `16.2`. Após o merge, iniciar `16.3 — Journey Study Experience`: Journey passa a significar módulos/capítulos + conteúdos + progresso, com API independente de `/join`, rota `/learn`, leitor de conteúdo e a mesma experiência de consumo para professor e aluno.
+Avançar dentro do `16.3.8`: fortalecer revisão de documentos grandes, validar proveniência/materialização ponta a ponta e só então introduzir fallback de IA para estrutura realmente ambígua. Adapters externos, incluindo Notion, devem produzir o mesmo documento normalizado e não alterar o domínio da Journey.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)

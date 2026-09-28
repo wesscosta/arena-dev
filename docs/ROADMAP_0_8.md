@@ -257,7 +257,7 @@ O incremento não transforma Journey em uma segunda área de Atividades e não i
 8. `16.3.7` simplificação do Builder — **concluído**;
 9. `16.3.7B` convergência visual com a referência de produto — **concluído**;
 10. `16.3.7C` Journey Progression UX — **concluído**;
-10. `16.3.8` alinhamento de ingestão/IA e hierarquia editorial.
+11. `16.3.8` Content Ingestion & Structured Import — **16.3.8.0–16.3.8.3 implementados**.
 
 ## 16.4 — Journey Map
 
