@@ -92,6 +92,64 @@ class ContentIngestionServiceTest {
     }
 
     @Test
+    void preservesDeepMarkdownHeadingsInsideContentWithoutCallingAi() {
+        UUID classroomId = classroom();
+        String markdown = """
+                # Python
+                ## Fundamentos
+                Introdução do módulo.
+                ### Variáveis
+                Conceito de variável.
+                #### Boas práticas
+                Use nomes significativos.
+                ```python
+                # isto não é heading
+                valor = 10
+                ```
+                ### Tipos de dados
+                Texto do segundo conteúdo.
+                """;
+
+        var draft = service.preview(new ContentIngestionService.PreviewRequest(
+                classroomId, ContentIngestionSource.MARKDOWN, null, null, null,
+                markdown, null, "python.md"
+        ));
+
+        assertThat(draft.title()).isEqualTo("Python");
+        assertThat(draft.sections()).hasSize(1);
+        assertThat(draft.sections().getFirst().title()).isEqualTo("Fundamentos");
+        assertThat(draft.sections().getFirst().description()).contains("Introdução do módulo");
+        assertThat(draft.sections().getFirst().items()).extracting(ContentIngestionService.DraftItem::title)
+                .containsExactly("Variáveis", "Tipos de dados");
+        assertThat(draft.sections().getFirst().items().getFirst().body())
+                .contains("#### Boas práticas", "# isto não é heading", "valor = 10");
+        verifyNoInteractions(ai);
+    }
+
+    @Test
+    void mapsH2BodyToContentWithoutInventingStructureOrCallingAi() {
+        UUID classroomId = classroom();
+        String markdown = """
+                # Git
+                ## Fundamentos
+                Git é um sistema de controle de versão distribuído.
+                ## Commits
+                Um commit registra um estado relevante do trabalho.
+                """;
+
+        var draft = service.preview(new ContentIngestionService.PreviewRequest(
+                classroomId, ContentIngestionSource.MARKDOWN, null, null, null,
+                markdown, null, "git.md"
+        ));
+
+        assertThat(draft.sections()).extracting(ContentIngestionService.DraftSection::title)
+                .containsExactly("Fundamentos", "Commits");
+        assertThat(draft.sections()).allSatisfy(section -> assertThat(section.items()).hasSize(1));
+        assertThat(draft.sections().getFirst().items().getFirst().body()).contains("controle de versão");
+        verifyNoInteractions(ai);
+    }
+
+    @Test
     void keepsExternalAndNotionLinksAsReferencesInsteadOfScrapingThem() {
         UUID classroomId = classroom();
 

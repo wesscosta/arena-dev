@@ -282,44 +282,9 @@ public class ContentIngestionService {
 
     private DraftView fromMarkdown(PreviewRequest request) {
         String markdown = requireContent(request);
-        String title = clean(request.title());
-        List<DraftSection> sections = new ArrayList<>();
-        String currentSection = "Conteúdo";
-        String currentSectionDescription = null;
-        List<DraftItem> currentItems = new ArrayList<>();
-        String currentItemTitle = null;
-        StringBuilder currentBody = new StringBuilder();
-
-        for (String rawLine : markdown.split("\\R")) {
-            String line = rawLine.stripTrailing();
-            if (line.startsWith("# ") && title == null) {
-                title = line.substring(2).trim();
-                continue;
-            }
-            if (line.startsWith("## ")) {
-                flushItem(currentItems, currentItemTitle, currentBody);
-                currentItemTitle = null;
-                if (!currentItems.isEmpty()) {
-                    sections.add(new DraftSection(currentSection, currentSectionDescription, List.copyOf(currentItems)));
-                }
-                currentSection = line.substring(3).trim();
-                currentSectionDescription = null;
-                currentItems = new ArrayList<>();
-                currentBody = new StringBuilder();
-                continue;
-            }
-            if (line.startsWith("### ")) {
-                flushItem(currentItems, currentItemTitle, currentBody);
-                currentItemTitle = line.substring(4).trim();
-                currentBody = new StringBuilder();
-                continue;
-            }
-            currentBody.append(line).append('\n');
-        }
-        flushItem(currentItems, currentItemTitle, currentBody);
-        if (!currentItems.isEmpty()) {
-            sections.add(new DraftSection(currentSection, currentSectionDescription, List.copyOf(currentItems)));
-        }
+        MarkdownDocument document = parseMarkdown(markdown);
+        String title = valueOr(clean(request.title()), document.title());
+        List<DraftSection> sections = mapMarkdownToJourney(document);
         if (sections.isEmpty()) {
             sections = fromText(new PreviewRequest(
                     request.classroomId(), ContentIngestionSource.TEXT, request.title(),
@@ -328,25 +293,101 @@ public class ContentIngestionService {
         }
         return new DraftView(
                 valueOr(title, "Jornada importada"),
-                valueOr(request.description(), "Estrutura sugerida a partir do Markdown."),
+                valueOr(request.description(), "Estrutura preservada a partir do Markdown fornecido."),
                 ContentIngestionSource.MARKDOWN,
                 clean(request.sourceLabel()),
                 sections
         );
     }
 
-    private void flushItem(List<DraftItem> items, String title, StringBuilder body) {
-        String content = body.toString().trim();
-        if (title == null && content.isEmpty()) return;
-        String itemTitle = title == null ? summarize(content, 72) : title;
-        items.add(new DraftItem(
-                itemTitle,
-                content.isEmpty() ? null : summarize(content, 180),
-                DraftItemType.CONTENT,
-                content.isEmpty() ? null : content,
-                null
-        ));
+    /**
+     * Parses Markdown into a source-neutral heading tree before any Journey mapping.
+     * H1 names the document. H2/H3 keep their source hierarchy; H4+ remain inside
+     * the nearest content body so the reader preserves the author's internal structure.
+     */
+    private MarkdownDocument parseMarkdown(String markdown) {
+        String documentTitle = null;
+        List<MarkdownSection> sections = new ArrayList<>();
+        MarkdownSection currentSection = null;
+        MarkdownContent currentContent = null;
+        StringBuilder preamble = new StringBuilder();
+        boolean fenced = false;
+
+        for (String rawLine : markdown.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1)) {
+            String line = rawLine.stripTrailing();
+            String trimmed = line.stripLeading();
+            if (trimmed.startsWith("```")) {
+                fenced = !fenced;
+                appendMarkdown(currentContent, currentSection, preamble, line);
+                continue;
+            }
+            if (!fenced && trimmed.startsWith("# ") && documentTitle == null) {
+                documentTitle = trimmed.substring(2).trim();
+                continue;
+            }
+            if (!fenced && trimmed.startsWith("## ")) {
+                currentSection = new MarkdownSection(trimmed.substring(3).trim(), new StringBuilder(), new ArrayList<>());
+                sections.add(currentSection);
+                currentContent = null;
+                continue;
+            }
+            if (!fenced && trimmed.startsWith("### ")) {
+                if (currentSection == null) {
+                    currentSection = new MarkdownSection("Conteúdo", new StringBuilder(), new ArrayList<>());
+                    sections.add(currentSection);
+                }
+                currentContent = new MarkdownContent(trimmed.substring(4).trim(), new StringBuilder());
+                currentSection.contents().add(currentContent);
+                continue;
+            }
+            // H4/H5/H6 are deliberately preserved as Markdown in the content body.
+            appendMarkdown(currentContent, currentSection, preamble, line);
+        }
+        if (!preamble.toString().isBlank() && sections.isEmpty()) {
+            MarkdownSection section = new MarkdownSection("Conteúdo", new StringBuilder(), new ArrayList<>());
+            section.contents().add(new MarkdownContent(valueOr(documentTitle, "Conteúdo"), preamble));
+            sections.add(section);
+        }
+        return new MarkdownDocument(documentTitle, List.copyOf(sections));
     }
+
+    private void appendMarkdown(MarkdownContent content, MarkdownSection section, StringBuilder preamble, String line) {
+        if (content != null) content.body().append(line).append('\n');
+        else if (section != null) section.intro().append(line).append('\n');
+        else preamble.append(line).append('\n');
+    }
+
+    private List<DraftSection> mapMarkdownToJourney(MarkdownDocument document) {
+        List<DraftSection> result = new ArrayList<>();
+        for (MarkdownSection section : document.sections()) {
+            List<DraftItem> items = new ArrayList<>();
+            String intro = section.intro().toString().trim();
+            for (MarkdownContent content : section.contents()) {
+                String body = content.body().toString().trim();
+                items.add(new DraftItem(
+                        content.title(),
+                        body.isEmpty() ? null : summarize(body, 180),
+                        DraftItemType.CONTENT,
+                        body.isEmpty() ? null : body,
+                        null
+                ));
+            }
+            // An H2 with body but no H3 is still useful: materialize one content,
+            // rather than inventing a hierarchy or calling AI.
+            if (items.isEmpty() && !intro.isEmpty()) {
+                items.add(new DraftItem(section.title(), summarize(intro, 180), DraftItemType.CONTENT, intro, null));
+                intro = "";
+            }
+            if (!items.isEmpty()) {
+                result.add(new DraftSection(section.title(), intro.isEmpty() ? null : summarize(intro, 180), List.copyOf(items)));
+            }
+        }
+        return result;
+    }
+
+    private record MarkdownDocument(String title, List<MarkdownSection> sections) {}
+    private record MarkdownSection(String title, StringBuilder intro, List<MarkdownContent> contents) {}
+    private record MarkdownContent(String title, StringBuilder body) {}
 
     private DraftView fromLink(PreviewRequest request) {
         String sourceUrl = clean(request.sourceUrl());

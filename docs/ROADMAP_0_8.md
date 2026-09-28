@@ -2,7 +2,7 @@
 
 **Linha ativa:** v0.8
 **Branch de execução:** `feat/v0.8-content-ingestion`
-**Estado atual:** `16.3 — Journey Study Experience` em execução; `16.3.0`–`16.3.7C` concluídos na branch; `16.3.8` é a próxima fatia.
+**Estado atual:** `16.3 — Journey Study Experience` em execução; `16.3.0`–`16.3.7C` concluídos; `16.3.8.0–16.3.8.3` implementam a base de importação estruturada Markdown.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
@@ -18,7 +18,7 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | 16.0 | Professor Arena Experience | **Concluído · PR #21 mergeado** |
 | 16.1 | Journey Core | **Concluído · PR #22 mergeado** |
 | 16.2 | Learning Resources & Content Ingestion | **Concluído na branch · aguardando merge** |
-| 16.3 | Journey Study Experience | **Em execução · 16.3.0–16.3.7C concluídos** |
+| 16.3 | Journey Study Experience | **Em execução · 16.3.8 Structured Import em implementação** |
 | 16.4 | Journey Map | **Absorvido pelo 16.3; sem incremento separado no MVP** |
 | 16.5 | Question Attempts & Skills | **Candidato pós-validação do 16.3** |
 | 16.6 | Mastery básico | **Candidato pós-validação do 16.3** |

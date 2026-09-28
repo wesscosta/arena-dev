@@ -68,8 +68,9 @@ test("new journey onboarding is source-agnostic and review-first", () => {
   assert.match(wizard, /Usar um modelo/);
   assert.match(wizard, /Importar material/);
   assert.match(wizard, /Começar em branco/);
-  assert.match(wizard, /PDF, Word, PowerPoint e texto entram no mesmo fluxo/);
-  assert.match(wizard, /Markdown também são aceitos, mas não são exigidos/);
+  assert.match(wizard, /PDF, Word e PowerPoint podem ser analisados/);
+  assert.match(wizard, /Arquivos Markdown preservam a hierarquia declarada sem depender de IA/);
+  assert.match(wizard, /H1 define o título · H2 vira módulo · H3 vira conteúdo · H4–H6 permanecem dentro do conteúdo/);
   assert.match(wizard, /Links do Notion são reconhecidos automaticamente/);
   assert.doesNotMatch(wizard, /\["notion", "Notion"\]/);
   assert.match(wizard, /Nada é publicado automaticamente/);

@@ -477,41 +477,40 @@ Objetivo: aproximar deliberadamente Study Shell, Journey Study View e Content Re
 - professor continua usando exatamente a mesma Study View/Reader em modo de prévia, sem uma segunda representação visual;
 - comportamento responsivo troca a sidebar por header compacto sem alterar a arquitetura das rotas ou o domínio.
 
-## 16.3.8 — Ingestão/IA alinhada ao novo escopo
+## 16.3.8 — Content Ingestion & Structured Import
 
-O wizard do `16.2` permanece, mas toda fonte converge para:
+A ingestão passa a tratar **Markdown estruturado como a primeira fonte determinística**, sem transformar Markdown ou Notion no modelo mental do produto. O destino continua sendo `Draft → módulos → conteúdos → revisão humana → materialização`.
+
+### 16.3.8.0–16.3.8.3 — base implementada
 
 ```text
-Source
-  ↓
-Draft
-  ↓
-Sections
-  ↓
-Contents
+Markdown → MarkdownDocument → mapper determinístico → Journey Draft → revisão humana → materialização
 ```
 
-Não gerar quiz/desafio/checkpoint como estrutura de Journey.
+Regras iniciais do perfil Markdown:
 
-### Saída esperada da IA
+- `H1` → título sugerido da Journey;
+- `H2` → módulo;
+- `H3` → conteúdo navegável;
+- `H4`, `H5` e `H6` → permanecem no corpo Markdown do conteúdo e são renderizados pelo Content Reader;
+- headings dentro de code fences não são interpretados como estrutura;
+- corpo de um `H2` sem `H3` vira um único conteúdo do módulo, sem inventar subtópicos;
+- material estruturado não chama IA para reinterpretar hierarquia já explícita.
 
-```json
-{
-  "sections": [
-    {
-      "title": "Fundamentos",
-      "items": [
-        {
-          "title": "HTTP",
-          "body": "..."
-        }
-      ]
-    }
-  ]
-}
-```
+O wizard ganhou entrada explícita **Markdown** dentro de `Importar material`, com preview editável antes da materialização. Nada é publicado automaticamente.
 
-A IA continua sem autoridade de publicação.
+### Fronteira arquitetural
+
+IA é capability opcional para fontes ambíguas, não dependência do pipeline. Notion não é o núcleo desta fatia: um acervo do Notion pode aproveitar o mesmo fluxo por Markdown exportado/conversão. Um adapter nativo autorizado poderá ser avaliado posteriormente, produzindo o mesmo documento normalizado.
+
+A importação do MVP é **snapshot**: a fonte registra proveniência, mas não permanece sincronizada com a Journey. Sincronização contínua/bidirecional fica fora do escopo.
+
+### Próximas fatias internas
+
+- `16.3.8.4` — fortalecer preview/revisão para documentos grandes;
+- `16.3.8.5` — validar materialização e proveniência ponta a ponta;
+- `16.3.8.6` — fallback assistido por IA apenas quando a estrutura for ambígua;
+- `16.3.8.7` — avaliar adapters externos, incluindo Notion, sem acoplá-los ao domínio.
 
 ## Identidade e acesso
 
@@ -723,7 +722,9 @@ Professor
 6. `16.3.5` — progresso e continuidade;
 7. `16.3.6` — acesso do professor na mesma experiência;
 8. `16.3.7` — simplificação do Builder;
-9. `16.3.8` — alinhamento final de ingestão e IA.
+9. `16.3.7B` — convergência visual;
+10. `16.3.7C` — Journey Progression UX;
+11. `16.3.8` — Content Ingestion & Structured Import.
 
 ## Product Gate após 16.3
 
@@ -760,4 +761,4 @@ Fatia criada após a validação da convergência visual para fechar a diferenç
 
 ### Decisão de escopo
 
-A 16.3.7C implementa gamificação estrutural por **progressão, estado, orientação e feedback**. Permanecem fora desta fatia XP novo, ranking, badges, moedas, streak, skill tree, mapa espacial, quizzes e atividades dentro da Journey. A próxima fatia permanece `16.3.8 — Alinhamento de ingestão e IA`.
+A 16.3.7C implementa gamificação estrutural por **progressão, estado, orientação e feedback**. Permanecem fora desta fatia XP novo, ranking, badges, moedas, streak, skill tree, mapa espacial, quizzes e atividades dentro da Journey. A linha seguinte é `16.3.8 — Content Ingestion & Structured Import`; a base determinística Markdown (`16.3.8.0–16.3.8.3`) já está implementada.

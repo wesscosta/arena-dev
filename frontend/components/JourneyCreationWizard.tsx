@@ -22,7 +22,7 @@ type Props = {
 };
 
 type Mode = "choose" | "ai" | "template" | "import" | "preview";
-type ImportMode = "file" | "text" | "url";
+type ImportMode = "file" | "markdown" | "text" | "url";
 
 const TEMPLATE_OPTIONS = [
   { key: "SEQUENCE", title: "Sequência de estudo", text: "Contexto, desenvolvimento e síntese." },
@@ -331,6 +331,7 @@ export default function JourneyCreationWizard({
             <div className={styles.importTabs}>
               {([
                 ["file", "Arquivo"],
+                ["markdown", "Markdown"],
                 ["text", "Colar texto"],
                 ["url", "Link"],
               ] as const).map(([key, label]) => (
@@ -348,10 +349,17 @@ export default function JourneyCreationWizard({
                   onDrop={handleDrop}
                 >
                   <strong>{busy ? "Analisando material..." : dragOver ? "Solte o arquivo aqui" : "Arraste um material ou escolha um arquivo"}</strong>
-                  <p>PDF, Word, PowerPoint e texto entram no mesmo fluxo de análise. Formatos como Markdown também são aceitos, mas não são exigidos.</p>
+                  <p>PDF, Word e PowerPoint podem ser analisados. Arquivos Markdown preservam a hierarquia declarada sem depender de IA.</p>
                   <label className={styles.fileButton}>Escolher arquivo<input type="file" disabled={busy} accept=".pdf,.doc,.docx,.ppt,.pptx,.md,.markdown,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/markdown" onChange={(event) => void handleFile(event)} /></label>
                   <small className={styles.supportedFiles}>Até 20 MB · {(capabilities?.supportedFileExtensions ?? ["PDF", "DOCX", "PPTX", "TXT", "MD"]).join(" · ")}</small>
                 </div>
+              </>
+            )}
+            {importMode === "markdown" && (
+              <>
+                <label><span>Título opcional</span><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Se vazio, a Arena usa o H1" /></label>
+                <div className={styles.structureHint}><strong>Importação estruturada</strong><span>H1 define o título · H2 vira módulo · H3 vira conteúdo · H4–H6 permanecem dentro do conteúdo.</span><small>A Arena preserva a estrutura explícita do Markdown. IA não é necessária para este fluxo.</small></div>
+                <label><span>Cole o Markdown</span><textarea className={styles.largeText} value={textContent} onChange={(event) => setTextContent(event.target.value)} placeholder={"# Python\n\n## Fundamentos\n\n### Variáveis\nConteúdo..."} /></label>
               </>
             )}
             {importMode === "text" && (
@@ -371,6 +379,7 @@ export default function JourneyCreationWizard({
             )}
             <div className={styles.footer}>
               <button className={styles.secondary} onClick={() => setMode("choose")}>Voltar</button>
+              {importMode === "markdown" && <button className={styles.primary} disabled={busy || !textContent.trim()} onClick={() => void preview({ source: "MARKDOWN", content: textContent, sourceLabel: "Markdown colado" })}>{busy ? "Estruturando..." : "Preservar estrutura"}</button>}
               {importMode === "text" && <button className={styles.primary} disabled={busy || !textContent.trim()} onClick={() => void preview({ source: "TEXT", content: textContent, sourceLabel: "Texto colado" })}>{busy ? "Analisando..." : "Analisar material"}</button>}
               {importMode === "url" && <button className={styles.primary} disabled={busy || !sourceUrl.trim()} onClick={() => void preview({ source: sourceUrl.toLowerCase().includes("notion") ? "NOTION" : "URL", sourceUrl, sourceLabel })}>{sourceUrl.toLowerCase().includes("notion") ? "Vincular página" : "Usar link"}</button>}
             </div>
@@ -451,7 +460,7 @@ export default function JourneyCreationWizard({
               ))}
               <button type="button" className={styles.addSectionButton} onClick={addSection}>+ Adicionar módulo</button>
             </div>
-            <div className={styles.reviewNote}>Revise títulos, módulos e tipos antes de continuar. Nada é publicado automaticamente: esta estrutura vira um rascunho editável.</div>
+            <div className={styles.reviewNote}>{draft.source === "MARKDOWN" ? "Estrutura detectada do Markdown. Revise o mapeamento antes de continuar; H4–H6 e o corpo permanecem dentro de cada conteúdo." : "Revise títulos, módulos e conteúdos antes de continuar."} Nada é publicado automaticamente: esta estrutura vira um rascunho editável.</div>
             <div className={styles.footer}><button className={styles.secondary} onClick={() => setMode("choose")}>Refazer</button><button className={styles.primary} disabled={busy || !draft.title.trim() || itemCount === 0} onClick={() => void useDraft()}>{busy ? "Criando rascunho..." : "Usar esta estrutura"}</button></div>
           </div>
         )}

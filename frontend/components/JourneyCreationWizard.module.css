@@ -546,3 +546,6 @@
   font-size: .72rem;
   line-height: 1.45;
 }
+
+/* 16.3.8 — deterministic structured import */
+.structureHint{display:grid;gap:.28rem;padding:.8rem .9rem;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));border-radius:.72rem;background:color-mix(in srgb,var(--accent) 5%,var(--surface));}.structureHint strong{font-size:.78rem}.structureHint span{color:var(--text);font-size:.72rem;line-height:1.45}.structureHint small{color:var(--muted);font-size:.67rem;line-height:1.45}
