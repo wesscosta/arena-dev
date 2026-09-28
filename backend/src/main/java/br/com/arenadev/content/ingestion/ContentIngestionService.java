@@ -405,7 +405,16 @@ public class ContentIngestionService {
     }
 
     private static String summarize(String value, int max) {
-        String text = value == null ? "" : value.replaceAll("\\s+", " ").trim();
+        String text = value == null ? "" : value
+                .replaceAll("(?s)```.*?```", " ")
+                .replaceAll("(?m)^#{1,6}\\s+", "")
+                .replaceAll("(?m)^\\s*>\\s?", "")
+                .replaceAll("(?m)^\\s*[-*+]\\s+", "")
+                .replaceAll("!\\[[^]]*]\\([^)]*\\)", " ")
+                .replaceAll("\\[([^]]+)]\\([^)]*\\)", "$1")
+                .replaceAll("[`*_~]", "")
+                .replaceAll("\\s+", " ")
+                .trim();
         if (text.length() <= max) return text;
         return text.substring(0, Math.max(1, max - 1)).trim() + "…";
     }
