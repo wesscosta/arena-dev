@@ -730,3 +730,9 @@ Professor
 `16.5 — Question Attempts & Skills`, `16.6 — Mastery`, `16.7 — Review`, `16.8 — Teacher Journey Dashboard` e `16.9 — Minimal Gamification` são **candidatos pós-validação**, não uma sequência automática de implementação.
 
 Não iniciar esses incrementos, achievements ou uma visualização gamificada adicional enquanto o fluxo básico de estudo não estiver validado com usuários reais. O gate deve verificar pelo menos: compreensão da estrutura, retomada do ponto correto, leitura/conclusão sem fricção relevante e utilidade do progresso para aluno e professor. O valor da Journey precisa ser demonstrado primeiro como experiência de aprendizagem, não como quantidade de mecânicas.
+
+### Ajuste de fidelidade visual e execução de atividades — 28/09/2026
+
+Após comparação direta com o export do Figma (`JornadaScreen.tsx`), a convergência visual recebeu uma segunda passagem. A Study View deixa de centralizar uma coluna excessivamente distante da sidebar e passa a seguir a composição da referência: sidebar de 220px, conteúdo alinhado à esquerda com `40px 48px`, Journey limitada a 900px, progresso compacto, capítulos de 32px e conteúdos em cards de 10px de raio. Estados atual, concluído e bloqueado preservam semântica real do domínio.
+
+A experiência de atividades em `/join` também foi corrigida. Uma atividade com muitas questões não é mais expandida integralmente dentro do card estreito do participante. Ao iniciar/continuar, abre um runner em tela inteira com uma questão por etapa, indicador `atual / total`, progresso, navegação `Anterior`/`Próxima` e envio somente no final. O runner possui layouts específicos para mobile vertical e horizontal; em desktop usa largura de leitura de até 900px. Respostas abertas são persistidas ao avançar e respostas de opção continuam com autosave imediato.
