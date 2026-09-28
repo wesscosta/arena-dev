@@ -30,12 +30,11 @@ public class JourneyStudyService {
 
     @Transactional(readOnly = true)
     public List<JourneyStudySummary> list(StudyPrincipal principal) {
-        Enrollment enrollment = requireEnrollment(principal);
-        return journeys.findByClassroomIdAndStatusOrderByUpdatedAtDesc(principal.classroomId(), JourneyStatus.PUBLISHED)
-                .stream()
-                .map(journey -> summary(journey, enrollment))
-                .sorted(Comparator
-                        .comparing(JourneyStudySummary::started).reversed()
+        requireEnrollment(principal);
+        return enrollments.findByStudentIdAndActiveTrue(principal.userId()).stream()
+                .flatMap(enrollment -> journeys.findByClassroomIdAndStatusOrderByUpdatedAtDesc(enrollment.getClassroom().getId(), JourneyStatus.PUBLISHED)
+                        .stream().map(journey -> summary(journey, enrollment)))
+                .sorted(Comparator.comparing(JourneyStudySummary::started).reversed()
                         .thenComparing(JourneyStudySummary::lastStudiedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList();
     }
@@ -133,7 +132,8 @@ public class JourneyStudyService {
         return new JourneyStudySummary(
                 journey.getId(), journey.getTitle(), journey.getDescription(), projection.progress(),
                 current == null ? null : current.getId(), current == null ? null : current.getTitle(),
-                projection.started(), projection.lastStudiedAt()
+                projection.started(), projection.lastStudiedAt(),
+                enrollment.getClassroom().getId(), enrollment.getClassroom().getName(), enrollment.getClassroom().getCode()
         );
     }
 
@@ -239,7 +239,7 @@ public class JourneyStudyService {
 
     public enum StudyState { COMPLETED, CURRENT, LOCKED }
     public record JourneyProgressSummary(int completedContents, int totalContents, int percent) {}
-    public record JourneyStudySummary(UUID id, String title, String description, JourneyProgressSummary progress, UUID currentContentId, String currentContentTitle, boolean started, Instant lastStudiedAt) {}
+    public record JourneyStudySummary(UUID id, String title, String description, JourneyProgressSummary progress, UUID currentContentId, String currentContentTitle, boolean started, Instant lastStudiedAt, UUID classroomId, String classroomName, String classroomCode) {}
     public record JourneyStudyView(UUID id, String title, String description, JourneyProgressSummary progress, List<JourneyModuleView> modules) {}
     public record JourneyModuleView(UUID id, String title, String description, List<JourneyContentView> contents) {}
     public record JourneyContentView(UUID id, String title, String description, StudyState state, UUID resourceId, boolean hasExternalSource) {}

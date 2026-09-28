@@ -17,17 +17,20 @@ public class ContentIngestionService {
     private final JourneyDraftAiProvider aiProvider;
     private final ContentFileExtractionService fileExtraction;
     private final JourneyStructureFallbackService structureFallback;
+    private final ContentSourceAdapterRegistry sourceAdapters;
 
     public ContentIngestionService(
             ClassroomRepository classrooms,
             JourneyDraftAiProvider aiProvider,
             ContentFileExtractionService fileExtraction,
-            JourneyStructureFallbackService structureFallback
+            JourneyStructureFallbackService structureFallback,
+            ContentSourceAdapterRegistry sourceAdapters
     ) {
         this.classrooms = classrooms;
         this.aiProvider = aiProvider;
         this.fileExtraction = fileExtraction;
         this.structureFallback = structureFallback;
+        this.sourceAdapters = sourceAdapters;
     }
 
     public Capabilities capabilities() {
@@ -49,10 +52,10 @@ public class ContentIngestionService {
         return switch (source) {
             case AI -> aiProvider.generate(request);
             case TEMPLATE -> fromTemplate(request);
-            case TEXT -> fromTextWithOptionalFallback(request, ContentIngestionSource.TEXT);
-            case MARKDOWN -> fromMarkdown(request);
-            case FILE -> fromTextWithOptionalFallback(request, ContentIngestionSource.FILE);
-            case URL, NOTION -> fromLink(request);
+            case TEXT, FILE -> fromNormalizedText(request, sourceAdapters.normalize(request));
+            case MARKDOWN -> fromNormalizedMarkdown(request, sourceAdapters.normalize(request));
+            case NOTION -> fromNormalizedNotion(request, sourceAdapters.normalize(request));
+            case URL -> fromLink(request);
         };
     }
 
@@ -158,13 +161,17 @@ public class ContentIngestionService {
         PreviewRequest request = new PreviewRequest(
                 classroomId, extracted.source(), title, null, null, extracted.content(), null, extracted.filename()
         );
-        if (extracted.source() == ContentIngestionSource.MARKDOWN) return fromMarkdown(request);
-        return fromTextWithOptionalFallback(request, extracted.source());
+        NormalizedDocument document = sourceAdapters.normalize(request);
+        if (extracted.source() == ContentIngestionSource.MARKDOWN) return fromNormalizedMarkdown(request, document);
+        return fromNormalizedText(request, document);
     }
 
-    private DraftView fromTextWithOptionalFallback(PreviewRequest request, ContentIngestionSource source) {
-        DraftView deterministic = fromText(request, source);
-        JourneyStructureFallbackService.StructureAssessment assessment = assessTextStructure(request.content(), deterministic);
+    private DraftView fromNormalizedText(PreviewRequest request, NormalizedDocument document) {
+        List<TextBlock> blocks = document.blocks().stream()
+                .map(block -> new TextBlock(block.text(), block instanceof NormalizedDocument.Heading))
+                .toList();
+        DraftView deterministic = fromTextBlocks(request, document, blocks);
+        JourneyStructureFallbackService.StructureAssessment assessment = assessTextStructure(request.content(), deterministic, blocks);
         DraftView assessed = new DraftView(
                 deterministic.title(), deterministic.description(), deterministic.source(), deterministic.sourceLabel(),
                 deterministic.sections(), new StructureAnalysis(
@@ -174,80 +181,49 @@ public class ContentIngestionService {
         return structureFallback.improveIfUseful(request, assessed, assessment).draft();
     }
 
-    private JourneyStructureFallbackService.StructureAssessment assessTextStructure(String content, DraftView draft) {
+    private JourneyStructureFallbackService.StructureAssessment assessTextStructure(
+            String content, DraftView draft, List<TextBlock> blocks
+    ) {
         String value = content == null ? "" : content.trim();
         if (value.isBlank()) return new JourneyStructureFallbackService.StructureAssessment(1.0, false, "Conteúdo vazio é tratado pela validação de entrada.");
-        List<TextBlock> blocks = textBlocks(value);
         long headings = blocks.stream().filter(TextBlock::heading).count();
         int items = draft.sections().stream().mapToInt(section -> section.items().size()).sum();
         boolean syntheticGrouping = headings < 2 && items > 6;
         boolean longUnstructured = headings == 0 && value.length() >= 1800 && items >= 4;
         if (syntheticGrouping || longUnstructured) {
             return new JourneyStructureFallbackService.StructureAssessment(
-                    headings == 0 ? 0.35 : 0.55,
-                    true,
+                    headings == 0 ? 0.35 : 0.55, true,
                     "Material sem hierarquia explícita; a Arena aplicou agrupamento determinístico revisável."
             );
         }
         return new JourneyStructureFallbackService.StructureAssessment(
-                headings >= 2 ? 0.90 : 0.75,
-                false,
+                headings >= 2 ? 0.90 : 0.75, false,
                 headings >= 2 ? "Hierarquia textual detectada com confiança." : "Material curto; estrutura determinística suficiente."
         );
     }
 
-    private DraftView fromText(PreviewRequest request, ContentIngestionSource source) {
-        String content = requireContent(request);
-        List<TextBlock> blocks = textBlocks(content);
-        String title = valueOr(request.title(), blocks.isEmpty() ? "Jornada importada" : summarize(blocks.getFirst().text(), 70));
+    private DraftView fromTextBlocks(PreviewRequest request, NormalizedDocument document, List<TextBlock> blocks) {
+        String title = valueOr(document.title(), blocks.isEmpty() ? "Jornada importada" : summarize(blocks.getFirst().text(), 70));
         List<DraftSection> sections = inferSections(blocks);
         return new DraftView(
-                title,
-                valueOr(request.description(), "Estrutura sugerida a partir do material fornecido."),
-                source,
-                clean(request.sourceLabel()),
-                sections
+                title, valueOr(request.description(), "Estrutura sugerida a partir do material fornecido."),
+                document.provenance().source(), document.provenance().sourceLabel(), sections
         );
-    }
-
-    private List<TextBlock> textBlocks(String content) {
-        List<TextBlock> blocks = new ArrayList<>();
-        String normalized = content.replace("\r\n", "\n").replace('\r', '\n').trim();
-        for (String paragraph : normalized.split("\n\s*\n")) {
-            String text = paragraph.trim();
-            if (text.isEmpty()) continue;
-            String[] lines = text.split("\n");
-            if (lines.length > 1 && looksLikeHeading(lines[0].trim())) {
-                blocks.add(new TextBlock(lines[0].trim(), true));
-                String remainder = String.join("\n", java.util.Arrays.copyOfRange(lines, 1, lines.length)).trim();
-                if (!remainder.isEmpty()) blocks.add(new TextBlock(remainder, false));
-            } else {
-                blocks.add(new TextBlock(text, looksLikeHeading(text)));
-            }
-            if (blocks.size() >= 48) break;
-        }
-        return blocks;
     }
 
     private List<DraftSection> inferSections(List<TextBlock> blocks) {
         if (blocks.isEmpty()) return List.of(new DraftSection("Conteúdo", null, List.of()));
         long headingCount = blocks.stream().filter(TextBlock::heading).count();
         if (headingCount >= 2) return sectionsFromHeadings(blocks);
-
-        List<DraftItem> items = blocks.stream()
-                .filter(block -> !block.heading())
-                .map(block -> contentItem(block.text()))
-                .limit(18)
-                .toList();
+        List<DraftItem> items = blocks.stream().filter(block -> !block.heading()).map(block -> contentItem(block.text())).limit(18).toList();
         if (items.isEmpty()) items = List.of(contentItem(blocks.getFirst().text()));
         if (items.size() <= 6) return List.of(new DraftSection("Conteúdo", null, items));
-
         List<DraftSection> sections = new ArrayList<>();
         for (int start = 0; start < items.size(); start += 3) {
             int end = Math.min(start + 3, items.size());
             List<DraftItem> slice = List.copyOf(items.subList(start, end));
-            String sectionTitle = inferSectionTitle(slice.getFirst().title(), sections.size() + 1);
-            sections.add(new DraftSection(sectionTitle, "Agrupamento sugerido a partir da estrutura do documento.", slice));
+            sections.add(new DraftSection(inferSectionTitle(slice.getFirst().title(), sections.size() + 1),
+                    "Agrupamento sugerido a partir da estrutura do documento.", slice));
             if (sections.size() >= 6) break;
         }
         return sections;
@@ -259,54 +235,28 @@ public class ContentIngestionService {
         List<DraftItem> items = new ArrayList<>();
         for (TextBlock block : blocks) {
             if (block.heading()) {
-                if (!items.isEmpty()) {
-                    sections.add(new DraftSection(sectionTitle, null, List.copyOf(items)));
-                    items.clear();
-                    if (sections.size() >= 6) break;
-                }
+                if (!items.isEmpty()) { sections.add(new DraftSection(sectionTitle, null, List.copyOf(items))); items.clear(); if (sections.size() >= 6) break; }
                 sectionTitle = cleanHeading(block.text());
             } else {
                 items.add(contentItem(block.text()));
-                if (items.size() >= 4) {
-                    sections.add(new DraftSection(sectionTitle, null, List.copyOf(items)));
-                    items.clear();
-                    sectionTitle = sectionTitle + " · continuação";
-                    if (sections.size() >= 6) break;
-                }
+                if (items.size() >= 4) { sections.add(new DraftSection(sectionTitle, null, List.copyOf(items))); items.clear(); sectionTitle += " · continuação"; if (sections.size() >= 6) break; }
             }
         }
-        if (!items.isEmpty() && sections.size() < 6) {
-            sections.add(new DraftSection(sectionTitle, null, List.copyOf(items)));
-        }
+        if (!items.isEmpty() && sections.size() < 6) sections.add(new DraftSection(sectionTitle, null, List.copyOf(items)));
         return sections.isEmpty() ? List.of(new DraftSection("Conteúdo", null, blocks.stream().map(block -> contentItem(block.text())).limit(12).toList())) : sections;
     }
 
     private DraftItem contentItem(String text) {
         String normalized = text.trim();
         String firstLine = normalized.lines().findFirst().orElse(normalized);
-        String itemTitle = summarize(firstLine.replaceFirst("^[•▪◦*-]\\s*", ""), 72);
-        return new DraftItem(itemTitle, summarize(normalized, 180), DraftItemType.CONTENT, normalized, null);
-    }
-
-    private boolean looksLikeHeading(String value) {
-        String text = value == null ? "" : value.replaceAll("\\s+", " ").trim();
-        if (text.isEmpty() || text.length() > 90 || text.contains("\n")) return false;
-        if (text.matches("(?i)^(m[oó]dulo|cap[ií]tulo|unidade|aula|tema|etapa|se[cç][aã]o|parte)\\s+[A-ZÀ-Ú0-9IVXLC].*")) return true;
-        if (text.matches("^\\d+(?:\\.\\d+){0,3}[).:-]?\\s+.{2,70}$")) return true;
-        int letters = 0;
-        int upper = 0;
-        for (char c : text.toCharArray()) {
-            if (Character.isLetter(c)) { letters++; if (Character.isUpperCase(c)) upper++; }
-        }
-        return letters >= 4 && upper >= Math.ceil(letters * .82) && !text.endsWith(".");
+        return new DraftItem(summarize(firstLine.replaceFirst("^[•▪◦*-]\\s*", ""), 72), summarize(normalized, 180), DraftItemType.CONTENT, normalized, null);
     }
 
     private String cleanHeading(String heading) {
         String clean = heading
                 .replaceFirst("(?iu)^(m[oó]dulo|cap[ií]tulo|unidade|aula|tema|etapa|se[cç][aã]o|parte)\\s+", "")
                 .replaceFirst("^[0-9IVXLC.-]+\\s*[—–:-]?\\s*", "")
-                .replaceFirst("^\\d+(?:\\.\\d+){0,3}[).:-]?\\s+", "")
-                .trim();
+                .replaceFirst("^\\d+(?:\\.\\d+){0,3}[).:-]?\\s+", "").trim();
         return summarize(clean.isBlank() ? heading : clean, 80);
     }
 
@@ -317,133 +267,103 @@ public class ContentIngestionService {
 
     private record TextBlock(String text, boolean heading) {}
 
-    private DraftView fromMarkdown(PreviewRequest request) {
-        String markdown = requireContent(request);
-        MarkdownDocument document = parseMarkdown(markdown);
-        String title = valueOr(clean(request.title()), document.title());
-        List<DraftSection> sections = mapMarkdownToJourney(document);
+    private DraftView fromNormalizedMarkdown(PreviewRequest request, NormalizedDocument document) {
+        List<DraftSection> sections = mapNormalizedMarkdown(document);
         if (sections.isEmpty()) {
-            sections = fromText(new PreviewRequest(
-                    request.classroomId(), ContentIngestionSource.TEXT, request.title(),
-                    request.description(), null, markdown, request.sourceUrl(), request.sourceLabel()
-            ), ContentIngestionSource.TEXT).sections();
+            List<TextBlock> blocks = document.blocks().stream().map(block -> new TextBlock(block.text(), block instanceof NormalizedDocument.Heading)).toList();
+            sections = fromTextBlocks(request, document, blocks).sections();
         }
         return new DraftView(
-                valueOr(title, "Jornada importada"),
+                valueOr(document.title(), "Jornada importada"),
                 valueOr(request.description(), "Estrutura preservada a partir do Markdown fornecido."),
-                ContentIngestionSource.MARKDOWN,
-                clean(request.sourceLabel()),
-                sections
+                document.provenance().source(), document.provenance().sourceLabel(), sections
         );
     }
 
-    /**
-     * Parses Markdown into a source-neutral heading tree before any Journey mapping.
-     * H1 names the document. H2/H3 keep their source hierarchy; H4+ remain inside
-     * the nearest content body so the reader preserves the author's internal structure.
-     */
-    private MarkdownDocument parseMarkdown(String markdown) {
-        String documentTitle = null;
-        List<MarkdownSection> sections = new ArrayList<>();
-        MarkdownSection currentSection = null;
-        MarkdownContent currentContent = null;
-        StringBuilder preamble = new StringBuilder();
-        boolean fenced = false;
-
-        for (String rawLine : markdown.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1)) {
-            String line = rawLine.stripTrailing();
-            String trimmed = line.stripLeading();
-            if (trimmed.startsWith("```")) {
-                fenced = !fenced;
-                appendMarkdown(currentContent, currentSection, preamble, line);
-                continue;
-            }
-            if (!fenced && trimmed.startsWith("# ") && documentTitle == null) {
-                documentTitle = trimmed.substring(2).trim();
-                continue;
-            }
-            if (!fenced && trimmed.startsWith("## ")) {
-                currentSection = new MarkdownSection(trimmed.substring(3).trim(), new StringBuilder(), new ArrayList<>());
-                sections.add(currentSection);
-                currentContent = null;
-                continue;
-            }
-            if (!fenced && trimmed.startsWith("### ")) {
-                if (currentSection == null) {
-                    currentSection = new MarkdownSection("Conteúdo", new StringBuilder(), new ArrayList<>());
-                    sections.add(currentSection);
-                }
-                currentContent = new MarkdownContent(trimmed.substring(4).trim(), new StringBuilder());
-                currentSection.contents().add(currentContent);
-                continue;
-            }
-            // H4/H5/H6 are deliberately preserved as Markdown in the content body.
-            appendMarkdown(currentContent, currentSection, preamble, line);
-        }
-        if (!preamble.toString().isBlank() && sections.isEmpty()) {
-            MarkdownSection section = new MarkdownSection("Conteúdo", new StringBuilder(), new ArrayList<>());
-            section.contents().add(new MarkdownContent(valueOr(documentTitle, "Conteúdo"), preamble));
-            sections.add(section);
-        }
-        return new MarkdownDocument(documentTitle, List.copyOf(sections));
-    }
-
-    private void appendMarkdown(MarkdownContent content, MarkdownSection section, StringBuilder preamble, String line) {
-        if (content != null) content.body().append(line).append('\n');
-        else if (section != null) section.intro().append(line).append('\n');
-        else preamble.append(line).append('\n');
-    }
-
-    private List<DraftSection> mapMarkdownToJourney(MarkdownDocument document) {
+    private List<DraftSection> mapNormalizedMarkdown(NormalizedDocument document) {
         List<DraftSection> result = new ArrayList<>();
-        for (MarkdownSection section : document.sections()) {
-            List<DraftItem> items = new ArrayList<>();
-            String intro = section.intro().toString().trim();
-            for (MarkdownContent content : section.contents()) {
-                String body = content.body().toString().trim();
-                items.add(new DraftItem(
-                        content.title(),
-                        body.isEmpty() ? null : summarize(body, 180),
-                        DraftItemType.CONTENT,
-                        body.isEmpty() ? null : body,
-                        null
-                ));
-            }
-            // An H2 with body but no H3 is still useful: materialize one content,
-            // rather than inventing a hierarchy or calling AI.
-            if (items.isEmpty() && !intro.isEmpty()) {
-                items.add(new DraftItem(section.title(), summarize(intro, 180), DraftItemType.CONTENT, intro, null));
-                intro = "";
-            }
-            if (!items.isEmpty()) {
-                result.add(new DraftSection(section.title(), intro.isEmpty() ? null : summarize(intro, 180), List.copyOf(items)));
+        String sectionTitle = null;
+        StringBuilder sectionIntro = new StringBuilder();
+        List<DraftItem> items = new ArrayList<>();
+        String contentTitle = null;
+        StringBuilder contentBody = new StringBuilder();
+        for (NormalizedDocument.Block block : document.blocks()) {
+            if (block instanceof NormalizedDocument.Heading heading && heading.level() == 2) {
+                if (contentTitle != null) { items.add(markdownItem(contentTitle, contentBody)); contentTitle = null; contentBody.setLength(0); }
+                if (sectionTitle != null) addMarkdownSection(result, sectionTitle, sectionIntro, items);
+                sectionTitle = heading.text(); sectionIntro.setLength(0); items = new ArrayList<>();
+            } else if (block instanceof NormalizedDocument.Heading heading && heading.level() == 3) {
+                if (sectionTitle == null) sectionTitle = "Conteúdo";
+                if (contentTitle != null) items.add(markdownItem(contentTitle, contentBody));
+                contentTitle = heading.text(); contentBody.setLength(0);
+            } else {
+                String value = block instanceof NormalizedDocument.Heading h
+                        ? "#".repeat(h.level()) + " " + h.text()
+                        : block.text();
+                if (contentTitle != null) appendBlock(contentBody, value); else appendBlock(sectionIntro, value);
             }
         }
+        if (contentTitle != null) items.add(markdownItem(contentTitle, contentBody));
+        if (sectionTitle != null) addMarkdownSection(result, sectionTitle, sectionIntro, items);
         return result;
     }
 
-    private record MarkdownDocument(String title, List<MarkdownSection> sections) {}
-    private record MarkdownSection(String title, StringBuilder intro, List<MarkdownContent> contents) {}
-    private record MarkdownContent(String title, StringBuilder body) {}
+    private void addMarkdownSection(List<DraftSection> result, String title, StringBuilder introBuilder, List<DraftItem> items) {
+        String intro = introBuilder.toString().trim();
+        List<DraftItem> sectionItems = new ArrayList<>(items);
+        if (sectionItems.isEmpty() && !intro.isEmpty()) {
+            sectionItems.add(new DraftItem(title, summarize(intro, 180), DraftItemType.CONTENT, intro, null));
+            intro = "";
+        }
+        if (!sectionItems.isEmpty()) result.add(new DraftSection(title, intro.isEmpty() ? null : summarize(intro, 180), List.copyOf(sectionItems)));
+    }
+
+    private DraftItem markdownItem(String title, StringBuilder bodyBuilder) {
+        String body = bodyBuilder.toString().trim();
+        return new DraftItem(title, body.isEmpty() ? null : summarize(body, 180), DraftItemType.CONTENT, body.isEmpty() ? null : body, null);
+    }
+
+    private void appendBlock(StringBuilder target, String value) {
+        if (!target.isEmpty()) target.append("\n\n");
+        target.append(value);
+    }
+
+    private DraftView fromNormalizedNotion(PreviewRequest request, NormalizedDocument document) {
+        if (!document.blocks().isEmpty()) {
+            DraftView mapped = fromNormalizedMarkdown(request, document);
+            return new DraftView(
+                    mapped.title(), valueOr(request.description(), "Snapshot importado de uma página do Notion."),
+                    ContentIngestionSource.NOTION, document.provenance().sourceLabel(), mapped.sections(),
+                    new StructureAnalysis("DETERMINISTIC", 0.95, false, "Hierarquia preservada do snapshot autorizado do Notion.")
+            );
+        }
+        String sourceUrl = document.provenance().sourceUrl();
+        String title = valueOr(document.title(), "Conteúdo do Notion");
+        return new DraftView(
+                title,
+                valueOr(request.description(), "Página vinculada. A leitura automática do conteúdo depende de uma integração autorizada."),
+                ContentIngestionSource.NOTION,
+                document.provenance().sourceLabel(),
+                List.of(section("Material do Notion", null,
+                        new DraftItem(title, null, DraftItemType.EXTERNAL_RESOURCE, null, sourceUrl)))
+        );
+    }
 
     private DraftView fromLink(PreviewRequest request) {
         String sourceUrl = clean(request.sourceUrl());
         if (sourceUrl == null) throw new IllegalArgumentException("Informe o link do material.");
         validateHttpUrl(sourceUrl);
-        boolean notion = request.source() == ContentIngestionSource.NOTION;
-        String title = valueOr(request.title(), notion ? "Conteúdo do Notion" : "Recurso externo");
+        String title = valueOr(request.title(), "Recurso externo");
         return new DraftView(
                 title,
                 valueOr(
                         request.description(),
-                        notion
-                                ? "Página vinculada. A leitura automática do conteúdo depende de uma integração autorizada."
-                                : "Link preservado como referência externa."
+                        "Link preservado como referência externa."
                 ),
                 request.source(),
                 valueOr(request.sourceLabel(), sourceUrl),
                 List.of(section(
-                        notion ? "Material do Notion" : "Material externo",
+                        "Material externo",
                         null,
                         new DraftItem(title, null, DraftItemType.EXTERNAL_RESOURCE, null, sourceUrl)
                 ))

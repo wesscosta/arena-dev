@@ -154,4 +154,4 @@ Rejeitada no MVP. A hierarquia vertical de módulos e conteúdos já fornece ori
 - `16.1` permanece como infraestrutura de progressão;
 - `16.2` permanece como infraestrutura de conteúdo/ingestão;
 - `16.3` é redefinido como **Journey Study Experience**;
-- `16.4 — Journey Map` deixa de ser incremento obrigatório e é absorvido pelo `16.3` como linguagem de progressão vertical; qualquer visualização mais lúdica passa a ser evolução posterior baseada em evidência de uso.
+- o antigo candidato `16.4 — Journey Map` deixa de ser incremento obrigatório e é absorvido pelo `16.3` como linguagem de progressão vertical; qualquer visualização mais lúdica passa a ser evolução posterior baseada em evidência de uso. O identificador `16.4` foi posteriormente reutilizado pelo roadmap corrente para **Student Experience Shell & Workspace Visibility**, sem alterar esta decisão arquitetural sobre Journey Map.

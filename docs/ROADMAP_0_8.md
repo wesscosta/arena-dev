@@ -19,17 +19,18 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | 16.1 | Journey Core | **Concluído · PR #22 mergeado** |
 | 16.2 | Learning Resources & Content Ingestion | **Concluído na branch · aguardando merge** |
 | 16.3 | Journey Study Experience | **Em execução · 16.3.8 Structured Import em implementação** |
-| 16.4 | Journey Map | **Absorvido pelo 16.3; sem incremento separado no MVP** |
-| 16.5 | Question Attempts & Skills | **Candidato pós-validação do 16.3** |
-| 16.6 | Mastery básico | **Candidato pós-validação do 16.3** |
-| 16.7 | Review | **Candidato pós-validação do 16.3** |
-| 16.8 | Teacher Journey Dashboard | **Candidato pós-validação do 16.3** |
-| 16.9 | Minimal Gamification | **Candidato pós-validação do 16.3** |
-| 16.10 | Pilot, Metrics & Hardening | Planejado |
+| 16.4 | Student Experience Shell & Workspace Visibility | **Em execução · base do shell implementada** |
+| 16.5 | Content Library & Reuse | **Marcado para planejamento · após estabilizar visibilidade do 16.4** |
+| 16.6 | Question Attempts & Skills | **Candidato pós-validação do 16.3** |
+| 16.7 | Mastery básico | **Candidato pós-validação do 16.3** |
+| 16.8 | Review | **Candidato pós-validação do 16.3** |
+| 16.9 | Teacher Journey Dashboard | **Candidato pós-validação do 16.3** |
+| 16.10 | Minimal Gamification | **Candidato pós-validação do 16.3** |
+| 16.11 | Pilot, Metrics & Hardening | Planejado |
 
 ### Product Gate após 16.3
 
-Os incrementos `16.5` a `16.9` não são uma fila automática. Só avançam após validação real da Journey como experiência de estudo: estrutura compreensível, retomada correta, leitura/conclusão com baixa fricção e progresso útil. Mastery, Skills, Review e gamificação persistente permanecem hipóteses de evolução até esse gate.
+Os incrementos de mastery/gamificação posteriores à biblioteca não são uma fila automática. Só avançam após validação real da Journey como experiência de estudo: estrutura compreensível, retomada correta, leitura/conclusão com baixa fricção e progresso útil. Mastery, Skills, Review e gamificação persistente permanecem hipóteses de evolução até esse gate.
 ## 16.0 — Professor Arena Experience
 
 ### Objetivo
@@ -209,7 +210,7 @@ O fluxo não pressupõe que o professor mantenha um segundo cérebro, Markdown o
 - segmentação heurística de documentos sem headings implementada;
 - API/CRUD de `LearningResource` fechada com cobertura HTTP e proteção contra exclusão de recurso em uso;
 - preview estrutural consolidado como referência visual, sem antecipar estados reais do aluno;
-- adapter autorizado para Notion permanece como evolução posterior e não bloqueia o Journey MVP.
+- adapter autorizado do Notion foi implementado posteriormente no `16.3.8.7D–H`, sem alterar o gate histórico do `16.2`.
 
 Com esses gates atendidos, o próximo incremento é `16.3 — Journey Study Experience`, regido pelo ADR-0045. A Jornada passa a ser tratada como estudo sequencial de conteúdo, não como workflow de Atividades ou dinâmicas da Arena.
 
@@ -259,6 +260,83 @@ O incremento não transforma Journey em uma segunda área de Atividades e não i
 10. `16.3.7C` Journey Progression UX — **concluído**;
 11. `16.3.8` Content Ingestion & Structured Import — **16.3.8.0–16.3.8.6 implementados**.
 
-## 16.4 — Journey Map
+## 16.4 — Student Experience Shell & Workspace Visibility
 
-O incremento separado deixa de ser obrigatório no MVP. O mapa cognitivo será inicialmente a própria estrutura vertical de módulos e conteúdos do `16.3`. Qualquer visualização mais lúdica ou espacial passa a depender de evidência de uso após validação da experiência básica de estudo.
+O antigo `Journey Map` foi absorvido pelo `16.3`. O identificador `16.4` passa a representar a arquitetura da experiência do aluno: shell unificado, multi-turma, entrada ao vivo, conquistas e controle explícito de quais turmas compõem o espaço persistente de estudo.
+
+### 16.4A — Student Workspace Visibility — próximo corte
+
+**Problema:** matrícula não implica exposição permanente de conteúdo. Uma turma pode usar a Arena somente ao vivo, via `/join`, sem criar cards de Journey para seus alunos.
+
+**Regra de produto:**
+
+```text
+Enrollment
+   ├── Live/Arena access → independe do workspace de estudo
+   └── Study workspace   → exige turma liberada + Journey publicada/visível
+```
+
+**Plano técnico:**
+
+1. adicionar política explícita à turma, inicialmente `studentStudyWorkspaceEnabled` (`false` por padrão para novas turmas, com migration compatível para dados existentes);
+2. expor a política nos DTOs/CRUD de `Classroom` e no painel do professor como `Disponibilizar espaço de estudo para os alunos`;
+3. manter `Enrollment` responsável apenas pelo vínculo aluno↔turma; não usar matrícula como autorização implícita de biblioteca;
+4. alterar `JourneyStudyService.listPublished()` para agregar somente matrículas ativas cujas turmas tenham workspace liberado;
+5. manter `/join`, QR, código e runtime ao vivo independentes dessa flag;
+6. manter publicação/visibilidade da Journey como segundo gate: turma liberada não publica rascunhos;
+7. distinguir empty states: sem turma liberada, turma liberada sem Journey e todas as Journeys concluídas;
+8. cobrir combinações multi-turma: live-only + study-enabled, duas study-enabled, revogação de acesso e Journey despublicada;
+9. não apagar progresso quando o professor desabilitar o workspace: ocultar acesso e preservar histórico para eventual reativação.
+
+### 16.4B — Live dentro do Student Shell
+
+- `/join` permanece porta pública e direta para QR/código;
+- `/learn/live` reutiliza `StudentJoinFlow`, nunca um segundo runner;
+- evolução posterior pode listar sessões ativas das turmas do aluno sem exigir código;
+- disponibilidade de sessão ao vivo não depende de `studentStudyWorkspaceEnabled`.
+
+### 16.4C — Achievements Foundation
+
+- manter rota `/learn/achievements` no shell;
+- criar domínio persistente somente quando critérios acadêmicos reais estiverem definidos;
+- evitar badges decorativos, moedas, streaks ou ranking sem hipótese validada.
+
+## 16.5 — Content Library & Reuse — MARCADOR DE ROADMAP
+
+> **Marcado para implementação futura.** Não iniciar como galeria visual antes de estabilizar `16.4A` e validar o papel atual de `LearningResource`.
+
+A biblioteca deve transformar conteúdo em ativo reutilizável do professor, e não em uma coleção de Journeys clonadas. O candidato natural à unidade de biblioteca é o `LearningResource` já existente.
+
+```text
+Markdown / Notion / Arquivo / IA
+              ↓
+       Content Ingestion
+              ↓
+       LearningResource
+              ↓
+      Biblioteca de conteúdo
+        ↙       ↓       ↘
+   Journey   Activity   Arena
+```
+
+### Plano técnico preliminar da biblioteca
+
+1. **Auditoria de domínio:** revisar `LearningResource`, proveniência, ownership, referências por Journey e regras de exclusão antes de criar novas tabelas.
+2. **Ownership/escopo:** definir recursos privados do professor e preparar extensão futura para compartilhamento institucional sem tornar todo material global.
+3. **Metadados:** assunto/tags, descrição curta, origem, autor, data de atualização e tipo; evitar taxonomia rígida prematura.
+4. **Catálogo/API:** paginação, busca textual, filtros por tipo/origem/tag e preview; nenhuma listagem ilimitada.
+5. **Ingestão:** permitir que Markdown/Notion/arquivo materializem recursos revisados na biblioteca sem obrigatoriamente criar uma Journey.
+6. **Reuso em Journey:** ação `Adicionar à jornada` deve referenciar/reutilizar recurso; definir explicitamente semântica de snapshot versus referência antes de permitir edição compartilhada.
+7. **Ciclo de vida:** impedir exclusão destrutiva de recurso em uso; preferir arquivamento e registrar dependências.
+8. **UI do professor:** Biblioteca como workspace pesquisável, não mural infinito de cards; lista/grid adaptativa, preview e ações contextuais.
+9. **Aluno:** biblioteca do professor não aparece automaticamente para o aluno. O acesso continua mediado por turma liberada + Journey publicada ou outro contexto pedagógico explícito.
+10. **Gate:** provar reutilização real entre pelo menos duas Journeys/turmas sem duplicação de conteúdo e sem quebrar proveniência.
+
+### Fora do escopo inicial
+
+- marketplace público;
+- biblioteca global entre organizações;
+- edição colaborativa em tempo real;
+- sincronização bidirecional Notion↔Arena;
+- recomendação automática por IA;
+- versionamento editorial complexo.

@@ -6,7 +6,7 @@
 
 **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 
-**Incremento atual:** `16.3 — Journey Study Experience`; `16.3.0–16.3.7C` concluídos e `16.3.8.0–16.3.8.3` implementados na branch ativa.
+**Incremento atual:** `16.3 — Journey Study Experience` em fechamento técnico e `16.4 — Student Experience Shell & Workspace Visibility` iniciado na branch ativa.
 
 **Branch ativa:** `feat/v0.8-content-ingestion`.
 
@@ -16,7 +16,7 @@ A v0.7.0 está encerrada e publicada. `16.0` e `16.1` foram integrados à `main`
 
 A Journey já possui Study API própria, `/learn`, Reader, progresso e retomada, prévia do professor na mesma experiência, Builder reduzido a módulos + conteúdos e Progression UX com estados `COMPLETED`, `CURRENT` e `LOCKED`.
 
-A frente atual é `16.3.8 — Content Ingestion & Structured Import`. A base Markdown determinística já preserva hierarquia explícita sem depender de IA e sempre produz um Draft revisável antes da materialização.
+A frente de ingestão `16.3.8` já cobre contrato normalizado, adapters Markdown/Text/Notion, Review UX, proveniência, fallback AI-ready, OAuth autorizado do Notion e seleção/importação de páginas pelo Journey Builder. Em paralelo, o `16.4` iniciou o shell unificado do aluno e revelou o próximo gate de produto: matrícula não deve expor automaticamente uma turma no espaço persistente de estudo.
 
 ## Baselines
 
@@ -24,12 +24,12 @@ A frente atual é `16.3.8 — Content Ingestion & Structured Import`. A base Mar
 baseline publicada        v0.7.0
 linha ativa               v0.8
 último integrado à main   16.1 · PR #22
-incremento atual           16.3 · Journey Study Experience
-fatia atual                16.3.8 · Structured Import
-branch                    feat/v0.8-content-ingestion
-schema                    Flyway V1–V31
-provider operacional      Microsoft Teams
-Google Classroom          standby
+incremento atual           16.4 · Student Experience Shell & Workspace Visibility
+fatia atual                16.4A · Student Workspace Visibility (planejada)
+branch                     feat/v0.8-content-ingestion
+schema                     Flyway V1–V33
+providers                  Microsoft Teams + Notion OAuth
+Google Classroom           standby
 ```
 
 ## Journey Study Experience — implementação atual
@@ -54,11 +54,28 @@ Google Classroom          standby
 - `H2` sem `H3` e com corpo vira um único conteúdo, sem hierarquia inventada;
 - Markdown estruturado não chama IA para reinterpretar estrutura explícita;
 - PDF/Office/texto continuam suportados pelo pipeline do 16.2;
-- Notion não é dependência: Markdown exportado/conversão já reutiliza o mesmo pipeline;
-- integração nativa autorizada com Notion permanece evolução posterior;
+- Notion possui adapter nativo, provider via API oficial, OAuth e seleção de páginas autorizadas no Journey Builder;
+- credenciais OAuth ficam no backend; token manual permanece apenas como fallback técnico;
 - MVP de importação é snapshot, sem sincronização contínua/bidirecional;
 - IA permanece opcional para material ambíguo e sem autoridade de publicação.
 
+
+## Student Experience Shell — 16.4
+
+- `/learn` prioriza retomada e jornadas em andamento; concluídas deixam de poluir a Home;
+- `/learn/journeys` é a biblioteca pessoal de percursos, com busca, filtro por turma/estado e agrupamento multi-turma;
+- `/learn/live` integra a entrada ao vivo ao shell autenticado reutilizando o mesmo `StudentJoinFlow` de `/join`;
+- `/join` permanece porta pública para QR/código e não depende do espaço persistente de estudo;
+- `/learn/achievements` está reservado para conquistas baseadas em critérios acadêmicos reais;
+- próximo corte `16.4A`: adicionar gate explícito de turma para o professor decidir se ela compõe o espaço de estudo do aluno;
+- desabilitar o workspace deverá ocultar conteúdo sem apagar progresso.
+
+## Marcador de roadmap — 16.5 Content Library & Reuse
+
+- biblioteca futura será construída sobre auditoria/evolução de `LearningResource`, evitando um segundo modelo paralelo de conteúdo;
+- materiais poderão nascer de Markdown, Notion, arquivo ou IA e ser reutilizados em Journey/Activity/Arena;
+- o acervo do professor não será automaticamente visível ao aluno;
+- primeiro gate: estabilizar `16.4A`; depois validar ownership, metadados, busca, ciclo de vida e semântica de reuso/snapshot.
 
 ## UX transversal — shell e participantes
 
@@ -66,7 +83,7 @@ Google Classroom          standby
 - confinamento `100dvh`/`overflow: hidden` ficou restrito à Arena ao vivo via `arena-fullscreen-shell`;
 - scroll lock de overlays centralizado e seguro para locks simultâneos;
 - tela de participantes simplificada com busca, nome de exibição sob demanda e ações por ícones;
-- regressão validada com 258 testes de frontend e build de produção.
+- regressão transversal atual validada com 264 testes de frontend e build de produção;
 
 ## Professor Arena Experience — implementado
 
@@ -99,18 +116,16 @@ Google Classroom          standby
 ## Validação corrente
 
 ```text
-backend unit        107 passed
-backend integration 76 passed
-backend total       183 passed
-frontend tests      263 passed
-frontend typecheck  OK
-frontend build      OK
-Flyway              V1–V31 OK
+backend tests        101 passed (último gate executado)
+frontend tests       264 passed
+frontend typecheck   OK
+frontend build       OK
+Flyway               V1–V33
 ```
 
 ## Próximo gate
 
-Avançar dentro do `16.3.8`: fortalecer revisão de documentos grandes, validar proveniência/materialização ponta a ponta e só então introduzir fallback de IA para estrutura realmente ambígua. Adapters externos, incluindo Notion, devem produzir o mesmo documento normalizado e não alterar o domínio da Journey.
+Implementar `16.4A — Student Workspace Visibility`: separar matrícula de exposição permanente do conteúdo, adicionar controle de liberação na turma e filtrar a Study API por esse gate sem afetar `/join`. Após estabilização, iniciar a auditoria de `LearningResource` que antecede `16.5 — Content Library & Reuse`.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)

@@ -1,17 +1,16 @@
 "use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { fetchStudyJourneys, studyDeviceClaims, type JourneyStudySummary } from "@/lib/study-api";
+import { useEffect,useMemo,useState } from "react";
+import { fetchAllStudyJourneys,type MultiClassroomJourneySummary } from "@/lib/study-api";
 import styles from "../study.module.css";
-
-export default function JourneysPage() {
-  const [journeys, setJourneys] = useState<JourneyStudySummary[]>([]);
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
-  useEffect(() => { let active = true; (async () => { for (const claim of studyDeviceClaims()) { try { const data = await fetchStudyJourneys(claim.token); if (active) { setJourneys(data); setState("ready"); } return; } catch {} } if (active) setState("error"); })(); return () => { active = false; }; }, []);
-  return <><p className={styles.eyebrow}>Jornadas</p><h1 className={styles.title}>Seus percursos de estudo</h1><p className={styles.lead}>Acesse os conteúdos publicados para sua turma e acompanhe o avanço em cada jornada.</p>
-    {state === "loading" && <div className={styles.empty}>Carregando jornadas…</div>}
-    {state === "error" && <div className={styles.error}>Não foi possível identificar seus estudos neste dispositivo. <Link href="/join">Entrar em uma aula</Link></div>}
-    {state === "ready" && <section className={styles.section}><div className={styles.list}>{journeys.map(j => <Link key={j.id} href={`/learn/journeys/${j.id}`} className={styles.card}><div><h3>{j.title}</h3><p>{j.progress.percent === 100 ? "Jornada concluída" : j.currentContentTitle ? `${j.started ? "Continuar" : "Começar"}: ${j.currentContentTitle}` : j.description || "Percurso de estudo"}</p></div><span className={styles.percent}>{j.progress.percent}%</span></Link>)}</div>{!journeys.length && <div className={styles.empty}>Nenhuma jornada publicada para sua turma.</div>}</section>}
-  </>;
-}
+export default function JourneysPage(){
+ const [journeys,setJourneys]=useState<MultiClassroomJourneySummary[]>([]);const [state,setState]=useState<"loading"|"ready"|"error">("loading");const [query,setQuery]=useState("");const [classroom,setClassroom]=useState("ALL");const [status,setStatus]=useState("ALL");
+ useEffect(()=>{let active=true;void fetchAllStudyJourneys().then(data=>{if(active){setJourneys(data);setState("ready")}}).catch(()=>active&&setState("error"));return()=>{active=false}},[]);
+ const classrooms=useMemo(()=>Array.from(new Map(journeys.map(j=>[j.classroomId,j.classroomName||"Turma"]))).entries(),[journeys]);
+ const filtered=journeys.filter(j=>(classroom==="ALL"||j.classroomId===classroom)&&(status==="ALL"||(status==="DONE"?j.progress.percent===100:status==="ACTIVE"?j.progress.percent>0&&j.progress.percent<100:j.progress.percent===0))&&j.title.toLowerCase().includes(query.toLowerCase()));
+ const groups=Array.from(new Map(filtered.map(j=>[j.classroomId,{name:j.classroomName||"Sua turma",items:filtered.filter(x=>x.classroomId===j.classroomId)}])).values());
+ return <><p className={styles.eyebrow}>Jornadas</p><h1 className={styles.title}>Seus percursos de estudo</h1><p className={styles.lead}>Encontre conteúdos de todas as suas turmas e acompanhe seu avanço sem perder o contexto.</p>
+ <div className={styles.libraryFilters}><input aria-label="Buscar jornadas" placeholder="Buscar jornadas..." value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="Filtrar por turma" value={classroom} onChange={e=>setClassroom(e.target.value)}><option value="ALL">Todas as turmas</option>{classrooms.map(([id,name])=><option key={id} value={id}>{name}</option>)}</select><select aria-label="Filtrar por estado" value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">Todos os estados</option><option value="NEW">Não iniciadas</option><option value="ACTIVE">Em andamento</option><option value="DONE">Concluídas</option></select></div>
+ {state==="loading"&&<div className={styles.empty}>Carregando jornadas…</div>}{state==="error"&&<div className={styles.error}>Não foi possível identificar seus estudos neste dispositivo. <Link href="/learn/live">Entrar ao vivo</Link></div>}
+ {state==="ready"&&groups.map(g=><section className={styles.journeyGroup} key={g.items[0].classroomId}><div className={styles.sectionHead}><div><span className={styles.groupLabel}>TURMA</span><h2>{g.name}</h2></div></div><div className={styles.list}>{g.items.map(j=><Link key={`${j.classroomId}:${j.id}`} href={`/learn/journeys/${j.id}`} className={styles.card}><div><h3>{j.title}</h3><p>{j.progress.percent===100?"Jornada concluída":j.currentContentTitle?`${j.started?"Continuar":"Começar"}: ${j.currentContentTitle}`:j.description||"Percurso de estudo"}</p></div><span className={styles.percent}>{j.progress.percent}%</span></Link>)}</div></section>)}
+ {state==="ready"&&!filtered.length&&<div className={styles.empty}>Nenhuma jornada corresponde aos filtros atuais.</div>}</>}

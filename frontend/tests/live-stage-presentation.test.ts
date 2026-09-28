@@ -8,7 +8,7 @@ const projectorSource = readFileSync(
   "utf8",
 );
 const joinSource = readFileSync(
-  resolve(process.cwd(), "app/join/page.tsx"),
+  resolve(process.cwd(), "components/StudentJoinFlow.tsx"),
   "utf8",
 );
 const stageContract = readFileSync(

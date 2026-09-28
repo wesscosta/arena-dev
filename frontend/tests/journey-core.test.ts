@@ -72,7 +72,9 @@ test("new journey onboarding is source-agnostic and review-first", () => {
   assert.match(wizard, /Arquivos Markdown preservam a hierarquia declarada sem depender de IA/);
   assert.match(wizard, /H1 define o título · H2 vira módulo · H3 vira conteúdo · H4–H6 permanecem dentro do conteúdo/);
   assert.match(wizard, /Links do Notion são reconhecidos automaticamente/);
-  assert.doesNotMatch(wizard, /\["notion", "Notion"\]/);
+  assert.match(wizard, /["notion", "Notion"]/);
+  assert.match(wizard, /Conecte seu Notion para importar páginas/);
+  assert.match(wizard, /Importar página/);
   assert.match(wizard, /DraftReviewWorkspace/);
   assert.match(wizard, /handleDrop/);
   assert.match(wizard, /event\.key === "Escape"/);

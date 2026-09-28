@@ -19,7 +19,8 @@ class IntegrationDomainTest {
         assertThat(LearningPlatformProvider.values())
                 .containsExactly(
                         LearningPlatformProvider.MICROSOFT_TEAMS,
-                        LearningPlatformProvider.GOOGLE_CLASSROOM
+                        LearningPlatformProvider.GOOGLE_CLASSROOM,
+                        LearningPlatformProvider.NOTION
                 );
     }
 

@@ -549,3 +549,12 @@
 
 /* 16.3.8 — deterministic structured import */
 .structureHint{display:grid;gap:.28rem;padding:.8rem .9rem;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));border-radius:.72rem;background:color-mix(in srgb,var(--accent) 5%,var(--surface));}.structureHint strong{font-size:.78rem}.structureHint span{color:var(--text);font-size:.72rem;line-height:1.45}.structureHint small{color:var(--muted);font-size:.67rem;line-height:1.45}
+.notionPanel { display:grid; gap:.85rem; }
+.notionConnect { min-height:13rem; display:grid; place-content:center; justify-items:center; gap:.65rem; padding:1.5rem; text-align:center; border:1px solid var(--border); border-radius:.9rem; background:color-mix(in srgb,var(--accent) 3%,transparent); }
+.notionConnect p { max-width:34rem; margin:0; color:var(--muted); font-size:.78rem; line-height:1.5; }
+.notionPages { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.55rem; max-height:17rem; overflow:auto; }
+.notionPage { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.8rem; text-align:left; border:1px solid var(--border); border-radius:.7rem; background:var(--surface-2,var(--surface)); color:var(--text); cursor:pointer; }
+.notionPage:hover { border-color:color-mix(in srgb,var(--accent) 48%,var(--border)); }
+.notionPage small { color:var(--accent); white-space:nowrap; }
+.emptyPages { grid-column:1/-1; padding:1rem; text-align:center; color:var(--muted); }
+@media (max-width: 720px) { .notionPages { grid-template-columns:1fr; } }

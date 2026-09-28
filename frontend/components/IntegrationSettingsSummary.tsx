@@ -4,9 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge, Button } from "@/components/ui";
 import {
   fetchMicrosoftReadiness,
+  fetchNotionReadiness,
   startMicrosoftOAuth,
+  startNotionOAuth,
+  disableIntegrationConnection,
   type IntegrationConnection,
   type MicrosoftReadiness,
+  type NotionReadiness,
 } from "@/lib/microsoft-integration-api";
 import { fetchClassroomIntegrationState } from "@/lib/classroom-integrations";
 
@@ -17,6 +21,7 @@ export default function IntegrationSettingsSummary({
 }) {
   const [readiness, setReadiness] = useState<MicrosoftReadiness | null>(null);
   const [connections, setConnections] = useState<IntegrationConnection[]>([]);
+  const [notionReadiness, setNotionReadiness] = useState<NotionReadiness | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -24,11 +29,13 @@ export default function IntegrationSettingsSummary({
     Promise.all([
       fetchMicrosoftReadiness(),
       fetchClassroomIntegrationState(),
+      fetchNotionReadiness(),
     ])
-      .then(([ready, state]) => {
+      .then(([ready, state, notionReady]) => {
         if (!active) return;
         setReadiness(ready);
         setConnections(state.connections);
+        setNotionReadiness(notionReady);
       })
       .catch((cause) => {
         if (!active) return;
@@ -45,6 +52,7 @@ export default function IntegrationSettingsSummary({
     [connections],
   );
   const activeTeams = teams.find((item) => item.status === "ACTIVE");
+  const activeNotion = connections.find((item) => item.provider === "NOTION" && item.status === "ACTIVE");
   return (
     <div className="integration-settings-grid">
       <article className="integration-provider-card">
@@ -92,6 +100,23 @@ export default function IntegrationSettingsSummary({
         >
           {activeTeams ? "Gerenciar integração" : "Entrar com Microsoft 365"}
         </Button>
+      </article>
+
+      <article className="integration-provider-card">
+        <div className="integration-provider-head">
+          <div className="integration-provider-icon">N</div>
+          <div><strong>Notion</strong><small>Importe páginas e transforme sua hierarquia em jornadas.</small></div>
+          <Badge variant={activeNotion ? "success" : notionReadiness?.delegatedOAuthConfigured ? "warning" : "neutral"} dot={Boolean(activeNotion)}>
+            {activeNotion ? "Conectado" : notionReadiness?.delegatedOAuthConfigured ? "Pronto para conectar" : "Não configurado"}
+          </Badge>
+        </div>
+        {activeNotion && <div className="integration-provider-meta"><span>{activeNotion.displayName}</span><small>Workspace autorizado</small></div>}
+        <div className="integration-provider-actions">
+          <Button size="sm" disabled={!activeNotion && !notionReadiness?.delegatedOAuthConfigured} onClick={() => {
+            if (activeNotion) { void disableIntegrationConnection(activeNotion.id).then(() => setConnections((items) => items.map((item) => item.id === activeNotion.id ? {...item,status:"DISABLED"} : item))).catch((cause)=>setError(cause instanceof Error?cause.message:"Falha ao desconectar Notion.")); return; }
+            void startNotionOAuth().then(({authorizationUrl})=>window.location.assign(authorizationUrl)).catch((cause)=>setError(cause instanceof Error?cause.message:"Falha ao iniciar conexão com Notion."));
+          }}>{activeNotion ? "Desconectar" : "Conectar Notion"}</Button>
+        </div>
       </article>
 
       <article className="integration-provider-card integration-provider-card-muted">

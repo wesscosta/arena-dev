@@ -6,7 +6,7 @@
 >
 > **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Execução atual:** `16.3 — Journey Study Experience` na branch `feat/v0.8-content-ingestion`. `16.3.0–16.3.7C` estão concluídos e `16.3.8.0–16.3.8.3` implementam a base de importação estruturada por Markdown.
+> **Execução atual:** `16.3.8 — Content Ingestion & Structured Import` em fechamento técnico e `16.4 — Student Experience Shell & Workspace Visibility` em execução na branch `feat/v0.8-content-ingestion`; próximo corte planejado: `16.4A — Student Workspace Visibility`.
 
 ## Modelo do produto
 
@@ -117,7 +117,7 @@ flowchart LR
     P["Projetor"] --> F
     F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
     F <-->|"WebSocket"| B
-    B --> D["PostgreSQL 17 + Flyway V1–V31"]
+    B --> D["PostgreSQL 17 + Flyway V1–V33"]
 ```
 
 Princípios:
@@ -175,7 +175,11 @@ O `16.1 — Journey Core` introduziu a base persistente de progressão: jornadas
 
 O `16.2 — Learning Resources & Content Ingestion` consolidou `LearningResource`, ingestão e preview revisável. O `16.3` já entrega `/learn`, Study API independente de `/join`, Reader, progresso/retomada, prévia do professor, Builder simplificado e Journey Progression UX.
 
-A fatia atual `16.3.8 — Content Ingestion & Structured Import` torna a ingestão mais previsível: Markdown estruturado é interpretado deterministicamente (`H1 → título`, `H2 → módulo`, `H3 → conteúdo`, `H4–H6 → estrutura interna`), sem gastar IA para reinterpretar hierarquia explícita. O wizard possui entrada Markdown própria e todo resultado continua como Draft revisável. Notion permanece um adaptador possível: exportações/conversões para Markdown já podem usar o pipeline; integração nativa autorizada fica para avaliação posterior. O MVP usa importação **snapshot**, sem sincronização bidirecional.
+O `16.3.8 — Content Ingestion & Structured Import` evoluiu para um pipeline comum de documentos normalizados: Markdown estruturado mantém mapeamento determinístico (`H1 → título`, `H2 → módulo`, `H3 → conteúdo`), enquanto Text/File e Notion usam adapters da mesma fronteira. Notion já possui OAuth, API oficial e seleção de páginas autorizadas no Journey Builder. Toda importação continua como **snapshot revisável**, sem sincronização bidirecional silenciosa.
+
+O `16.4 — Student Experience Shell & Workspace Visibility` já introduz Início, Jornadas, Entrar ao vivo e Conquistas no mesmo shell. `/join` continua público para QR/código e compartilha o mesmo runtime de `/learn/live`. O próximo corte (`16.4A`) separa **matrícula** de **exposição permanente de conteúdo**: o professor decidirá se uma turma fica disponível no espaço de estudo, sem afetar a Arena ao vivo.
+
+`16.5 — Content Library & Reuse` está marcado no roadmap como evolução futura de `LearningResource`: um acervo reutilizável de materiais vindos de Markdown/Notion/arquivo/IA, consumível por Journey, Activity e Arena sem criar automaticamente cards para os alunos.
 
 Estado final do `16.0 — Professor Arena Experience`:
 
@@ -264,7 +268,7 @@ Histórico da v0.6:
 - `v0.5.0` — histórica;
 - `v0.6.0` — baseline técnica encerrada e congelada;
 - `v0.7.0` — Educational Integrations; publicada e encerrada;
-- `v0.8` — Professor Experience & Journey MVP; linha ativa, `16.3.8 — Content Ingestion & Structured Import` em execução.
+- `v0.8` — Professor Experience & Journey MVP; linha ativa, `16.3.8` em fechamento técnico e `16.4 — Student Experience Shell & Workspace Visibility` em execução.
 
 ## Licença
 

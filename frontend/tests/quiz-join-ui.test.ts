@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const joinPage = readFileSync(resolve(process.cwd(), "app/join/page.tsx"), "utf8");
+const joinPage = readFileSync(resolve(process.cwd(), "components/StudentJoinFlow.tsx"), "utf8");
 
 test("join renders the authoritative quiz only while the shared stage is QUIZ", () => {
   assert.match(joinPage, /liveStage\.primary\.type === "QUIZ"/);

@@ -10,6 +10,7 @@ import {
   type ContentIngestionSource,
 } from "@/lib/content-ingestion-api";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
+import { fetchIntegrationConnections, fetchNotionPages, startNotionOAuth, type NotionPageSummary } from "@/lib/microsoft-integration-api";
 import styles from "./JourneyCreationWizard.module.css";
 import DraftReviewWorkspace from "./DraftReviewWorkspace";
 
@@ -23,7 +24,7 @@ type Props = {
 };
 
 type Mode = "choose" | "ai" | "template" | "import" | "preview";
-type ImportMode = "file" | "markdown" | "text" | "url";
+type ImportMode = "file" | "markdown" | "text" | "notion" | "url";
 
 const TEMPLATE_OPTIONS = [
   { key: "SEQUENCE", title: "Sequência de estudo", text: "Contexto, desenvolvimento e síntese." },
@@ -48,6 +49,10 @@ export default function JourneyCreationWizard({
   const [textContent, setTextContent] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourceLabel, setSourceLabel] = useState("");
+  const [notionConnected, setNotionConnected] = useState(false);
+  const [notionPages, setNotionPages] = useState<NotionPageSummary[]>([]);
+  const [notionQuery, setNotionQuery] = useState("");
+  const [notionLoading, setNotionLoading] = useState(false);
   const [draft, setDraft] = useState<ContentDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -68,9 +73,12 @@ export default function JourneyCreationWizard({
     setDraft(null);
     setDragOver(false);
     queueMicrotask(() => closeRef.current?.focus());
-    void fetchContentIngestionCapabilities()
-      .then(setCapabilities)
-      .catch(() => setCapabilities(null));
+    void fetchContentIngestionCapabilities().then(setCapabilities).catch(() => setCapabilities(null));
+    void fetchIntegrationConnections().then((items) => {
+      const connected = items.some((item) => item.provider === "NOTION" && item.status === "ACTIVE");
+      setNotionConnected(connected);
+      if (connected) { setNotionLoading(true); void fetchNotionPages().then(setNotionPages).catch(() => setNotionPages([])).finally(() => setNotionLoading(false)); }
+    }).catch(() => setNotionConnected(false));
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -248,6 +256,7 @@ export default function JourneyCreationWizard({
                 ["file", "Arquivo"],
                 ["markdown", "Markdown"],
                 ["text", "Colar texto"],
+                ["notion", "Notion"],
                 ["url", "Link"],
               ] as const).map(([key, label]) => (
                 <button key={key} type="button" className={importMode === key ? styles.activeTab : ""} onClick={() => setImportMode(key)}>{label}</button>
@@ -283,12 +292,23 @@ export default function JourneyCreationWizard({
                 <label><span>Cole seu material</span><textarea className={styles.largeText} value={textContent} onChange={(event) => setTextContent(event.target.value)} placeholder="Cole roteiro de aula, apostila, plano, anotações ou qualquer texto." /></label>
               </>
             )}
+            {importMode === "notion" && (
+              <div className={styles.notionPanel}>
+                {notionConnected ? <>
+                  <div className={styles.structureHint}><strong>Workspace conectado</strong><span>Escolha uma página autorizada. A Arena importa um snapshot e preserva sua hierarquia para revisão.</span><small>Alterações posteriores no Notion não modificam a jornada automaticamente.</small></div>
+                  <label><span>Buscar página</span><input value={notionQuery} onChange={(event)=>setNotionQuery(event.target.value)} placeholder="Python, Django, Banco de Dados..." /></label>
+                  <button type="button" className={styles.secondary} disabled={notionLoading} onClick={()=>{setNotionLoading(true);void fetchNotionPages(notionQuery).then(setNotionPages).catch((e)=>notify(e instanceof Error?e.message:"Falha ao buscar páginas do Notion.")).finally(()=>setNotionLoading(false));}}>{notionLoading?"Buscando...":"Buscar"}</button>
+                  <div className={styles.notionPages}>{notionPages.map((page)=><button key={page.id} type="button" className={styles.notionPage} disabled={busy} onClick={()=>void preview({source:"NOTION",sourceUrl:page.url,sourceLabel:page.title})}><strong>{page.title}</strong><small>Importar página</small></button>)}{!notionLoading && notionPages.length===0 && <small className={styles.emptyPages}>Nenhuma página autorizada encontrada.</small>}</div>
+                  <div className={styles.sourceHint}>Você também pode usar a aba Link para colar diretamente a URL de uma página já autorizada.</div>
+                </> : <div className={styles.notionConnect}><strong>Conecte seu Notion para importar páginas</strong><p>Autorize o Arena Dev a acessar somente as páginas que você escolher. Nenhum token precisa ser copiado manualmente.</p><button type="button" className={styles.primary} onClick={()=>void startNotionOAuth().then(({authorizationUrl})=>window.location.assign(authorizationUrl)).catch((e)=>notify(e instanceof Error?e.message:"Falha ao iniciar conexão com Notion."))}>Conectar Notion</button></div>}
+              </div>
+            )}
             {importMode === "url" && (
               <>
                 <label><span>Título opcional</span><input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
                 <label><span>URL do material</span><input type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://..." /></label>
                 <label><span>Identificação opcional</span><input value={sourceLabel} onChange={(event) => setSourceLabel(event.target.value)} placeholder="Ex.: Material de referência" /></label>
-                {sourceUrl.toLowerCase().includes("notion") && <div className={styles.notice}>Link do Notion reconhecido. Nesta versão a Arena preserva a referência sem raspar HTML público; leitura automática será feita por integração autorizada.</div>}
+                {sourceUrl.toLowerCase().includes("notion") && <div className={styles.notice}>{notionConnected ? "Link do Notion reconhecido. A Arena importará um snapshot da página usando sua conexão autorizada." : "Link do Notion reconhecido, mas não há conexão autorizada. Use a aba Notion para conectar o workspace antes de importar o conteúdo."}</div>}
                 <div className={styles.sourceHint}>Links comuns viram recursos externos. Links do Notion são reconhecidos automaticamente, sem exigir um fluxo separado.</div>
               </>
             )}
@@ -296,7 +316,7 @@ export default function JourneyCreationWizard({
               <button className={styles.secondary} onClick={() => setMode("choose")}>Voltar</button>
               {importMode === "markdown" && <button className={styles.primary} disabled={busy || !textContent.trim()} onClick={() => void preview({ source: "MARKDOWN", content: textContent, sourceLabel: "Markdown colado" })}>{busy ? "Estruturando..." : "Preservar estrutura"}</button>}
               {importMode === "text" && <button className={styles.primary} disabled={busy || !textContent.trim()} onClick={() => void preview({ source: "TEXT", content: textContent, sourceLabel: "Texto colado" })}>{busy ? "Analisando..." : "Analisar material"}</button>}
-              {importMode === "url" && <button className={styles.primary} disabled={busy || !sourceUrl.trim()} onClick={() => void preview({ source: sourceUrl.toLowerCase().includes("notion") ? "NOTION" : "URL", sourceUrl, sourceLabel })}>{sourceUrl.toLowerCase().includes("notion") ? "Vincular página" : "Usar link"}</button>}
+              {importMode === "url" && <button className={styles.primary} disabled={busy || !sourceUrl.trim() || (sourceUrl.toLowerCase().includes("notion") && !notionConnected)} onClick={() => void preview({ source: sourceUrl.toLowerCase().includes("notion") ? "NOTION" : "URL", sourceUrl, sourceLabel })}>{sourceUrl.toLowerCase().includes("notion") ? "Importar página" : "Usar link"}</button>}
             </div>
           </div>
         )}

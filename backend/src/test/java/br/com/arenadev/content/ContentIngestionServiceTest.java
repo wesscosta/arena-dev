@@ -15,7 +15,10 @@ class ContentIngestionServiceTest {
     private final JourneyDraftAiProvider ai = mock(JourneyDraftAiProvider.class);
     private final ContentFileExtractionService files = mock(ContentFileExtractionService.class);
     private final JourneyStructureFallbackService fallback = new JourneyStructureFallbackService(ai);
-    private final ContentIngestionService service = new ContentIngestionService(classrooms, ai, files, fallback);
+    private final ContentSourceAdapterRegistry adapters = new ContentSourceAdapterRegistry(List.of(
+            new MarkdownSourceAdapter(), new TextSourceAdapter(), new NotionSourceAdapter(new MarkdownSourceAdapter(), mock(NotionPageProvider.class))
+    ));
+    private final ContentIngestionService service = new ContentIngestionService(classrooms, ai, files, fallback, adapters);
 
     @Test
     void reportsCapabilitiesWithoutAssumingOneTeacherWorkflow() {

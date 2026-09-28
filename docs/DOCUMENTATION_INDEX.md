@@ -33,7 +33,7 @@
 
 Os incrementos `16.0 — Professor Arena Experience` e `16.1 — Journey Core` foram integrados à `main` pelos PRs #21 e #22.
 
-O `16.2 — Learning Resources & Content Ingestion` está concluído na branch `feat/v0.8-content-ingestion`. O `16.3 — Journey Study Experience` está em execução: `16.3.0–16.3.7C` concluídos e `16.3.8.0–16.3.8.3` implementam a base determinística de Structured Import por Markdown.
+O `16.2 — Learning Resources & Content Ingestion` está concluído na branch `feat/v0.8-content-ingestion`. O `16.3` já cobre Study Experience e Structured Import até adapters/OAuth/UX do Notion. O `16.4 — Student Experience Shell & Workspace Visibility` está em execução; o próximo corte é `16.4A`, que separa matrícula de exposição permanente do conteúdo. `16.5 — Content Library & Reuse` está registrado como marcador de roadmap sobre a evolução de `LearningResource`.
 
 ## Histórico
 
@@ -63,4 +63,4 @@ O `16.2 — Learning Resources & Content Ingestion` está concluído na branch `
 
 Não reescrever documentação histórica para fabricar evidência retroativa. Quando houver divergência entre fechamento técnico e publicação externa, registrar explicitamente a evidência disponível.
 
-**Atualizado em 28/09/2026 para o estado corrente do 16.3 e início do 16.3.8 — Content Ingestion & Structured Import.**
+**Atualizado em 28/09/2026 para o fechamento técnico do 16.3.8, início do 16.4 e marcador arquitetural do 16.5 — Content Library & Reuse.**

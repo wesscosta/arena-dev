@@ -1,0 +1,4 @@
+package br.com.arenadev.integration.api;
+import br.com.arenadev.integration.provider.notion.*;import jakarta.servlet.http.HttpSession;import org.springframework.web.bind.annotation.*;import org.springframework.web.servlet.view.RedirectView;
+@RestController @RequestMapping("/api/integrations/notion/oauth")
+public class NotionOAuthController { private final NotionDelegatedOAuthService oauth; public NotionOAuthController(NotionDelegatedOAuthService oauth){this.oauth=oauth;} @GetMapping("/start") public AuthorizationResponse start(HttpSession session){return new AuthorizationResponse(oauth.authorizationUrl(session));} @GetMapping("/callback") public RedirectView callback(@RequestParam String code,@RequestParam String state,HttpSession session){return new RedirectView(oauth.complete(code,state,session).redirectUrl());} public record AuthorizationResponse(String authorizationUrl){} }

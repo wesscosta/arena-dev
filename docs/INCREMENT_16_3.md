@@ -501,16 +501,16 @@ O wizard ganhou entrada explícita **Markdown** dentro de `Importar material`, c
 
 ### Fronteira arquitetural
 
-IA é capability opcional para fontes ambíguas, não dependência do pipeline. Notion não é o núcleo desta fatia: um acervo do Notion pode aproveitar o mesmo fluxo por Markdown exportado/conversão. Um adapter nativo autorizado poderá ser avaliado posteriormente, produzindo o mesmo documento normalizado.
+IA é capability opcional para fontes ambíguas, não dependência do pipeline. Notion não é o núcleo desta fatia: além do caminho por Markdown, o `16.3.8.7D–H` implementou adapter nativo, API oficial, OAuth e seleção de páginas, todos convergindo para o mesmo `NormalizedDocument`.
 
 A importação do MVP é **snapshot**: a fonte registra proveniência, mas não permanece sincronizada com a Journey. Sincronização contínua/bidirecional fica fora do escopo.
 
 ### Próximas fatias internas
 
 - `16.3.8.4` — **concluído**: Review Workspace master-detail para documentos grandes, com outline pesquisável, filtro de atenção, validação editorial `ERROR/WARNING`, edição progressiva, preview Markdown, reordenação e responsividade;
-- `16.3.8.5` — validar materialização e proveniência ponta a ponta;
+- `16.3.8.5` — **concluído**: materialização e proveniência ponta a ponta preservadas no snapshot;
 - `16.3.8.6` — **concluído (AI-ready)**: análise de confiança aciona assistência apenas para estrutura textual ambígua; sem provider, com resposta inválida ou falha externa, o Draft determinístico é mantido. Markdown estruturado não chama IA. Quando usada, a assistência preserva fonte/proveniência e marca o Draft como `AI_ASSISTED`;
-- `16.3.8.7` — avaliar adapters externos, incluindo Notion, sem acoplá-los ao domínio.
+- `16.3.8.7A–H` — **implementado**: contrato `NormalizedDocument`, adapters externos, migração do pipeline, Notion API/OAuth, consumo seguro de credenciais e seleção/importação de páginas no Builder.
 
 ## Identidade e acesso
 
@@ -728,7 +728,7 @@ Professor
 
 ## Product Gate após 16.3
 
-`16.5 — Question Attempts & Skills`, `16.6 — Mastery`, `16.7 — Review`, `16.8 — Teacher Journey Dashboard` e `16.9 — Minimal Gamification` são **candidatos pós-validação**, não uma sequência automática de implementação.
+`16.5` foi reservado no roadmap corrente para **Content Library & Reuse**. Question Attempts & Skills, Mastery, Review, Teacher Journey Dashboard e Minimal Gamification foram deslocados para `16.6–16.10` e continuam **candidatos pós-validação**, não uma sequência automática de implementação.
 
 Não iniciar esses incrementos, achievements ou uma visualização gamificada adicional enquanto o fluxo básico de estudo não estiver validado com usuários reais. O gate deve verificar pelo menos: compreensão da estrutura, retomada do ponto correto, leitura/conclusão sem fricção relevante e utilidade do progresso para aluno e professor. O valor da Journey precisa ser demonstrado primeiro como experiência de aprendizagem, não como quantidade de mecânicas.
 
@@ -762,3 +762,148 @@ Fatia criada após a validação da convergência visual para fechar a diferenç
 ### Decisão de escopo
 
 A 16.3.7C implementa gamificação estrutural por **progressão, estado, orientação e feedback**. Permanecem fora desta fatia XP novo, ranking, badges, moedas, streak, skill tree, mapa espacial, quizzes e atividades dentro da Journey. A linha seguinte é `16.3.8 — Content Ingestion & Structured Import`; a linha `16.3.8.0–16.3.8.6` já cobre Markdown determinístico, Review UX, proveniência/materialização e fallback AI-ready.
+
+### 16.3.8.7A–7B — Normalized Document & Source Adapter Contracts
+
+**Status:** implementado na branch em 28/09/2026.
+
+A fronteira de ingestão passa a possuir contratos explícitos antes do mapeamento para Journey:
+
+```text
+SourceAdapter
+     ↓
+NormalizedDocument
+     ↓
+StructureAnalyzer / MappingProfile
+     ↓
+JourneyDraft
+```
+
+- `NormalizedDocument` é source-neutral e preserva título, blocos estruturais, metadata e proveniência;
+- blocos normalizados distinguem `Heading(level, text)` e `Content(text)` sem conhecer `JourneySection` ou `LearningResource`;
+- `ContentSourceAdapter` define a fronteira de normalização e não pode materializar Journey;
+- `ContentSourceAdapterRegistry` resolve adapters por `ContentIngestionSource`;
+- `MarkdownSourceAdapter` preserva headings H2–H6 e conteúdo/fenced code; H1 pode fornecer o título do documento;
+- `TextSourceAdapter` atende texto direto e texto extraído de arquivos pelo mesmo contrato;
+- proveniência acompanha `source`, `sourceLabel`, `sourceUrl`, identificador externo futuro e formato;
+- a migração do orquestrador para consumir exclusivamente esse contrato pertence ao 16.3.8.7C, evitando big-bang e preservando o comportamento atual nesta etapa;
+- Notion ainda não recebe adapter específico: entra somente após a migração do pipeline, no 16.3.8.7D.
+
+### 16.3.8.7C — Pipeline Migration
+
+**Status:** implementado na branch em 28/09/2026.
+
+- `ContentIngestionService` deixou de fazer parsing direto de `TEXT`, `FILE` e `MARKDOWN`;
+- essas fontes agora atravessam `ContentSourceAdapterRegistry → NormalizedDocument` antes do mapeamento para `DraftView`;
+- Markdown é mapeado a partir de headings/blocos normalizados, preservando H4–H6 no corpo e a semântica H2 → módulo / H3 → conteúdo;
+- texto e arquivos extraídos compartilham `TextSourceAdapter`, inclusive a detecção determinística de headings de materiais Office/PDF;
+- o fallback de IA continua posterior ao mapeamento determinístico e não participa da normalização da fonte;
+- `URL` e `NOTION` permanecem temporariamente no caminho legado de referência externa até o adapter dedicado do 16.3.8.7D;
+- templates e geração explícita por IA permanecem fora do contrato de documento externo por representarem modos de criação, não adapters de fonte.
+
+### 16.3.8.7D — Notion Adapter
+
+**Status:** implementado na branch em 28/09/2026.
+
+- `NotionSourceAdapter` implementa `ContentSourceAdapter` e produz exclusivamente `NormalizedDocument`;
+- URLs são validadas para hosts oficiais `notion.so` / `notion.site` e, quando disponível, o page id é normalizado como identificador de proveniência;
+- o adapter não raspa HTML público e não cria `Journey` diretamente;
+- quando existe snapshot autorizado em conteúdo estruturado, ele atravessa o mesmo contrato de headings do Markdown e mantém `source=NOTION`;
+- sem provider autorizado, o adapter produz snapshot de referência (`NOTION_REFERENCE`) e o comportamento atual de vínculo externo é preservado;
+- `ContentIngestionService` agora resolve `NOTION` pelo registry e só depois mapeia o `NormalizedDocument` para Draft;
+- neste corte o adapter foi mantido independente de autorização; os cortes `16.3.8.7E–H` adicionaram provider, OAuth e UX sem introduzir scraping ou credencial hardcoded;
+- a semântica continua sendo snapshot/importação, nunca sincronização bidirecional automática.
+
+
+### 16.3.8.7E — Notion Authorized Provider
+
+**Status:** implementado na branch em 28/09/2026.
+
+- `NotionPageProvider` separa autorização/transporte HTTP do `NotionSourceAdapter`;
+- `NotionApiPageProvider` lê metadados e blocos pela API oficial quando `APP_INTEGRATIONS_NOTION_TOKEN` está configurado;
+- paginação de filhos e blocos aninhados é percorrida recursivamente com limite defensivo de profundidade;
+- headings 1–3 são preservados semanticamente e blocos textuais comuns são convertidos para conteúdo normalizado;
+- token permanece exclusivamente no backend e nunca integra DTOs, provenance ou frontend;
+- páginas não compartilhadas com a integração retornam erro orientando a autorização, sem fallback para scraping;
+- sem token configurado, o fluxo continua degradando com segurança para `NOTION_REFERENCE`;
+- a leitura gera snapshot: nenhuma sincronização bidirecional ou atualização silenciosa da Journey é introduzida.
+
+### 16.3.8.7F — Notion OAuth Connection
+
+**Status:** backend implementado na branch em 28/09/2026.
+
+- `NOTION` passa a ser provider oficial do Integration Core, com migration V33;
+- `NotionOAuthSettings` separa client id, client secret e redirect URI da credencial do usuário;
+- `GET /api/integrations/notion/oauth/start` cria state anti-CSRF e devolve a URL oficial de autorização;
+- `GET /api/integrations/notion/oauth/callback` valida state, troca o authorization code pelo token e retorna ao frontend;
+- workspace id/nome identificam a conexão e evitam duplicação por tenant;
+- access/refresh token são persistidos somente pelo `IntegrationCredentialStore`, usando o armazenamento criptografado já compartilhado por Teams/Google;
+- `GET /api/integrations/notion/readiness` informa se OAuth está configurado no servidor sem expor segredos;
+- callback local padrão: `http://localhost:8080/api/integrations/notion/oauth/callback`;
+- variáveis adicionadas: `APP_INTEGRATIONS_NOTION_CLIENT_ID`, `APP_INTEGRATIONS_NOTION_CLIENT_SECRET` e `APP_INTEGRATIONS_NOTION_REDIRECT_URI`;
+- token interno permanece disponível apenas como caminho técnico de desenvolvimento; UX de usuário final deve preferir OAuth.
+
+A etapa seguinte é 16.3.8.7G: expor a conexão em Configurações/Integrações e ligar o `NotionPageProvider` à credencial OAuth da conexão ativa, removendo a dependência do token global para o fluxo de usuário final.
+
+### 16.3.8.7G — Notion Integration UX & OAuth Credential Consumption
+
+**Status:** implementado na branch em 28/09/2026.
+
+- Configurações → Integrações passa a exibir Notion como provider real, com estados Não configurado / Pronto para conectar / Conectado;
+- CTA `Conectar Notion` inicia o OAuth; conexão ativa mostra workspace e permite desconectar;
+- o frontend nunca recebe client secret, access token ou refresh token;
+- `NotionApiPageProvider` passa a priorizar credenciais criptografadas de uma `IntegrationConnection` NOTION ativa;
+- `APP_INTEGRATIONS_NOTION_TOKEN` permanece somente como fallback técnico para desenvolvimento/instalação privada;
+- conexões Notion são excluídas do fluxo de vínculos de turmas, pois são fonte de conteúdo e não plataforma de classroom;
+- o próximo incremento 7H deve integrar seleção/busca de página do workspace diretamente no Journey Builder e melhorar o estado de importação sem conexão.
+
+### 16.3.8.7H — Journey ↔ Notion Import UX
+
+**Status:** implementado na branch em 28/09/2026.
+
+- o Journey Builder ganha uma fonte `Notion` explícita, separada de links genéricos;
+- sem conexão ativa, a própria importação explica a necessidade de autorização e oferece `Conectar Notion` via OAuth;
+- com conexão ativa, o professor pode listar e buscar páginas autorizadas do workspace sem copiar tokens;
+- `GET /api/integrations/notion/pages` usa `/v1/search` com a credencial OAuth ativa e retorna somente id, título e URL;
+- selecionar uma página dispara `source=NOTION` e segue o pipeline comum `NotionSourceAdapter → NormalizedDocument → Draft → Review`;
+- URL continua disponível como alternativa, mas uma URL Notion sem conexão deixa de produzir falso sucesso: o CTA de importação fica bloqueado e orienta conectar primeiro;
+- o CTA anterior `Vincular página` foi substituído por `Importar página`, refletindo a semântica real de snapshot;
+- a UI explicita que alterações posteriores no Notion não sincronizam silenciosamente a Journey.
+
+## 16.4 — Student Experience Shell
+
+**Status inicial:** arquitetura-base implementada em 28/09/2026.
+
+- `StudyShell` passa a organizar Início, Jornadas, Entrar ao vivo e Conquistas;
+- `/join` permanece como entrada pública por código/QR e o runtime foi extraído para `StudentJoinFlow`, reutilizado também em `/learn/live`;
+- `/learn/live` integra o acesso ao vivo ao domínio autenticado de estudos sem duplicar o runner;
+- `/learn/achievements` estabelece a rota e o estado inicial, deixando badges/regras para o domínio de achievements real;
+- `/learn` deixa de tratar jornadas concluídas como “outras jornadas”: prioriza continuar/em andamento e diferencia corretamente “sem jornadas” de “tudo concluído”;
+- `/learn/journeys` torna-se biblioteca completa, com busca, filtro de turma, filtro de estado e agrupamento por turma;
+- o backend de estudo deixa de listar somente a turma do token atual: a listagem agrega as matrículas ativas do mesmo aluno e inclui contexto `classroomId/name/code` em cada resumo;
+- múltiplos device claims no frontend são agregados/deduplicados por `classroomId:journeyId`.
+
+### Próximos cortes de 16.4
+
+- identidade consolidada do aluno entre turmas (hoje a agregação depende do `studentId` resolvido pelo claim);
+- sessões ativas das turmas em `/learn/live`, além da entrada por código;
+- domínio persistente de achievements e critérios reais;
+- navegação mobile dedicada para as quatro áreas;
+- testes E2E multi-turma e validação visual do shell.
+
+### 16.4A — Student Workspace Visibility — planejamento técnico
+
+A agregação multi-turma introduzida no shell não deve transformar toda matrícula em conteúdo permanente. O próximo corte adiciona um gate explícito de turma para o espaço de estudo.
+
+- `Enrollment` continua representando pertencimento à turma;
+- Arena ao vivo (`/join` e `/learn/live`) continua disponível independentemente do workspace;
+- `Classroom.studentStudyWorkspaceEnabled` controla se a turma pode expor conteúdo persistente no `/learn`;
+- Journey precisa continuar `PUBLISHED`/visível para aparecer: são dois gates independentes;
+- desabilitar o workspace oculta conteúdo, mas não apaga progresso;
+- a gestão da turma recebe um controle explícito `Disponibilizar espaço de estudo para os alunos`;
+- Study API filtra matrículas ativas por essa política antes de agregar Journeys;
+- testes devem cobrir aluno em várias turmas com combinações live-only e study-enabled.
+
+### Marcador — 16.5 Content Library & Reuse
+
+A biblioteca foi registrada no roadmap como evolução deliberada do `LearningResource`, não como nova coleção paralela de entidades. O objetivo é permitir ingestão, organização e reutilização de materiais prontos em Journeys/Activities/Arena, sem expor automaticamente o acervo do professor ao aluno. O plano técnico detalhado e os limites de escopo estão em `ROADMAP_0_8.md`.

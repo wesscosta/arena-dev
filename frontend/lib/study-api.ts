@@ -11,6 +11,9 @@ export type JourneyStudySummary = {
   currentContentTitle: string | null;
   started: boolean;
   lastStudiedAt: string | null;
+  classroomId?: string;
+  classroomName?: string;
+  classroomCode?: string | null;
 };
 export type JourneyContentView = {
   id: string;
@@ -76,6 +79,18 @@ export function studyDeviceClaims(): Array<{ classroomId: string; token: string 
     if (token) result.push({ classroomId: key.slice(prefix.length), token });
   }
   return result;
+}
+
+export type MultiClassroomJourneySummary = JourneyStudySummary & { studyToken: string; classroomId: string };
+export async function fetchAllStudyJourneys(): Promise<MultiClassroomJourneySummary[]> {
+  const claims = studyDeviceClaims();
+  const groups = await Promise.all(claims.map(async (claim) => {
+    try { const journeys = await fetchStudyJourneys(claim.token); return journeys.map((journey) => ({ ...journey, studyToken: claim.token, classroomId: journey.classroomId ?? claim.classroomId })); }
+    catch { return []; }
+  }));
+  const unique = new Map<string, MultiClassroomJourneySummary>();
+  groups.flat().forEach((journey) => unique.set(`${journey.classroomId}:${journey.id}`, journey));
+  return [...unique.values()].sort((a,b) => (b.lastStudiedAt ?? "").localeCompare(a.lastStudiedAt ?? ""));
 }
 
 async function teacherPreviewRequest<T>(path: string): Promise<T> {
