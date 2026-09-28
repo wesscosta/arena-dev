@@ -897,7 +897,7 @@ A agregação multi-turma introduzida no shell não deve transformar toda matrí
 
 - `Enrollment` continua representando pertencimento à turma;
 - Arena ao vivo (`/join` e `/learn/live`) continua disponível independentemente do workspace;
-- `Classroom.studentStudyWorkspaceEnabled` controla se a turma pode expor conteúdo persistente no `/learn`;
+- `Classroom.studentStudyAccessEnabled` controla se a turma pode expor conteúdo persistente no `/learn`;
 - Journey precisa continuar `PUBLISHED`/visível para aparecer: são dois gates independentes;
 - desabilitar o workspace oculta conteúdo, mas não apaga progresso;
 - a gestão da turma recebe um controle explícito `Disponibilizar espaço de estudo para os alunos`;

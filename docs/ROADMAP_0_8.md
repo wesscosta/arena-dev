@@ -2,7 +2,7 @@
 
 **Linha ativa:** v0.8
 **Branch de execução:** `feat/v0.8-content-ingestion`
-**Estado atual:** `16.3 — Journey Study Experience` em execução; `16.3.0`–`16.3.7C` concluídos; `16.3.8.0–16.3.8.6` implementam importação estruturada Markdown, Review UX escalável, proveniência/snapshot e fallback AI-ready opcional para fontes ambíguas.
+**Estado atual:** `16.4 — Student Experience Shell & Workspace Visibility` implementado tecnicamente em A–C; gate visual integrado pendente. O próximo domínio funcional é `16.5 — Content Library & Reuse`, iniciado por auditoria de `LearningResource`.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
@@ -17,10 +17,10 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | --- | --- | --- |
 | 16.0 | Professor Arena Experience | **Concluído · PR #21 mergeado** |
 | 16.1 | Journey Core | **Concluído · PR #22 mergeado** |
-| 16.2 | Learning Resources & Content Ingestion | **Concluído na branch · aguardando merge** |
-| 16.3 | Journey Study Experience | **Em execução · 16.3.8 Structured Import em implementação** |
-| 16.4 | Student Experience Shell & Workspace Visibility | **Em execução · base do shell implementada** |
-| 16.5 | Content Library & Reuse | **Marcado para planejamento · após estabilizar visibilidade do 16.4** |
+| 16.2 | Learning Resources & Content Ingestion | **Concluído na branch ativa** |
+| 16.3 | Journey Study Experience | **Fechamento técnico concluído na branch ativa** |
+| 16.4 | Student Experience Shell & Workspace Visibility | **16.4A–C implementados tecnicamente · gate visual integrado pendente** |
+| 16.5 | Content Library & Reuse | **Próximo domínio · iniciar por auditoria de LearningResource após gate visual do 16.4** |
 | 16.6 | Question Attempts & Skills | **Candidato pós-validação do 16.3** |
 | 16.7 | Mastery básico | **Candidato pós-validação do 16.3** |
 | 16.8 | Review | **Candidato pós-validação do 16.3** |
@@ -262,44 +262,78 @@ O incremento não transforma Journey em uma segunda área de Atividades e não i
 
 ## 16.4 — Student Experience Shell & Workspace Visibility
 
-O antigo `Journey Map` foi absorvido pelo `16.3`. O identificador `16.4` passa a representar a arquitetura da experiência do aluno: shell unificado, multi-turma, entrada ao vivo, conquistas e controle explícito de quais turmas compõem o espaço persistente de estudo.
+O antigo `Journey Map` foi absorvido pelo `16.3`. O `16.4` consolida a arquitetura da experiência do aluno: shell unificado, multi-turma, entrada ao vivo e controle explícito de como conteúdos passam a compor o espaço persistente de estudo.
 
-### 16.4A — Student Workspace Visibility — próximo corte
+### 16.4A — Student Workspace Visibility — IMPLEMENTADO TECNICAMENTE
 
-**Problema:** matrícula não implica exposição permanente de conteúdo. Uma turma pode usar a Arena somente ao vivo, via `/join`, sem criar cards de Journey para seus alunos.
+**Problema resolvido:** matrícula não implica exposição permanente de conteúdo. Uma turma pode usar a Arena somente ao vivo, via `/join`, sem criar cards de Journey para seus alunos.
 
 **Regra de produto:**
 
 ```text
 Enrollment
    ├── Live/Arena access → independe do workspace de estudo
-   └── Study workspace   → exige turma liberada + Journey publicada/visível
+   └── Study workspace   → exige studentStudyAccessEnabled + Journey publicada
 ```
 
-**Plano técnico:**
+Implementado:
+- migration `V34` com `student_study_access_enabled = false` por padrão;
+- `StudyAccessPolicy` centraliza autorização de estudo;
+- listagem multi-turma usa a matrícula correspondente à turma da Journey;
+- desabilitar o acesso oculta conteúdo sem apagar matrícula, Journey ou progresso;
+- `/join`, QR e runtime ao vivo permanecem independentes dessa política.
 
-1. adicionar política explícita à turma, inicialmente `studentStudyWorkspaceEnabled` (`false` por padrão para novas turmas, com migration compatível para dados existentes);
-2. expor a política nos DTOs/CRUD de `Classroom` e no painel do professor como `Disponibilizar espaço de estudo para os alunos`;
-3. manter `Enrollment` responsável apenas pelo vínculo aluno↔turma; não usar matrícula como autorização implícita de biblioteca;
-4. alterar `JourneyStudyService.listPublished()` para agregar somente matrículas ativas cujas turmas tenham workspace liberado;
-5. manter `/join`, QR, código e runtime ao vivo independentes dessa flag;
-6. manter publicação/visibilidade da Journey como segundo gate: turma liberada não publica rascunhos;
-7. distinguir empty states: sem turma liberada, turma liberada sem Journey e todas as Journeys concluídas;
-8. cobrir combinações multi-turma: live-only + study-enabled, duas study-enabled, revogação de acesso e Journey despublicada;
-9. não apagar progresso quando o professor desabilitar o workspace: ocultar acesso e preservar histórico para eventual reativação.
+Detalhes: [INCREMENT_16_4A.md](INCREMENT_16_4A.md).
 
-### 16.4B — Live dentro do Student Shell
+### 16.4B — Live dentro do Student Shell — IMPLEMENTADO TECNICAMENTE
 
 - `/join` permanece porta pública e direta para QR/código;
-- `/learn/live` reutiliza `StudentJoinFlow`, nunca um segundo runner;
-- evolução posterior pode listar sessões ativas das turmas do aluno sem exigir código;
-- disponibilidade de sessão ao vivo não depende de `studentStudyWorkspaceEnabled`.
+- `/learn/live` é o Live Hub persistente e reutiliza `StudentJoinFlow`;
+- `GET /api/learn/live` descobre sessões ACTIVE em todas as matrículas ativas do mesmo aluno;
+- descoberta de sessão não depende de `studentStudyAccessEnabled`;
+- Home pode sinalizar aula acontecendo agora sem se transformar em runner;
+- múltiplas sessões exigem escolha explícita e código manual permanece como fallback.
 
-### 16.4C — Achievements Foundation
+Detalhes: [INCREMENT_16_4B.md](INCREMENT_16_4B.md).
 
-- manter rota `/learn/achievements` no shell;
-- criar domínio persistente somente quando critérios acadêmicos reais estiverem definidos;
-- evitar badges decorativos, moedas, streaks ou ranking sem hipótese validada.
+### 16.4C — Journey Discovery & Redemption — IMPLEMENTADO TECNICAMENTE
+
+**Objetivo:** permitir que uma Journey publicada compatível seja adicionada ao perfil leve do aluno por um código compartilhado pelo professor, sem criar matrícula artificial.
+
+```text
+Journey
+├── acesso institucional → Enrollment → JourneyStageProgress
+└── acesso por código    → StudentJourneyAccess → StudentJourneyStageProgress
+```
+
+Implementado:
+- migration `V35`;
+- código opcional `J-XXXXXX`, regenerável e desativável;
+- resgate único persiste `Student ↔ Journey`;
+- regenerar/desativar impede novos resgates sem remover acessos ou progresso existentes;
+- mesma Journey é deduplicada quando aluno possui acesso por turma e por código;
+- acesso institucional válido tem precedência para preservar progresso já existente;
+- Journeys dependentes de `ActivitySubmission` permanecem fora do resgate por código nesta etapa;
+- código concede conteúdo; device claim continua responsável pela identidade leve.
+
+Detalhes: [INCREMENT_16_4C.md](INCREMENT_16_4C.md).
+
+### 16.4D — Achievements Foundation — RESERVADO / NÃO IMPLEMENTADO
+
+A rota `/learn/achievements` pode permanecer reservada no shell, mas domínio persistente de conquistas só deve ser criado quando critérios acadêmicos reais estiverem definidos e validados. Não introduzir badges decorativos, moedas, streaks ou ranking apenas para preencher a interface.
+
+Este item **não é o próximo incremento automático**. O próximo domínio priorizado após estabilização visual do 16.4 é o `16.5 — Content Library & Reuse`.
+
+### Gate de fechamento do 16.4
+
+O fechamento de release exige validação visual integrada em desktop/mobile dos fluxos A–C:
+1. professor habilita/desabilita espaço de estudo sem afetar Live;
+2. aluno multi-turma vê Journeys e sessões corretas sem cards duplicados;
+3. `/join` continua independente e regressão do runtime Live permanece íntegra;
+4. professor gera/regenera/desativa código de Journey;
+5. aluno resgata uma vez, mantém acesso/progresso e não precisa redigitar o código.
+
+Os gates automatizados correntes estão verdes: backend completo, frontend **268 testes**, typecheck, build e `git diff --check`; schema Flyway em **V35**.
 
 ## 16.5 — Content Library & Reuse — MARCADOR DE ROADMAP
 
@@ -340,3 +374,11 @@ Markdown / Notion / Arquivo / IA
 - sincronização bidirecional Notion↔Arena;
 - recomendação automática por IA;
 - versionamento editorial complexo.
+
+### Checkpoint 28/09/2026 — fechamento funcional/visual do Student Experience
+
+`16.4A`, `16.4B` e `16.4C` estão implementados e o refinamento transversal do Student Shell foi consolidado. O ciclo é considerado fechado como **checkpoint**, não como release final da v0.8.
+
+Pendências de hardening: auditoria manual de acessibilidade, validação visual mobile/ultrawide, consolidação do CSS histórico, E2E e gates de release. `16.4D — Achievements Foundation` permanece reservado/não implementado. `16.5 — Content Library & Reuse` permanece marcador de roadmap e não foi antecipado.
+
+Ver [`CLOSURE_16_4_STUDENT_EXPERIENCE.md`](CLOSURE_16_4_STUDENT_EXPERIENCE.md).

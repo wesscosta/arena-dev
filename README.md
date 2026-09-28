@@ -6,7 +6,7 @@
 >
 > **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Execução atual:** `16.3.8 — Content Ingestion & Structured Import` em fechamento técnico e `16.4 — Student Experience Shell & Workspace Visibility` em execução na branch `feat/v0.8-content-ingestion`; próximo corte planejado: `16.4A — Student Workspace Visibility`.
+> **Execução atual:** `16.3.8 — Content Ingestion & Structured Import` em fechamento técnico e `16.4 — Student Experience Shell & Workspace Visibility` em execução na branch `feat/v0.8-content-ingestion`; `16.4A — Student Workspace Visibility` implementado tecnicamente; validação visual é o gate restante.
 
 ## Modelo do produto
 
@@ -117,7 +117,7 @@ flowchart LR
     P["Projetor"] --> F
     F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
     F <-->|"WebSocket"| B
-    B --> D["PostgreSQL 17 + Flyway V1–V33"]
+    B --> D["PostgreSQL 17 + Flyway V1–V35"]
 ```
 
 Princípios:
@@ -177,7 +177,7 @@ O `16.2 — Learning Resources & Content Ingestion` consolidou `LearningResource
 
 O `16.3.8 — Content Ingestion & Structured Import` evoluiu para um pipeline comum de documentos normalizados: Markdown estruturado mantém mapeamento determinístico (`H1 → título`, `H2 → módulo`, `H3 → conteúdo`), enquanto Text/File e Notion usam adapters da mesma fronteira. Notion já possui OAuth, API oficial e seleção de páginas autorizadas no Journey Builder. Toda importação continua como **snapshot revisável**, sem sincronização bidirecional silenciosa.
 
-O `16.4 — Student Experience Shell & Workspace Visibility` já introduz Início, Jornadas, Entrar ao vivo e Conquistas no mesmo shell. `/join` continua público para QR/código e compartilha o mesmo runtime de `/learn/live`. O próximo corte (`16.4A`) separa **matrícula** de **exposição permanente de conteúdo**: o professor decidirá se uma turma fica disponível no espaço de estudo, sem afetar a Arena ao vivo.
+O `16.4 — Student Experience Shell & Workspace Visibility` já introduz Início, Jornadas, Entrar ao vivo e Conquistas no mesmo shell. `/join` continua público para QR/código e compartilha o mesmo runtime de `/learn/live`. O `16.4A` separa **matrícula** de **exposição permanente de conteúdo**: o professor decide se uma turma fica disponível no espaço de estudo, sem afetar a Arena ao vivo. A autorização está centralizada na Study API e preserva o progresso ao ocultar/reativar a turma.
 
 `16.5 — Content Library & Reuse` está marcado no roadmap como evolução futura de `LearningResource`: um acervo reutilizável de materiais vindos de Markdown/Notion/arquivo/IA, consumível por Journey, Activity e Arena sem criar automaticamente cards para os alunos.
 
@@ -273,3 +273,32 @@ Histórico da v0.6:
 ## Licença
 
 MIT.
+
+
+### Student Live — 16.4B
+
+O Student Shell descobre sessões ativas das matrículas do aluno em `/learn/live`, mantém entrada manual por código e reutiliza o mesmo runtime público de `/join`.
+
+
+### Journey Redemption — 16.4C
+
+Jornadas publicadas compatíveis podem ser distribuídas por código e vinculadas ao perfil leve do aluno sem criar matrícula artificial. O código é usado apenas no resgate; acesso e progresso persistem depois.
+
+### Fechamento do Student Experience — 16.4
+
+Checkpoint funcional/visual encerrado em **28/09/2026** para `16.4A–16.4C` e para o refinamento transversal do Student Shell.
+
+- workspace persistente do aluno separado de `/join`;
+- visibilidade de Journey controlada pelo professor;
+- aluno pode pertencer a múltiplas turmas;
+- Live discovery integrado ao Student Shell;
+- Journey discovery/redemption;
+- Home, Journey e Reader refinados;
+- progresso sequencial, retomada e capítulos recolhíveis;
+- zoom global da área de estudos (80–200%), preservando o chrome da aplicação;
+- Style Guide do Student Shell com critérios de acessibilidade;
+- descrições/excerpts de importação sanitizados para não expor metadados técnicos ao aluno.
+
+O fechamento **não inclui** `16.4D — Achievements Foundation`, que permanece reservado, nem `16.5 — Content Library & Reuse`, que permanece como próxima linha candidata.
+
+Detalhes e pendências: [`docs/CLOSURE_16_4_STUDENT_EXPERIENCE.md`](docs/CLOSURE_16_4_STUDENT_EXPERIENCE.md).

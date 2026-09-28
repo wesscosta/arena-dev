@@ -33,7 +33,7 @@
 
 Os incrementos `16.0 — Professor Arena Experience` e `16.1 — Journey Core` foram integrados à `main` pelos PRs #21 e #22.
 
-O `16.2 — Learning Resources & Content Ingestion` está concluído na branch `feat/v0.8-content-ingestion`. O `16.3` já cobre Study Experience e Structured Import até adapters/OAuth/UX do Notion. O `16.4 — Student Experience Shell & Workspace Visibility` está em execução; o próximo corte é `16.4A`, que separa matrícula de exposição permanente do conteúdo. `16.5 — Content Library & Reuse` está registrado como marcador de roadmap sobre a evolução de `LearningResource`.
+O `16.2 — Learning Resources & Content Ingestion` está concluído na branch `feat/v0.8-content-ingestion`. O `16.3` já cobre Study Experience e Structured Import até adapters/OAuth/UX do Notion. O `16.4 — Student Experience Shell & Workspace Visibility` está em execução; o [`16.4A — Student Workspace Visibility`](INCREMENT_16_4A.md) separa matrícula de exposição permanente do conteúdo e o [`16.4B — Live dentro do Student Shell`](INCREMENT_16_4B.md) adiciona discovery multi-turma e Live Hub reutilizando o runtime público, e o [`16.4C — Journey Discovery & Redemption`](INCREMENT_16_4C.md) permite vincular Jornadas ao perfil leve por código. Os três cortes estão implementados tecnicamente, restando o gate visual integrado. `16.4D — Achievements Foundation` fica reservado e não implementado. `16.5 — Content Library & Reuse` é o próximo domínio priorizado, começando pela auditoria de `LearningResource`.
 
 ## Histórico
 
@@ -63,4 +63,5 @@ O `16.2 — Learning Resources & Content Ingestion` está concluído na branch `
 
 Não reescrever documentação histórica para fabricar evidência retroativa. Quando houver divergência entre fechamento técnico e publicação externa, registrar explicitamente a evidência disponível.
 
-**Atualizado em 28/09/2026 para o fechamento técnico do 16.3.8, início do 16.4 e marcador arquitetural do 16.5 — Content Library & Reuse.**
+**Atualizado em 28/09/2026 para consolidar 16.4A–C, reservar 16.4D sem implementação e preparar o gate de entrada do 16.5 — Content Library & Reuse.**
+- [`CLOSURE_16_4_STUDENT_EXPERIENCE.md`](CLOSURE_16_4_STUDENT_EXPERIENCE.md) — fechamento do ciclo 16.4, decisões consolidadas, gates e pendências.
