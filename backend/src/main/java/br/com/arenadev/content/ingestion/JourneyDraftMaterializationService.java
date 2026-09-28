@@ -69,7 +69,7 @@ public class JourneyDraftMaterializationService {
                         unlock,
                         JourneyCompletionRule.MANUAL,
                         section,
-                        mapItemType(draftItem.type()),
+                        JourneyItemType.CONTENT,
                         resource
                 );
                 journey.addStage(stage);
@@ -92,11 +92,6 @@ public class JourneyDraftMaterializationService {
     ) {
         String body = clean(item.body());
         String sourceUrl = clean(item.sourceUrl());
-        boolean contentLike = item.type() == DraftItemType.CONTENT
-                || item.type() == DraftItemType.EXTERNAL_RESOURCE
-                || body != null
-                || sourceUrl != null;
-        if (!contentLike) return null;
 
         LearningResource resource = new LearningResource(classroom, item.title().trim());
         LearningResourceFormat format = sourceUrl != null && body == null
@@ -127,11 +122,6 @@ public class JourneyDraftMaterializationService {
             case URL -> LearningResourceSourceType.URL;
             case NOTION -> LearningResourceSourceType.NOTION;
         };
-    }
-
-    private JourneyItemType mapItemType(DraftItemType type) {
-        if (type == null) return JourneyItemType.CONTENT;
-        return JourneyItemType.valueOf(type.name());
     }
 
     private static String clean(String value) {

@@ -32,7 +32,7 @@ public class JourneyStage {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "item_type", nullable = false, length = 30)
-    private JourneyItemType itemType = JourneyItemType.ACTIVITY;
+    private JourneyItemType itemType = JourneyItemType.CONTENT;
 
     @Column(nullable = false)
     private int position;
@@ -91,7 +91,7 @@ public class JourneyStage {
         this.unlockRule = unlockRule;
         this.completionRule = completionRule;
         this.section = section;
-        this.itemType = itemType == null ? JourneyItemType.ACTIVITY : itemType;
+        this.itemType = itemType == null ? (activity == null ? JourneyItemType.CONTENT : JourneyItemType.ACTIVITY) : itemType;
         this.learningResource = learningResource;
         this.updatedAt = Instant.now();
     }

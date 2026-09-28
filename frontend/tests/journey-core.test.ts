@@ -87,12 +87,38 @@ test("new journey onboarding is source-agnostic and review-first", () => {
   assert.match(wizard, /Remover módulo/);
   assert.match(wizard, /Adicionar módulo/);
   assert.match(wizard, /Adicionar item/);
-  assert.match(wizard, /Conteúdo e instruções/);
-  assert.match(wizard, /Recurso e origem/);
+  assert.match(wizard, /<span>Conteúdo<\/span>/);
+  assert.doesNotMatch(wizard, /<option value="QUIZ">/);
+  assert.doesNotMatch(wizard, /<option value="ACTIVITY">/);
+  assert.match(wizard, /Conteúdo e origem/);
   assert.match(wizard, /URL do recurso/);
   assert.match(wizard, /patchItem\(sectionIndex, itemIndex, \{ body:/);
   assert.match(wizard, /patchItem\(sectionIndex, itemIndex, \{ sourceUrl:/);
   assert.match(ingestion, /\/api\/content-ingestion\/preview/);
   assert.match(ingestion, /\/api\/content-ingestion\/file-preview/);
   assert.match(manager, /<JourneyCreationWizard/);
+});
+
+test("study journey view uses vertical modules instead of nested cards", () => {
+  const studyView = readFileSync(resolve(process.cwd(), "app/learn/journeys/[journeyId]/page.tsx"), "utf8");
+  const studyCss = readFileSync(resolve(process.cwd(), "app/learn/study.module.css"), "utf8");
+  assert.match(studyView, /studyModule/);
+  assert.match(studyView, /studyContentRow/);
+  assert.match(studyView, /Conclua o conteúdo anterior para avançar/);
+  assert.match(studyView, /Continuar/);
+  assert.match(studyCss, /Journey Study View — structural hierarchy, not nested cards/);
+  assert.doesNotMatch(studyView, /className=\{styles\.hero\}/);
+  assert.doesNotMatch(studyView, /className=\{styles\.card\}/);
+});
+
+test("content reader supports study formats and explicit completion", () => {
+  const page = readFileSync(resolve(process.cwd(), "app/learn/journeys/[journeyId]/content/[contentId]/page.tsx"), "utf8");
+  const reader = readFileSync(resolve(process.cwd(), "components/study/JourneyContentReader.tsx"), "utf8");
+  assert.match(page, /startStudyContent/);
+  assert.match(page, /completeStudyContent/);
+  assert.match(page, /Concluir e continuar/);
+  assert.match(reader, /ReactMarkdown/);
+  assert.match(reader, /remarkGfm/);
+  assert.match(reader, /noopener noreferrer/);
+  assert.match(reader, /PLAIN_TEXT/);
 });

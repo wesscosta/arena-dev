@@ -51,7 +51,7 @@ class ContentIngestionServiceTest {
         assertThat(draft.sections()).hasSize(3);
         assertThat(draft.sections().getFirst().items())
                 .extracting(ContentIngestionService.DraftItem::type)
-                .contains(DraftItemType.CONTENT, DraftItemType.QUIZ);
+                .containsOnly(DraftItemType.CONTENT);
     }
 
     @Test

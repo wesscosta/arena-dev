@@ -2,7 +2,7 @@
 
 **Linha ativa:** v0.8
 **Branch de execução:** `feat/v0.8-content-ingestion`
-**Estado atual:** `16.2` concluído na branch; `16.3 — Journey Study Experience` é o próximo incremento.
+**Estado atual:** `16.3 — Journey Study Experience` em execução; `16.3.0`–`16.3.4` concluídos na branch.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
@@ -18,14 +18,18 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | 16.0 | Professor Arena Experience | **Concluído · PR #21 mergeado** |
 | 16.1 | Journey Core | **Concluído · PR #22 mergeado** |
 | 16.2 | Learning Resources & Content Ingestion | **Concluído na branch · aguardando merge** |
-| 16.3 | Journey Study Experience | **Próximo** |
+| 16.3 | Journey Study Experience | **Em execução · 16.3.0–16.3.4 concluídos** |
 | 16.4 | Journey Map | **Absorvido pelo 16.3; sem incremento separado no MVP** |
-| 16.5 | Question Attempts & Skills | Planejado |
-| 16.6 | Mastery básico | Planejado |
-| 16.7 | Review | Planejado |
-| 16.8 | Teacher Journey Dashboard | Planejado |
-| 16.9 | Minimal Gamification | Planejado |
+| 16.5 | Question Attempts & Skills | **Candidato pós-validação do 16.3** |
+| 16.6 | Mastery básico | **Candidato pós-validação do 16.3** |
+| 16.7 | Review | **Candidato pós-validação do 16.3** |
+| 16.8 | Teacher Journey Dashboard | **Candidato pós-validação do 16.3** |
+| 16.9 | Minimal Gamification | **Candidato pós-validação do 16.3** |
 | 16.10 | Pilot, Metrics & Hardening | Planejado |
+
+### Product Gate após 16.3
+
+Os incrementos `16.5` a `16.9` não são uma fila automática. Só avançam após validação real da Journey como experiência de estudo: estrutura compreensível, retomada correta, leitura/conclusão com baixa fricção e progresso útil. Mastery, Skills, Review e gamificação persistente permanecem hipóteses de evolução até esse gate.
 ## 16.0 — Professor Arena Experience
 
 ### Objetivo
@@ -243,11 +247,11 @@ O incremento não transforma Journey em uma segunda área de Atividades e não i
 
 ### Sequência técnica
 
-1. `16.3.0` Domain cleanup;
-2. `16.3.1` Study API;
-3. `16.3.2` Study shell `/learn`;
-4. `16.3.3` Journey Study View;
-5. `16.3.4` Content Reader;
+1. `16.3.0` Domain cleanup — **concluído**;
+2. `16.3.1` Study API independente de `/join` — **concluído**;
+3. `16.3.2` Study shell `/learn` — **concluído**;
+4. `16.3.3` Journey Study View — **concluído**;
+5. `16.3.4` Content Reader — **concluído**;
 6. `16.3.5` Progressão e continuidade;
 7. `16.3.6` mesma experiência para professor;
 8. `16.3.7` simplificação do Builder;

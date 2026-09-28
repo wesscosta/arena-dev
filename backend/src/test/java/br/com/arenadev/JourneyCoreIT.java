@@ -4,6 +4,8 @@ import br.com.arenadev.activity.Activity;
 import br.com.arenadev.activity.ActivityRepository;
 import br.com.arenadev.classroom.*;
 import br.com.arenadev.journey.*;
+import br.com.arenadev.content.*;
+import br.com.arenadev.study.*;
 import br.com.arenadev.submission.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,8 @@ class JourneyCoreIT {
     }
 
     @Autowired private JourneyService journeyService;
+    @Autowired private JourneyStudyService journeyStudyService;
+    @Autowired private LearningResourceRepository learningResourceRepository;
     @Autowired private JourneyRepository journeyRepository;
     @Autowired private JourneyStageProgressRepository progressRepository;
     @Autowired private ActivitySubmissionRepository submissionRepository;
@@ -50,6 +54,7 @@ class JourneyCoreIT {
     void cleanDatabase() {
         progressRepository.deleteAll();
         journeyRepository.deleteAll();
+        learningResourceRepository.deleteAll();
         submissionRepository.deleteAll();
         activityRepository.deleteAll();
         enrollmentRepository.deleteAll();
@@ -164,6 +169,71 @@ class JourneyCoreIT {
         assertThat(catalog.getFirst().currentStage().nextAction()).isEqualTo("COMPLETE_STAGE");
         assertThat(catalog.getFirst().stages()).extracting(JourneyService.StageProgressView::status)
                 .containsExactly(JourneyStageProgressStatus.AVAILABLE, JourneyStageProgressStatus.LOCKED);
+    }
+
+    @Test
+    void studyApiProjectionIsSequentialAndReturnsContentWithoutJoinSession() {
+        Fixture fixture = fixture("Estudo", "JRNY-STUDY");
+        LearningResource firstResource = new LearningResource(fixture.classroom(), "HTTP");
+        firstResource.update("HTTP", "Base da Web", "# HTTP\nConteúdo de estudo.", LearningResourceFormat.MARKDOWN,
+                LearningResourceSourceType.MANUAL, null, "Material do professor");
+        firstResource = learningResourceRepository.save(firstResource);
+        LearningResource secondResource = new LearningResource(fixture.classroom(), "REST");
+        secondResource.update("REST", null, "# REST", LearningResourceFormat.MARKDOWN,
+                LearningResourceSourceType.MANUAL, null, null);
+        secondResource = learningResourceRepository.save(secondResource);
+
+        JourneyService.JourneyView created = journeyService.create(new JourneyService.JourneyInput(
+                fixture.classroom().getId(), "Web", "Estudo sequencial", List.of(
+                        new JourneyService.StageInput(null, "HTTP", "Fundamentos", null, JourneyUnlockRule.IMMEDIATE,
+                                JourneyCompletionRule.MANUAL, null, "Fundamentos", JourneyItemType.CONTENT, firstResource.getId()),
+                        new JourneyService.StageInput(null, "REST", null, null, JourneyUnlockRule.IMMEDIATE,
+                                JourneyCompletionRule.MANUAL, null, "Fundamentos", JourneyItemType.CONTENT, secondResource.getId())
+                )
+        ));
+        JourneyService.JourneyView published = journeyService.publish(created.id());
+        StudyPrincipal principal = new StudyPrincipal(fixture.enrollment().getStudent().getId(), fixture.enrollment().getId(),
+                fixture.classroom().getId(), StudyPrincipal.Role.STUDENT);
+
+        var catalog = journeyStudyService.list(principal);
+        assertThat(catalog).hasSize(1);
+        assertThat(catalog.getFirst().currentContentTitle()).isEqualTo("HTTP");
+
+        var initial = journeyStudyService.get(published.id(), principal);
+        assertThat(initial.modules()).hasSize(1);
+        assertThat(initial.modules().getFirst().contents()).extracting(JourneyStudyService.JourneyContentView::state)
+                .containsExactly(JourneyStudyService.StudyState.CURRENT, JourneyStudyService.StudyState.LOCKED);
+
+        var detail = journeyStudyService.content(published.id(), published.stages().getFirst().id(), principal);
+        assertThat(detail.body()).contains("Conteúdo de estudo");
+        assertThat(detail.format()).isEqualTo("MARKDOWN");
+
+        var after = journeyStudyService.complete(published.id(), published.stages().getFirst().id(), principal);
+        assertThat(after.progress().percent()).isEqualTo(50);
+        assertThat(after.modules().getFirst().contents()).extracting(JourneyStudyService.JourneyContentView::state)
+                .containsExactly(JourneyStudyService.StudyState.COMPLETED, JourneyStudyService.StudyState.CURRENT);
+    }
+
+    @Test
+    void studyApiHidesDraftsAndRejectsAnotherEnrollmentClassroom() {
+        Fixture source = fixture("Fonte estudo", "JRNY-SOURCE");
+        Fixture other = fixture("Outra turma estudo", "JRNY-OTHER");
+        JourneyService.JourneyView draft = journeyService.create(new JourneyService.JourneyInput(
+                source.classroom().getId(), "Rascunho", null,
+                List.of(stage("Conteúdo", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL))
+        ));
+        StudyPrincipal sourcePrincipal = new StudyPrincipal(source.enrollment().getStudent().getId(), source.enrollment().getId(),
+                source.classroom().getId(), StudyPrincipal.Role.STUDENT);
+        StudyPrincipal otherPrincipal = new StudyPrincipal(other.enrollment().getStudent().getId(), other.enrollment().getId(),
+                other.classroom().getId(), StudyPrincipal.Role.STUDENT);
+
+        assertThat(journeyStudyService.list(sourcePrincipal)).isEmpty();
+        assertThatThrownBy(() -> journeyStudyService.get(draft.id(), sourcePrincipal))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .hasMessageContaining("404");
+        assertThatThrownBy(() -> journeyStudyService.get(draft.id(), otherPrincipal))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .hasMessageContaining("404");
     }
 
     @Test

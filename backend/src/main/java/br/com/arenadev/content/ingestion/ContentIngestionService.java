@@ -82,12 +82,12 @@ public class ContentIngestionService {
                 List.of(
                         section("Começar", "Introduza o tema e ative conhecimentos prévios.",
                                 item("Contexto e objetivos", DraftItemType.CONTENT),
-                                item("Diagnóstico inicial", DraftItemType.QUIZ)),
+                                item("Conhecimentos prévios", DraftItemType.CONTENT)),
                         section("Desenvolver", "Avance do conceito para a aplicação.",
                                 item("Conteúdo principal", DraftItemType.CONTENT),
-                                item("Prática guiada", DraftItemType.ACTIVITY)),
+                                item("Aplicação guiada", DraftItemType.CONTENT)),
                         section("Consolidar", "Verifique compreensão e aplicação.",
-                                item("Checkpoint", DraftItemType.CHECKPOINT))
+                                item("Síntese do desafio", DraftItemType.CONTENT))
                 )
         );
     }
@@ -102,12 +102,12 @@ public class ContentIngestionService {
                 List.of(
                         section("Descoberta", null,
                                 item("Problema e contexto", DraftItemType.CONTENT),
-                                item("Definir escopo", DraftItemType.ACTIVITY)),
+                                item("Definição de escopo", DraftItemType.CONTENT)),
                         section("Construção", null,
-                                item("Primeira entrega", DraftItemType.ACTIVITY),
-                                item("Revisão intermediária", DraftItemType.CHECKPOINT)),
+                                item("Construção inicial", DraftItemType.CONTENT),
+                                item("Revisão da construção", DraftItemType.CONTENT)),
                         section("Entrega", null,
-                                item("Desafio final", DraftItemType.CHALLENGE))
+                                item("Síntese do projeto", DraftItemType.CONTENT))
                 )
         );
     }
@@ -120,31 +120,31 @@ public class ContentIngestionService {
                 "Preparação para avaliação",
                 List.of(
                         section("Diagnóstico", null,
-                                item("O que já sabemos?", DraftItemType.QUIZ)),
+                                item("Mapa de conhecimentos prévios", DraftItemType.CONTENT)),
                         section("Revisão", null,
                                 item("Conceitos essenciais", DraftItemType.CONTENT),
-                                item("Prática de recuperação", DraftItemType.ACTIVITY)),
+                                item("Revisão orientada", DraftItemType.CONTENT)),
                         section("Verificação", null,
-                                item("Checkpoint final", DraftItemType.CHECKPOINT))
+                                item("Síntese para avaliação", DraftItemType.CONTENT))
                 )
         );
     }
 
     private DraftView challengeTemplate(PreviewRequest request) {
-        String title = valueOr(request.title(), "Aprendizagem por desafios");
+        String title = valueOr(request.title(), "Estudo orientado por desafios");
         return new DraftView(
                 title,
-                valueOr(request.description(), "Jornada centrada em missões e checkpoints."),
+                valueOr(request.description(), "Percurso de estudo orientado por problemas e estratégias de resolução."),
                 ContentIngestionSource.TEMPLATE,
-                "Aprendizagem por desafios",
+                "Estudo orientado por desafios",
                 List.of(
                         section("Preparação", null,
                                 item("Briefing do desafio", DraftItemType.CONTENT)),
                         section("Missões", null,
-                                item("Missão 1", DraftItemType.CHALLENGE),
-                                item("Missão 2", DraftItemType.CHALLENGE)),
+                                item("Análise do desafio", DraftItemType.CONTENT),
+                                item("Estratégias de resolução", DraftItemType.CONTENT)),
                         section("Fechamento", null,
-                                item("Checkpoint", DraftItemType.CHECKPOINT))
+                                item("Síntese do desafio", DraftItemType.CONTENT))
                 )
         );
     }

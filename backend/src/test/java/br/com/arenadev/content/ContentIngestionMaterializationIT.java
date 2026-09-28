@@ -102,12 +102,12 @@ class ContentIngestionMaterializationIT {
         assertThat(view.stages()).extracting(stage -> stage.sectionTitle())
                 .containsExactly("Fundamentos", "Fundamentos", "Prática");
         assertThat(view.stages()).extracting(stage -> stage.itemType())
-                .containsExactly(JourneyItemType.CONTENT, JourneyItemType.QUIZ, JourneyItemType.EXTERNAL_RESOURCE);
+                .containsOnly(JourneyItemType.CONTENT);
         assertThat(view.stages().getFirst().learningResourceId()).isNotNull();
-        assertThat(view.stages().get(1).learningResourceId()).isNull();
+        assertThat(view.stages().get(1).learningResourceId()).isNotNull();
         assertThat(view.stages().get(2).learningResourceId()).isNotNull();
 
-        assertThat(resources.findByClassroomIdOrderByUpdatedAtDesc(classroom.getId())).hasSize(2);
+        assertThat(resources.findByClassroomIdOrderByUpdatedAtDesc(classroom.getId())).hasSize(3);
     }
     @Test
     void materializesExtractedFileContentAsPlainTextWithFileProvenance() {

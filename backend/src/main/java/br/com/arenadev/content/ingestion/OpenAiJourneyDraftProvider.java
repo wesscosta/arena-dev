@@ -113,18 +113,10 @@ public class OpenAiJourneyDraftProvider implements JourneyDraftAiProvider {
             List<ContentIngestionService.DraftItem> items = new ArrayList<>();
             for (AiItem item : section.items()) {
                 if (item == null || item.title() == null || item.title().isBlank()) continue;
-                DraftItemType type;
-                try {
-                    type = DraftItemType.valueOf(
-                            item.type() == null ? "CONTENT" : item.type().trim().toUpperCase()
-                    );
-                } catch (IllegalArgumentException ignored) {
-                    type = DraftItemType.CONTENT;
-                }
                 items.add(new ContentIngestionService.DraftItem(
                         item.title().trim(),
                         clean(item.description()),
-                        type,
+                        DraftItemType.CONTENT,
                         clean(item.body()),
                         clean(item.sourceUrl())
                 ));
@@ -153,16 +145,10 @@ public class OpenAiJourneyDraftProvider implements JourneyDraftAiProvider {
                 Você estrutura jornadas educacionais para professores.
                 Não publique nada e não invente fontes externas.
                 A saída é sempre um RASCUNHO que o professor revisará.
-                Organize a jornada em módulos e itens.
-                Use somente os tipos:
-                CONTENT, ACTIVITY, QUIZ, CHALLENGE, CHECKPOINT, EXTERNAL_RESOURCE.
-                CONTENT é explicação/material.
-                ACTIVITY é produção ou prática.
-                QUIZ é verificação objetiva.
-                CHALLENGE é missão aplicada.
-                CHECKPOINT é marco de consolidação.
-                EXTERNAL_RESOURCE só deve ser usado se uma URL tiver sido fornecida.
-                Prefira 2 a 6 módulos, com 2 a 6 itens por módulo.
+                Organize a jornada como material de estudo sequencial em módulos e conteúdos.
+                Cada item deve ser CONTENT. Não crie atividades, quiz, desafios ou checkpoints como estrutura da jornada.
+                Quando houver uma URL fornecida, preserve-a em sourceUrl como referência do conteúdo, sem mudar o tipo.
+                Prefira 2 a 6 módulos, com 2 a 6 conteúdos por módulo.
                 Não presuma que o professor usa Markdown, Notion ou qualquer ferramenta específica.
                 Retorne APENAS JSON válido, sem markdown, no formato:
                 {

@@ -1,0 +1,210 @@
+package br.com.arenadev.study;
+
+import br.com.arenadev.classroom.Enrollment;
+import br.com.arenadev.classroom.EnrollmentRepository;
+import br.com.arenadev.content.LearningResource;
+import br.com.arenadev.journey.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Instant;
+import java.util.*;
+
+@Service
+public class JourneyStudyService {
+    private final JourneyRepository journeys;
+    private final EnrollmentRepository enrollments;
+    private final JourneyStageProgressRepository progress;
+
+    public JourneyStudyService(
+            JourneyRepository journeys,
+            EnrollmentRepository enrollments,
+            JourneyStageProgressRepository progress
+    ) {
+        this.journeys = journeys;
+        this.enrollments = enrollments;
+        this.progress = progress;
+    }
+
+    @Transactional(readOnly = true)
+    public List<JourneyStudySummary> list(StudyPrincipal principal) {
+        Enrollment enrollment = requireEnrollment(principal);
+        return journeys.findByClassroomIdAndStatusOrderByUpdatedAtDesc(principal.classroomId(), JourneyStatus.PUBLISHED)
+                .stream().map(journey -> summary(journey, enrollment)).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public JourneyStudyView get(UUID journeyId, StudyPrincipal principal) {
+        Enrollment enrollment = requireEnrollment(principal);
+        Journey journey = requirePublishedJourney(journeyId, principal);
+        Projection projection = project(journey, enrollment);
+        return new JourneyStudyView(
+                journey.getId(), journey.getTitle(), journey.getDescription(),
+                projection.progress(), modules(journey, projection.states())
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public JourneyContentDetailView content(UUID journeyId, UUID contentId, StudyPrincipal principal) {
+        Enrollment enrollment = requireEnrollment(principal);
+        Journey journey = requirePublishedJourney(journeyId, principal);
+        JourneyStage stage = requireContent(journey, contentId);
+        StudyState state = project(journey, enrollment).states().get(stage.getId());
+        if (state == StudyState.LOCKED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Este conteúdo ainda está bloqueado.");
+        }
+        return detail(stage, state);
+    }
+
+    @Transactional
+    public JourneyStudyView start(UUID journeyId, UUID contentId, StudyPrincipal principal) {
+        Enrollment enrollment = requireEnrollment(principal);
+        Journey journey = requirePublishedJourney(journeyId, principal);
+        JourneyStage stage = requireContent(journey, contentId);
+        StudyState state = project(journey, enrollment).states().get(stage.getId());
+        if (state == StudyState.LOCKED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Este conteúdo ainda está bloqueado.");
+        }
+        if (state != StudyState.COMPLETED) {
+            JourneyStageProgress entity = progress.findByStageIdAndEnrollmentId(stage.getId(), enrollment.getId())
+                    .orElseGet(() -> new JourneyStageProgress(stage, enrollment));
+            entity.start(Instant.now());
+            progress.save(entity);
+        }
+        return view(journey, enrollment);
+    }
+
+    @Transactional
+    public JourneyStudyView complete(UUID journeyId, UUID contentId, StudyPrincipal principal) {
+        Enrollment enrollment = requireEnrollment(principal);
+        Journey journey = requirePublishedJourney(journeyId, principal);
+        JourneyStage stage = requireContent(journey, contentId);
+        StudyState state = project(journey, enrollment).states().get(stage.getId());
+        if (state == StudyState.LOCKED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Este conteúdo ainda está bloqueado.");
+        }
+        JourneyStageProgress entity = progress.findByStageIdAndEnrollmentId(stage.getId(), enrollment.getId())
+                .orElseGet(() -> new JourneyStageProgress(stage, enrollment));
+        entity.complete(Instant.now());
+        progress.save(entity);
+        return view(journey, enrollment);
+    }
+
+    private JourneyStudyView view(Journey journey, Enrollment enrollment) {
+        Projection projection = project(journey, enrollment);
+        return new JourneyStudyView(journey.getId(), journey.getTitle(), journey.getDescription(),
+                projection.progress(), modules(journey, projection.states()));
+    }
+
+    private JourneyStudySummary summary(Journey journey, Enrollment enrollment) {
+        Projection projection = project(journey, enrollment);
+        JourneyStage current = journey.getStages().stream()
+                .filter(stage -> projection.states().get(stage.getId()) == StudyState.CURRENT)
+                .findFirst().orElse(null);
+        return new JourneyStudySummary(
+                journey.getId(), journey.getTitle(), journey.getDescription(), projection.progress(),
+                current == null ? null : current.getId(), current == null ? null : current.getTitle()
+        );
+    }
+
+    private Projection project(Journey journey, Enrollment enrollment) {
+        Map<UUID, JourneyStageProgress> persisted = new HashMap<>();
+        progress.findByStageJourneyIdAndEnrollmentId(journey.getId(), enrollment.getId())
+                .forEach(item -> persisted.put(item.getStage().getId(), item));
+        Map<UUID, StudyState> states = new LinkedHashMap<>();
+        boolean currentAssigned = false;
+        int completed = 0;
+        for (JourneyStage stage : journey.getStages()) {
+            JourneyStageProgress item = persisted.get(stage.getId());
+            boolean done = item != null && item.getCompletedAt() != null;
+            StudyState state;
+            if (done) {
+                state = StudyState.COMPLETED;
+                completed++;
+            } else if (!currentAssigned) {
+                state = StudyState.CURRENT;
+                currentAssigned = true;
+            } else {
+                state = StudyState.LOCKED;
+            }
+            states.put(stage.getId(), state);
+        }
+        int total = journey.getStages().size();
+        int percent = total == 0 ? 0 : Math.round(completed * 100f / total);
+        return new Projection(states, new JourneyProgressSummary(completed, total, percent));
+    }
+
+    private List<JourneyModuleView> modules(Journey journey, Map<UUID, StudyState> states) {
+        Map<String, ModuleBuilder> modules = new LinkedHashMap<>();
+        for (JourneyStage stage : journey.getStages()) {
+            JourneySection section = stage.getSection();
+            String key = section == null ? "__default" : section.getId().toString();
+            ModuleBuilder module = modules.computeIfAbsent(key, ignored -> new ModuleBuilder(
+                    section == null ? null : section.getId(),
+                    section == null ? "Conteúdo" : section.getTitle(),
+                    section == null ? null : section.getDescription(),
+                    new ArrayList<>()
+            ));
+            module.contents().add(contentView(stage, states.get(stage.getId())));
+        }
+        return modules.values().stream()
+                .map(module -> new JourneyModuleView(module.id(), module.title(), module.description(), List.copyOf(module.contents())))
+                .toList();
+    }
+
+    private JourneyContentView contentView(JourneyStage stage, StudyState state) {
+        LearningResource resource = stage.getLearningResource();
+        return new JourneyContentView(stage.getId(), stage.getTitle(), stage.getDescription(), state,
+                resource == null ? null : resource.getId(), resource != null && resource.getSourceUrl() != null);
+    }
+
+    private JourneyContentDetailView detail(JourneyStage stage, StudyState state) {
+        LearningResource resource = stage.getLearningResource();
+        return new JourneyContentDetailView(
+                stage.getId(), stage.getTitle(), stage.getDescription(), state,
+                resource == null ? null : resource.getId(),
+                resource == null ? null : resource.getBody(),
+                resource == null ? null : resource.getFormat().name(),
+                resource == null ? null : resource.getSourceUrl(),
+                resource == null ? null : resource.getSourceLabel()
+        );
+    }
+
+    private Enrollment requireEnrollment(StudyPrincipal principal) {
+        Enrollment enrollment = enrollments.findById(principal.enrollmentId())
+                .filter(Enrollment::isActive)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Matrícula ativa não encontrada."));
+        if (!enrollment.getClassroom().getId().equals(principal.classroomId())
+                || !enrollment.getStudent().getId().equals(principal.userId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "A identidade de estudo não pertence a esta matrícula.");
+        }
+        return enrollment;
+    }
+
+    private Journey requirePublishedJourney(UUID journeyId, StudyPrincipal principal) {
+        Journey journey = journeys.findById(journeyId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Jornada não encontrada."));
+        if (journey.getStatus() != JourneyStatus.PUBLISHED
+                || !journey.getClassroom().getId().equals(principal.classroomId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Jornada não encontrada.");
+        }
+        return journey;
+    }
+
+    private JourneyStage requireContent(Journey journey, UUID contentId) {
+        return journey.getStages().stream().filter(stage -> stage.getId().equals(contentId)).findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conteúdo não encontrado nesta jornada."));
+    }
+
+    public enum StudyState { COMPLETED, CURRENT, LOCKED }
+    public record JourneyProgressSummary(int completedContents, int totalContents, int percent) {}
+    public record JourneyStudySummary(UUID id, String title, String description, JourneyProgressSummary progress, UUID currentContentId, String currentContentTitle) {}
+    public record JourneyStudyView(UUID id, String title, String description, JourneyProgressSummary progress, List<JourneyModuleView> modules) {}
+    public record JourneyModuleView(UUID id, String title, String description, List<JourneyContentView> contents) {}
+    public record JourneyContentView(UUID id, String title, String description, StudyState state, UUID resourceId, boolean hasExternalSource) {}
+    public record JourneyContentDetailView(UUID id, String title, String description, StudyState state, UUID resourceId, String body, String format, String sourceUrl, String sourceLabel) {}
+    private record Projection(Map<UUID, StudyState> states, JourneyProgressSummary progress) {}
+    private record ModuleBuilder(UUID id, String title, String description, List<JourneyContentView> contents) {}
+}

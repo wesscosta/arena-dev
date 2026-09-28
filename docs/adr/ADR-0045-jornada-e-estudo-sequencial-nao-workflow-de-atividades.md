@@ -89,7 +89,8 @@ Essas dinâmicas não são tipos nativos de conteúdo da Jornada.
 - a progressão padrão é sequencial;
 - conteúdo é concluído explicitamente pelo estudante;
 - regras de desbloqueio por item não aparecem no editor comum;
-- `itemType = CONTENT`, `completionRule = MANUAL` e desbloqueio derivado da posição são defaults internos;
+- `itemType = CONTENT`, `completionRule = MANUAL` e desbloqueio derivado da posição são defaults internos para todo conteúdo novo;
+- todo conteúdo novo da Jornada possui `LearningResource`; `JourneyStage` organiza posição/progresso e referencia o recurso, mas não é o repositório primário do material;
 - professor e aluno usam a mesma experiência de leitura;
 - professor recebe capacidades extras de edição, não uma tela de consumo diferente;
 - Jornada funciona sem sessão ativa e não depende de `/join`;
@@ -119,6 +120,8 @@ JourneyStudyService  → estudo/progresso
 ```
 
 O contrato canônico de estudo será independente de `/api/join/{code}`.
+
+A camada de estudo recebe uma identidade semântica própria (`StudyPrincipal`: usuário/matrícula/turma/papel), desacoplada de `SessionParticipant` e de detalhes HTTP. O `/join` pode atuar apenas como adapter temporário durante desenvolvimento; a release para aluno exige identidade persistente.
 
 ### Frontend
 

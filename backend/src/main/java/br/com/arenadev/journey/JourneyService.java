@@ -297,7 +297,9 @@ public class JourneyService {
             if (completionRule != JourneyCompletionRule.MANUAL && activity == null) {
                 throw new IllegalArgumentException("Etapas concluídas por atividade precisam referenciar uma atividade.");
             }
-            JourneyItemType itemType = Objects.requireNonNullElse(input.itemType(), JourneyItemType.ACTIVITY);
+            JourneyItemType itemType = input.itemType() != null
+                    ? input.itemType()
+                    : activity == null ? JourneyItemType.CONTENT : JourneyItemType.ACTIVITY;
             stage.update(input.title().trim(), clean(input.description()), position, activity, unlockRule, completionRule, section, itemType, resource);
         }
 
@@ -333,7 +335,9 @@ public class JourneyService {
             UUID currentActivityId = stage.getActivity() == null ? null : stage.getActivity().getId();
             UUID currentResourceId = stage.getLearningResource() == null ? null : stage.getLearningResource().getId();
             UUID currentSectionId = stage.getSection() == null ? null : stage.getSection().getId();
-            JourneyItemType expectedType = Objects.requireNonNullElse(input.itemType(), JourneyItemType.ACTIVITY);
+            JourneyItemType expectedType = input.itemType() != null
+                    ? input.itemType()
+                    : input.activityId() == null ? JourneyItemType.CONTENT : JourneyItemType.ACTIVITY;
             if (!Objects.equals(parseUuid(input.id()), stage.getId())
                     || !Objects.equals(input.title() == null ? null : input.title().trim(), stage.getTitle())
                     || !Objects.equals(clean(input.description()), stage.getDescription())

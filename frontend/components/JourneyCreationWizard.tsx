@@ -8,7 +8,6 @@ import {
   type ContentDraft,
   type ContentIngestionCapabilities,
   type ContentIngestionSource,
-  type DraftItemType,
 } from "@/lib/content-ingestion-api";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import styles from "./JourneyCreationWizard.module.css";
@@ -26,20 +25,11 @@ type Mode = "choose" | "ai" | "template" | "import" | "preview";
 type ImportMode = "file" | "text" | "url";
 
 const TEMPLATE_OPTIONS = [
-  { key: "SEQUENCE", title: "Sequência de aulas", text: "Introdução, desenvolvimento e consolidação." },
-  { key: "PROJECT", title: "Projeto integrador", text: "Descoberta, construção e entrega." },
-  { key: "EXAM_PREP", title: "Preparação para avaliação", text: "Diagnóstico, revisão e verificação." },
-  { key: "CHALLENGE", title: "Aprendizagem por desafios", text: "Briefing, missões e checkpoint." },
+  { key: "SEQUENCE", title: "Sequência de estudo", text: "Contexto, desenvolvimento e síntese." },
+  { key: "PROJECT", title: "Estudo por projeto", text: "Contexto, construção e síntese do projeto." },
+  { key: "EXAM_PREP", title: "Preparação para avaliação", text: "Conhecimentos prévios, revisão e síntese." },
+  { key: "CHALLENGE", title: "Estudo por desafios", text: "Contexto, análise e estratégias de resolução." },
 ] as const;
-
-const ITEM_LABELS: Record<string, string> = {
-  CONTENT: "Conteúdo",
-  ACTIVITY: "Atividade",
-  QUIZ: "Quiz",
-  CHALLENGE: "Desafio",
-  CHECKPOINT: "Checkpoint",
-  EXTERNAL_RESOURCE: "Recurso externo",
-};
 export default function JourneyCreationWizard({
   open,
   classroomId,
@@ -414,16 +404,16 @@ export default function JourneyCreationWizard({
                   <div className={styles.itemList}>
                     {section.items.map((item, itemIndex) => (
                       <div className={styles.item} key={`${item.title}-${itemIndex}`}>
-                        <select className={styles.itemTypeSelect} value={item.type} onChange={(event) => patchItem(sectionIndex, itemIndex, { type: event.target.value as DraftItemType })} aria-label={`Tipo do item ${itemIndex + 1}`}>
-                          {Object.entries(ITEM_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                        </select>
+                        <span className={styles.itemTypeSelect} aria-label={`Conteúdo ${itemIndex + 1}`}>
+                          {item.sourceUrl ? "Link" : "Conteúdo"}
+                        </span>
                         <div className={styles.itemIdentity}>
                           <input value={item.title} onChange={(event) => patchItem(sectionIndex, itemIndex, { title: event.target.value })} aria-label={`Título do item ${itemIndex + 1}`} />
                           <input value={item.description ?? ""} onChange={(event) => patchItem(sectionIndex, itemIndex, { description: event.target.value || null })} placeholder="Descrição opcional" aria-label={`Descrição do item ${itemIndex + 1}`} />
                           <details className={styles.itemDetails} open={Boolean(item.body || item.sourceUrl)}>
-                            <summary>{item.type === "EXTERNAL_RESOURCE" ? "Recurso e origem" : "Conteúdo e instruções"}</summary>
+                            <summary>{item.sourceUrl ? "Conteúdo e origem" : "Conteúdo"}</summary>
                             <div className={styles.itemDetailsBody}>
-                              {item.type === "EXTERNAL_RESOURCE" && (
+                              {item.sourceUrl && (
                                 <label>
                                   <span>URL do recurso</span>
                                   <input
@@ -436,11 +426,11 @@ export default function JourneyCreationWizard({
                                 </label>
                               )}
                               <label>
-                                <span>{item.type === "CONTENT" ? "Conteúdo" : "Instruções ou conteúdo opcional"}</span>
+                                <span>Conteúdo</span>
                                 <textarea
                                   value={item.body ?? ""}
                                   onChange={(event) => patchItem(sectionIndex, itemIndex, { body: event.target.value || null })}
-                                  placeholder={item.type === "CONTENT" ? "Revise ou complemente o conteúdo deste item." : "Adicione instruções, briefing ou material de apoio."}
+                                  placeholder="Revise ou complemente o conteúdo deste item."
                                   aria-label={`Conteúdo do item ${itemIndex + 1}`}
                                 />
                               </label>
