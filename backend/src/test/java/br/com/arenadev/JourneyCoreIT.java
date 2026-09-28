@@ -215,6 +215,50 @@ class JourneyCoreIT {
     }
 
     @Test
+    void studyContinuityResumesFirstIncompleteContentAndFinishesJourney() {
+        Fixture fixture = fixture("Continuidade", "JRNY-CONT");
+        JourneyService.JourneyView journey = createPublishedJourney(fixture, List.of(
+                stage("Primeiro", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL),
+                stage("Segundo", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL),
+                stage("Terceiro", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL)
+        ));
+        StudyPrincipal principal = new StudyPrincipal(fixture.enrollment().getStudent().getId(), fixture.enrollment().getId(),
+                fixture.classroom().getId(), StudyPrincipal.Role.STUDENT);
+
+        assertThat(progressRepository.count()).isZero();
+        journeyStudyService.get(journey.id(), principal);
+        journeyStudyService.content(journey.id(), journey.stages().getFirst().id(), principal);
+        assertThat(progressRepository.count()).isZero(); // GET never creates progress
+
+        journeyStudyService.start(journey.id(), journey.stages().getFirst().id(), principal);
+        JourneyStageProgress started = progressRepository.findByStageIdAndEnrollmentId(
+                journey.stages().getFirst().id(), fixture.enrollment().getId()).orElseThrow();
+        var firstStartedAt = started.getStartedAt();
+        var firstUpdatedAt = started.getUpdatedAt();
+        journeyStudyService.start(journey.id(), journey.stages().getFirst().id(), principal);
+        JourneyStageProgress startedAgain = progressRepository.findByStageIdAndEnrollmentId(
+                journey.stages().getFirst().id(), fixture.enrollment().getId()).orElseThrow();
+        assertThat(startedAgain.getStartedAt()).isEqualTo(firstStartedAt);
+        assertThat(startedAgain.getUpdatedAt()).isEqualTo(firstUpdatedAt); // start is idempotent
+
+        journeyStudyService.complete(journey.id(), journey.stages().getFirst().id(), principal);
+        var resumed = journeyStudyService.list(principal).getFirst();
+        assertThat(resumed.started()).isTrue();
+        assertThat(resumed.currentContentId()).isEqualTo(journey.stages().get(1).id());
+        assertThat(resumed.progress().percent()).isEqualTo(33);
+
+        journeyStudyService.complete(journey.id(), journey.stages().get(1).id(), principal);
+        journeyStudyService.complete(journey.id(), journey.stages().get(2).id(), principal);
+        var finished = journeyStudyService.list(principal).getFirst();
+        assertThat(finished.progress().percent()).isEqualTo(100);
+        assertThat(finished.currentContentId()).isNull();
+        assertThat(finished.currentContentTitle()).isNull();
+        assertThat(journeyStudyService.get(journey.id(), principal).modules().getFirst().contents())
+                .extracting(JourneyStudyService.JourneyContentView::state)
+                .containsOnly(JourneyStudyService.StudyState.COMPLETED);
+    }
+
+    @Test
     void studyApiHidesDraftsAndRejectsAnotherEnrollmentClassroom() {
         Fixture source = fixture("Fonte estudo", "JRNY-SOURCE");
         Fixture other = fixture("Outra turma estudo", "JRNY-OTHER");

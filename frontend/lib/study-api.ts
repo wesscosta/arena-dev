@@ -9,6 +9,8 @@ export type JourneyStudySummary = {
   progress: JourneyProgressSummary;
   currentContentId: string | null;
   currentContentTitle: string | null;
+  started: boolean;
+  lastStudiedAt: string | null;
 };
 export type JourneyContentView = {
   id: string;

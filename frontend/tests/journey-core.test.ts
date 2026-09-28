@@ -122,3 +122,13 @@ test("content reader supports study formats and explicit completion", () => {
   assert.match(reader, /noopener noreferrer/);
   assert.match(reader, /PLAIN_TEXT/);
 });
+
+test("study home resumes the persisted current content directly", () => {
+  const home = readFileSync(resolve(process.cwd(), "app/learn/page.tsx"), "utf8");
+  const api = readFileSync(resolve(process.cwd(), "lib/study-api.ts"), "utf8");
+  assert.match(home, /journey\.started && journey\.progress\.percent < 100/);
+  assert.match(home, /current\.currentContentId/);
+  assert.match(home, /Começar/);
+  assert.match(home, /Continuar/);
+  assert.match(api, /lastStudiedAt/);
+});

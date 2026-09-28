@@ -325,6 +325,8 @@ Não implementar editor rich-text sofisticado neste incremento.
 
 ## 16.3.5 — Progressão e continuidade
 
+**Status:** concluído na branch em 28/09/2026.
+
 ### Default
 
 Progressão sequencial.
@@ -349,6 +351,18 @@ conteúdo 2 = CURRENT
 - retorno posterior aponta para o primeiro conteúdo não concluído/disponível.
 
 Não adicionar branching no MVP.
+
+### Resultado aplicado
+
+- `GET` de Journey e conteúdo permanece estritamente sem efeitos colaterais; progresso só nasce em comandos explícitos de `start/complete`;
+- `start` tornou-se idempotente também no timestamp: reabrir o conteúdo atual não altera artificialmente `startedAt/updatedAt`;
+- catálogo de estudo informa `started` e `lastStudiedAt`, permitindo distinguir uma Journey nunca iniciada de uma retomada real;
+- jornadas iniciadas são priorizadas por atividade de estudo mais recente, sem alterar a ordem estrutural dos conteúdos;
+- `/learn` retoma diretamente o `currentContentId` persistido/projetado, em vez de obrigar o aluno a reabrir a visão geral da Journey;
+- CTA diferencia `Começar` de `Continuar`; jornadas 100% concluídas deixam de ocupar o bloco principal de retomada;
+- conclusão continua promovendo exatamente o primeiro conteúdo incompleto para `CURRENT`; após o último conteúdo não existe `CURRENT` residual e o progresso chega a 100%;
+- conclusão de módulo permanece derivada: um módulo está concluído quando todos os seus conteúdos estão `COMPLETED`, sem entidade/status paralelo;
+- testes cobrem GET sem mutação, start idempotente, retomada no primeiro incompleto e conclusão integral da Journey.
 
 ## 16.3.6 — Professor usa a mesma experiência
 

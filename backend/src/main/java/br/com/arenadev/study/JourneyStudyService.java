@@ -32,7 +32,12 @@ public class JourneyStudyService {
     public List<JourneyStudySummary> list(StudyPrincipal principal) {
         Enrollment enrollment = requireEnrollment(principal);
         return journeys.findByClassroomIdAndStatusOrderByUpdatedAtDesc(principal.classroomId(), JourneyStatus.PUBLISHED)
-                .stream().map(journey -> summary(journey, enrollment)).toList();
+                .stream()
+                .map(journey -> summary(journey, enrollment))
+                .sorted(Comparator
+                        .comparing(JourneyStudySummary::started).reversed()
+                        .thenComparing(JourneyStudySummary::lastStudiedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -105,7 +110,8 @@ public class JourneyStudyService {
                 .findFirst().orElse(null);
         return new JourneyStudySummary(
                 journey.getId(), journey.getTitle(), journey.getDescription(), projection.progress(),
-                current == null ? null : current.getId(), current == null ? null : current.getTitle()
+                current == null ? null : current.getId(), current == null ? null : current.getTitle(),
+                projection.started(), projection.lastStudiedAt()
         );
     }
 
@@ -133,7 +139,12 @@ public class JourneyStudyService {
         }
         int total = journey.getStages().size();
         int percent = total == 0 ? 0 : Math.round(completed * 100f / total);
-        return new Projection(states, new JourneyProgressSummary(completed, total, percent));
+        Instant lastStudiedAt = persisted.values().stream()
+                .map(JourneyStageProgress::getUpdatedAt)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+        return new Projection(states, new JourneyProgressSummary(completed, total, percent), !persisted.isEmpty(), lastStudiedAt);
     }
 
     private List<JourneyModuleView> modules(Journey journey, Map<UUID, StudyState> states) {
@@ -200,11 +211,11 @@ public class JourneyStudyService {
 
     public enum StudyState { COMPLETED, CURRENT, LOCKED }
     public record JourneyProgressSummary(int completedContents, int totalContents, int percent) {}
-    public record JourneyStudySummary(UUID id, String title, String description, JourneyProgressSummary progress, UUID currentContentId, String currentContentTitle) {}
+    public record JourneyStudySummary(UUID id, String title, String description, JourneyProgressSummary progress, UUID currentContentId, String currentContentTitle, boolean started, Instant lastStudiedAt) {}
     public record JourneyStudyView(UUID id, String title, String description, JourneyProgressSummary progress, List<JourneyModuleView> modules) {}
     public record JourneyModuleView(UUID id, String title, String description, List<JourneyContentView> contents) {}
     public record JourneyContentView(UUID id, String title, String description, StudyState state, UUID resourceId, boolean hasExternalSource) {}
     public record JourneyContentDetailView(UUID id, String title, String description, StudyState state, UUID resourceId, String body, String format, String sourceUrl, String sourceLabel) {}
-    private record Projection(Map<UUID, StudyState> states, JourneyProgressSummary progress) {}
+    private record Projection(Map<UUID, StudyState> states, JourneyProgressSummary progress, boolean started, Instant lastStudiedAt) {}
     private record ModuleBuilder(UUID id, String title, String description, List<JourneyContentView> contents) {}
 }

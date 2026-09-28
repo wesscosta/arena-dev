@@ -36,7 +36,9 @@ export default function LearnHomePage() {
   }, []);
 
   const journeys = loaded?.journeys ?? [];
-  const current = useMemo(() => journeys.find((journey) => journey.progress.percent < 100) ?? journeys[0] ?? null, [journeys]);
+  const current = useMemo(() => journeys.find((journey) => journey.started && journey.progress.percent < 100)
+    ?? journeys.find((journey) => journey.progress.percent < 100)
+    ?? null, [journeys]);
   const others = current ? journeys.filter((journey) => journey.id !== current.id) : journeys;
 
   return <>
@@ -50,11 +52,11 @@ export default function LearnHomePage() {
 
     {current && <section className={styles.hero} aria-labelledby="continue-title">
       <div className={styles.heroTop}><div><p className={styles.eyebrow}>Continue estudando</p><h2 id="continue-title">{current.title}</h2><p className={styles.muted}>{current.description || "Seu percurso de estudo atual."}</p>{current.currentContentTitle && <p className={styles.current}>Próximo conteúdo<strong>{current.currentContentTitle}</strong></p>}</div>
-      <Link className={styles.button} href={`/learn/journeys/${current.id}`}>Continuar</Link></div>
+      <Link className={styles.button} href={current.currentContentId ? `/learn/journeys/${current.id}/content/${current.currentContentId}` : `/learn/journeys/${current.id}`}>{current.started ? "Continuar" : "Começar"}</Link></div>
       <div className={styles.progress} aria-label={`${current.progress.percent}% concluído`}><span style={{ width: `${current.progress.percent}%` }} /></div>
       <div className={styles.progressMeta}><span>{current.progress.completedContents} de {current.progress.totalContents} conteúdos</span><strong>{current.progress.percent}%</strong></div>
     </section>}
 
-    {!loading && !error && others.length > 0 && <section className={styles.section}><div className={styles.sectionHead}><h2>Outras jornadas</h2></div><div className={styles.list}>{others.map((journey) => <Link key={journey.id} href={`/learn/journeys/${journey.id}`} className={styles.card}><div><h3>{journey.title}</h3><p>{journey.currentContentTitle ? `Continuar em ${journey.currentContentTitle}` : journey.description || "Jornada de estudo"}</p></div><span className={styles.percent}>{journey.progress.percent}%</span></Link>)}</div></section>}
+    {!loading && !error && others.length > 0 && <section className={styles.section}><div className={styles.sectionHead}><h2>Outras jornadas</h2></div><div className={styles.list}>{others.map((journey) => <Link key={journey.id} href={`/learn/journeys/${journey.id}`} className={styles.card}><div><h3>{journey.title}</h3><p>{journey.progress.percent === 100 ? "Jornada concluída" : journey.currentContentTitle ? `${journey.started ? "Continuar" : "Começar"} em ${journey.currentContentTitle}` : journey.description || "Jornada de estudo"}</p></div><span className={styles.percent}>{journey.progress.percent}%</span></Link>)}</div></section>}
   </>;
 }

@@ -38,8 +38,10 @@ public class JourneyStageProgress {
     }
 
     public void start(Instant when) {
-        if (startedAt == null) startedAt = when;
-        updatedAt = when;
+        if (startedAt == null) {
+            startedAt = when;
+            updatedAt = when;
+        }
     }
 
     public void complete(Instant when) {
