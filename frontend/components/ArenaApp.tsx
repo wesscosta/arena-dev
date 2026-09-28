@@ -568,7 +568,6 @@ export default function ArenaApp() {
                   <JourneyManager
                     classroomId={activeClassroom.id}
                     classroomName={activeClassroom.name}
-                    activities={data.activities.filter((activity) => activity.classroomId === activeClassroom.id)}
                     notify={notify}
                   />
                 )}

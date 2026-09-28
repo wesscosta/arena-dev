@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Activity } from "@/lib/types";
 import { materializeContentDraft, type ContentDraft } from "@/lib/content-ingestion-api";
 import JourneyCreationWizard from "@/components/JourneyCreationWizard";
-import JourneyMapPreview from "@/components/JourneyMapPreview";
 import {
   archiveJourney,
   createJourney,
@@ -12,17 +10,14 @@ import {
   publishJourney,
   updateJourney,
   type Journey,
-  type JourneyCompletionRule,
   type JourneyInput,
   type JourneyStageInput,
-  type JourneyUnlockRule,
 } from "@/lib/journey-api";
 import styles from "./JourneyManager.module.css";
 
 type Props = {
   classroomId: string;
   classroomName: string;
-  activities: Activity[];
   notify: (message: string) => void;
 };
 
@@ -69,32 +64,12 @@ function statusLabel(status: Journey["status"]) {
   return "RASCUNHO";
 }
 
-function completionLabel(rule: JourneyCompletionRule) {
-  if (rule === "ACTIVITY_SUBMITTED") return "Atividade enviada";
-  if (rule === "ACTIVITY_GRADED") return "Atividade corrigida";
-  return "Conclusão manual";
-}
-
-function unlockLabel(rule: JourneyUnlockRule) {
-  return rule === "IMMEDIATE" ? "Disponível imediatamente" : "Após concluir a etapa anterior";
-}
-
-function itemTypeLabel(type: DraftStage["itemType"]) {
-  if (type === "CONTENT") return "Conteúdo";
-  if (type === "QUIZ") return "Quiz";
-  if (type === "CHALLENGE") return "Desafio";
-  if (type === "CHECKPOINT") return "Checkpoint";
-  if (type === "EXTERNAL_RESOURCE") return "Recurso externo";
-  return "Atividade";
-}
-
-export default function JourneyManager({ classroomId, classroomName, activities, notify }: Props) {
+export default function JourneyManager({ classroomId, classroomName, notify }: Props) {
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [creationOpen, setCreationOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"structure" | "preview">("structure");
 
   useEffect(() => {
     let active = true;
@@ -121,12 +96,11 @@ export default function JourneyManager({ classroomId, classroomName, activities,
     return [...groups.values()];
   }, [draft]);
 
-  function selectJourney(journey: Journey) { setDraft(toDraft(journey)); setViewMode("structure"); }
+  function selectJourney(journey: Journey) { setDraft(toDraft(journey)); }
   function newJourney() { setCreationOpen(true); }
 
   function startBlankJourney() {
     setDraft(emptyDraft());
-    setViewMode("structure");
   }
 
   async function useContentDraft(contentDraft: ContentDraft) {
@@ -136,8 +110,7 @@ export default function JourneyManager({ classroomId, classroomName, activities,
       const saved = await materializeContentDraft(classroomId, contentDraft);
       setJourneys((current) => [saved, ...current.filter((journey) => journey.id !== saved.id)]);
       setDraft(toDraft(saved));
-      setViewMode("structure");
-      notify("Estrutura criada como rascunho. Revise antes de publicar.");
+        notify("Estrutura criada como rascunho. Revise antes de publicar.");
     } catch (error) {
       notify(error instanceof Error ? error.message : "Não foi possível criar a jornada a partir do rascunho.");
       throw error;
@@ -152,7 +125,7 @@ export default function JourneyManager({ classroomId, classroomName, activities,
     setDraft({
       ...draft,
       stages: [...draft.stages, {
-        title: "Nova etapa",
+        title: "Novo conteúdo",
         description: "",
         unlockRule: first ? "IMMEDIATE" : "PREVIOUS_STAGE_COMPLETED",
         completionRule: "MANUAL",
@@ -218,11 +191,7 @@ export default function JourneyManager({ classroomId, classroomName, activities,
       return null;
     }
     if (draft.stages.some((stage) => !stage.title.trim())) {
-      notify("Todas as etapas precisam de título.");
-      return null;
-    }
-    if (draft.stages.some((stage) => stage.completionRule !== "MANUAL" && !stage.activityId)) {
-      notify("Etapas com conclusão por atividade precisam apontar para uma atividade.");
+      notify("Todos os conteúdos precisam de título.");
       return null;
     }
     return {
@@ -233,12 +202,12 @@ export default function JourneyManager({ classroomId, classroomName, activities,
         id: stage.id,
         title: stage.title.trim(),
         description: stage.description?.trim() || undefined,
-        activityId: stage.activityId,
-        unlockRule: index === 0 ? "IMMEDIATE" : stage.unlockRule,
-        completionRule: stage.completionRule,
+        activityId: undefined,
+        unlockRule: index === 0 ? "IMMEDIATE" : "PREVIOUS_STAGE_COMPLETED",
+        completionRule: "MANUAL",
         sectionId: stage.sectionId ?? undefined,
         sectionTitle: stage.sectionTitle ?? undefined,
-        itemType: stage.itemType ?? "ACTIVITY",
+        itemType: "CONTENT",
         learningResourceId: stage.learningResourceId ?? undefined,
       })),
     };
@@ -312,7 +281,7 @@ export default function JourneyManager({ classroomId, classroomName, activities,
                 <span className={`${styles.status} ${styles[journey.status.toLowerCase()]}`}>{statusLabel(journey.status)}</span>
               </div>
               <p>{journey.description || "Sem descrição."}</p>
-              <div className={styles.cardMeta}><span>{journey.stages.length} etapa(s)</span><span>Atualizada {new Date(journey.updatedAt).toLocaleDateString("pt-BR")}</span></div>
+              <div className={styles.cardMeta}><span>{journey.stages.length} conteúdo(s)</span><span>Atualizada {new Date(journey.updatedAt).toLocaleDateString("pt-BR")}</span></div>
             </button>
           ))}
         </aside>
@@ -325,7 +294,7 @@ export default function JourneyManager({ classroomId, classroomName, activities,
               <div className={styles.editorHead}>
                 <div>
                   <h3>{draft.id ? draft.title || "Jornada sem título" : "Nova jornada"}</h3>
-                  <p>{structuralLocked ? "Estrutura protegida após publicação para preservar o progresso." : "Rascunho editável. A primeira etapa fica disponível imediatamente."}</p>
+                  <p>{structuralLocked ? "Estrutura protegida após publicação para preservar o progresso." : "Rascunho editável. Organize módulos e conteúdos; as regras de progressão são aplicadas automaticamente."}</p>
                 </div>
                 <div className={styles.actions}>
                   {draft.id && <a className={styles.secondary} href={`/learn/journeys/${draft.id}?preview=teacher`}>Ver jornada</a>}
@@ -336,43 +305,7 @@ export default function JourneyManager({ classroomId, classroomName, activities,
                 </div>
               </div>
 
-              <div className={styles.viewTabs} role="tablist" aria-label="Visualização da jornada">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={viewMode === "structure"}
-                  className={viewMode === "structure" ? styles.viewTabActive : styles.viewTab}
-                  onClick={() => setViewMode("structure")}
-                >
-                  Estrutura
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={viewMode === "preview"}
-                  className={viewMode === "preview" ? styles.viewTabActive : styles.viewTab}
-                  onClick={() => setViewMode("preview")}
-                >
-                  Visualizar como aluno
-                </button>
-              </div>
-
-              {viewMode === "preview" ? (
-                <JourneyMapPreview
-                  title={draft.title}
-                  description={draft.description}
-                  stages={draft.stages.map((stage, index) => ({
-                    id: stage.id ?? `draft-${index}`,
-                    title: stage.title,
-                    description: stage.description ?? null,
-                    sectionId: stage.sectionId ?? null,
-                    sectionTitle: stage.sectionTitle ?? null,
-                    itemType: stage.itemType ?? "ACTIVITY",
-                  }))}
-                />
-              ) : (
-                <>
-                  {structuralLocked ? (
+              {structuralLocked ? (
                     <div className={styles.publishedSummary}>
                       <div><span>Título</span><strong>{draft.title}</strong></div>
                       <div><span>Descrição</span><p>{draft.description || "Sem descrição."}</p></div>
@@ -388,12 +321,11 @@ export default function JourneyManager({ classroomId, classroomName, activities,
                     <div className={styles.builderHeader}>
                       <div>
                         <h4>Estrutura da jornada</h4>
-                        <span>Organize por módulos. Cada item pode ser conteúdo, atividade, quiz, desafio, checkpoint ou recurso.</span>
+                        <span>Organize o material em módulos e conteúdos, na mesma ordem em que o aluno estudará.</span>
                       </div>
                       {!structuralLocked && (
                         <div className={styles.builderActions}>
-                          <button className={styles.secondary} type="button" onClick={() => addStage()}>+ Item</button>
-                          <button className={styles.primary} type="button" onClick={addModule}>+ Módulo</button>
+                          <button className={styles.secondary} type="button" onClick={addModule}>+ Adicionar módulo</button>
                         </div>
                       )}
                     </div>
@@ -416,92 +348,54 @@ export default function JourneyManager({ classroomId, classroomName, activities,
                               )}
                             </div>
                             <div className={styles.moduleMeta}>
-                              <span>{group.entries.length} {group.entries.length === 1 ? "item" : "itens"}</span>
+                              <span>{group.entries.length} {group.entries.length === 1 ? "conteúdo" : "conteúdos"}</span>
                               {!structuralLocked && (
                                 <div className={styles.moduleControls}>
                                   <button type="button" title="Mover módulo para cima" disabled={groupIndex === 0} onClick={() => moveModule(groupIndex, -1)}>↑</button>
                                   <button type="button" title="Mover módulo para baixo" disabled={groupIndex === stageGroups.length - 1} onClick={() => moveModule(groupIndex, 1)}>↓</button>
-                                  <button type="button" onClick={() => addStage(group.title, group.entries[0]?.stage.sectionId)}>+ adicionar item</button>
+                                  <button type="button" onClick={() => addStage(group.title, group.entries[0]?.stage.sectionId)}>+ Adicionar conteúdo</button>
                                 </div>
                               )}
                             </div>
                           </header>
 
                           <div className={styles.moduleItems}>
-                            {group.entries.map(({ stage, index }, entryIndex) => {
-                              const activity = activities.find((item) => item.id === stage.activityId);
-                              return structuralLocked ? (
+                            {group.entries.map(({ stage, index }, entryIndex) => (
+                              structuralLocked ? (
                                 <article className={styles.builderItemReadOnly} key={stage.id ?? `new-${index}`}>
-                                  <div className={styles.itemTypeIcon}>{itemTypeLabel(stage.itemType)}</div>
+                                  <div className={styles.contentHandle} aria-hidden="true">≡</div>
                                   <div className={styles.itemMain}>
                                     <strong>{stage.title}</strong>
                                     {stage.description && <p>{stage.description}</p>}
-                                    <div className={styles.itemMetaLine}>
-                                      <span>{completionLabel(stage.completionRule)}</span>
-                                      <span>{unlockLabel(index === 0 ? "IMMEDIATE" : stage.unlockRule)}</span>
-                                      {activity && <span>{activity.title}</span>}
-                                    </div>
                                   </div>
                                 </article>
                               ) : (
                                 <article className={styles.builderItem} key={stage.id ?? `new-${index}`}>
-                                  <div className={styles.itemOrder}>{index + 1}</div>
+                                  <div className={styles.contentHandle} aria-hidden="true">≡</div>
                                   <div className={styles.itemMain}>
-                                    <div className={styles.itemTopRow}>
-                                      <select
-                                        className={styles.itemTypeSelect}
-                                        value={stage.itemType ?? "CONTENT"}
-                                        aria-label={`Tipo do item ${index + 1}`}
-                                        onChange={(event) => patchStage(index, { itemType: event.target.value as DraftStage["itemType"] })}
-                                      >
-                                        <option value="CONTENT">Conteúdo</option>
-                                        <option value="ACTIVITY">Atividade</option>
-                                        <option value="QUIZ">Quiz</option>
-                                        <option value="CHALLENGE">Desafio</option>
-                                        <option value="CHECKPOINT">Checkpoint</option>
-                                        <option value="EXTERNAL_RESOURCE">Recurso externo</option>
-                                      </select>
-                                      <input
-                                        className={styles.itemTitleInput}
-                                        value={stage.title}
-                                        aria-label={`Título do item ${index + 1}`}
-                                        onChange={(event) => patchStage(index, { title: event.target.value })}
-                                      />
-                                    </div>
+                                    <input
+                                      className={styles.itemTitleInput}
+                                      value={stage.title}
+                                      aria-label={`Título do conteúdo ${index + 1}`}
+                                      onChange={(event) => patchStage(index, { title: event.target.value })}
+                                      placeholder="Título do conteúdo"
+                                    />
                                     <input
                                       className={styles.itemDescriptionInput}
                                       value={stage.description ?? ""}
-                                      aria-label={`Descrição do item ${index + 1}`}
+                                      aria-label={`Descrição do conteúdo ${index + 1}`}
                                       onChange={(event) => patchStage(index, { description: event.target.value })}
                                       placeholder="Descrição opcional"
                                     />
-                                    <details className={styles.itemAdvanced}>
-                                      <summary>Regras e vínculo</summary>
-                                      <div className={styles.itemAdvancedGrid}>
-                                        <label className={styles.field}><span>Atividade vinculada</span><select value={stage.activityId ?? ""} onChange={(event) => patchStage(index, { activityId: event.target.value || undefined })}><option value="">Nenhuma</option>{activities.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
-                                        <label className={styles.field}><span>Critério de conclusão</span><select value={stage.completionRule} onChange={(event) => patchStage(index, { completionRule: event.target.value as JourneyCompletionRule })}><option value="MANUAL">Manual</option><option value="ACTIVITY_SUBMITTED">Atividade enviada</option><option value="ACTIVITY_GRADED">Atividade corrigida</option></select></label>
-                                        <label className={styles.field}><span>Desbloqueio</span><select value={index === 0 ? "IMMEDIATE" : stage.unlockRule} disabled={index === 0} onChange={(event) => patchStage(index, { unlockRule: event.target.value as JourneyUnlockRule })}><option value="IMMEDIATE">Imediato</option><option value="PREVIOUS_STAGE_COMPLETED">Após etapa anterior</option></select></label>
-                                      </div>
-                                    </details>
                                   </div>
-                                  <div className={styles.itemActions} aria-label={`Organizar item ${index + 1}`}>
-                                    <button
-                                      type="button"
-                                      title="Mover para cima"
-                                      disabled={entryIndex === 0}
-                                      onClick={() => moveStageTo(index, group.entries[entryIndex - 1]?.index ?? index)}
-                                    >↑</button>
-                                    <button
-                                      type="button"
-                                      title="Mover para baixo"
-                                      disabled={entryIndex === group.entries.length - 1}
-                                      onClick={() => moveStageTo(index, group.entries[entryIndex + 1]?.index ?? index)}
-                                    >↓</button>
-                                    <button type="button" title="Remover item" onClick={() => removeStage(index)}>×</button>
+                                  <div className={styles.itemActions} aria-label={`Organizar conteúdo ${index + 1}`}>
+                                    <button type="button" title="Mover para cima" disabled={entryIndex === 0} onClick={() => moveStageTo(index, group.entries[entryIndex - 1]?.index ?? index)}>↑</button>
+                                    <button type="button" title="Mover para baixo" disabled={entryIndex === group.entries.length - 1} onClick={() => moveStageTo(index, group.entries[entryIndex + 1]?.index ?? index)}>↓</button>
+                                    <button type="button" title="Remover conteúdo" onClick={() => removeStage(index)}>×</button>
                                   </div>
                                 </article>
-                              );
-                            })}
+                              )
+                            ))}
                           </div>
                         </section>
                       ))}
@@ -509,14 +403,12 @@ export default function JourneyManager({ classroomId, classroomName, activities,
                       {draft.stages.length === 0 && (
                         <div className={styles.builderEmpty}>
                           <strong>Sua jornada ainda está vazia.</strong>
-                          <span>Comece criando um módulo ou adicionando o primeiro item.</span>
+                          <span>Comece criando o primeiro módulo da jornada.</span>
                           {!structuralLocked && <button className={styles.primary} type="button" onClick={addModule}>Criar primeiro módulo</button>}
                         </div>
                       )}
                     </div>
                   </div>
-                </>
-              )}
             </>
           )}
         </section>

@@ -410,6 +410,8 @@ O parâmetro é capability/contexto de acesso, não uma UI paralela.
 
 ## 16.3.7 — Simplificação do Journey Builder
 
+**Status:** concluído na branch em 28/09/2026.
+
 Essa fatia ocorre **depois** da Study View estar utilizável, para que a autoria seja guiada pela experiência real de consumo.
 
 ### Editor alvo
@@ -444,6 +446,23 @@ Descrição
 - controles de workflow.
 
 Esses detalhes ficam encapsulados como defaults ou compatibilidade legada.
+
+### Resultado aplicado
+
+- `JourneyManager` deixou de expor tipo de item, atividade vinculada, critério de conclusão, regra de desbloqueio e controles de workflow;
+- autoria padrão agora apresenta somente título/descrição da Journey, módulos e conteúdos em ordem;
+- novos conteúdos são persistidos com defaults encapsulados `CONTENT + MANUAL + sequência PREVIOUS_STAGE_COMPLETED` (primeiro conteúdo `IMMEDIATE`);
+- `JourneyMapPreview` e a aba `Visualizar como aluno` foram removidos; o professor usa `Ver jornada`, que abre a Study View real introduzida em `16.3.6`;
+- módulos mantêm renomeação e reordenação; conteúdos mantêm título, descrição, reordenação e remoção;
+- o editor foi visualmente achatado: módulo é hierarquia editorial, não card pesado contendo outros cards;
+- jornadas publicadas continuam protegidas contra alteração estrutural e são apresentadas em modo compacto de leitura;
+- compatibilidade de domínio com tipos/regras legados permanece no backend/API, mas não contamina a autoria padrão da Journey.
+
+## 16.3.7B — Convergência visual com a referência de produto
+
+Fatia adicionada após validação comparativa com o Figma. A infraestrutura de `16.3.0–16.3.7` não encerra a fidelidade visual da experiência de estudo.
+
+Objetivo: aproximar deliberadamente Study Shell, Journey Study View e Content Reader da referência aprovada, preservando as decisões de domínio já consolidadas. Esta fatia cobre shell/navegação do aluno, densidade, coluna de conteúdo, capítulos numerados, linha de progressão, estados concluído/atual/bloqueado e hierarquia visual. Não reintroduzir `JourneyMapPreview`, skill tree ou cards aninhados.
 
 ## 16.3.8 — Ingestão/IA alinhada ao novo escopo
 

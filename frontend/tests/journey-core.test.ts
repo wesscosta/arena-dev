@@ -13,12 +13,13 @@ test("classroom workspace exposes Journey Core as its own tab", () => {
   assert.match(app, /<JourneyManager/);
 });
 
-test("Journey Core editor keeps ordering and completion rules explicit", () => {
+test("Journey Builder encapsulates sequential progression defaults", () => {
   assert.match(manager, /PREVIOUS_STAGE_COMPLETED/);
-  assert.match(manager, /ACTIVITY_SUBMITTED/);
-  assert.match(manager, /ACTIVITY_GRADED/);
-  assert.match(manager, /moveStage/);
-  assert.match(manager, /A primeira etapa fica disponível imediatamente/);
+  assert.match(manager, /completionRule: "MANUAL"/);
+  assert.match(manager, /itemType: "CONTENT"/);
+  assert.match(manager, /moveStageTo/);
+  assert.doesNotMatch(manager, /ACTIVITY_SUBMITTED/);
+  assert.doesNotMatch(manager, /ACTIVITY_GRADED/);
 });
 
 test("published journey structure is protected in the teacher editor", () => {
@@ -36,28 +37,26 @@ test("journey API exposes draft authoring and lifecycle endpoints", () => {
 });
 
 
-test("published journey switches from form controls to a compact read-only representation", () => {
+test("published journey switches from authoring to a compact read-only structure", () => {
   assert.match(manager, /structuralLocked \? \(/);
   assert.match(manager, /publishedSummary/);
   assert.match(manager, /builderItemReadOnly/);
-  assert.match(manager, /completionLabel/);
-  assert.match(manager, /unlockLabel/);
+  assert.match(manager, /Ver jornada/);
 });
 
-test("Journey Builder exposes module-based authoring and a student preview", () => {
-  const preview = readFileSync(resolve(process.cwd(), "components/JourneyMapPreview.tsx"), "utf8");
-
-  assert.match(manager, /Visualizar como aluno/);
-  assert.match(manager, /<JourneyMapPreview/);
+test("Journey Builder exposes only module and content authoring", () => {
   assert.match(manager, /addModule/);
   assert.match(manager, /renameModule/);
   assert.match(manager, /sectionTitle/);
-  assert.match(manager, /Conteúdo/);
-  assert.match(manager, /Checkpoint/);
-  assert.match(preview, /PRÉVIA DA EXPERIÊNCIA DO ALUNO/);
-  assert.match(preview, /CAPÍTULO/);
-  assert.match(preview, /Comece aqui/);
-  assert.match(preview, /Prévia estrutural/);
+  assert.match(manager, /Adicionar conteúdo/);
+  assert.match(manager, /itemType: "CONTENT"/);
+  assert.match(manager, /completionRule: "MANUAL"/);
+  assert.doesNotMatch(manager, /Visualizar como aluno/);
+  assert.doesNotMatch(manager, /JourneyMapPreview/);
+  assert.doesNotMatch(manager, /Atividade vinculada/);
+  assert.doesNotMatch(manager, /Critério de conclusão/);
+  assert.doesNotMatch(manager, /Regras e vínculo/);
+  assert.doesNotMatch(manager, /Checkpoint/);
 });
 
 
