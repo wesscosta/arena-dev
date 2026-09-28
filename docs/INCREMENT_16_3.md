@@ -460,9 +460,22 @@ Esses detalhes ficam encapsulados como defaults ou compatibilidade legada.
 
 ## 16.3.7B — Convergência visual com a referência de produto
 
+**Status:** concluído na branch em 28/09/2026.
+
 Fatia adicionada após validação comparativa com o Figma. A infraestrutura de `16.3.0–16.3.7` não encerra a fidelidade visual da experiência de estudo.
 
 Objetivo: aproximar deliberadamente Study Shell, Journey Study View e Content Reader da referência aprovada, preservando as decisões de domínio já consolidadas. Esta fatia cobre shell/navegação do aluno, densidade, coluna de conteúdo, capítulos numerados, linha de progressão, estados concluído/atual/bloqueado e hierarquia visual. Não reintroduzir `JourneyMapPreview`, skill tree ou cards aninhados.
+
+### Resultado aplicado
+
+- Study Shell passa a usar navegação lateral persistente no desktop, com identidade `Arena Dev / Estudos`, e header compacto apenas em viewport móvel;
+- a área principal ganhou largura e densidade mais próximas da referência, sem transformar a home em dashboard carregado;
+- Journey Study View mantém módulos verticais, mas agora usa capítulos numerados circulares ligados por uma linha estrutural contínua;
+- conteúdo atual recebe ênfase editorial por linha/acento, enquanto concluído e bloqueado permanecem distinguíveis por ícone, texto e contraste — não apenas cor;
+- espaçamento, tipografia e metadados foram reduzidos para privilegiar hierarquia e leitura, evitando cards aninhados;
+- Content Reader foi alinhado à mesma coluna editorial, com largura de leitura controlada e navegação anterior/próximo preservada;
+- professor continua usando exatamente a mesma Study View/Reader em modo de prévia, sem uma segunda representação visual;
+- comportamento responsivo troca a sidebar por header compacto sem alterar a arquitetura das rotas ou o domínio.
 
 ## 16.3.8 — Ingestão/IA alinhada ao novo escopo
 

@@ -98,6 +98,21 @@ test("new journey onboarding is source-agnostic and review-first", () => {
   assert.match(manager, /<JourneyCreationWizard/);
 });
 
+test("16.3.7B converges the study shell and learning hierarchy with the product reference", () => {
+  const shell = readFileSync(resolve(process.cwd(), "components/study/StudyShell.tsx"), "utf8");
+  const studyCss = readFileSync(resolve(process.cwd(), "app/learn/study.module.css"), "utf8");
+  const reader = readFileSync(resolve(process.cwd(), "app/learn/journeys/[journeyId]/content/[contentId]/page.tsx"), "utf8");
+
+  assert.match(shell, /studySidebar/);
+  assert.match(shell, /ARENA DEV/);
+  assert.match(shell, /ESTUDOS/);
+  assert.match(studyCss, /16\.3\.7B — Study experience visual convergence/);
+  assert.match(studyCss, /studyModule:not\(:last-child\)>\.studyModuleIndex:after/);
+  assert.match(studyCss, /border-left:2px solid var\(--study-accent\)/);
+  assert.match(reader, /JourneyContentReader/);
+  assert.doesNotMatch(shell, /JourneyMapPreview/);
+});
+
 test("study journey view uses vertical modules instead of nested cards", () => {
   const studyView = readFileSync(resolve(process.cwd(), "app/learn/journeys/[journeyId]/page.tsx"), "utf8");
   const studyCss = readFileSync(resolve(process.cwd(), "app/learn/study.module.css"), "utf8");

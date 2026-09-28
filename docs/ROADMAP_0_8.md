@@ -2,7 +2,7 @@
 
 **Linha ativa:** v0.8
 **Branch de execução:** `feat/v0.8-content-ingestion`
-**Estado atual:** `16.3 — Journey Study Experience` em execução; `16.3.0`–`16.3.7` concluídos na branch; `16.3.7B` é a próxima fatia visual.
+**Estado atual:** `16.3 — Journey Study Experience` em execução; `16.3.0`–`16.3.7B` concluídos na branch; `16.3.8` é a próxima fatia.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
@@ -18,7 +18,7 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | 16.0 | Professor Arena Experience | **Concluído · PR #21 mergeado** |
 | 16.1 | Journey Core | **Concluído · PR #22 mergeado** |
 | 16.2 | Learning Resources & Content Ingestion | **Concluído na branch · aguardando merge** |
-| 16.3 | Journey Study Experience | **Em execução · 16.3.0–16.3.7 concluídos** |
+| 16.3 | Journey Study Experience | **Em execução · 16.3.0–16.3.7B concluídos** |
 | 16.4 | Journey Map | **Absorvido pelo 16.3; sem incremento separado no MVP** |
 | 16.5 | Question Attempts & Skills | **Candidato pós-validação do 16.3** |
 | 16.6 | Mastery básico | **Candidato pós-validação do 16.3** |
@@ -255,7 +255,7 @@ O incremento não transforma Journey em uma segunda área de Atividades e não i
 6. `16.3.5` Progressão e continuidade — **concluído**;
 7. `16.3.6` mesma experiência para professor — **concluído**;
 8. `16.3.7` simplificação do Builder — **concluído**;
-9. `16.3.7B` convergência visual com a referência de produto;
+9. `16.3.7B` convergência visual com a referência de produto — **concluído**;
 10. `16.3.8` alinhamento de ingestão/IA e hierarquia editorial.
 
 ## 16.4 — Journey Map
