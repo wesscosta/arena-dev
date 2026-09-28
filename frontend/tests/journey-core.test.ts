@@ -73,30 +73,33 @@ test("new journey onboarding is source-agnostic and review-first", () => {
   assert.match(wizard, /H1 define o título · H2 vira módulo · H3 vira conteúdo · H4–H6 permanecem dentro do conteúdo/);
   assert.match(wizard, /Links do Notion são reconhecidos automaticamente/);
   assert.doesNotMatch(wizard, /\["notion", "Notion"\]/);
-  assert.match(wizard, /Nada é publicado automaticamente/);
+  assert.match(wizard, /DraftReviewWorkspace/);
   assert.match(wizard, /handleDrop/);
   assert.match(wizard, /event\.key === "Escape"/);
   assert.match(wizard, /event\.key !== "Tab"/);
   assert.match(wizard, /openerRef\.current\?\.focus\(\)/);
-  assert.match(wizard, /patchSection/);
-  assert.match(wizard, /patchItem/);
-  assert.match(wizard, /addSection/);
-  assert.match(wizard, /moveSection/);
-  assert.match(wizard, /addItem/);
-  assert.match(wizard, /moveItem/);
-  assert.match(wizard, /Remover módulo/);
-  assert.match(wizard, /Adicionar módulo/);
-  assert.match(wizard, /Adicionar item/);
-  assert.match(wizard, /<span>Conteúdo<\/span>/);
+  assert.match(wizard, /DraftReviewWorkspace/);
   assert.doesNotMatch(wizard, /<option value="QUIZ">/);
   assert.doesNotMatch(wizard, /<option value="ACTIVITY">/);
-  assert.match(wizard, /Conteúdo e origem/);
-  assert.match(wizard, /URL do recurso/);
-  assert.match(wizard, /patchItem\(sectionIndex, itemIndex, \{ body:/);
-  assert.match(wizard, /patchItem\(sectionIndex, itemIndex, \{ sourceUrl:/);
   assert.match(ingestion, /\/api\/content-ingestion\/preview/);
   assert.match(ingestion, /\/api\/content-ingestion\/file-preview/);
   assert.match(manager, /<JourneyCreationWizard/);
+});
+
+test("16.3.8.4 reviews large drafts through master-detail navigation", () => {
+  const review = readFileSync(resolve(process.cwd(), "components/DraftReviewWorkspace.tsx"), "utf8");
+  assert.match(review, /validateContentDraft/);
+  assert.match(review, /Buscar módulo ou conteúdo/);
+  assert.match(review, /Com atenção/);
+  assert.match(review, /EMPTY_CONTENT_TITLE/);
+  assert.match(review, /DUPLICATE_TITLE/);
+  assert.match(review, /LONG_CONTENT/);
+  assert.match(review, /ReactMarkdown/);
+  assert.match(review, /Visualizar/);
+  assert.match(review, /Adicionar módulo/);
+  assert.match(review, /Adicionar conteúdo/);
+  assert.match(review, /Usar esta estrutura/);
+  assert.match(review, /confirm\(/);
 });
 
 test("16.3.7B converges the study shell and learning hierarchy with the product reference", () => {

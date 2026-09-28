@@ -507,9 +507,9 @@ A importação do MVP é **snapshot**: a fonte registra proveniência, mas não 
 
 ### Próximas fatias internas
 
-- `16.3.8.4` — fortalecer preview/revisão para documentos grandes;
+- `16.3.8.4` — **concluído**: Review Workspace master-detail para documentos grandes, com outline pesquisável, filtro de atenção, validação editorial `ERROR/WARNING`, edição progressiva, preview Markdown, reordenação e responsividade;
 - `16.3.8.5` — validar materialização e proveniência ponta a ponta;
-- `16.3.8.6` — fallback assistido por IA apenas quando a estrutura for ambígua;
+- `16.3.8.6` — **concluído (AI-ready)**: análise de confiança aciona assistência apenas para estrutura textual ambígua; sem provider, com resposta inválida ou falha externa, o Draft determinístico é mantido. Markdown estruturado não chama IA. Quando usada, a assistência preserva fonte/proveniência e marca o Draft como `AI_ASSISTED`;
 - `16.3.8.7` — avaliar adapters externos, incluindo Notion, sem acoplá-los ao domínio.
 
 ## Identidade e acesso
@@ -761,4 +761,4 @@ Fatia criada após a validação da convergência visual para fechar a diferenç
 
 ### Decisão de escopo
 
-A 16.3.7C implementa gamificação estrutural por **progressão, estado, orientação e feedback**. Permanecem fora desta fatia XP novo, ranking, badges, moedas, streak, skill tree, mapa espacial, quizzes e atividades dentro da Journey. A linha seguinte é `16.3.8 — Content Ingestion & Structured Import`; a base determinística Markdown (`16.3.8.0–16.3.8.3`) já está implementada.
+A 16.3.7C implementa gamificação estrutural por **progressão, estado, orientação e feedback**. Permanecem fora desta fatia XP novo, ranking, badges, moedas, streak, skill tree, mapa espacial, quizzes e atividades dentro da Journey. A linha seguinte é `16.3.8 — Content Ingestion & Structured Import`; a linha `16.3.8.0–16.3.8.6` já cobre Markdown determinístico, Review UX, proveniência/materialização e fallback AI-ready.

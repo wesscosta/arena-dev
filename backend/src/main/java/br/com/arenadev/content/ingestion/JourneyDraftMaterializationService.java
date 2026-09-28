@@ -8,6 +8,11 @@ import br.com.arenadev.shared.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.util.HexFormat;
 import java.util.UUID;
 
 @Service
@@ -108,7 +113,35 @@ public class JourneyDraftMaterializationService {
                 sourceUrl,
                 clean(draft.sourceLabel())
         );
+        resource.recordProvenance(
+                provenanceReference(draft, item),
+                Instant.now(),
+                sha256(snapshotPayload(item, body, sourceUrl))
+        );
         return resources.save(resource);
+    }
+
+    private String provenanceReference(
+            ContentIngestionService.DraftView draft,
+            ContentIngestionService.DraftItem item
+    ) {
+        String itemUrl = clean(item.sourceUrl());
+        if (itemUrl != null) return itemUrl;
+        return clean(draft.sourceLabel());
+    }
+
+    private String snapshotPayload(ContentIngestionService.DraftItem item, String body, String sourceUrl) {
+        return item.title().trim() + "\n" + valueOr(item.description(), "") + "\n"
+                + valueOr(body, "") + "\n" + valueOr(sourceUrl, "");
+    }
+
+    private String sha256(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 indisponível no runtime.", exception);
+        }
     }
 
     private LearningResourceSourceType mapSourceType(ContentIngestionSource source) {

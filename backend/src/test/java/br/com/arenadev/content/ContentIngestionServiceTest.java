@@ -14,7 +14,8 @@ class ContentIngestionServiceTest {
     private final ClassroomRepository classrooms = mock(ClassroomRepository.class);
     private final JourneyDraftAiProvider ai = mock(JourneyDraftAiProvider.class);
     private final ContentFileExtractionService files = mock(ContentFileExtractionService.class);
-    private final ContentIngestionService service = new ContentIngestionService(classrooms, ai, files);
+    private final JourneyStructureFallbackService fallback = new JourneyStructureFallbackService(ai);
+    private final ContentIngestionService service = new ContentIngestionService(classrooms, ai, files, fallback);
 
     @Test
     void reportsCapabilitiesWithoutAssumingOneTeacherWorkflow() {
@@ -261,6 +262,75 @@ class ContentIngestionServiceTest {
         assertThat(draft.sections()).allSatisfy(section -> assertThat(section.items()).hasSize(3));
         assertThat(draft.sections()).extracting(ContentIngestionService.DraftSection::title)
                 .allSatisfy(title -> assertThat(title).isNotBlank());
+    }
+
+    @Test
+    void keepsAmbiguousTextDeterministicWhenAiIsUnavailable() {
+        UUID classroomId = classroom();
+        when(ai.isConfigured()).thenReturn(false);
+        String content = String.join("\n\n",
+                "Primeiro conceito explicado em um parágrafo sem título explícito.",
+                "Segundo conceito explicado em um parágrafo sem título explícito.",
+                "Terceiro conceito explicado em um parágrafo sem título explícito.",
+                "Quarto conceito explicado em um parágrafo sem título explícito.",
+                "Quinto conceito explicado em um parágrafo sem título explícito.",
+                "Sexto conceito explicado em um parágrafo sem título explícito.",
+                "Sétimo conceito explicado em um parágrafo sem título explícito."
+        );
+        var draft = service.preview(new ContentIngestionService.PreviewRequest(
+                classroomId, ContentIngestionSource.TEXT, "Material", null, null,
+                content, null, "Texto colado"
+        ));
+        assertThat(draft.sections()).isNotEmpty();
+        assertThat(draft.structureAnalysis().mode()).isEqualTo("DETERMINISTIC");
+        assertThat(draft.structureAnalysis().aiUsed()).isFalse();
+        assertThat(draft.structureAnalysis().confidence()).isLessThan(0.6);
+        verify(ai, never()).generate(any());
+    }
+
+    @Test
+    void usesAiOnlyAsOptionalFallbackForAmbiguousTextAndPreservesSource() {
+        UUID classroomId = classroom();
+        when(ai.isConfigured()).thenReturn(true);
+        var suggestion = new ContentIngestionService.DraftView(
+                "Material organizado", "Sugestão", ContentIngestionSource.AI, "Gerado com IA",
+                List.of(new ContentIngestionService.DraftSection("Fundamentos", null,
+                        List.of(new ContentIngestionService.DraftItem("Conceito", null, DraftItemType.CONTENT, "Corpo", null))))
+        );
+        when(ai.generate(any())).thenReturn(suggestion);
+        String content = String.join("\n\n",
+                "Primeiro conceito sem hierarquia explícita.", "Segundo conceito sem hierarquia explícita.",
+                "Terceiro conceito sem hierarquia explícita.", "Quarto conceito sem hierarquia explícita.",
+                "Quinto conceito sem hierarquia explícita.", "Sexto conceito sem hierarquia explícita.",
+                "Sétimo conceito sem hierarquia explícita."
+        );
+        var draft = service.preview(new ContentIngestionService.PreviewRequest(
+                classroomId, ContentIngestionSource.FILE, "Material", null, null,
+                content, null, "apostila.pdf"
+        ));
+        assertThat(draft.title()).isEqualTo("Material organizado");
+        assertThat(draft.source()).isEqualTo(ContentIngestionSource.FILE);
+        assertThat(draft.sourceLabel()).isEqualTo("apostila.pdf");
+        assertThat(draft.structureAnalysis().mode()).isEqualTo("AI_ASSISTED");
+        assertThat(draft.structureAnalysis().aiUsed()).isTrue();
+        verify(ai).generate(any());
+    }
+
+    @Test
+    void providerFailureNeverBreaksAmbiguousImport() {
+        UUID classroomId = classroom();
+        when(ai.isConfigured()).thenReturn(true);
+        when(ai.generate(any())).thenThrow(new RuntimeException("provider offline"));
+        String content = String.join("\n\n",
+                "Um", "Dois", "Três", "Quatro", "Cinco", "Seis", "Sete"
+        );
+        var draft = service.preview(new ContentIngestionService.PreviewRequest(
+                classroomId, ContentIngestionSource.TEXT, "Material", null, null,
+                content, null, "Texto colado"
+        ));
+        assertThat(draft.sections()).isNotEmpty();
+        assertThat(draft.source()).isEqualTo(ContentIngestionSource.TEXT);
+        assertThat(draft.structureAnalysis().aiUsed()).isFalse();
     }
 
     @Test

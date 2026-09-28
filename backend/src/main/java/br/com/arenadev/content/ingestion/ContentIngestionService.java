@@ -16,15 +16,18 @@ public class ContentIngestionService {
     private final ClassroomRepository classrooms;
     private final JourneyDraftAiProvider aiProvider;
     private final ContentFileExtractionService fileExtraction;
+    private final JourneyStructureFallbackService structureFallback;
 
     public ContentIngestionService(
             ClassroomRepository classrooms,
             JourneyDraftAiProvider aiProvider,
-            ContentFileExtractionService fileExtraction
+            ContentFileExtractionService fileExtraction,
+            JourneyStructureFallbackService structureFallback
     ) {
         this.classrooms = classrooms;
         this.aiProvider = aiProvider;
         this.fileExtraction = fileExtraction;
+        this.structureFallback = structureFallback;
     }
 
     public Capabilities capabilities() {
@@ -46,9 +49,9 @@ public class ContentIngestionService {
         return switch (source) {
             case AI -> aiProvider.generate(request);
             case TEMPLATE -> fromTemplate(request);
-            case TEXT -> fromText(request, ContentIngestionSource.TEXT);
+            case TEXT -> fromTextWithOptionalFallback(request, ContentIngestionSource.TEXT);
             case MARKDOWN -> fromMarkdown(request);
-            case FILE -> fromText(request, ContentIngestionSource.FILE);
+            case FILE -> fromTextWithOptionalFallback(request, ContentIngestionSource.FILE);
             case URL, NOTION -> fromLink(request);
         };
     }
@@ -156,7 +159,41 @@ public class ContentIngestionService {
                 classroomId, extracted.source(), title, null, null, extracted.content(), null, extracted.filename()
         );
         if (extracted.source() == ContentIngestionSource.MARKDOWN) return fromMarkdown(request);
-        return fromText(request, extracted.source());
+        return fromTextWithOptionalFallback(request, extracted.source());
+    }
+
+    private DraftView fromTextWithOptionalFallback(PreviewRequest request, ContentIngestionSource source) {
+        DraftView deterministic = fromText(request, source);
+        JourneyStructureFallbackService.StructureAssessment assessment = assessTextStructure(request.content(), deterministic);
+        DraftView assessed = new DraftView(
+                deterministic.title(), deterministic.description(), deterministic.source(), deterministic.sourceLabel(),
+                deterministic.sections(), new StructureAnalysis(
+                        "DETERMINISTIC", assessment.confidence(), false, assessment.reason()
+                )
+        );
+        return structureFallback.improveIfUseful(request, assessed, assessment).draft();
+    }
+
+    private JourneyStructureFallbackService.StructureAssessment assessTextStructure(String content, DraftView draft) {
+        String value = content == null ? "" : content.trim();
+        if (value.isBlank()) return new JourneyStructureFallbackService.StructureAssessment(1.0, false, "Conteúdo vazio é tratado pela validação de entrada.");
+        List<TextBlock> blocks = textBlocks(value);
+        long headings = blocks.stream().filter(TextBlock::heading).count();
+        int items = draft.sections().stream().mapToInt(section -> section.items().size()).sum();
+        boolean syntheticGrouping = headings < 2 && items > 6;
+        boolean longUnstructured = headings == 0 && value.length() >= 1800 && items >= 4;
+        if (syntheticGrouping || longUnstructured) {
+            return new JourneyStructureFallbackService.StructureAssessment(
+                    headings == 0 ? 0.35 : 0.55,
+                    true,
+                    "Material sem hierarquia explícita; a Arena aplicou agrupamento determinístico revisável."
+            );
+        }
+        return new JourneyStructureFallbackService.StructureAssessment(
+                headings >= 2 ? 0.90 : 0.75,
+                false,
+                headings >= 2 ? "Hierarquia textual detectada com confiança." : "Material curto; estrutura determinística suficiente."
+        );
     }
 
     private DraftView fromText(PreviewRequest request, ContentIngestionSource source) {
@@ -486,7 +523,19 @@ public class ContentIngestionService {
             String description,
             ContentIngestionSource source,
             String sourceLabel,
-            List<DraftSection> sections
+            List<DraftSection> sections,
+            StructureAnalysis structureAnalysis
+    ) {
+        public DraftView(String title, String description, ContentIngestionSource source, String sourceLabel, List<DraftSection> sections) {
+            this(title, description, source, sourceLabel, sections, null);
+        }
+    }
+
+    public record StructureAnalysis(
+            String mode,
+            double confidence,
+            boolean aiUsed,
+            String message
     ) {}
 
     public record DraftSection(

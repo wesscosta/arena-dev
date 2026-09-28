@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import {
   fetchContentIngestionCapabilities,
   previewContentFile,
@@ -11,6 +11,7 @@ import {
 } from "@/lib/content-ingestion-api";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import styles from "./JourneyCreationWizard.module.css";
+import DraftReviewWorkspace from "./DraftReviewWorkspace";
 
 type Props = {
   open: boolean;
@@ -101,92 +102,6 @@ export default function JourneyCreationWizard({
       openerRef.current?.focus();
     };
   }, [open, onClose]);
-
-  const itemCount = useMemo(
-    () => draft?.sections.reduce((sum, section) => sum + section.items.length, 0) ?? 0,
-    [draft],
-  );
-
-  function patchDraft(patch: Partial<ContentDraft>) {
-    if (!draft) return;
-    setDraft({ ...draft, ...patch });
-  }
-
-  function patchSection(sectionIndex: number, patch: Partial<ContentDraft["sections"][number]>) {
-    if (!draft) return;
-    setDraft({
-      ...draft,
-      sections: draft.sections.map((section, index) => index === sectionIndex ? { ...section, ...patch } : section),
-    });
-  }
-
-  function removeSection(sectionIndex: number) {
-    if (!draft) return;
-    setDraft({ ...draft, sections: draft.sections.filter((_, index) => index !== sectionIndex) });
-  }
-
-  function addSection() {
-    if (!draft) return;
-    setDraft({
-      ...draft,
-      sections: [...draft.sections, {
-        title: `Novo módulo ${draft.sections.length + 1}`,
-        description: null,
-        items: [],
-      }],
-    });
-  }
-
-  function moveSection(sectionIndex: number, delta: number) {
-    if (!draft) return;
-    const target = sectionIndex + delta;
-    if (target < 0 || target >= draft.sections.length) return;
-    const sections = [...draft.sections];
-    [sections[sectionIndex], sections[target]] = [sections[target], sections[sectionIndex]];
-    setDraft({ ...draft, sections });
-  }
-
-  function patchItem(sectionIndex: number, itemIndex: number, patch: Partial<ContentDraft["sections"][number]["items"][number]>) {
-    if (!draft) return;
-    const section = draft.sections[sectionIndex];
-    if (!section) return;
-    patchSection(sectionIndex, {
-      items: section.items.map((item, index) => index === itemIndex ? { ...item, ...patch } : item),
-    });
-  }
-
-  function removeItem(sectionIndex: number, itemIndex: number) {
-    if (!draft) return;
-    const section = draft.sections[sectionIndex];
-    if (!section) return;
-    patchSection(sectionIndex, { items: section.items.filter((_, index) => index !== itemIndex) });
-  }
-
-  function addItem(sectionIndex: number) {
-    if (!draft) return;
-    const section = draft.sections[sectionIndex];
-    if (!section) return;
-    patchSection(sectionIndex, {
-      items: [...section.items, {
-        title: `Novo item ${section.items.length + 1}`,
-        description: null,
-        type: "CONTENT",
-        body: null,
-        sourceUrl: null,
-      }],
-    });
-  }
-
-  function moveItem(sectionIndex: number, itemIndex: number, delta: number) {
-    if (!draft) return;
-    const section = draft.sections[sectionIndex];
-    if (!section) return;
-    const target = itemIndex + delta;
-    if (target < 0 || target >= section.items.length) return;
-    const items = [...section.items];
-    [items[itemIndex], items[target]] = [items[target], items[itemIndex]];
-    patchSection(sectionIndex, { items });
-  }
 
   if (!open) return null;
 
@@ -386,83 +301,13 @@ export default function JourneyCreationWizard({
           </div>
         )}
         {mode === "preview" && draft && (
-          <div className={styles.preview}>
-            <div className={styles.previewSummary}>
-              <div className={styles.previewIdentity}>
-                <span>Jornada sugerida</span>
-                <input value={draft.title} onChange={(event) => patchDraft({ title: event.target.value })} aria-label="Título da jornada sugerida" />
-                <textarea value={draft.description} onChange={(event) => patchDraft({ description: event.target.value })} aria-label="Descrição da jornada sugerida" />
-              </div>
-              <div className={styles.previewMetrics}><b>{draft.sections.length}</b><span>módulos</span><b>{itemCount}</b><span>itens</span></div>
-            </div>
-            <div className={styles.sectionList}>
-              {draft.sections.map((section, sectionIndex) => (
-                <article className={styles.section} key={`${section.title}-${sectionIndex}`}>
-                  <header>
-                    <span>{String(sectionIndex + 1).padStart(2, "0")}</span>
-                    <div className={styles.sectionIdentity}>
-                      <input value={section.title} onChange={(event) => patchSection(sectionIndex, { title: event.target.value })} aria-label={`Título do módulo ${sectionIndex + 1}`} />
-                      <input value={section.description ?? ""} onChange={(event) => patchSection(sectionIndex, { description: event.target.value || null })} placeholder="Descrição opcional do módulo" aria-label={`Descrição do módulo ${sectionIndex + 1}`} />
-                    </div>
-                    <div className={styles.orderActions}>
-                      <button type="button" className={styles.iconAction} disabled={sectionIndex === 0} onClick={() => moveSection(sectionIndex, -1)} aria-label={`Mover módulo ${section.title} para cima`}>↑</button>
-                      <button type="button" className={styles.iconAction} disabled={sectionIndex === draft.sections.length - 1} onClick={() => moveSection(sectionIndex, 1)} aria-label={`Mover módulo ${section.title} para baixo`}>↓</button>
-                      <button type="button" className={styles.iconAction} onClick={() => removeSection(sectionIndex)} aria-label={`Remover módulo ${section.title}`}>×</button>
-                    </div>
-                  </header>
-                  <div className={styles.itemList}>
-                    {section.items.map((item, itemIndex) => (
-                      <div className={styles.item} key={`${item.title}-${itemIndex}`}>
-                        <span className={styles.itemTypeSelect} aria-label={`Conteúdo ${itemIndex + 1}`}>
-                          {item.sourceUrl ? "Link" : "Conteúdo"}
-                        </span>
-                        <div className={styles.itemIdentity}>
-                          <input value={item.title} onChange={(event) => patchItem(sectionIndex, itemIndex, { title: event.target.value })} aria-label={`Título do item ${itemIndex + 1}`} />
-                          <input value={item.description ?? ""} onChange={(event) => patchItem(sectionIndex, itemIndex, { description: event.target.value || null })} placeholder="Descrição opcional" aria-label={`Descrição do item ${itemIndex + 1}`} />
-                          <details className={styles.itemDetails} open={Boolean(item.body || item.sourceUrl)}>
-                            <summary>{item.sourceUrl ? "Conteúdo e origem" : "Conteúdo"}</summary>
-                            <div className={styles.itemDetailsBody}>
-                              {item.sourceUrl && (
-                                <label>
-                                  <span>URL do recurso</span>
-                                  <input
-                                    type="url"
-                                    value={item.sourceUrl ?? ""}
-                                    onChange={(event) => patchItem(sectionIndex, itemIndex, { sourceUrl: event.target.value || null })}
-                                    placeholder="https://..."
-                                    aria-label={`URL do item ${itemIndex + 1}`}
-                                  />
-                                </label>
-                              )}
-                              <label>
-                                <span>Conteúdo</span>
-                                <textarea
-                                  value={item.body ?? ""}
-                                  onChange={(event) => patchItem(sectionIndex, itemIndex, { body: event.target.value || null })}
-                                  placeholder="Revise ou complemente o conteúdo deste item."
-                                  aria-label={`Conteúdo do item ${itemIndex + 1}`}
-                                />
-                              </label>
-                            </div>
-                          </details>
-                        </div>
-                        <div className={styles.orderActions}>
-                          <button type="button" className={styles.iconAction} disabled={itemIndex === 0} onClick={() => moveItem(sectionIndex, itemIndex, -1)} aria-label={`Mover item ${item.title} para cima`}>↑</button>
-                          <button type="button" className={styles.iconAction} disabled={itemIndex === section.items.length - 1} onClick={() => moveItem(sectionIndex, itemIndex, 1)} aria-label={`Mover item ${item.title} para baixo`}>↓</button>
-                          <button type="button" className={styles.iconAction} onClick={() => removeItem(sectionIndex, itemIndex)} aria-label={`Remover item ${item.title}`}>×</button>
-                        </div>
-                      </div>
-                    ))}
-                    {section.items.length === 0 && <div className={styles.emptySection}>Este módulo está vazio e não será útil até receber um item.</div>}
-                    <button type="button" className={styles.addInline} onClick={() => addItem(sectionIndex)}>+ Adicionar item</button>
-                  </div>
-                </article>
-              ))}
-              <button type="button" className={styles.addSectionButton} onClick={addSection}>+ Adicionar módulo</button>
-            </div>
-            <div className={styles.reviewNote}>{draft.source === "MARKDOWN" ? "Estrutura detectada do Markdown. Revise o mapeamento antes de continuar; H4–H6 e o corpo permanecem dentro de cada conteúdo." : "Revise títulos, módulos e conteúdos antes de continuar."} Nada é publicado automaticamente: esta estrutura vira um rascunho editável.</div>
-            <div className={styles.footer}><button className={styles.secondary} onClick={() => setMode("choose")}>Refazer</button><button className={styles.primary} disabled={busy || !draft.title.trim() || itemCount === 0} onClick={() => void useDraft()}>{busy ? "Criando rascunho..." : "Usar esta estrutura"}</button></div>
-          </div>
+          <DraftReviewWorkspace
+            draft={draft}
+            busy={busy}
+            onChange={setDraft}
+            onBack={() => setMode("choose")}
+            onUse={() => void useDraft()}
+          />
         )}
       </section>
     </div>

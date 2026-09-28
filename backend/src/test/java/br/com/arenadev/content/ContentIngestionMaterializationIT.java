@@ -107,7 +107,14 @@ class ContentIngestionMaterializationIT {
         assertThat(view.stages().get(1).learningResourceId()).isNotNull();
         assertThat(view.stages().get(2).learningResourceId()).isNotNull();
 
-        assertThat(resources.findByClassroomIdOrderByUpdatedAtDesc(classroom.getId())).hasSize(3);
+        var materialized = resources.findByClassroomIdOrderByUpdatedAtDesc(classroom.getId());
+        assertThat(materialized).hasSize(3);
+        assertThat(materialized).allSatisfy(resource -> {
+            assertThat(resource.getSourceSnapshotAt()).isNotNull();
+            assertThat(resource.getSourceContentSha256()).matches("[0-9a-f]{64}");
+        });
+        assertThat(materialized).extracting(LearningResource::getSourceReference)
+                .contains("sql.md", "https://example.com/sql");
     }
     @Test
     void materializesExtractedFileContentAsPlainTextWithFileProvenance() {
@@ -140,6 +147,9 @@ class ContentIngestionMaterializationIT {
         assertThat(stored.getFirst().getFormat()).isEqualTo(LearningResourceFormat.PLAIN_TEXT);
         assertThat(stored.getFirst().getSourceType()).isEqualTo(LearningResourceSourceType.FILE);
         assertThat(stored.getFirst().getSourceLabel()).isEqualTo("apostila.pdf");
+        assertThat(stored.getFirst().getSourceReference()).isEqualTo("apostila.pdf");
+        assertThat(stored.getFirst().getSourceSnapshotAt()).isNotNull();
+        assertThat(stored.getFirst().getSourceContentSha256()).matches("[0-9a-f]{64}");
     }
 
 }

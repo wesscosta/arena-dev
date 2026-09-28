@@ -39,6 +39,15 @@ public class LearningResource {
     @Column(name = "source_label")
     private String sourceLabel;
 
+    @Column(name = "source_reference", columnDefinition = "text")
+    private String sourceReference;
+
+    @Column(name = "source_snapshot_at")
+    private Instant sourceSnapshotAt;
+
+    @Column(name = "source_content_sha256", length = 64)
+    private String sourceContentSha256;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -75,6 +84,13 @@ public class LearningResource {
         this.updatedAt = Instant.now();
     }
 
+    public void recordProvenance(String sourceReference, Instant sourceSnapshotAt, String sourceContentSha256) {
+        this.sourceReference = sourceReference;
+        this.sourceSnapshotAt = sourceSnapshotAt;
+        this.sourceContentSha256 = sourceContentSha256;
+        this.updatedAt = Instant.now();
+    }
+
     public UUID getId() { return id; }
     public Classroom getClassroom() { return classroom; }
     public String getTitle() { return title; }
@@ -84,6 +100,9 @@ public class LearningResource {
     public LearningResourceSourceType getSourceType() { return sourceType; }
     public String getSourceUrl() { return sourceUrl; }
     public String getSourceLabel() { return sourceLabel; }
+    public String getSourceReference() { return sourceReference; }
+    public Instant getSourceSnapshotAt() { return sourceSnapshotAt; }
+    public String getSourceContentSha256() { return sourceContentSha256; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

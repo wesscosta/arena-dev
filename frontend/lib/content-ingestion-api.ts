@@ -47,6 +47,12 @@ export type ContentDraft = {
   source: ContentIngestionSource;
   sourceLabel: string | null;
   sections: ContentDraftSection[];
+  structureAnalysis?: {
+    mode: "DETERMINISTIC" | "AI_ASSISTED";
+    confidence: number;
+    aiUsed: boolean;
+    message: string;
+  } | null;
 };
 
 export type ContentPreviewRequest = {

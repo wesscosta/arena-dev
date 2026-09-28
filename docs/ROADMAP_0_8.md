@@ -2,7 +2,7 @@
 
 **Linha ativa:** v0.8
 **Branch de execução:** `feat/v0.8-content-ingestion`
-**Estado atual:** `16.3 — Journey Study Experience` em execução; `16.3.0`–`16.3.7C` concluídos; `16.3.8.0–16.3.8.3` implementam a base de importação estruturada Markdown.
+**Estado atual:** `16.3 — Journey Study Experience` em execução; `16.3.0`–`16.3.7C` concluídos; `16.3.8.0–16.3.8.6` implementam importação estruturada Markdown, Review UX escalável, proveniência/snapshot e fallback AI-ready opcional para fontes ambíguas.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
@@ -257,7 +257,7 @@ O incremento não transforma Journey em uma segunda área de Atividades e não i
 8. `16.3.7` simplificação do Builder — **concluído**;
 9. `16.3.7B` convergência visual com a referência de produto — **concluído**;
 10. `16.3.7C` Journey Progression UX — **concluído**;
-11. `16.3.8` Content Ingestion & Structured Import — **16.3.8.0–16.3.8.3 implementados**.
+11. `16.3.8` Content Ingestion & Structured Import — **16.3.8.0–16.3.8.6 implementados**.
 
 ## 16.4 — Journey Map
 
