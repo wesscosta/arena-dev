@@ -70,6 +70,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [creationOpen, setCreationOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -96,7 +97,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
     return [...groups.values()];
   }, [draft]);
 
-  function selectJourney(journey: Journey) { setDraft(toDraft(journey)); }
+  function selectJourney(journey: Journey) { setDraft(toDraft(journey)); setMoreOpen(false); }
   function newJourney() { setCreationOpen(true); }
 
   function startBlankJourney() {
@@ -298,17 +299,17 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
                 </div>
                 <div className={styles.actions}>
                   {draft.id && <a className={styles.secondary} href={`/learn/journeys/${draft.id}?preview=teacher`}>Ver jornada</a>}
-                  <button className={styles.secondary} type="button" disabled={busy} onClick={() => setDraft(null)}>Fechar</button>
                   {draft.status === "DRAFT" && <button className={styles.primary} type="button" disabled={busy} onClick={() => void save()}>{busy ? "Salvando..." : "Salvar"}</button>}
                   {draft.id && draft.status === "DRAFT" && <button className={styles.ghost} type="button" disabled={busy || draft.stages.length === 0} onClick={() => void publish()}>Publicar</button>}
-                  {draft.id && draft.status !== "ARCHIVED" && <button className={styles.danger} type="button" disabled={busy} onClick={() => void archive()}>Arquivar</button>}
+                  <div className={styles.moreActions}><button className={styles.secondary} type="button" aria-label="Mais ações" aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}>•••</button>{moreOpen && <div className={styles.moreMenu}><button type="button" onClick={() => { setDraft(null); setMoreOpen(false); }}>Fechar painel</button>{draft.id && draft.status !== "ARCHIVED" && <button className={styles.moreDanger} type="button" disabled={busy} onClick={() => { setMoreOpen(false); void archive(); }}>Arquivar jornada</button>}</div>}</div>
                 </div>
               </div>
 
               {structuralLocked ? (
                     <div className={styles.publishedSummary}>
-                      <div><span>Título</span><strong>{draft.title}</strong></div>
-                      <div><span>Descrição</span><p>{draft.description || "Sem descrição."}</p></div>
+                      <div className={styles.publishedTitle}><strong>{draft.title}</strong><span className={`${styles.status} ${styles[draft.status.toLowerCase()]}`}>{statusLabel(draft.status)}</span></div>
+                      <p>{draft.description || "Sem descrição."}</p>
+                      <div className={styles.publishedMeta}><span>{stageGroups.length} {stageGroups.length === 1 ? "módulo" : "módulos"}</span><span>{draft.stages.length} {draft.stages.length === 1 ? "conteúdo" : "conteúdos"}</span></div>
                     </div>
                   ) : (
                     <div className={styles.fields}>

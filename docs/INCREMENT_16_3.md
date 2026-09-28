@@ -736,3 +736,28 @@ Não iniciar esses incrementos, achievements ou uma visualização gamificada ad
 Após comparação direta com o export do Figma (`JornadaScreen.tsx`), a convergência visual recebeu uma segunda passagem. A Study View deixa de centralizar uma coluna excessivamente distante da sidebar e passa a seguir a composição da referência: sidebar de 220px, conteúdo alinhado à esquerda com `40px 48px`, Journey limitada a 900px, progresso compacto, capítulos de 32px e conteúdos em cards de 10px de raio. Estados atual, concluído e bloqueado preservam semântica real do domínio.
 
 A experiência de atividades em `/join` também foi corrigida. Uma atividade com muitas questões não é mais expandida integralmente dentro do card estreito do participante. Ao iniciar/continuar, abre um runner em tela inteira com uma questão por etapa, indicador `atual / total`, progresso, navegação `Anterior`/`Próxima` e envio somente no final. O runner possui layouts específicos para mobile vertical e horizontal; em desktop usa largura de leitura de até 900px. Respostas abertas são persistidas ao avançar e respostas de opção continuam com autosave imediato.
+
+
+## 16.3.7C — Journey Progression UX
+
+**Status:** concluído na branch em 28/09/2026.
+
+Fatia criada após a validação da convergência visual para fechar a diferença entre uma lista de conteúdos e uma experiência de aprendizagem orientada por progresso. Não altera o domínio fundamental da Journey nem antecipa ingestão/IA.
+
+### Resultado aplicado
+
+- os estados existentes `COMPLETED`, `CURRENT` e `LOCKED` permanecem a fonte de verdade; `CURRENT` não ganhou persistência paralela no frontend;
+- a Study View ganhou CTA contextual **Continue de onde parou**, derivado exclusivamente do conteúdo `CURRENT` retornado pela Study API;
+- progresso geral ganhou maior legibilidade sem criar XP, moedas, streak ou mecânicas artificiais;
+- módulos concluídos passam a comunicar conclusão no próprio eixo da timeline;
+- conteúdo atual é dominante; concluído pode ser revisitado; bloqueado não oferece affordance de abertura;
+- a timeline vertical passou a comunicar progressão, mantendo topologia linear e sem reintroduzir mapa/skill tree;
+- a prévia do professor foi compactada e continua sem registrar `/start`, `/complete` ou progresso pessoal;
+- navegação contextual substitui o termo genérico `Workspace` por `Voltar para Jornadas` / `Minhas jornadas`;
+- o Builder publicado deixa de parecer formulário desabilitado: título, descrição, status e contagens são apresentados como resumo editorial;
+- ações administrativas secundárias foram agrupadas em menu de contexto, mantendo `Ver jornada` como ação principal;
+- responsividade da Journey foi revisada para desktop, tablet e mobile sem duplicar a experiência.
+
+### Decisão de escopo
+
+A 16.3.7C implementa gamificação estrutural por **progressão, estado, orientação e feedback**. Permanecem fora desta fatia XP novo, ranking, badges, moedas, streak, skill tree, mapa espacial, quizzes e atividades dentro da Journey. A próxima fatia permanece `16.3.8 — Alinhamento de ingestão e IA`.
