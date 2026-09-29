@@ -12,6 +12,10 @@ export type JourneyStage = {
   activityId: string | null;
   unlockRule: JourneyUnlockRule;
   completionRule: JourneyCompletionRule;
+  sectionId?: string | null;
+  sectionTitle?: string | null;
+  itemType?: "CONTENT" | "ACTIVITY" | "QUIZ" | "CHALLENGE" | "CHECKPOINT" | "EXTERNAL_RESOURCE";
+  learningResourceId?: string | null;
 };
 
 export type Journey = {
@@ -32,6 +36,10 @@ export type JourneyStageInput = {
   activityId?: string;
   unlockRule: JourneyUnlockRule;
   completionRule: JourneyCompletionRule;
+  sectionId?: string;
+  sectionTitle?: string;
+  itemType?: JourneyStage["itemType"];
+  learningResourceId?: string;
 };
 
 export type JourneyInput = {
@@ -81,4 +89,12 @@ export function publishJourney(id: string) {
 
 export function archiveJourney(id: string) {
   return request<Journey>(`/api/journeys/${encodeURIComponent(id)}/archive`, { method: "POST", body: "{}" });
+}
+
+export type JourneyRedemptionCode = { code: string | null; active: boolean; redeemedCount: number };
+export function fetchJourneyRedemption(id: string) { return request<JourneyRedemptionCode>(`/api/journeys/${encodeURIComponent(id)}/redemption`); }
+export function enableJourneyRedemption(id: string) { return request<JourneyRedemptionCode>(`/api/journeys/${encodeURIComponent(id)}/redemption/enable`, { method: "POST", body: "{}" }); }
+export function regenerateJourneyRedemption(id: string) { return request<JourneyRedemptionCode>(`/api/journeys/${encodeURIComponent(id)}/redemption/regenerate`, { method: "POST", body: "{}" }); }
+export async function disableJourneyRedemption(id: string) {
+  await apiFetch(`/api/journeys/${encodeURIComponent(id)}/redemption`, { method: "DELETE" });
 }

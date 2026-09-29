@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const join = readFileSync(resolve(process.cwd(), "app/join/page.tsx"), "utf8");
+const join = readFileSync(resolve(process.cwd(), "components/StudentJoinFlow.tsx"), "utf8");
 const globals = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
 const quizCss = readFileSync(resolve(process.cwd(), "app/join/quiz.module.css"), "utf8");
 

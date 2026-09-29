@@ -1,6 +1,7 @@
 package br.com.arenadev.shared;
 
 import br.com.arenadev.auth.LoginRateLimitExceededException;
+import br.com.arenadev.content.LearningResourceInUseException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> notFound(ResourceNotFoundException exception) {
         return response(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(LearningResourceInUseException.class)
+    public ResponseEntity<Map<String, Object>> conflict(LearningResourceInUseException exception) {
+        return response(HttpStatus.CONFLICT, exception.getMessage());
     }
 
     @ExceptionHandler({IllegalArgumentException.class, DataIntegrityViolationException.class})

@@ -6,6 +6,8 @@ import br.com.arenadev.classroom.Classroom;
 import br.com.arenadev.classroom.ClassroomRepository;
 import br.com.arenadev.classroom.Enrollment;
 import br.com.arenadev.classroom.EnrollmentRepository;
+import br.com.arenadev.content.LearningResource;
+import br.com.arenadev.content.LearningResourceRepository;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import br.com.arenadev.submission.ActivitySubmissionRepository;
 import br.com.arenadev.submission.ActivitySubmissionStatus;
@@ -20,6 +22,7 @@ public class JourneyService {
     private final JourneyRepository journeyRepository;
     private final ClassroomRepository classroomRepository;
     private final ActivityRepository activityRepository;
+    private final LearningResourceRepository learningResourceRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final JourneyStageProgressRepository progressRepository;
     private final ActivitySubmissionRepository submissionRepository;
@@ -28,6 +31,7 @@ public class JourneyService {
             JourneyRepository journeyRepository,
             ClassroomRepository classroomRepository,
             ActivityRepository activityRepository,
+            LearningResourceRepository learningResourceRepository,
             EnrollmentRepository enrollmentRepository,
             JourneyStageProgressRepository progressRepository,
             ActivitySubmissionRepository submissionRepository
@@ -35,6 +39,7 @@ public class JourneyService {
         this.journeyRepository = journeyRepository;
         this.classroomRepository = classroomRepository;
         this.activityRepository = activityRepository;
+        this.learningResourceRepository = learningResourceRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.progressRepository = progressRepository;
         this.submissionRepository = submissionRepository;
@@ -235,25 +240,60 @@ public class JourneyService {
 
     private void applyStages(Journey journey, List<StageInput> inputs) {
         List<StageInput> safe = inputs == null ? List.of() : inputs;
-        Map<UUID, JourneyStage> existing = new HashMap<>();
-        journey.getStages().forEach(stage -> existing.put(stage.getId(), stage));
-        Set<UUID> reused = new HashSet<>();
+        Map<UUID, JourneyStage> existingStages = new HashMap<>();
+        journey.getStages().forEach(stage -> existingStages.put(stage.getId(), stage));
+        Map<UUID, JourneySection> existingSections = new HashMap<>();
+        journey.getSections().forEach(section -> existingSections.put(section.getId(), section));
+        Set<UUID> reusedStages = new HashSet<>();
+        Set<UUID> reusedSections = new HashSet<>();
+        Map<String, JourneySection> sectionsByKey = new LinkedHashMap<>();
+        int sectionPosition = 0;
 
         for (int position = 0; position < safe.size(); position++) {
             StageInput input = safe.get(position);
             validateStage(input, position + 1);
             UUID requestedId = parseUuid(input.id());
-            JourneyStage stage = requestedId == null ? null : existing.get(requestedId);
+            JourneyStage stage = requestedId == null ? null : existingStages.get(requestedId);
             if (stage == null) {
                 stage = new JourneyStage(input.title().trim(), position);
                 journey.addStage(stage);
             } else {
-                reused.add(stage.getId());
+                reusedStages.add(stage.getId());
             }
+
             Activity activity = input.activityId() == null ? null : requireActivity(input.activityId());
             if (activity != null && !activity.getClassroom().getId().equals(journey.getClassroom().getId())) {
                 throw new IllegalArgumentException("A atividade da etapa precisa pertencer à mesma turma da jornada.");
             }
+            UUID currentResourceId = stage.getLearningResource() == null ? null : stage.getLearningResource().getId();
+            UUID requestedResourceId = input.learningResourceId();
+            boolean resourceAssociationChanged = !Objects.equals(currentResourceId, requestedResourceId);
+            LearningResource resource = requestedResourceId == null ? null : requireLearningResource(requestedResourceId);
+            if (resourceAssociationChanged && resource != null && !resource.isLibraryVisible()
+                    && (resource.getClassroom() == null || !resource.getClassroom().getId().equals(journey.getClassroom().getId()))) {
+                throw new IllegalArgumentException("O recurso da etapa precisa pertencer à mesma turma ou estar disponível na Biblioteca.");
+            }
+
+            JourneySection section = null;
+            String sectionTitle = clean(input.sectionTitle());
+            UUID sectionId = parseUuid(input.sectionId());
+            if (sectionId != null || sectionTitle != null) {
+                String sectionKey = sectionId != null ? "id:" + sectionId : "title:" + sectionTitle.toLowerCase(Locale.ROOT);
+                section = sectionsByKey.get(sectionKey);
+                if (section == null) {
+                    section = sectionId == null ? null : existingSections.get(sectionId);
+                    if (section == null) {
+                        section = new JourneySection(sectionTitle == null ? "Módulo " + (sectionPosition + 1) : sectionTitle, null, sectionPosition);
+                        journey.addSection(section);
+                    } else {
+                        reusedSections.add(section.getId());
+                        section.update(sectionTitle == null ? section.getTitle() : sectionTitle, section.getDescription(), sectionPosition);
+                    }
+                    sectionsByKey.put(sectionKey, section);
+                    sectionPosition++;
+                }
+            }
+
             JourneyUnlockRule unlockRule = position == 0
                     ? JourneyUnlockRule.IMMEDIATE
                     : Objects.requireNonNullElse(input.unlockRule(), JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED);
@@ -261,13 +301,37 @@ public class JourneyService {
             if (completionRule != JourneyCompletionRule.MANUAL && activity == null) {
                 throw new IllegalArgumentException("Etapas concluídas por atividade precisam referenciar uma atividade.");
             }
-            stage.update(input.title().trim(), clean(input.description()), position, activity, unlockRule, completionRule);
+            JourneyItemType itemType = input.itemType() != null
+                    ? input.itemType()
+                    : activity == null ? JourneyItemType.CONTENT : JourneyItemType.ACTIVITY;
+            stage.updateConfiguration(input.title().trim(), clean(input.description()), position, activity, unlockRule, completionRule, section, itemType);
+            if (resourceAssociationChanged) {
+                if (resource == null) {
+                    stage.detachLearningResource();
+                } else {
+                    stage.materializeResource(resource);
+                }
+            }
         }
 
-        List<JourneyStage> stale = journey.getStages().stream()
-                .filter(stage -> stage.getId() != null && existing.containsKey(stage.getId()) && !reused.contains(stage.getId()))
+        List<JourneyStage> staleStages = journey.getStages().stream()
+                .filter(stage -> stage.getId() != null && existingStages.containsKey(stage.getId()) && !reusedStages.contains(stage.getId()))
                 .toList();
-        stale.forEach(journey::removeStage);
+        staleStages.forEach(journey::removeStage);
+
+        Set<UUID> stillReferencedSectionIds = journey.getStages().stream()
+                .map(JourneyStage::getSection)
+                .filter(Objects::nonNull)
+                .map(JourneySection::getId)
+                .filter(Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        List<JourneySection> staleSections = journey.getSections().stream()
+                .filter(section -> section.getId() != null
+                        && existingSections.containsKey(section.getId())
+                        && !reusedSections.contains(section.getId())
+                        && !stillReferencedSectionIds.contains(section.getId()))
+                .toList();
+        staleSections.forEach(journey::removeSection);
     }
 
     private boolean sameStageShape(Journey journey, List<StageInput> inputs) {
@@ -280,10 +344,18 @@ public class JourneyService {
                     : Objects.requireNonNullElse(input.unlockRule(), JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED);
             JourneyCompletionRule expectedCompletion = Objects.requireNonNullElse(input.completionRule(), JourneyCompletionRule.MANUAL);
             UUID currentActivityId = stage.getActivity() == null ? null : stage.getActivity().getId();
+            UUID currentResourceId = stage.getLearningResource() == null ? null : stage.getLearningResource().getId();
+            UUID currentSectionId = stage.getSection() == null ? null : stage.getSection().getId();
+            JourneyItemType expectedType = input.itemType() != null
+                    ? input.itemType()
+                    : input.activityId() == null ? JourneyItemType.CONTENT : JourneyItemType.ACTIVITY;
             if (!Objects.equals(parseUuid(input.id()), stage.getId())
                     || !Objects.equals(input.title() == null ? null : input.title().trim(), stage.getTitle())
                     || !Objects.equals(clean(input.description()), stage.getDescription())
                     || !Objects.equals(input.activityId(), currentActivityId)
+                    || !Objects.equals(input.learningResourceId(), currentResourceId)
+                    || !Objects.equals(parseUuid(input.sectionId()), currentSectionId)
+                    || expectedType != stage.getItemType()
                     || expectedUnlock != stage.getUnlockRule()
                     || expectedCompletion != stage.getCompletionRule()) {
                 return false;
@@ -334,6 +406,10 @@ public class JourneyService {
         return activityRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Atividade não encontrada."));
     }
 
+    private LearningResource requireLearningResource(UUID id) {
+        return learningResourceRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Recurso de aprendizagem não encontrado."));
+    }
+
     private void requireSameClassroom(Journey journey, Enrollment enrollment) {
         if (!journey.getClassroom().getId().equals(enrollment.getClassroom().getId())) {
             throw new IllegalArgumentException("A matrícula não pertence à turma desta jornada.");
@@ -346,7 +422,11 @@ public class JourneyService {
                 journey.getStages().stream().map(stage -> new StageView(
                         stage.getId(), stage.getPosition(), stage.getTitle(), stage.getDescription(),
                         stage.getActivity() == null ? null : stage.getActivity().getId(),
-                        stage.getUnlockRule(), stage.getCompletionRule()
+                        stage.getUnlockRule(), stage.getCompletionRule(),
+                        stage.getSection() == null ? null : stage.getSection().getId(),
+                        stage.getSection() == null ? null : stage.getSection().getTitle(),
+                        stage.getItemType(),
+                        stage.getLearningResource() == null ? null : stage.getLearningResource().getId()
                 )).toList(),
                 journey.getCreatedAt(), journey.getUpdatedAt()
         );
@@ -360,9 +440,32 @@ public class JourneyService {
     private static String clean(String value) { return value == null || value.isBlank() ? null : value.trim(); }
 
     public record JourneyInput(UUID classroomId, String title, String description, List<StageInput> stages) {}
-    public record StageInput(String id, String title, String description, UUID activityId, JourneyUnlockRule unlockRule, JourneyCompletionRule completionRule) {}
+    public record StageInput(
+            String id,
+            String title,
+            String description,
+            UUID activityId,
+            JourneyUnlockRule unlockRule,
+            JourneyCompletionRule completionRule,
+            String sectionId,
+            String sectionTitle,
+            JourneyItemType itemType,
+            UUID learningResourceId
+    ) {}
     public record JourneyView(UUID id, UUID classroomId, String title, String description, JourneyStatus status, List<StageView> stages, Instant createdAt, Instant updatedAt) {}
-    public record StageView(UUID id, int position, String title, String description, UUID activityId, JourneyUnlockRule unlockRule, JourneyCompletionRule completionRule) {}
+    public record StageView(
+            UUID id,
+            int position,
+            String title,
+            String description,
+            UUID activityId,
+            JourneyUnlockRule unlockRule,
+            JourneyCompletionRule completionRule,
+            UUID sectionId,
+            String sectionTitle,
+            JourneyItemType itemType,
+            UUID learningResourceId
+    ) {}
     public record JourneyProgressView(UUID journeyId, UUID enrollmentId, int completedStages, int totalStages, int percent, List<StageProgressView> stages) {}
     public record ParticipantJourneyView(UUID journeyId, String title, String description, int percent, int completedStages, int totalStages, StageProgressView currentStage, List<StageProgressView> stages) {}
     public record StageProgressView(UUID stageId, int position, String title, String description, UUID activityId, JourneyUnlockRule unlockRule, JourneyCompletionRule completionRule, JourneyStageProgressStatus status, Instant startedAt, Instant completedAt, String nextAction) {}

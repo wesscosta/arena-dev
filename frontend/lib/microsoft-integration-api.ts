@@ -8,7 +8,7 @@ export type MicrosoftReadiness = {
 
 export type IntegrationConnection = {
   id: string;
-  provider: "MICROSOFT_TEAMS" | "GOOGLE_CLASSROOM";
+  provider: "MICROSOFT_TEAMS" | "GOOGLE_CLASSROOM" | "NOTION";
   displayName: string;
   externalTenantId: string | null;
   status: "DRAFT" | "ACTIVE" | "DISABLED";
@@ -481,3 +481,10 @@ export const importMicrosoftSubmission = (
       body: JSON.stringify({ microsoftSubmissionId }),
     },
   );
+
+export type NotionReadiness = { provider: "NOTION"; delegatedOAuthConfigured: boolean };
+export const fetchNotionReadiness = () => request<NotionReadiness>("/api/integrations/notion/readiness");
+export const startNotionOAuth = () => request<{ authorizationUrl: string }>("/api/integrations/notion/oauth/start");
+export const disableIntegrationConnection = (connectionId: string) => request<IntegrationConnection>(`/api/integrations/connections/${connectionId}/disable`, { method: "POST" });
+export type NotionPageSummary = { id: string; title: string; url: string };
+export const fetchNotionPages = (query = "") => request<NotionPageSummary[]>(`/api/integrations/notion/pages?query=${encodeURIComponent(query)}`);

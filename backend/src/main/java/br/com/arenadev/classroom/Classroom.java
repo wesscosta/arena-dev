@@ -32,6 +32,9 @@ public class Classroom {
     @Column(name = "theme_icon", nullable = false, length = 20)
     private String themeIcon = "code";
 
+    @Column(name = "student_study_access_enabled", nullable = false)
+    private boolean studentStudyAccessEnabled = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -65,6 +68,14 @@ public class Classroom {
 
     public String getThemeIcon() {
         return themeIcon;
+    }
+
+    public boolean isStudentStudyAccessEnabled() {
+        return studentStudyAccessEnabled;
+    }
+
+    public void setStudentStudyAccessEnabled(boolean studentStudyAccessEnabled) {
+        this.studentStudyAccessEnabled = studentStudyAccessEnabled;
     }
 
     public Instant getCreatedAt() {

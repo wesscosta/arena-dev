@@ -45,7 +45,7 @@ public class ClassroomController {
             @PathVariable UUID id,
             @Valid @RequestBody ClassroomUpdateRequest request
     ) {
-        return service.update(id, request.name(), request.code(), request.active(), request.themeColor(), request.themeIcon());
+        return service.update(id, request.name(), request.code(), request.active(), request.themeColor(), request.themeIcon(), request.studentStudyAccessEnabled());
     }
 
     @DeleteMapping("/{id}")
@@ -111,7 +111,8 @@ public class ClassroomController {
             String code,
             boolean active,
             String themeColor,
-            String themeIcon
+            String themeIcon,
+            boolean studentStudyAccessEnabled
     ) {
     }
 

@@ -60,6 +60,8 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [savedAt, setSavedAt] = useState<string>("");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [questionIndex, setQuestionIndex] = useState(0);
 
   async function load() {
     setBusy(true); setError("");
@@ -94,6 +96,9 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
       restored.generic = contentValue(generic?.content);
       if (generic) setGenericKind(generic.kind);
       setDrafts(restored);
+      setQuestionIndex(0);
+      setSaveState("idle");
+      setSavedAt("");
       setOpenId(next.id);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível iniciar a atividade.");
@@ -102,7 +107,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
 
   async function saveQuestion(question: ParticipantQuestion, value: string) {
     if (!open?.submissionId || open.submissionStatus !== "IN_PROGRESS") return;
-    setBusy(true); setError("");
+    setBusy(true); setError(""); setSaveState("saving");
     try {
       const existing = open.items.find((item) => item.questionId === question.id);
       const next = await saveParticipantSubmissionItem(
@@ -112,7 +117,8 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
       );
       replaceActivity(next);
       setSavedAt(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Falha no autosave."); }
+      setSaveState("saved");
+    } catch (caught) { setSaveState("error"); setError(caught instanceof Error ? caught.message : "Falha no autosave."); }
     finally { setBusy(false); }
   }
 
@@ -144,6 +150,19 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
     ).catch(() => undefined);
   }
 
+  async function persistCurrentQuestion() {
+    if (!open || open.submissionStatus !== "IN_PROGRESS") return;
+    const question = open.questions[questionIndex];
+    if (!question || optionsOf(question).length) return;
+    await saveQuestion(question, drafts[`q:${question.id}`] ?? "");
+  }
+
+  async function goToQuestion(nextIndex: number) {
+    if (!open || busy || nextIndex < 0 || nextIndex >= open.questions.length) return;
+    await persistCurrentQuestion();
+    setQuestionIndex(nextIndex);
+  }
+
   async function submit() {
     if (!open?.submissionId || open.submissionStatus !== "IN_PROGRESS") return;
     if (!window.confirm("Enviar esta atividade? Depois do envio, esta tentativa deixa de aceitar alterações.")) return;
@@ -159,7 +178,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
   return <section className={styles.shell}>
     <header className={styles.head}>
       <div><span className={styles.kicker}>MINHAS ATIVIDADES</span><h2>Entregas da turma</h2><p>Abra, continue e envie atividades sem sair da experiência do aluno.</p></div>
-      <button type="button" className={styles.refresh} disabled={busy} onClick={() => void load()}>{busy ? "Atualizando..." : "Atualizar"}</button>
+      <button type="button" className={styles.refresh} disabled={busy} onClick={() => void load()}>{busy ? "Atualizando..." : "↻ Atualizar"}</button>
     </header>
 
     {error && <div className={styles.error} role="alert">{error}</div>}
@@ -174,36 +193,43 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
           {activity.submissionStatus === "NOT_STARTED" ? "Iniciar atividade" : activity.submissionStatus === "IN_PROGRESS" ? "Continuar atividade" : "Visualizar entrega"}
         </button>
 
-        {open?.id === activity.id && <div className={styles.detail}>
-          {open.questions.map((question) => {
-            const key = `q:${question.id}`;
-            const options = optionsOf(question);
-            const editable = open.submissionStatus === "IN_PROGRESS";
-            return <div className={styles.question} key={question.id}>
-              <strong>{question.position + 1}. {question.statement}</strong>
-              {question.code && <pre className={styles.code}><code>{question.code}</code></pre>}
-              {options.length ? <div className={styles.options}>{options.map((option) => <label className={styles.option} key={option.id}><input type="radio" name={key} value={option.id} checked={(drafts[key] ?? "") === option.id} disabled={!editable || busy} onChange={(event) => { const value = event.target.value; setDrafts((current) => ({ ...current, [key]: value })); void saveQuestion(question, value); }} /><span>{option.text}</span></label>)}</div> : <label className={styles.field}><span>Sua resposta</span><textarea className={styles.textarea} value={drafts[key] ?? ""} disabled={!editable || busy} onChange={(event) => setDrafts((current) => ({ ...current, [key]: event.target.value }))} onPaste={(event) => registerPaste(open.items.find((item) => item.questionId === question.id)?.id ?? null, event.clipboardData.getData("text").length)} onBlur={() => void saveQuestion(question, drafts[key] ?? "")} /></label>}
-            </div>;
-          })}
+        {open?.id === activity.id && (() => {
+          const question = open.questions[questionIndex] ?? null;
+          const key = question ? `q:${question.id}` : "";
+          const options = question ? optionsOf(question) : [];
+          const editable = open.submissionStatus === "IN_PROGRESS";
+          const total = open.questions.length;
+          const isLast = questionIndex === total - 1;
+          return <div className={styles.runner} role="dialog" aria-modal="true" aria-label={`Atividade ${open.title}`}>
+            <header className={styles.runnerTop}>
+              <div className={styles.runnerBrand}><span>A</span><div><strong>ARENA DEV</strong><small>{access.classroomName}</small></div></div>
+              <div className={styles.runnerTitle}><span>ATIVIDADE</span><strong>{open.title}</strong></div>
+              <button type="button" className={styles.runnerClose} onClick={() => setOpenId(null)} aria-label="Fechar atividade">×</button>
+            </header>
 
-          <div className={styles.question}>
-            <strong>Entrega complementar</strong>
-            <div className={styles.meta}><span>Use quando a atividade pedir pesquisa, texto, link ou código além das questões.</span></div>
-            <label className={styles.field}><span>Tipo de conteúdo</span><select className={styles.select} value={genericKind} disabled={open.submissionStatus !== "IN_PROGRESS" || busy} onChange={(event) => setGenericKind(event.target.value as ParticipantSubmissionKind)}><option value="TEXT">Texto / pesquisa</option><option value="CODE">Código</option><option value="LINK">Link</option><option value="ARTIFACT">Referência de artefato</option></select></label>
-            <label className={styles.field}><span>Conteúdo</span><textarea className={styles.textarea} value={drafts.generic ?? ""} disabled={open.submissionStatus !== "IN_PROGRESS" || busy} onChange={(event) => setDrafts((current) => ({ ...current, generic: event.target.value }))} onPaste={(event) => registerPaste(genericItem(open)?.id ?? null, event.clipboardData.getData("text").length)} onBlur={() => void saveGeneric()} placeholder={genericKind === "CODE" ? "Cole seu código ou descreva o repositório..." : genericKind === "LINK" ? "https://..." : "Digite ou descreva sua entrega..."} /></label>
-          </div>
+            <main className={styles.runnerMain}>
+              <div className={styles.runnerProgress}>
+                <div><strong>{questionIndex + 1}</strong><span>/ {total}</span></div>
+                <div className={styles.runnerTrack}><span style={{ width: `${total ? ((questionIndex + 1) / total) * 100 : 0}%` }} /></div>
+                <small className={styles.saveState} role="status" aria-live="polite">{!editable ? statusLabel(open.submissionStatus) : saveState === "saving" ? "Salvando…" : saveState === "error" ? "Falha ao salvar" : saveState === "saved" ? `✓ Salvo${savedAt ? ` às ${savedAt}` : ""}` : "✓ Autosave ativo"}</small>
+              </div>
 
-          {open.publishedFeedback && <div className={styles.feedback}>
-            <strong>Feedback do professor</strong>
-            <p>{open.publishedFeedback}</p>
-            {open.feedbackPublishedAt && <small>Publicado em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(open.feedbackPublishedAt))}</small>}
-          </div>}
+              {question ? <section className={styles.runnerQuestion}>
+                <div className={styles.questionLabel}>QUESTÃO {String(questionIndex + 1).padStart(2, "0")}</div>
+                <h2>{question.statement}</h2>
+                {question.code && <pre className={styles.runnerCode}><code>{question.code}</code></pre>}
+                {options.length ? <div className={styles.runnerOptions}>{options.map((option, index) => <label className={`${styles.runnerOption} ${(drafts[key] ?? "") === option.id ? styles.selectedOption : ""}`} key={option.id}><input type="radio" name={key} value={option.id} checked={(drafts[key] ?? "") === option.id} disabled={!editable || busy} onChange={(event) => { const value = event.target.value; setDrafts((current) => ({ ...current, [key]: value })); void saveQuestion(question, value); }} /><b>{String.fromCharCode(65 + index)}</b><span>{option.text}</span></label>)}</div> : <label className={styles.runnerField}><span>Sua resposta</span><textarea value={drafts[key] ?? ""} disabled={!editable || busy} onChange={(event) => setDrafts((current) => ({ ...current, [key]: event.target.value }))} onPaste={(event) => registerPaste(open.items.find((item) => item.questionId === question.id)?.id ?? null, event.clipboardData.getData("text").length)} placeholder="Digite sua resposta..." /></label>}
+              </section> : <div className={styles.empty}>Esta atividade não possui questões objetivas. Use a entrega complementar quando solicitada.</div>}
+            </main>
 
-          <div className={styles.foot}>
-            <span className={styles.saved}>{savedAt ? `Salvo às ${savedAt}` : open.submissionStatus === "IN_PROGRESS" ? "As respostas são salvas ao sair de cada campo." : `Status: ${statusLabel(open.submissionStatus)}`}</span>
-            {open.submissionStatus === "IN_PROGRESS" && <button type="button" className={`${styles.action} ${styles.primary}`} disabled={busy} onClick={() => void submit()}>{busy ? "Salvando..." : "Enviar atividade"}</button>}
-          </div>
-        </div>}
+            <footer className={styles.runnerFooter}>
+              <button type="button" className={styles.runnerSecondary} disabled={busy || questionIndex === 0} onClick={() => void goToQuestion(questionIndex - 1)}>← Anterior</button>
+              <span aria-hidden="true" />
+              {!isLast ? <button type="button" className={styles.runnerPrimary} disabled={busy} onClick={() => void goToQuestion(questionIndex + 1)}>Próxima →</button> : editable ? <button type="button" className={styles.runnerPrimary} disabled={busy} onClick={async () => { await persistCurrentQuestion(); void submit(); }}>{busy ? "Salvando..." : "Revisar e enviar"}</button> : <button type="button" className={styles.runnerPrimary} onClick={() => setOpenId(null)}>Concluir</button>}
+            </footer>
+          </div>;
+        })()}
+
       </article>)}
       {!activities.length && !busy && <div className={styles.empty}>Nenhuma atividade disponível nesta turma.</div>}
     </div>

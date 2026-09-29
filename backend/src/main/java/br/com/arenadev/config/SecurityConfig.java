@@ -68,7 +68,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(new CookieCsrfTokenRepository())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                        .ignoringRequestMatchers("/api/join/**")
+                        .ignoringRequestMatchers("/api/join/**", "/api/learn/**")
                 )
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
@@ -85,7 +85,7 @@ public class SecurityConfig {
                         ))
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/health", "/api/health/**", "/api/auth/csrf", "/api/auth/login", "/api/join/**", "/api/projector/**", "/ws/**").permitAll()
+                        .requestMatchers("/api/health", "/api/health/**", "/api/auth/csrf", "/api/auth/login", "/api/join/**", "/api/learn/**", "/api/projector/**", "/ws/**").permitAll()
                         .requestMatchers("/api/**").hasRole("TEACHER")
                         .anyRequest().permitAll()
                 );

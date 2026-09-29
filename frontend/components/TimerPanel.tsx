@@ -13,6 +13,7 @@ import {
   type SessionTimer,
   type TimerState,
 } from "@/lib/timer-api";
+import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import {
   effectiveTimerStatus,
   formatTimer,
@@ -43,6 +44,7 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
   const [busy, setBusy] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [focusOpen, setFocusOpen] = useState(false);
+  useBodyScrollLock(focusOpen);
   const [openFocusOnStart, setOpenFocusOnStart] = useState(true);
   const [alerts, setAlerts] = useState({ five: true, one: true, end: true });
   const previousRemaining = useRef<number | null>(null);
@@ -91,16 +93,12 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
   useEffect(() => {
     if (!focusOpen) return;
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setFocusOpen(false);
     };
     window.addEventListener("keydown", closeOnEscape);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [focusOpen]);
