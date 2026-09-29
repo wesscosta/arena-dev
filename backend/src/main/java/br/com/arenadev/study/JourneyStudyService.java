@@ -1,5 +1,6 @@
 package br.com.arenadev.study;
 
+import br.com.arenadev.achievement.AchievementService;
 import br.com.arenadev.classroom.Enrollment;
 import br.com.arenadev.classroom.EnrollmentRepository;
 import br.com.arenadev.content.LearningResource;
@@ -20,6 +21,7 @@ public class JourneyStudyService {
     private final StudyAccessPolicy accessPolicy;
     private final StudentJourneyAccessRepository redeemedAccess;
     private final StudentJourneyStageProgressRepository redeemedProgress;
+    private final AchievementService achievements;
 
     public JourneyStudyService(
             JourneyRepository journeys,
@@ -27,7 +29,8 @@ public class JourneyStudyService {
             JourneyStageProgressRepository progress,
             StudyAccessPolicy accessPolicy,
             StudentJourneyAccessRepository redeemedAccess,
-            StudentJourneyStageProgressRepository redeemedProgress
+            StudentJourneyStageProgressRepository redeemedProgress,
+            AchievementService achievements
     ) {
         this.journeys = journeys;
         this.enrollments = enrollments;
@@ -35,6 +38,7 @@ public class JourneyStudyService {
         this.accessPolicy = accessPolicy;
         this.redeemedAccess = redeemedAccess;
         this.redeemedProgress = redeemedProgress;
+        this.achievements = achievements;
     }
 
     @Transactional(readOnly = true)
@@ -61,7 +65,7 @@ public class JourneyStudyService {
         Projection projection = project(journey, access);
         return new JourneyStudyView(
                 journey.getId(), journey.getTitle(), journey.getDescription(),
-                projection.progress(), modules(journey, projection.states())
+                projection.progress(), modules(journey, projection.states()), List.of()
         );
     }
 
@@ -116,7 +120,8 @@ public class JourneyStudyService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Este conteúdo ainda está bloqueado.");
         }
         saveComplete(stage, access);
-        return view(journey, access);
+        List<AchievementService.AchievementView> unlocked = achievements.evaluate(principal.userId());
+        return view(journey, access, unlocked);
     }
 
 
@@ -124,13 +129,17 @@ public class JourneyStudyService {
         Map<UUID, StudyState> states = new LinkedHashMap<>();
         journey.getStages().forEach(stage -> states.put(stage.getId(), StudyState.CURRENT));
         return new JourneyStudyView(journey.getId(), journey.getTitle(), journey.getDescription(),
-                new JourneyProgressSummary(0, journey.getStages().size(), 0), modules(journey, states));
+                new JourneyProgressSummary(0, journey.getStages().size(), 0), modules(journey, states), List.of());
     }
 
     private JourneyStudyView view(Journey journey, AccessContext access) {
+        return view(journey, access, List.of());
+    }
+
+    private JourneyStudyView view(Journey journey, AccessContext access, List<AchievementService.AchievementView> unlocked) {
         Projection projection = project(journey, access);
         return new JourneyStudyView(journey.getId(), journey.getTitle(), journey.getDescription(),
-                projection.progress(), modules(journey, projection.states()));
+                projection.progress(), modules(journey, projection.states()), unlocked);
     }
 
     private JourneyStudySummary summary(Journey journey, AccessContext access) {
@@ -215,8 +224,12 @@ public class JourneyStudyService {
 
     private JourneyContentView contentView(JourneyStage stage, StudyState state) {
         LearningResource resource = stage.getLearningResource();
+        boolean hasSnapshot = stage.getResourceSnapshotFormat() != null;
+        boolean hasExternalSource = hasSnapshot
+                ? stage.getResourceSnapshotSourceUrl() != null || stage.getResourceSnapshotSourceLabel() != null
+                : resource != null && (resource.getSourceUrl() != null || resource.getSourceLabel() != null);
         return new JourneyContentView(stage.getId(), stage.getTitle(), stage.getDescription(), state,
-                resource == null ? null : resource.getId(), resource != null && resource.getSourceUrl() != null);
+                resource == null ? null : resource.getId(), hasExternalSource);
     }
 
     private JourneyContentDetailView detail(JourneyStage stage, StudyState state) {
@@ -224,10 +237,10 @@ public class JourneyStudyService {
         return new JourneyContentDetailView(
                 stage.getId(), stage.getTitle(), stage.getDescription(), state,
                 resource == null ? null : resource.getId(),
-                resource == null ? null : resource.getBody(),
-                resource == null ? null : resource.getFormat().name(),
-                resource == null ? null : resource.getSourceUrl(),
-                resource == null ? null : resource.getSourceLabel()
+                stage.getResourceSnapshotFormat() != null ? stage.getResourceSnapshotBody() : resource == null ? null : resource.getBody(),
+                stage.getResourceSnapshotFormat() != null ? stage.getResourceSnapshotFormat() : resource == null ? null : resource.getFormat().name(),
+                stage.getResourceSnapshotFormat() != null ? stage.getResourceSnapshotSourceUrl() : resource == null ? null : resource.getSourceUrl(),
+                stage.getResourceSnapshotFormat() != null ? stage.getResourceSnapshotSourceLabel() : resource == null ? null : resource.getSourceLabel()
         );
     }
 
@@ -256,7 +269,7 @@ public class JourneyStudyService {
     public enum StudyState { COMPLETED, CURRENT, LOCKED }
     public record JourneyProgressSummary(int completedContents, int totalContents, int percent) {}
     public record JourneyStudySummary(UUID id, String title, String description, JourneyProgressSummary progress, UUID currentContentId, String currentContentTitle, boolean started, Instant lastStudiedAt, UUID classroomId, String classroomName, String classroomCode) {}
-    public record JourneyStudyView(UUID id, String title, String description, JourneyProgressSummary progress, List<JourneyModuleView> modules) {}
+    public record JourneyStudyView(UUID id, String title, String description, JourneyProgressSummary progress, List<JourneyModuleView> modules, List<AchievementService.AchievementView> newlyUnlockedAchievements) {}
     public record JourneyModuleView(UUID id, String title, String description, List<JourneyContentView> contents) {}
     public record JourneyContentView(UUID id, String title, String description, StudyState state, UUID resourceId, boolean hasExternalSource) {}
     public record JourneyContentDetailView(UUID id, String title, String description, StudyState state, UUID resourceId, String body, String format, String sourceUrl, String sourceLabel) {}

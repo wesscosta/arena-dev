@@ -13,8 +13,8 @@ public class LearningResource {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "classroom_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "classroom_id")
     private Classroom classroom;
 
     @Column(nullable = false, length = 180)
@@ -47,6 +47,15 @@ public class LearningResource {
 
     @Column(name = "source_content_sha256", length = 64)
     private String sourceContentSha256;
+
+    @Column(name = "library_visible", nullable = false)
+    private boolean libraryVisible = false;
+
+    @Column(nullable = false)
+    private int revision = 1;
+
+    @Column(name = "archived_at")
+    private Instant archivedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
@@ -81,6 +90,19 @@ public class LearningResource {
         this.sourceType = sourceType;
         this.sourceUrl = sourceUrl;
         this.sourceLabel = sourceLabel;
+        if (this.id != null) this.revision++;
+        this.updatedAt = Instant.now();
+    }
+
+    public void publishToLibrary() {
+        this.libraryVisible = true;
+        this.archivedAt = null;
+        this.updatedAt = Instant.now();
+    }
+
+    public void archiveFromLibrary() {
+        this.libraryVisible = false;
+        this.archivedAt = Instant.now();
         this.updatedAt = Instant.now();
     }
 
@@ -103,6 +125,9 @@ public class LearningResource {
     public String getSourceReference() { return sourceReference; }
     public Instant getSourceSnapshotAt() { return sourceSnapshotAt; }
     public String getSourceContentSha256() { return sourceContentSha256; }
+    public boolean isLibraryVisible() { return libraryVisible; }
+    public int getRevision() { return revision; }
+    public Instant getArchivedAt() { return archivedAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

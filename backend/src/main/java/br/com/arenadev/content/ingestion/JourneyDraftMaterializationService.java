@@ -66,7 +66,7 @@ public class JourneyDraftMaterializationService {
                 JourneyUnlockRule unlock = globalPosition == 0
                         ? JourneyUnlockRule.IMMEDIATE
                         : JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED;
-                stage.update(
+                stage.updateConfiguration(
                         draftItem.title().trim(),
                         clean(draftItem.description()),
                         globalPosition,
@@ -74,9 +74,11 @@ public class JourneyDraftMaterializationService {
                         unlock,
                         JourneyCompletionRule.MANUAL,
                         section,
-                        JourneyItemType.CONTENT,
-                        resource
+                        JourneyItemType.CONTENT
                 );
+                if (resource != null) {
+                    stage.materializeResource(resource);
+                }
                 journey.addStage(stage);
                 globalPosition++;
             }

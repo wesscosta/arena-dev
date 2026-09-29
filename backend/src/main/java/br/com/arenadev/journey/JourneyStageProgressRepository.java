@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface JourneyStageProgressRepository extends JpaRepository<JourneyStageProgress, UUID> {
     Optional<JourneyStageProgress> findByStageIdAndEnrollmentId(UUID stageId, UUID enrollmentId);
     List<JourneyStageProgress> findByStageJourneyIdAndEnrollmentId(UUID journeyId, UUID enrollmentId);
+    java.util.List<JourneyStageProgress> findByEnrollmentStudentIdAndCompletedAtIsNotNull(java.util.UUID studentId);
 }

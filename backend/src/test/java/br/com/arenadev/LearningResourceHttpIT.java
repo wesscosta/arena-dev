@@ -56,6 +56,8 @@ class LearningResourceHttpIT {
 
     @Autowired
     private JourneyService journeys;
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     private HttpClient client;
     private String csrfToken;
@@ -155,6 +157,73 @@ class LearningResourceHttpIT {
         HttpResponse<String> delete = send("DELETE", "/api/learning-resources/" + resourceId, null, true);
         assertThat(delete.statusCode()).isEqualTo(409);
         assertThat(delete.body()).contains("vinculado a uma jornada");
+    }
+
+    @Test
+    void libraryResourceCanBeReusedAcrossClassroomsWithoutMutatingJourneySnapshot() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        UUID classroomId = classrooms.create("Biblioteca " + suffix, "LIB" + suffix).id();
+        HttpResponse<String> create = send("POST", "/api/library/resources",
+                "{\"title\":\"Python — Variáveis\",\"body\":\"Versão 1\",\"format\":\"MARKDOWN\",\"sourceType\":\"MANUAL\"}", true);
+        assertThat(create.statusCode()).isEqualTo(201);
+        assertThat(create.body()).contains("\"libraryVisible\":true", "\"revision\":1", "\"classroomId\":null");
+        String resourceId = create.body().replaceFirst(".*\\\"id\\\":\\\"([^\\\"]+)\\\".*", "$1");
+
+        var journey = journeys.create(new JourneyService.JourneyInput(classroomId, "Jornada com Biblioteca", null,
+                java.util.List.of(new JourneyService.StageInput(null, "Variáveis", null, null,
+                        JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, "Fundamentos",
+                        JourneyItemType.CONTENT, UUID.fromString(resourceId)))));
+        HttpResponse<String> update = send("PUT", "/api/library/resources/" + resourceId,
+                "{\"title\":\"Python — Variáveis\",\"body\":\"Versão 2\",\"format\":\"MARKDOWN\",\"sourceType\":\"MANUAL\"}", true);
+        assertThat(update.statusCode()).isEqualTo(200);
+        assertThat(update.body()).contains("\"revision\":2");
+
+        String stageId = journey.stages().getFirst().id().toString();
+        journeys.update(journey.id(), new JourneyService.JourneyInput(
+                classroomId,
+                "Jornada com Biblioteca — título revisado",
+                "Alteração estrutural sem rematerialização",
+                java.util.List.of(new JourneyService.StageInput(
+                        stageId, "Variáveis revisadas", "Descrição revisada", null,
+                        JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, "Fundamentos",
+                        JourneyItemType.CONTENT, UUID.fromString(resourceId)
+                ))
+        ));
+
+        String snapshot = jdbc.queryForObject(
+                "select resource_snapshot_body from journey_stages where journey_id = ?",
+                String.class, journey.id());
+        Integer snapshotRevision = jdbc.queryForObject(
+                "select resource_snapshot_revision from journey_stages where journey_id = ?",
+                Integer.class, journey.id());
+        assertThat(snapshot).isEqualTo("Versão 1");
+        assertThat(snapshotRevision).isEqualTo(1);
+
+        assertThat(send("GET", "/api/library/resources?q=Variáveis", null, false).body()).contains(resourceId);
+        assertThat(send("GET", "/api/library/resources?q=Inexistente", null, false).body()).doesNotContain(resourceId);
+
+        assertThat(send("POST", "/api/library/resources/" + resourceId + "/archive", "{}", true).statusCode()).isEqualTo(204);
+        assertThat(send("GET", "/api/library/resources", null, false).body()).doesNotContain(resourceId);
+        assertThat(send("GET", "/api/library/resources?archived=true", null, false).body()).contains(resourceId);
+
+        journeys.update(journey.id(), new JourneyService.JourneyInput(
+                classroomId,
+                "Jornada ainda válida com origem arquivada",
+                null,
+                java.util.List.of(new JourneyService.StageInput(
+                        stageId, "Variáveis revisadas", null, null,
+                        JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, "Fundamentos",
+                        JourneyItemType.CONTENT, UUID.fromString(resourceId)
+                ))
+        ));
+        assertThat(jdbc.queryForObject(
+                "select resource_snapshot_revision from journey_stages where journey_id = ?",
+                Integer.class, journey.id())).isEqualTo(1);
+
+        HttpResponse<String> restore = send("POST", "/api/library/resources/" + resourceId + "/restore", "{}", true);
+        assertThat(restore.statusCode()).isEqualTo(200);
+        assertThat(restore.body()).contains("\"libraryVisible\":true", "\"archivedAt\":null");
+        assertThat(send("GET", "/api/library/resources", null, false).body()).contains(resourceId);
     }
 
     @Test

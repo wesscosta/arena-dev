@@ -4,4 +4,5 @@ import java.util.*;
 public interface StudentJourneyStageProgressRepository extends JpaRepository<StudentJourneyStageProgress,UUID>{
  Optional<StudentJourneyStageProgress> findByStageIdAndAccessId(UUID stageId,UUID accessId);
  List<StudentJourneyStageProgress> findByStageJourneyIdAndAccessId(UUID journeyId,UUID accessId);
+ List<StudentJourneyStageProgress> findByAccessStudentIdAndCompletedAtIsNotNull(UUID studentId);
 }

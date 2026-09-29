@@ -265,9 +265,13 @@ public class JourneyService {
             if (activity != null && !activity.getClassroom().getId().equals(journey.getClassroom().getId())) {
                 throw new IllegalArgumentException("A atividade da etapa precisa pertencer à mesma turma da jornada.");
             }
-            LearningResource resource = input.learningResourceId() == null ? null : requireLearningResource(input.learningResourceId());
-            if (resource != null && !resource.getClassroom().getId().equals(journey.getClassroom().getId())) {
-                throw new IllegalArgumentException("O recurso da etapa precisa pertencer à mesma turma da jornada.");
+            UUID currentResourceId = stage.getLearningResource() == null ? null : stage.getLearningResource().getId();
+            UUID requestedResourceId = input.learningResourceId();
+            boolean resourceAssociationChanged = !Objects.equals(currentResourceId, requestedResourceId);
+            LearningResource resource = requestedResourceId == null ? null : requireLearningResource(requestedResourceId);
+            if (resourceAssociationChanged && resource != null && !resource.isLibraryVisible()
+                    && (resource.getClassroom() == null || !resource.getClassroom().getId().equals(journey.getClassroom().getId()))) {
+                throw new IllegalArgumentException("O recurso da etapa precisa pertencer à mesma turma ou estar disponível na Biblioteca.");
             }
 
             JourneySection section = null;
@@ -300,7 +304,14 @@ public class JourneyService {
             JourneyItemType itemType = input.itemType() != null
                     ? input.itemType()
                     : activity == null ? JourneyItemType.CONTENT : JourneyItemType.ACTIVITY;
-            stage.update(input.title().trim(), clean(input.description()), position, activity, unlockRule, completionRule, section, itemType, resource);
+            stage.updateConfiguration(input.title().trim(), clean(input.description()), position, activity, unlockRule, completionRule, section, itemType);
+            if (resourceAssociationChanged) {
+                if (resource == null) {
+                    stage.detachLearningResource();
+                } else {
+                    stage.materializeResource(resource);
+                }
+            }
         }
 
         List<JourneyStage> staleStages = journey.getStages().stream()

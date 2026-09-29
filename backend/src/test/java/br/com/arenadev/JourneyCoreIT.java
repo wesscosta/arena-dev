@@ -2,6 +2,7 @@ package br.com.arenadev;
 
 import br.com.arenadev.activity.Activity;
 import br.com.arenadev.activity.ActivityRepository;
+import br.com.arenadev.achievement.*;
 import br.com.arenadev.classroom.*;
 import br.com.arenadev.journey.*;
 import br.com.arenadev.content.*;
@@ -53,9 +54,12 @@ class JourneyCoreIT {
     @Autowired private JourneyRedemptionCodeRepository redemptionCodeRepository;
     @Autowired private StudentJourneyAccessRepository studentJourneyAccessRepository;
     @Autowired private StudentJourneyStageProgressRepository studentJourneyProgressRepository;
+    @Autowired private StudentAchievementRepository studentAchievementRepository;
+    @Autowired private AchievementService achievementService;
 
     @BeforeEach
     void cleanDatabase() {
+        studentAchievementRepository.deleteAll();
         studentJourneyProgressRepository.deleteAll();
         studentJourneyAccessRepository.deleteAll();
         redemptionCodeRepository.deleteAll();
@@ -418,6 +422,32 @@ class JourneyCoreIT {
                 .containsExactly("Fundamentos da Web", "Fundamentos da Web");
         assertThat(updated.stages()).extracting(JourneyService.StageView::itemType)
                 .containsExactly(JourneyItemType.CONTENT, JourneyItemType.CONTENT);
+    }
+
+    @Test
+    void achievementsAreDerivedFromProgressAndRemainIdempotent() {
+        Fixture fixture = fixture("Conquistas", "ACH-1");
+        JourneyService.JourneyView journey = createPublishedJourney(fixture, List.of(
+                new JourneyService.StageInput(null, "Conteúdo 1", null, null, JourneyUnlockRule.IMMEDIATE,
+                        JourneyCompletionRule.MANUAL, null, "Módulo 1", JourneyItemType.CONTENT, null),
+                new JourneyService.StageInput(null, "Conteúdo 2", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED,
+                        JourneyCompletionRule.MANUAL, null, "Módulo 1", JourneyItemType.CONTENT, null)
+        ));
+        StudyPrincipal principal = new StudyPrincipal(fixture.enrollment().getStudent().getId(), fixture.enrollment().getId(),
+                fixture.classroom().getId(), StudyPrincipal.Role.STUDENT);
+
+        var first = journeyStudyService.complete(journey.id(), journey.stages().getFirst().id(), principal);
+        assertThat(first.newlyUnlockedAchievements()).extracting(AchievementService.AchievementView::code)
+                .containsExactly(AchievementCode.FIRST_CONTENT_COMPLETED);
+
+        var second = journeyStudyService.complete(journey.id(), journey.stages().get(1).id(), principal);
+        assertThat(second.newlyUnlockedAchievements()).extracting(AchievementService.AchievementView::code)
+                .containsExactlyInAnyOrder(AchievementCode.FIRST_MODULE_COMPLETED, AchievementCode.FIRST_JOURNEY_COMPLETED);
+
+        journeyStudyService.complete(journey.id(), journey.stages().get(1).id(), principal);
+        assertThat(studentAchievementRepository.findByStudentIdOrderByUnlockedAtAsc(fixture.enrollment().getStudent().getId()))
+                .hasSize(3);
+        assertThat(achievementService.list(fixture.enrollment().getStudent().getId()).unlocked()).isEqualTo(3);
     }
 
     @Test

@@ -33,8 +33,69 @@ public class LearningResourceService {
     }
 
     @Transactional(readOnly = true)
+    public List<ResourceView> listLibrary(String query, boolean archived) {
+        String normalizedQuery = clean(query);
+        List<LearningResource> rows = archived
+                ? resources.findByArchivedAtIsNotNullOrderByUpdatedAtDesc()
+                : normalizedQuery == null
+                    ? resources.findByLibraryVisibleTrueOrderByUpdatedAtDesc()
+                    : resources.searchLibrary(normalizedQuery);
+        return rows.stream().map(this::view).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ResourceView getLibrary(UUID id) {
+        LearningResource resource = requireResource(id);
+        if (!resource.isLibraryVisible() && resource.getArchivedAt() == null) {
+            throw new ResourceNotFoundException("Conteúdo da Biblioteca não encontrado.");
+        }
+        return view(resource);
+    }
+
+    @Transactional(readOnly = true)
     public ResourceView get(UUID id) {
         return view(requireResource(id));
+    }
+
+    @Transactional
+    public ResourceView createLibrary(LibraryResourceInput input) {
+        validateLibrary(input);
+        LearningResource resource = new LearningResource(null, input.title().trim());
+        resource.update(input.title().trim(), clean(input.summary()), clean(input.body()),
+                input.format() == null ? LearningResourceFormat.MARKDOWN : input.format(),
+                input.sourceType() == null ? LearningResourceSourceType.MANUAL : input.sourceType(),
+                clean(input.sourceUrl()), clean(input.sourceLabel()));
+        resource.publishToLibrary();
+        return view(resources.save(resource));
+    }
+
+    @Transactional
+    public ResourceView updateLibrary(UUID id, LibraryResourceInput input) {
+        validateLibrary(input);
+        LearningResource resource = requireResource(id);
+        if (!resource.isLibraryVisible()) throw new ResourceNotFoundException("Conteúdo da Biblioteca não encontrado.");
+        resource.update(input.title().trim(), clean(input.summary()), clean(input.body()),
+                input.format() == null ? resource.getFormat() : input.format(),
+                input.sourceType() == null ? resource.getSourceType() : input.sourceType(),
+                clean(input.sourceUrl()), clean(input.sourceLabel()));
+        return view(resource);
+    }
+
+    @Transactional
+    public void archiveLibrary(UUID id) {
+        LearningResource resource = requireResource(id);
+        if (!resource.isLibraryVisible()) throw new ResourceNotFoundException("Conteúdo da Biblioteca não encontrado.");
+        resource.archiveFromLibrary();
+    }
+
+    @Transactional
+    public ResourceView restoreLibrary(UUID id) {
+        LearningResource resource = requireResource(id);
+        if (resource.getArchivedAt() == null) {
+            throw new ResourceNotFoundException("Conteúdo arquivado não encontrado.");
+        }
+        resource.publishToLibrary();
+        return view(resource);
     }
 
     @Transactional
@@ -82,6 +143,15 @@ public class LearningResourceService {
         resources.delete(resource);
     }
 
+    private void validateLibrary(LibraryResourceInput input) {
+        if (input == null || input.title() == null || input.title().isBlank()) {
+            throw new IllegalArgumentException("Título do conteúdo é obrigatório.");
+        }
+        if (input.format() == LearningResourceFormat.LINK && (input.sourceUrl() == null || input.sourceUrl().isBlank())) {
+            throw new IllegalArgumentException("Recurso do tipo link precisa de URL.");
+        }
+    }
+
     private void validate(ResourceInput input) {
         if (input == null || input.classroomId() == null) {
             throw new IllegalArgumentException("Turma é obrigatória.");
@@ -107,7 +177,7 @@ public class LearningResourceService {
     private ResourceView view(LearningResource resource) {
         return new ResourceView(
                 resource.getId(),
-                resource.getClassroom().getId(),
+                resource.getClassroom() == null ? null : resource.getClassroom().getId(),
                 resource.getTitle(),
                 resource.getSummary(),
                 resource.getBody(),
@@ -115,6 +185,9 @@ public class LearningResourceService {
                 resource.getSourceType(),
                 resource.getSourceUrl(),
                 resource.getSourceLabel(),
+                resource.isLibraryVisible(),
+                resource.getRevision(),
+                resource.getArchivedAt(),
                 resource.getCreatedAt(),
                 resource.getUpdatedAt()
         );
@@ -134,6 +207,11 @@ public class LearningResourceService {
             String sourceLabel
     ) {}
 
+    public record LibraryResourceInput(
+            String title, String summary, String body, LearningResourceFormat format,
+            LearningResourceSourceType sourceType, String sourceUrl, String sourceLabel
+    ) {}
+
     public record ResourceView(
             UUID id,
             UUID classroomId,
@@ -144,6 +222,9 @@ public class LearningResourceService {
             LearningResourceSourceType sourceType,
             String sourceUrl,
             String sourceLabel,
+            boolean libraryVisible,
+            int revision,
+            Instant archivedAt,
             Instant createdAt,
             Instant updatedAt
     ) {}
