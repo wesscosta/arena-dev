@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { materializeContentDraft, type ContentDraft } from "@/lib/content-ingestion-api";
+import { fetchContentLibrary, type LearningResource } from "@/lib/learning-resource-api";
 import JourneyCreationWizard from "@/components/JourneyCreationWizard";
 import {
   archiveJourney,
@@ -77,6 +78,10 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
   const [creationOpen, setCreationOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [redemption, setRedemption] = useState<JourneyRedemptionCode | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryResources, setLibraryResources] = useState<LearningResource[]>([]);
+  const [libraryQuery, setLibraryQuery] = useState("");
+  const [libraryTargetModule, setLibraryTargetModule] = useState<string | undefined>();
 
   useEffect(() => {
     if (!draft?.id || draft.status !== "PUBLISHED") { setRedemption(null); return; }
@@ -148,6 +153,33 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
         sectionTitle: sectionTitle ?? draft.stages.at(-1)?.sectionTitle ?? "Módulo 1",
       }],
     });
+  }
+
+  async function openLibrary(sectionTitle?: string) {
+    if (!draft || structuralLocked) return;
+    setLibraryTargetModule(sectionTitle);
+    setLibraryOpen(true);
+    try { setLibraryResources(await fetchContentLibrary()); }
+    catch (error) { notify(error instanceof Error ? error.message : "Não foi possível carregar a Biblioteca."); }
+  }
+
+  function addFromLibrary(resource: LearningResource) {
+    if (!draft || structuralLocked) return;
+    const first = draft.stages.length === 0;
+    setDraft({
+      ...draft,
+      stages: [...draft.stages, {
+        title: resource.title,
+        description: resource.summary ?? "",
+        unlockRule: first ? "IMMEDIATE" : "PREVIOUS_STAGE_COMPLETED",
+        completionRule: "MANUAL",
+        itemType: "CONTENT",
+        sectionTitle: libraryTargetModule ?? draft.stages.at(-1)?.sectionTitle ?? "Módulo 1",
+        learningResourceId: resource.id,
+      }],
+    });
+    setLibraryOpen(false);
+    notify(`${resource.title} foi adicionado ao rascunho. O snapshot será criado ao salvar a Jornada.`);
   }
 
   function addModule() {
@@ -346,7 +378,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
                       </div>
                       {!structuralLocked && (
                         <div className={styles.builderActions}>
-                          <button className={styles.secondary} type="button" onClick={addModule}>+ Adicionar módulo</button>
+                          <button className={styles.secondary} type="button" onClick={()=>void openLibrary()}>Biblioteca</button><button className={styles.secondary} type="button" onClick={addModule}>+ Adicionar módulo</button>
                         </div>
                       )}
                     </div>
@@ -374,7 +406,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
                                 <div className={styles.moduleControls}>
                                   <button type="button" title="Mover módulo para cima" disabled={groupIndex === 0} onClick={() => moveModule(groupIndex, -1)}>↑</button>
                                   <button type="button" title="Mover módulo para baixo" disabled={groupIndex === stageGroups.length - 1} onClick={() => moveModule(groupIndex, 1)}>↓</button>
-                                  <button type="button" onClick={() => addStage(group.title, group.entries[0]?.stage.sectionId)}>+ Adicionar conteúdo</button>
+                                  <button type="button" onClick={() => void openLibrary(group.title)}>Biblioteca</button><button type="button" onClick={() => addStage(group.title, group.entries[0]?.stage.sectionId)}>+ Adicionar conteúdo</button>
                                 </div>
                               )}
                             </div>
@@ -434,6 +466,23 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
           )}
         </section>
       </div>
+      {libraryOpen && (
+        <div className={styles.libraryBackdrop}>
+          <section className={styles.libraryPicker} role="dialog" aria-modal="true" aria-labelledby="library-picker-title">
+            <header><div><span>BIBLIOTECA</span><h3 id="library-picker-title">Adicionar material</h3><p>Escolha um material reutilizável. A Journey receberá um snapshot ao ser salva.</p></div><button type="button" aria-label="Fechar Biblioteca" onClick={()=>setLibraryOpen(false)}>×</button></header>
+            <input className={styles.librarySearch} value={libraryQuery} onChange={(event)=>setLibraryQuery(event.target.value)} placeholder="Buscar materiais..." aria-label="Buscar materiais na Biblioteca"/>
+            <div className={styles.libraryResults}>
+              {libraryResources.filter((resource)=>[resource.title,resource.summary??""].join(" ").toLowerCase().includes(libraryQuery.toLowerCase())).map((resource)=>(
+                <button type="button" key={resource.id} onClick={()=>addFromLibrary(resource)}>
+                  <span><strong>{resource.title}</strong><small>{resource.summary || "Sem descrição."}</small></span>
+                  <em>Revisão {resource.revision}</em>
+                </button>
+              ))}
+              {libraryResources.length===0 && <p className={styles.libraryEmpty}>Sua Biblioteca ainda está vazia.</p>}
+            </div>
+          </section>
+        </div>
+      )}
       <JourneyCreationWizard
         open={creationOpen}
         classroomId={classroomId}

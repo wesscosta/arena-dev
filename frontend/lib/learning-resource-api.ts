@@ -5,7 +5,7 @@ export type LearningResourceSourceType = "MANUAL" | "AI" | "TEMPLATE" | "TEXT" |
 
 export type LearningResource = {
   id: string;
-  classroomId: string;
+  classroomId: string | null;
   title: string;
   summary: string | null;
   body: string | null;
@@ -13,6 +13,9 @@ export type LearningResource = {
   sourceType: LearningResourceSourceType;
   sourceUrl: string | null;
   sourceLabel: string | null;
+  libraryVisible: boolean;
+  revision: number;
+  archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -73,4 +76,38 @@ export async function deleteLearningResource(id: string) {
     try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
     throw new LearningResourceApiError(body?.message || `Falha ao excluir conteúdo (${response.status}).`, response.status);
   }
+}
+
+export type LibraryResourceInput = Omit<LearningResourceInput, "classroomId">;
+
+export function fetchContentLibrary(query = "", archived = false) {
+  const params = new URLSearchParams();
+  if (query.trim()) params.set("q", query.trim());
+  if (archived) params.set("archived", "true");
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return request<LearningResource[]>(`/api/library/resources${suffix}`);
+}
+
+export function fetchLibraryResource(id: string) {
+  return request<LearningResource>(`/api/library/resources/${encodeURIComponent(id)}`);
+}
+
+export function createLibraryResource(input: LibraryResourceInput) {
+  return request<LearningResource>("/api/library/resources", { method: "POST", body: JSON.stringify(input) });
+}
+
+export function updateLibraryResource(id: string, input: LibraryResourceInput) {
+  return request<LearningResource>(`/api/library/resources/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(input) });
+}
+
+export async function archiveLibraryResource(id: string) {
+  const response = await apiFetch(`/api/library/resources/${encodeURIComponent(id)}/archive`, { method: "POST" });
+  if (!response.ok) {
+    let body: ApiErrorBody | undefined;
+    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
+    throw new LearningResourceApiError(body?.message || `Falha ao arquivar conteúdo (${response.status}).`, response.status);
+  }
+}
+export function restoreLibraryResource(id: string) {
+  return request<LearningResource>(`/api/library/resources/${encodeURIComponent(id)}/restore`, { method: "POST", body: "{}" });
 }

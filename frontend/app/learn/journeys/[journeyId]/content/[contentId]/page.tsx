@@ -49,6 +49,7 @@ export default function ContentReaderPage() {
     setCompleting(true);
     try {
       const updated = await completeStudyContent(journeyId, contentId, data.token);
+      updated.newlyUnlockedAchievements.forEach((achievement) => window.dispatchEvent(new CustomEvent("arena:achievement-unlocked", { detail: { title: achievement.title, description: achievement.description } })));
       const flat = updated.modules.flatMap(module => module.contents);
       const next = flat.find(content => content.state === "CURRENT");
       router.push(next ? `/learn/journeys/${journeyId}/content/${next.id}` : `/learn/journeys/${journeyId}`);

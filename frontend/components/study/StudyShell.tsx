@@ -17,6 +17,17 @@ export default function StudyShell({ children }: { children: ReactNode }) {
   const achievementsActive = pathname.startsWith("/learn/achievements");
   const homeActive = pathname === "/learn";
   const [textScale, setTextScale] = useState(1);
+  const [achievementToast, setAchievementToast] = useState<{ title: string; description: string } | null>(null);
+  useEffect(() => {
+    function onAchievement(event: Event) {
+      const detail = (event as CustomEvent<{ title: string; description: string }>).detail;
+      if (!detail) return;
+      setAchievementToast(detail);
+      window.setTimeout(() => setAchievementToast(null), 5000);
+    }
+    window.addEventListener("arena:achievement-unlocked", onAchievement);
+    return () => window.removeEventListener("arena:achievement-unlocked", onAchievement);
+  }, []);
   useEffect(() => {
     const stored = Number(window.localStorage.getItem("arena-dev:study-text-scale"));
     if ([0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2].includes(stored)) setTextScale(stored);
@@ -50,5 +61,6 @@ export default function StudyShell({ children }: { children: ReactNode }) {
       <header className={styles.mobileHeader}><Link href="/learn" className={styles.brand} aria-label="Arena Dev — Estudos"><span className={styles.brandMark}>A</span><span className={styles.brandCopy}><strong>ARENA DEV</strong><small>ESTUDOS</small></span></Link></header>
       <main className={styles.main}>{children}</main>
     </div>
+    {achievementToast && <div className={styles.achievementToast} role="status" aria-live="polite"><span><AchievementIcon /></span><div><small>Nova conquista</small><strong>{achievementToast.title}</strong><p>{achievementToast.description}</p></div></div>}
   </div>;
 }

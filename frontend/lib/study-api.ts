@@ -24,12 +24,17 @@ export type JourneyContentView = {
   hasExternalSource: boolean;
 };
 export type JourneyModuleView = { id: string | null; title: string; description: string | null; contents: JourneyContentView[] };
+export type AchievementCode = "FIRST_CONTENT_COMPLETED" | "FIRST_MODULE_COMPLETED" | "FIRST_JOURNEY_COMPLETED";
+export type AchievementView = { code: AchievementCode; title: string; description: string; unlocked: boolean; unlockedAt: string | null };
+export type AchievementSummary = { unlocked: number; total: number; items: AchievementView[] };
+
 export type JourneyStudyView = {
   id: string;
   title: string;
   description: string | null;
   progress: JourneyProgressSummary;
   modules: JourneyModuleView[];
+  newlyUnlockedAchievements: AchievementView[];
 };
 export type JourneyContentDetailView = JourneyContentView & {
   body: string | null;
@@ -64,6 +69,16 @@ export type LiveSessionSummary = {
   joinCode: string;
   startedAt: string;
 };
+
+export function fetchStudyAchievements(token: string) {
+  return request<AchievementSummary>("/api/learn/achievements", token);
+}
+export async function fetchAllStudyAchievements(): Promise<AchievementSummary> {
+  for (const claim of studyDeviceClaims()) {
+    try { return await fetchStudyAchievements(claim.token); } catch { /* try another valid device claim */ }
+  }
+  throw new StudyApiError("Não foi possível carregar suas conquistas.", 401);
+}
 
 export function fetchStudyLiveSessions(token: string) {
   return request<LiveSessionSummary[]>("/api/learn/live", token);

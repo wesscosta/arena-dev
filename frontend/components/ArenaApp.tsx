@@ -15,6 +15,7 @@ import PollPanel from "@/components/PollPanel";
 import QuizPanel from "@/components/QuizPanel";
 import SessionAccessCard from "@/components/SessionAccessCard";
 import JourneyManager from "@/components/JourneyManager";
+import LibraryWorkspace from "@/components/LibraryWorkspace";
 import SessionTimeline from "@/components/SessionTimeline";
 import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
 import MicrosoftIntegrationConsole from "@/components/MicrosoftIntegrationConsole";
@@ -79,7 +80,7 @@ import {
   classroomThemePresentation,
 } from "@/lib/classroom-theme";
 
-type View = "dashboard" | "classroom" | "classroom-settings" | "arena" | "integrations" | "settings";
+type View = "dashboard" | "library" | "classroom" | "classroom-settings" | "arena" | "integrations" | "settings";
 type ClassroomTab = "home" | "students" | "activities" | "journeys" | "ranking" | "history";
 type ArenaDynamic = "runbook" | "draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss";
 type ArenaTool = "timer" | "groups" | "attendance" | "score" | null;
@@ -130,6 +131,7 @@ function ArenaGlyph({ name }: { name: ArenaGlyphName }) {
 
 const VIEW_LABEL: Record<View, string> = {
   dashboard: "Visão geral",
+  library: "Biblioteca",
   classroom: "Turma",
   "classroom-settings": "Gerenciar turma",
   arena: "Arena",
@@ -428,6 +430,13 @@ export default function ArenaApp() {
                     current: view === "classroom",
                   } satisfies BreadcrumbItem]
                 : []),
+              ...(view === "library"
+                ? [{
+                    id: "library",
+                    label: "Biblioteca",
+                    current: true,
+                  } satisfies BreadcrumbItem]
+                : []),
               ...(view === "arena"
                 ? [{
                     id: "arena",
@@ -460,6 +469,7 @@ export default function ArenaApp() {
           />
 
           <div className="topbar-actions app-topbar-actions">
+            <button type="button" className="button ghost" aria-current={view === "library" ? "page" : undefined} onClick={() => setView("library")}>Biblioteca</button>
             <Menu
               trigger={(triggerProps) => (
                 <button
@@ -508,6 +518,10 @@ export default function ArenaApp() {
 
         <section className={view === "arena" ? "content arena-content-full" : "content"}>
           {apiError && <div className="api-alert" role="alert" aria-live="assertive"><strong>API indisponível.</strong><span>{apiError}</span><button className="text-button" onClick={() => { void refreshClassroomDomain(); }}>Tentar novamente</button></div>}
+
+          {view === "library" && (
+            <LibraryWorkspace classrooms={data.classrooms} notify={notify} />
+          )}
 
           {view === "dashboard" && (
             <OverviewView
