@@ -379,6 +379,46 @@ Markdown / Notion / Arquivo / IA
 
 `16.4A`, `16.4B` e `16.4C` estão implementados e o refinamento transversal do Student Shell foi consolidado. O ciclo é considerado fechado como **checkpoint**, não como release final da v0.8.
 
-Pendências de hardening: auditoria manual de acessibilidade, validação visual mobile/ultrawide, consolidação do CSS histórico, E2E e gates de release. `16.4D — Achievements Foundation` permanece reservado/não implementado. `16.5 — Content Library & Reuse` permanece marcador de roadmap e não foi antecipado.
+Pendências de hardening daquele corte: auditoria manual de acessibilidade, validação visual mobile/ultrawide, consolidação do CSS histórico, E2E e gates de release. Posteriormente, 16.4D — Achievements Foundation e 16.5 até 16.5B.2 foram implementados; a sequência corrente segue em 16.5C.
 
 Ver [`CLOSURE_16_4_STUDENT_EXPERIENCE.md`](CLOSURE_16_4_STUDENT_EXPERIENCE.md).
+
+### 16.4D — Achievements Foundation — concluído
+
+Fundação persistente e deliberadamente pequena: AchievementCode estático, StudentAchievement, migration V36, avaliação/reconciliação sobre as duas fontes de progresso e página real de Conquistas. Sem XP automático, ranking, streak, moedas, catálogo configurável ou rule engine.
+
+**Estado do 16.4:** A–D implementados; incremento funcional tecnicamente concluído. Próxima linha: **16.5 — Content Library & Reuse**.
+
+### 16.5.0 — Architecture Audit — concluído
+
+O gate confirmou que LearningResource deve ser evoluído, não duplicado por ContentLibraryItem. Recursos hoje pertencem à Classroom e JourneyStage lê a mesma linha mutável, portanto ainda não existe snapshot Biblioteca → Journey. A autenticação também é single-teacher em memória, sem entidade persistente de professor. Próximo passo: 16.5A — Library Core, começando pelo design de ownership futuro e snapshot/migration segura.
+
+### 16.5A — Library Core — implementado
+
+V37 evolui LearningResource para recurso reutilizável, com visibilidade de Biblioteca, revisão monotônica e arquivamento. JourneyStage materializa snapshot do recurso e o Student Reader lê esse snapshot, eliminando a mutabilidade retroativa Biblioteca → Journey. A API /api/library/resources oferece o primeiro CRUD global no modelo single-teacher atual.
+
+### 16.5B — Library Workspace & Reuse — implementado
+
+Biblioteca global do professor com lista editorial, busca, criação/edição, archive/restore e reuso nos dois contextos: Biblioteca → Journey e Journey → Biblioteca. O incremento prova o produto sem acoplar Notion/ingestão. Próximo: **16.5C — Ingestion → Library**.
+
+### 16.5B.1 — Library Editorial Refinement — implementado
+
+Editor da Biblioteca em largura útil, preview Markdown simultâneo no desktop e alternável em telas menores. O reader continua editorialmente limitado. Mudanças semânticas de conteúdo não foram antecipadas.
+
+### 16.5C — Semantic Content Foundation & Ingestion → Library — PLANEJADO
+
+Próximo incremento documentado em INCREMENT_16_5C_PLAN.md: metadata semântica, Arena Canonical Markdown, canonicalizer, parser estrutural H1–H6, ingestão para Biblioteca, preview/review, discovery e contrato arquitetural para RAG. Não implementado neste ciclo.
+
+### Sequência final planejada do 16.5 e fechamento da v0.8
+
+- `16.5C — Semantic Content Foundation & Ingestion → Library`: próximo incremento; canonicalização, metadata, estrutura semântica, ingestão revisável e contrato de RAG.
+- `16.5D — Organization & Discovery`: filtros, áreas/tags, paginação/ordenação e descoberta do acervo, sem taxonomia rígida prematura.
+- `16.5E — Revision Awareness & Snapshot Hardening`: atualização de snapshot somente por operação explícita, aviso de revisão disponível e preservação de snapshots existentes.
+- `16.5F — Advanced Reuse & Library Closure`: fechamento do domínio de Biblioteca e reuso avançado somente onde houver necessidade comprovada.
+- `Release Hardening Gate`: E2E, acessibilidade manual, mobile/ultrawide, autorização, migrations/restore, performance, dívida CSS, documentação e release candidate.
+
+`16.6 — Knowledge & Retrieval Foundation` fica planejado como evolução pós-v0.8/opcional. Não bloqueia a release e só deve começar com corpus real, métricas de retrieval e 16.5 estabilizado.
+
+### 16.5B.2 — Journey Snapshot Integrity Hardening — implementado
+
+A materialização Biblioteca → Journey agora é explícita: updates comuns preservam a revisão já copiada, inclusive quando a origem foi posteriormente editada ou arquivada. `JourneyStage.updateConfiguration()` não toca no snapshot; `materializeResource()` é a fronteira de escrita. O 16.5E continua responsável pela futura atualização explícita entre revisões.

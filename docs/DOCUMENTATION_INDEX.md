@@ -33,7 +33,7 @@
 
 Os incrementos `16.0 — Professor Arena Experience` e `16.1 — Journey Core` foram integrados à `main` pelos PRs #21 e #22.
 
-O `16.2 — Learning Resources & Content Ingestion` está concluído na branch `feat/v0.8-content-ingestion`. O `16.3` já cobre Study Experience e Structured Import até adapters/OAuth/UX do Notion. O `16.4 — Student Experience Shell & Workspace Visibility` está em execução; o [`16.4A — Student Workspace Visibility`](INCREMENT_16_4A.md) separa matrícula de exposição permanente do conteúdo e o [`16.4B — Live dentro do Student Shell`](INCREMENT_16_4B.md) adiciona discovery multi-turma e Live Hub reutilizando o runtime público, e o [`16.4C — Journey Discovery & Redemption`](INCREMENT_16_4C.md) permite vincular Jornadas ao perfil leve por código. Os três cortes estão implementados tecnicamente, restando o gate visual integrado. `16.4D — Achievements Foundation` fica reservado e não implementado. `16.5 — Content Library & Reuse` é o próximo domínio priorizado, começando pela auditoria de `LearningResource`.
+O 16.2 — Learning Resources & Content Ingestion e o 16.3 — Study Experience & Structured Import estão concluídos. O 16.4 — Student Experience está implementado tecnicamente até 16.4D — Achievements Foundation. Em 16.5 — Content Library & Reuse, a auditoria arquitetural, Library Core, workspace/reuse, refinamento editorial e snapshot hardening estão implementados até 16.5B.2; o próximo incremento planejado é 16.5C — Semantic Content Foundation & Ingestion → Library.
 
 ## Histórico
 
@@ -65,3 +65,16 @@ Não reescrever documentação histórica para fabricar evidência retroativa. Q
 
 **Atualizado em 28/09/2026 para consolidar 16.4A–C, reservar 16.4D sem implementação e preparar o gate de entrada do 16.5 — Content Library & Reuse.**
 - [`CLOSURE_16_4_STUDENT_EXPERIENCE.md`](CLOSURE_16_4_STUDENT_EXPERIENCE.md) — fechamento do ciclo 16.4, decisões consolidadas, gates e pendências.
+- [INCREMENT_16_4D.md](INCREMENT_16_4D.md) — Achievements Foundation: domínio, persistência, reconciliação, API, UX e gates.
+- [INCREMENT_16_5_0_ARCHITECTURE_AUDIT.md](INCREMENT_16_5_0_ARCHITECTURE_AUDIT.md) — gate arquitetural da Content Library: LearningResource, ownership, snapshot, ingestão e migration strategy.
+- [INCREMENT_16_5A.md](INCREMENT_16_5A.md) — Library Core: lifecycle global, revision, archive e snapshot Library → Journey.
+- [INCREMENT_16_5B.md](INCREMENT_16_5B.md) — Library Workspace & Reuse: UX editorial, busca, lifecycle e reuso bidirecional com Journey.
+- [INCREMENT_16_5C_PLAN.md](INCREMENT_16_5C_PLAN.md) — Planejamento de Semantic Content Foundation, ingestão canônica e preparação arquitetural para RAG.
+
+## Sequência de fechamento v0.8
+
+`16.5C → 16.5D → 16.5E → 16.5F → Release Hardening → v0.8`.
+
+`16.6 — Knowledge & Retrieval Foundation` é pós-v0.8/opcional e não bloqueia a release. O planejamento semântico/RAG inicial permanece em [`INCREMENT_16_5C_PLAN.md`](INCREMENT_16_5C_PLAN.md).
+
+- [`INCREMENT_16_5B_2_SNAPSHOT_HARDENING.md`](INCREMENT_16_5B_2_SNAPSHOT_HARDENING.md) — integridade do snapshot Biblioteca → Journey e preservação de revisão em updates comuns.

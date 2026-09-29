@@ -6,7 +6,7 @@
 >
 > **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Execução atual:** `16.3.8 — Content Ingestion & Structured Import` em fechamento técnico e `16.4 — Student Experience Shell & Workspace Visibility` em execução na branch `feat/v0.8-content-ingestion`; `16.4A — Student Workspace Visibility` implementado tecnicamente; validação visual é o gate restante.
+> **Execução atual:** 16.4 Student Experience está concluído tecnicamente até 16.4D — Achievements Foundation. A linha 16.5 — Content Library & Reuse já possui 16.5.0, 16.5A, 16.5B, 16.5B.1 e 16.5B.2 implementados; o próximo incremento planejado é 16.5C — Semantic Content Foundation & Ingestion → Library.
 
 ## Modelo do produto
 
@@ -268,7 +268,7 @@ Histórico da v0.6:
 - `v0.5.0` — histórica;
 - `v0.6.0` — baseline técnica encerrada e congelada;
 - `v0.7.0` — Educational Integrations; publicada e encerrada;
-- `v0.8` — Professor Experience & Journey MVP; linha ativa, `16.3.8` em fechamento técnico e `16.4 — Student Experience Shell & Workspace Visibility` em execução.
+- `v0.8` — Professor Experience & Journey MVP; linha ativa com Student Experience concluída tecnicamente até 16.4D e Content Library implementada até 16.5B.2; próximo incremento planejado: 16.5C.
 
 ## Licença
 
@@ -299,6 +299,36 @@ Checkpoint funcional/visual encerrado em **28/09/2026** para `16.4A–16.4C` e p
 - Style Guide do Student Shell com critérios de acessibilidade;
 - descrições/excerpts de importação sanitizados para não expor metadados técnicos ao aluno.
 
-O fechamento **não inclui** `16.4D — Achievements Foundation`, que permanece reservado, nem `16.5 — Content Library & Reuse`, que permanece como próxima linha candidata.
+Esse registro descreve o gate histórico daquele fechamento. Desde então, 16.4D — Achievements Foundation e a base de 16.5 — Content Library & Reuse até 16.5B.2 foram implementados; o estado corrente está nas seções mais recentes deste README.
 
 Detalhes e pendências: [`docs/CLOSURE_16_4_STUDENT_EXPERIENCE.md`](docs/CLOSURE_16_4_STUDENT_EXPERIENCE.md).
+
+### 16.4D — Achievements Foundation
+
+Implementado em 28/09/2026. Conquistas agora são marcos persistentes derivados do progresso real do Student: **Primeiro Passo**, **Primeiro Capítulo** e **Primeira Jornada**. A fundação é idempotente, global ao aluno/multi-turma, reconcilia progresso anterior e cobre tanto matrícula quanto Journey adicionada por redemption. Não concede XP, não altera progresso e não possui endpoint público de unlock.
+
+Detalhes: docs/INCREMENT_16_4D.md. Com A–D implementados, o **16.4 está tecnicamente completo**; hardening de release permanece separado.
+
+### 16.5.0 — Content Library Architecture Audit
+
+Concluído em 28/09/2026. A auditoria determinou que a Biblioteca deve evoluir LearningResource, evitando um ContentLibraryItem paralelo. Antes da V37 será necessário separar o recurso editável do snapshot executável da Journey e resolver ownership sem inventar uma entidade de professor que ainda não existe no modelo persistente.
+
+Detalhes: docs/INCREMENT_16_5_0_ARCHITECTURE_AUDIT.md.
+
+### 16.5A — Library Core
+
+A Content Library agora possui núcleo persistente e API administrativa. LearningResource foi evoluído sem duplicação de domínio e Journeys materializam snapshots imutáveis do recurso/revisão usada. Consulte docs/INCREMENT_16_5A.md.
+
+### 16.5B — Library Workspace & Reuse
+
+A Biblioteca agora possui workspace global do professor, autoria manual, busca, archive/restore e reuso bidirecional com o Journey Builder. O snapshot continua pertencendo à Journey; editar ou arquivar o material não altera Journeys existentes. Consulte docs/INCREMENT_16_5B.md.
+
+### Sequência de fechamento da v0.8
+
+Após o refinamento `16.5B.1`, a linha ativa segue por `16.5C` (fundação semântica e ingestão), `16.5D` (organização/discovery), `16.5E` (revision awareness e hardening de snapshots) e `16.5F` (reuso avançado/fechamento da Biblioteca). Em seguida, a v0.8 entra em **Release Hardening** transversal antes do release candidate.
+
+A futura `16.6 — Knowledge & Retrieval Foundation` fica fora do gate da v0.8: chunks, índices lexical/vetorial, embeddings, avaliação de retrieval e RAG/LLM só serão iniciados depois da estabilização do corpus e da Biblioteca.
+
+### 16.5B.2 — Journey Snapshot Integrity Hardening — implementado
+
+A materialização Biblioteca → Journey agora é explícita: updates comuns preservam a revisão já copiada, inclusive quando a origem foi posteriormente editada ou arquivada. `JourneyStage.updateConfiguration()` não toca no snapshot; `materializeResource()` é a fronteira de escrita. O 16.5E continua responsável pela futura atualização explícita entre revisões.

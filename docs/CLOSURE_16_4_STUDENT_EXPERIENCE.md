@@ -1,13 +1,14 @@
 # Fechamento do ciclo 16.4 — Student Experience Shell
 
 **Data:** 28/09/2026  
-**Status:** ciclo funcional e visual encerrado para checkpoint; itens futuros permanecem fora deste fechamento.
+**Status:** 16.4A–16.4D tecnicamente concluídos; hardening de release permanece separado.
 
 ## Escopo encerrado
 
 - **16.4A — Student Workspace Visibility:** liberação explícita da turma para estudo persistente, default OFF, política centralizada e suporte ao mesmo aluno em múltiplas turmas.
 - **16.4B — Live dentro do Student Shell:** descoberta de sessões ativas das turmas do aluno sem misturar a regra de publicação de Journey; entrada continua reutilizando o runtime existente.
 - **16.4C — Journey Discovery & Redemption:** código de acesso para descoberta/associação de Journey e persistência de acesso/progresso.
+- **16.4D — Achievements Foundation:** marcos persistentes derivados do progresso real, globais ao Student, idempotentes e sem XP implícito.
 - **Student Shell:** Home, Jornadas, Reader, Live e Conquistas compartilham navegação e linguagem visual.
 - **Journey UX:** timeline progressiva, capítulos recolhíveis, recolher/expandir tudo, estados concluído/atual/pendente/bloqueado e retomada.
 - **Reader:** medida editorial responsiva, navegação anterior/próximo e zoom global da área de estudos.
@@ -44,7 +45,6 @@
 - E2E do fluxo completo do aluno ainda é desejável para o release.
 
 ### Fora deste ciclo
-- **16.4D — Achievements Foundation:** reservado; não implementado.
 - **16.5 — Content Library & Reuse:** próximo domínio candidato; requer decisão arquitetural sobre ownership, proveniência, versionamento e referência vs. snapshot.
 - piloto real com alunos/professor e coleta de métricas continuam necessários para fechar a v0.8 como versão de produto.
 
