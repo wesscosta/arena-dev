@@ -2,8 +2,11 @@ package br.com.arenadev;
 
 import br.com.arenadev.activity.Activity;
 import br.com.arenadev.activity.ActivityRepository;
+import br.com.arenadev.achievement.*;
 import br.com.arenadev.classroom.*;
 import br.com.arenadev.journey.*;
+import br.com.arenadev.content.*;
+import br.com.arenadev.study.*;
 import br.com.arenadev.submission.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +41,8 @@ class JourneyCoreIT {
     }
 
     @Autowired private JourneyService journeyService;
+    @Autowired private JourneyStudyService journeyStudyService;
+    @Autowired private LearningResourceRepository learningResourceRepository;
     @Autowired private JourneyRepository journeyRepository;
     @Autowired private JourneyStageProgressRepository progressRepository;
     @Autowired private ActivitySubmissionRepository submissionRepository;
@@ -45,11 +50,22 @@ class JourneyCoreIT {
     @Autowired private EnrollmentRepository enrollmentRepository;
     @Autowired private StudentRepository studentRepository;
     @Autowired private ClassroomRepository classroomRepository;
+    @Autowired private JourneyRedemptionService redemptionService;
+    @Autowired private JourneyRedemptionCodeRepository redemptionCodeRepository;
+    @Autowired private StudentJourneyAccessRepository studentJourneyAccessRepository;
+    @Autowired private StudentJourneyStageProgressRepository studentJourneyProgressRepository;
+    @Autowired private StudentAchievementRepository studentAchievementRepository;
+    @Autowired private AchievementService achievementService;
 
     @BeforeEach
     void cleanDatabase() {
+        studentAchievementRepository.deleteAll();
+        studentJourneyProgressRepository.deleteAll();
+        studentJourneyAccessRepository.deleteAll();
+        redemptionCodeRepository.deleteAll();
         progressRepository.deleteAll();
         journeyRepository.deleteAll();
+        learningResourceRepository.deleteAll();
         submissionRepository.deleteAll();
         activityRepository.deleteAll();
         enrollmentRepository.deleteAll();
@@ -167,6 +183,274 @@ class JourneyCoreIT {
     }
 
     @Test
+    void studyApiProjectionIsSequentialAndReturnsContentWithoutJoinSession() {
+        Fixture fixture = fixture("Estudo", "JRNY-STUDY");
+        LearningResource firstResource = new LearningResource(fixture.classroom(), "HTTP");
+        firstResource.update("HTTP", "Base da Web", "# HTTP\nConteúdo de estudo.", LearningResourceFormat.MARKDOWN,
+                LearningResourceSourceType.MANUAL, null, "Material do professor");
+        firstResource = learningResourceRepository.save(firstResource);
+        LearningResource secondResource = new LearningResource(fixture.classroom(), "REST");
+        secondResource.update("REST", null, "# REST", LearningResourceFormat.MARKDOWN,
+                LearningResourceSourceType.MANUAL, null, null);
+        secondResource = learningResourceRepository.save(secondResource);
+
+        JourneyService.JourneyView created = journeyService.create(new JourneyService.JourneyInput(
+                fixture.classroom().getId(), "Web", "Estudo sequencial", List.of(
+                        new JourneyService.StageInput(null, "HTTP", "Fundamentos", null, JourneyUnlockRule.IMMEDIATE,
+                                JourneyCompletionRule.MANUAL, null, "Fundamentos", JourneyItemType.CONTENT, firstResource.getId()),
+                        new JourneyService.StageInput(null, "REST", null, null, JourneyUnlockRule.IMMEDIATE,
+                                JourneyCompletionRule.MANUAL, null, "Fundamentos", JourneyItemType.CONTENT, secondResource.getId())
+                )
+        ));
+        JourneyService.JourneyView published = journeyService.publish(created.id());
+        StudyPrincipal principal = new StudyPrincipal(fixture.enrollment().getStudent().getId(), fixture.enrollment().getId(),
+                fixture.classroom().getId(), StudyPrincipal.Role.STUDENT);
+
+        var catalog = journeyStudyService.list(principal);
+        assertThat(catalog).hasSize(1);
+        assertThat(catalog.getFirst().currentContentTitle()).isEqualTo("HTTP");
+
+        var initial = journeyStudyService.get(published.id(), principal);
+        assertThat(initial.modules()).hasSize(1);
+        assertThat(initial.modules().getFirst().contents()).extracting(JourneyStudyService.JourneyContentView::state)
+                .containsExactly(JourneyStudyService.StudyState.CURRENT, JourneyStudyService.StudyState.LOCKED);
+
+        var detail = journeyStudyService.content(published.id(), published.stages().getFirst().id(), principal);
+        assertThat(detail.body()).contains("Conteúdo de estudo");
+        assertThat(detail.format()).isEqualTo("MARKDOWN");
+
+        var after = journeyStudyService.complete(published.id(), published.stages().getFirst().id(), principal);
+        assertThat(after.progress().percent()).isEqualTo(50);
+        assertThat(after.modules().getFirst().contents()).extracting(JourneyStudyService.JourneyContentView::state)
+                .containsExactly(JourneyStudyService.StudyState.COMPLETED, JourneyStudyService.StudyState.CURRENT);
+    }
+
+    @Test
+    void studyContinuityResumesFirstIncompleteContentAndFinishesJourney() {
+        Fixture fixture = fixture("Continuidade", "JRNY-CONT");
+        JourneyService.JourneyView journey = createPublishedJourney(fixture, List.of(
+                stage("Primeiro", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL),
+                stage("Segundo", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL),
+                stage("Terceiro", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL)
+        ));
+        StudyPrincipal principal = new StudyPrincipal(fixture.enrollment().getStudent().getId(), fixture.enrollment().getId(),
+                fixture.classroom().getId(), StudyPrincipal.Role.STUDENT);
+
+        assertThat(progressRepository.count()).isZero();
+        journeyStudyService.get(journey.id(), principal);
+        journeyStudyService.content(journey.id(), journey.stages().getFirst().id(), principal);
+        assertThat(progressRepository.count()).isZero(); // GET never creates progress
+
+        journeyStudyService.start(journey.id(), journey.stages().getFirst().id(), principal);
+        JourneyStageProgress started = progressRepository.findByStageIdAndEnrollmentId(
+                journey.stages().getFirst().id(), fixture.enrollment().getId()).orElseThrow();
+        var firstStartedAt = started.getStartedAt();
+        var firstUpdatedAt = started.getUpdatedAt();
+        journeyStudyService.start(journey.id(), journey.stages().getFirst().id(), principal);
+        JourneyStageProgress startedAgain = progressRepository.findByStageIdAndEnrollmentId(
+                journey.stages().getFirst().id(), fixture.enrollment().getId()).orElseThrow();
+        assertThat(startedAgain.getStartedAt()).isEqualTo(firstStartedAt);
+        assertThat(startedAgain.getUpdatedAt()).isEqualTo(firstUpdatedAt); // start is idempotent
+
+        journeyStudyService.complete(journey.id(), journey.stages().getFirst().id(), principal);
+        var resumed = journeyStudyService.list(principal).getFirst();
+        assertThat(resumed.started()).isTrue();
+        assertThat(resumed.currentContentId()).isEqualTo(journey.stages().get(1).id());
+        assertThat(resumed.progress().percent()).isEqualTo(33);
+
+        journeyStudyService.complete(journey.id(), journey.stages().get(1).id(), principal);
+        journeyStudyService.complete(journey.id(), journey.stages().get(2).id(), principal);
+        var finished = journeyStudyService.list(principal).getFirst();
+        assertThat(finished.progress().percent()).isEqualTo(100);
+        assertThat(finished.currentContentId()).isNull();
+        assertThat(finished.currentContentTitle()).isNull();
+        assertThat(journeyStudyService.get(journey.id(), principal).modules().getFirst().contents())
+                .extracting(JourneyStudyService.JourneyContentView::state)
+                .containsOnly(JourneyStudyService.StudyState.COMPLETED);
+    }
+
+    @Test
+    void teacherPreviewUsesStudyProjectionWithoutCreatingEnrollmentProgress() {
+        Fixture fixture = fixture("Preview docente", "JRNY-PREVIEW");
+        LearningResource resource = learningResourceRepository.save(new LearningResource(fixture.classroom(), "Leitura docente"));
+        JourneyService.JourneyView draft = journeyService.create(new JourneyService.JourneyInput(
+                fixture.classroom().getId(), "Prévia", "Mesma experiência", List.of(
+                        new JourneyService.StageInput(null, "Primeiro", null, null, JourneyUnlockRule.IMMEDIATE,
+                                JourneyCompletionRule.MANUAL, null, "Módulo", JourneyItemType.CONTENT, resource.getId()),
+                        new JourneyService.StageInput(null, "Segundo", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED,
+                                JourneyCompletionRule.MANUAL, null, "Módulo", JourneyItemType.CONTENT, resource.getId())
+                )
+        ));
+
+        long progressBefore = progressRepository.count();
+        long enrollmentsBefore = enrollmentRepository.count();
+        var preview = journeyStudyService.preview(draft.id());
+        var content = journeyStudyService.previewContent(draft.id(), draft.stages().getFirst().id());
+
+        assertThat(preview.modules().getFirst().contents())
+                .extracting(JourneyStudyService.JourneyContentView::state)
+                .containsOnly(JourneyStudyService.StudyState.CURRENT);
+        assertThat(content.title()).isEqualTo("Primeiro");
+        assertThat(progressRepository.count()).isEqualTo(progressBefore);
+        assertThat(enrollmentRepository.count()).isEqualTo(enrollmentsBefore);
+    }
+
+    @Test
+    void studyApiHidesDraftsAndRejectsAnotherEnrollmentClassroom() {
+        Fixture source = fixture("Fonte estudo", "JRNY-SOURCE");
+        Fixture other = fixture("Outra turma estudo", "JRNY-OTHER");
+        JourneyService.JourneyView draft = journeyService.create(new JourneyService.JourneyInput(
+                source.classroom().getId(), "Rascunho", null,
+                List.of(stage("Conteúdo", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL))
+        ));
+        StudyPrincipal sourcePrincipal = new StudyPrincipal(source.enrollment().getStudent().getId(), source.enrollment().getId(),
+                source.classroom().getId(), StudyPrincipal.Role.STUDENT);
+        StudyPrincipal otherPrincipal = new StudyPrincipal(other.enrollment().getStudent().getId(), other.enrollment().getId(),
+                other.classroom().getId(), StudyPrincipal.Role.STUDENT);
+
+        assertThat(journeyStudyService.list(sourcePrincipal)).isEmpty();
+        assertThatThrownBy(() -> journeyStudyService.get(draft.id(), sourcePrincipal))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .hasMessageContaining("404");
+        assertThatThrownBy(() -> journeyStudyService.get(draft.id(), otherPrincipal))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .hasMessageContaining("404");
+    }
+
+    @Test
+    void studyVisibilityIsMultiClassroomAndPreservesProgressWhenDisabled() {
+        Fixture source = fixture("Estudo A", "STUDY-A");
+        JourneyService.JourneyView journeyA = createPublishedJourney(source, List.of(
+                stage("A1", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL),
+                stage("A2", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL)
+        ));
+        Classroom classroomB = new Classroom("Estudo B", "STUDY-B");
+        classroomB.setStudentStudyAccessEnabled(true);
+        classroomB = classroomRepository.save(classroomB);
+        enrollmentRepository.save(new Enrollment(classroomB, source.enrollment().getStudent()));
+        JourneyService.JourneyView journeyB = journeyService.publish(journeyService.create(
+                new JourneyService.JourneyInput(classroomB.getId(), "Jornada B", null,
+                        List.of(stage("B1", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL)))
+        ).id());
+
+        StudyPrincipal principal = new StudyPrincipal(
+                source.enrollment().getStudent().getId(), source.enrollment().getId(),
+                source.classroom().getId(), StudyPrincipal.Role.STUDENT
+        );
+        assertThat(journeyStudyService.list(principal)).extracting(JourneyStudyService.JourneyStudySummary::id)
+                .containsExactlyInAnyOrder(journeyA.id(), journeyB.id());
+
+        journeyStudyService.complete(journeyA.id(), journeyA.stages().getFirst().id(), principal);
+        assertThat(journeyStudyService.get(journeyA.id(), principal).progress().percent()).isEqualTo(50);
+
+        source.classroom().setStudentStudyAccessEnabled(false);
+        classroomRepository.saveAndFlush(source.classroom());
+        assertThat(journeyStudyService.list(principal)).extracting(JourneyStudyService.JourneyStudySummary::id)
+                .containsExactly(journeyB.id());
+        assertThatThrownBy(() -> journeyStudyService.get(journeyA.id(), principal))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .hasMessageContaining("404");
+
+        source.classroom().setStudentStudyAccessEnabled(true);
+        classroomRepository.saveAndFlush(source.classroom());
+        assertThat(journeyStudyService.get(journeyA.id(), principal).progress().percent()).isEqualTo(50);
+    }
+
+    @Test
+    void newClassroomStartsWithStudyAccessDisabled() {
+        Classroom classroom = new Classroom("Nova turma", "STUDY-OFF");
+        assertThat(classroom.isStudentStudyAccessEnabled()).isFalse();
+    }
+
+    @Test
+    void redeemedJourneyPersistsOutsideClassroomVisibilityAndKeepsItsOwnProgress() {
+        Fixture fixture = fixture("Resgate", "JRNY-R");
+        JourneyService.JourneyView journey = createPublishedJourney(fixture, List.of(
+                stage("Conteúdo 1", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL),
+                stage("Conteúdo 2", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL)
+        ));
+        var code = redemptionService.enable(journey.id());
+        StudyPrincipal principal = new StudyPrincipal(
+                fixture.enrollment().getStudent().getId(), fixture.enrollment().getId(),
+                fixture.classroom().getId(), StudyPrincipal.Role.STUDENT
+        );
+
+        fixture.classroom().setStudentStudyAccessEnabled(false);
+        classroomRepository.saveAndFlush(fixture.classroom());
+        assertThat(journeyStudyService.list(principal)).isEmpty();
+
+        var redeemed = redemptionService.redeem(code.code(), principal);
+        assertThat(redeemed.journeyId()).isEqualTo(journey.id());
+        assertThat(journeyStudyService.list(principal)).extracting(JourneyStudyService.JourneyStudySummary::id).containsExactly(journey.id());
+
+        journeyStudyService.complete(journey.id(), journey.stages().getFirst().id(), principal);
+        redemptionService.disable(journey.id());
+        assertThat(journeyStudyService.get(journey.id(), principal).progress().percent()).isEqualTo(50);
+        assertThat(redemptionService.status(journey.id()).redeemedCount()).isEqualTo(1);
+    }
+
+    @Test
+    void draftAuthoringGroupsStagesIntoModulesAndPersistsModuleRename() {
+        Fixture fixture = fixture("Builder", "JRNY-BLD");
+        JourneyService.JourneyView created = journeyService.create(new JourneyService.JourneyInput(
+                fixture.classroom().getId(),
+                "Backend",
+                null,
+                List.of(
+                        new JourneyService.StageInput(null, "HTTP", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, "Fundamentos", JourneyItemType.CONTENT, null),
+                        new JourneyService.StageInput(null, "REST", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL, null, "Fundamentos", JourneyItemType.CONTENT, null)
+                )
+        ));
+
+        assertThat(created.stages()).extracting(JourneyService.StageView::sectionTitle)
+                .containsExactly("Fundamentos", "Fundamentos");
+        assertThat(created.stages().getFirst().sectionId()).isNotNull();
+        assertThat(created.stages().get(1).sectionId()).isEqualTo(created.stages().getFirst().sectionId());
+
+        String sectionId = created.stages().getFirst().sectionId().toString();
+        JourneyService.JourneyView updated = journeyService.update(created.id(), new JourneyService.JourneyInput(
+                fixture.classroom().getId(),
+                "Backend",
+                null,
+                List.of(
+                        new JourneyService.StageInput(created.stages().getFirst().id().toString(), "HTTP", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, sectionId, "Fundamentos da Web", JourneyItemType.CONTENT, null),
+                        new JourneyService.StageInput(created.stages().get(1).id().toString(), "REST", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL, sectionId, "Fundamentos da Web", JourneyItemType.CONTENT, null)
+                )
+        ));
+
+        assertThat(updated.stages()).extracting(JourneyService.StageView::sectionTitle)
+                .containsExactly("Fundamentos da Web", "Fundamentos da Web");
+        assertThat(updated.stages()).extracting(JourneyService.StageView::itemType)
+                .containsExactly(JourneyItemType.CONTENT, JourneyItemType.CONTENT);
+    }
+
+    @Test
+    void achievementsAreDerivedFromProgressAndRemainIdempotent() {
+        Fixture fixture = fixture("Conquistas", "ACH-1");
+        JourneyService.JourneyView journey = createPublishedJourney(fixture, List.of(
+                new JourneyService.StageInput(null, "Conteúdo 1", null, null, JourneyUnlockRule.IMMEDIATE,
+                        JourneyCompletionRule.MANUAL, null, "Módulo 1", JourneyItemType.CONTENT, null),
+                new JourneyService.StageInput(null, "Conteúdo 2", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED,
+                        JourneyCompletionRule.MANUAL, null, "Módulo 1", JourneyItemType.CONTENT, null)
+        ));
+        StudyPrincipal principal = new StudyPrincipal(fixture.enrollment().getStudent().getId(), fixture.enrollment().getId(),
+                fixture.classroom().getId(), StudyPrincipal.Role.STUDENT);
+
+        var first = journeyStudyService.complete(journey.id(), journey.stages().getFirst().id(), principal);
+        assertThat(first.newlyUnlockedAchievements()).extracting(AchievementService.AchievementView::code)
+                .containsExactly(AchievementCode.FIRST_CONTENT_COMPLETED);
+
+        var second = journeyStudyService.complete(journey.id(), journey.stages().get(1).id(), principal);
+        assertThat(second.newlyUnlockedAchievements()).extracting(AchievementService.AchievementView::code)
+                .containsExactlyInAnyOrder(AchievementCode.FIRST_MODULE_COMPLETED, AchievementCode.FIRST_JOURNEY_COMPLETED);
+
+        journeyStudyService.complete(journey.id(), journey.stages().get(1).id(), principal);
+        assertThat(studentAchievementRepository.findByStudentIdOrderByUnlockedAtAsc(fixture.enrollment().getStudent().getId()))
+                .hasSize(3);
+        assertThat(achievementService.list(fixture.enrollment().getStudent().getId()).unlocked()).isEqualTo(3);
+    }
+
+    @Test
     void publishedJourneyRejectsStructuralStageChanges() {
         Fixture fixture = fixture("Imutabilidade", "JRNY-I");
         JourneyService.JourneyView published = createPublishedJourney(fixture,
@@ -177,7 +461,7 @@ class JourneyCoreIT {
                 "Título atualizado",
                 null,
                 List.of(
-                        new JourneyService.StageInput(published.stages().getFirst().id().toString(), "Etapa única", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL),
+                        new JourneyService.StageInput(published.stages().getFirst().id().toString(), "Etapa única", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, null, null, null),
                         stage("Etapa extra", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL)
                 )
         )))
@@ -198,11 +482,13 @@ class JourneyCoreIT {
             JourneyUnlockRule unlockRule,
             JourneyCompletionRule completionRule
     ) {
-        return new JourneyService.StageInput(null, title, null, activityId, unlockRule, completionRule);
+        return new JourneyService.StageInput(null, title, null, activityId, unlockRule, completionRule, null, null, null, null);
     }
 
     private Fixture fixture(String classroomName, String classroomCode) {
-        Classroom classroom = classroomRepository.save(new Classroom(classroomName, classroomCode));
+        Classroom classroom = new Classroom(classroomName, classroomCode);
+        classroom.setStudentStudyAccessEnabled(true);
+        classroom = classroomRepository.save(classroom);
         Student student = studentRepository.save(new Student("REG-" + classroomCode, "Aluno " + classroomCode, null));
         Enrollment enrollment = enrollmentRepository.save(new Enrollment(classroom, student));
         Activity activity = activityRepository.save(new Activity(classroom, "Atividade " + classroomCode));

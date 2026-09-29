@@ -55,6 +55,8 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0036](ADR-0036-reveal-do-quiz-e-fechamento-nao-implicito.md) | Reveal do Quiz é explícito; fechar não revela resultado | Aceito |
 | [ADR-0037](ADR-0037-avaliacao-no-lock-e-scoreevent-como-ledger-de-xp.md) | Avaliação no lock; ScoreEvent permanece ledger exclusivo de XP | Aceito |
 
+| [ADR-0045](ADR-0045-jornada-e-estudo-sequencial-nao-workflow-de-atividades.md) | Jornada é estudo sequencial, não workflow de atividades | Aceito |
+
 ## Template
 
 Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
@@ -66,3 +68,5 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0042 — Hard delete explícito sem cascade global](ADR-0042-hard-delete-explicito-sem-cascade-global.md)
 - [ADR-0043 — ActivitySubmission como fonte de verdade e IA supervisionada](ADR-0043-activitysubmission-fonte-de-verdade-e-ia-supervisionada.md)
 - [ADR-0044 — SubmissionItem representa entregas polimórficas](ADR-0044-submissionitem-entrega-polimorfica.md)
+
+- [ADR-0045 — Jornada é estudo sequencial, não workflow de atividades](ADR-0045-jornada-e-estudo-sequencial-nao-workflow-de-atividades.md)

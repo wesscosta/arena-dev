@@ -6,7 +6,7 @@
 >
 > **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Execução atual:** `16.1 — Journey Core` concluído na branch `feat/v0.8-journey-core`, aguardando PR. Próximo incremento: `16.2 — Learning Resources & Content Ingestion`.
+> **Execução atual:** 16.4 Student Experience está concluído tecnicamente até 16.4D — Achievements Foundation. A linha 16.5 — Content Library & Reuse já possui 16.5.0, 16.5A, 16.5B, 16.5B.1 e 16.5B.2 implementados; o próximo incremento planejado é 16.5C — Semantic Content Foundation & Ingestion → Library.
 
 ## Modelo do produto
 
@@ -117,7 +117,7 @@ flowchart LR
     P["Projetor"] --> F
     F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
     F <-->|"WebSocket"| B
-    B --> D["PostgreSQL 17 + Flyway V1–V27"]
+    B --> D["PostgreSQL 17 + Flyway V1–V35"]
 ```
 
 Princípios:
@@ -171,9 +171,15 @@ Detalhes de fechamento em `docs/RELEASE_0_7.md`.
 
 ## v0.8 — linha ativa
 
-O `16.1 — Journey Core` introduz a base persistente de progressão: jornadas por turma, etapas ordenadas, regras de desbloqueio, critérios de conclusão e progresso por matrícula. A primeira interface administrativa está disponível na aba **Jornadas** da turma.
+O `16.1 — Journey Core` introduziu a base persistente de progressão: jornadas por turma, etapas ordenadas, regras de desbloqueio, critérios de conclusão e progresso por matrícula.
 
-A v0.8 começa pela reestruturação da experiência do professor antes de avançar para a Jornada do aluno.
+O `16.2 — Learning Resources & Content Ingestion` consolidou `LearningResource`, ingestão e preview revisável. O `16.3` já entrega `/learn`, Study API independente de `/join`, Reader, progresso/retomada, prévia do professor, Builder simplificado e Journey Progression UX.
+
+O `16.3.8 — Content Ingestion & Structured Import` evoluiu para um pipeline comum de documentos normalizados: Markdown estruturado mantém mapeamento determinístico (`H1 → título`, `H2 → módulo`, `H3 → conteúdo`), enquanto Text/File e Notion usam adapters da mesma fronteira. Notion já possui OAuth, API oficial e seleção de páginas autorizadas no Journey Builder. Toda importação continua como **snapshot revisável**, sem sincronização bidirecional silenciosa.
+
+O `16.4 — Student Experience Shell & Workspace Visibility` já introduz Início, Jornadas, Entrar ao vivo e Conquistas no mesmo shell. `/join` continua público para QR/código e compartilha o mesmo runtime de `/learn/live`. O `16.4A` separa **matrícula** de **exposição permanente de conteúdo**: o professor decide se uma turma fica disponível no espaço de estudo, sem afetar a Arena ao vivo. A autorização está centralizada na Study API e preserva o progresso ao ocultar/reativar a turma.
+
+`16.5 — Content Library & Reuse` está marcado no roadmap como evolução futura de `LearningResource`: um acervo reutilizável de materiais vindos de Markdown/Notion/arquivo/IA, consumível por Journey, Activity e Arena sem criar automaticamente cards para os alunos.
 
 Estado final do `16.0 — Professor Arena Experience`:
 
@@ -187,9 +193,9 @@ Estado final do `16.0 — Professor Arena Experience`:
 - rail de participantes com filtro Presentes/Todos e ferramentas contextuais estáveis para Timer, Organização, Presença e Pontuação Rápida;
 - QR ampliável, indicadores de online/presença consolidados e selects com contraste consistente no tema escuro;
 - Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle ocupando a altura disponível do cockpit em desktop;
-- quality gate técnico `16.0F.18` concluído: CSS legado da roleta removido, responsividade desktop validada, estados vazios explícitos e drawers com contenção/retorno de foco; resta apenas o fechamento visual/Projetor/PR do 16.0.
+- quality gate técnico `16.0F.18` concluído: CSS legado da roleta removido, responsividade desktop validada, estados vazios explícitos e drawers com contenção/retorno de foco; os passes `16.0F.19/20` fecharam consistência visual e Projetor antes do merge no PR #21.
 
-Roadmap e estado detalhado em `docs/ROADMAP_0_8.md` e `docs/INCREMENT_16_0.md`.
+Roadmap e estado detalhado em `docs/ROADMAP_0_8.md`, `docs/INCREMENT_16_3.md` e `docs/INCREMENT_16_2.md`.
 
 ## Executando localmente
 
@@ -239,6 +245,8 @@ O histórico detalhado de release permanece em `docs/RELEASE_0_6.md`. A document
 
 - [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
 - [`docs/ROADMAP_0_8.md`](docs/ROADMAP_0_8.md)
+- [`docs/INCREMENT_16_3.md`](docs/INCREMENT_16_3.md)
+- [`docs/INCREMENT_16_2.md`](docs/INCREMENT_16_2.md)
 - [`docs/INCREMENT_16_0.md`](docs/INCREMENT_16_0.md)
 - [`docs/ROADMAP_0_7.md`](docs/ROADMAP_0_7.md)
 - [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md)
@@ -260,8 +268,67 @@ Histórico da v0.6:
 - `v0.5.0` — histórica;
 - `v0.6.0` — baseline técnica encerrada e congelada;
 - `v0.7.0` — Educational Integrations; publicada e encerrada;
-- `v0.8` — Professor Experience & Journey MVP; linha ativa, `16.0` em execução.
+- `v0.8` — Professor Experience & Journey MVP; linha ativa com Student Experience concluída tecnicamente até 16.4D e Content Library implementada até 16.5B.2; próximo incremento planejado: 16.5C.
 
 ## Licença
 
 Proprietária. Consulte `LICENSE` para os termos aplicáveis.
+
+
+### Student Live — 16.4B
+
+O Student Shell descobre sessões ativas das matrículas do aluno em `/learn/live`, mantém entrada manual por código e reutiliza o mesmo runtime público de `/join`.
+
+
+### Journey Redemption — 16.4C
+
+Jornadas publicadas compatíveis podem ser distribuídas por código e vinculadas ao perfil leve do aluno sem criar matrícula artificial. O código é usado apenas no resgate; acesso e progresso persistem depois.
+
+### Fechamento do Student Experience — 16.4
+
+Checkpoint funcional/visual encerrado em **28/09/2026** para `16.4A–16.4C` e para o refinamento transversal do Student Shell.
+
+- workspace persistente do aluno separado de `/join`;
+- visibilidade de Journey controlada pelo professor;
+- aluno pode pertencer a múltiplas turmas;
+- Live discovery integrado ao Student Shell;
+- Journey discovery/redemption;
+- Home, Journey e Reader refinados;
+- progresso sequencial, retomada e capítulos recolhíveis;
+- zoom global da área de estudos (80–200%), preservando o chrome da aplicação;
+- Style Guide do Student Shell com critérios de acessibilidade;
+- descrições/excerpts de importação sanitizados para não expor metadados técnicos ao aluno.
+
+Esse registro descreve o gate histórico daquele fechamento. Desde então, 16.4D — Achievements Foundation e a base de 16.5 — Content Library & Reuse até 16.5B.2 foram implementados; o estado corrente está nas seções mais recentes deste README.
+
+Detalhes e pendências: [`docs/CLOSURE_16_4_STUDENT_EXPERIENCE.md`](docs/CLOSURE_16_4_STUDENT_EXPERIENCE.md).
+
+### 16.4D — Achievements Foundation
+
+Implementado em 28/09/2026. Conquistas agora são marcos persistentes derivados do progresso real do Student: **Primeiro Passo**, **Primeiro Capítulo** e **Primeira Jornada**. A fundação é idempotente, global ao aluno/multi-turma, reconcilia progresso anterior e cobre tanto matrícula quanto Journey adicionada por redemption. Não concede XP, não altera progresso e não possui endpoint público de unlock.
+
+Detalhes: docs/INCREMENT_16_4D.md. Com A–D implementados, o **16.4 está tecnicamente completo**; hardening de release permanece separado.
+
+### 16.5.0 — Content Library Architecture Audit
+
+Concluído em 28/09/2026. A auditoria determinou que a Biblioteca deve evoluir LearningResource, evitando um ContentLibraryItem paralelo. Antes da V37 será necessário separar o recurso editável do snapshot executável da Journey e resolver ownership sem inventar uma entidade de professor que ainda não existe no modelo persistente.
+
+Detalhes: docs/INCREMENT_16_5_0_ARCHITECTURE_AUDIT.md.
+
+### 16.5A — Library Core
+
+A Content Library agora possui núcleo persistente e API administrativa. LearningResource foi evoluído sem duplicação de domínio e Journeys materializam snapshots imutáveis do recurso/revisão usada. Consulte docs/INCREMENT_16_5A.md.
+
+### 16.5B — Library Workspace & Reuse
+
+A Biblioteca agora possui workspace global do professor, autoria manual, busca, archive/restore e reuso bidirecional com o Journey Builder. O snapshot continua pertencendo à Journey; editar ou arquivar o material não altera Journeys existentes. Consulte docs/INCREMENT_16_5B.md.
+
+### Sequência de fechamento da v0.8
+
+Após o refinamento `16.5B.1`, a linha ativa segue por `16.5C` (fundação semântica e ingestão), `16.5D` (organização/discovery), `16.5E` (revision awareness e hardening de snapshots) e `16.5F` (reuso avançado/fechamento da Biblioteca). Em seguida, a v0.8 entra em **Release Hardening** transversal antes do release candidate.
+
+A futura `16.6 — Knowledge & Retrieval Foundation` fica fora do gate da v0.8: chunks, índices lexical/vetorial, embeddings, avaliação de retrieval e RAG/LLM só serão iniciados depois da estabilização do corpus e da Biblioteca.
+
+### 16.5B.2 — Journey Snapshot Integrity Hardening — implementado
+
+A materialização Biblioteca → Journey agora é explícita: updates comuns preservam a revisão já copiada, inclusive quando a origem foi posteriormente editada ou arquivada. `JourneyStage.updateConfiguration()` não toca no snapshot; `materializeResource()` é a fronteira de escrita. O 16.5E continua responsável pela futura atualização explícita entre revisões.

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { reconnectDelayMs } from "../lib/runtime-snapshot";
 
-const joinSource = readFileSync(resolve(process.cwd(), "app/join/page.tsx"), "utf8");
+const joinSource = readFileSync(resolve(process.cwd(), "components/StudentJoinFlow.tsx"), "utf8");
 const projectorSource = readFileSync(resolve(process.cwd(), "components/ProjectorView.tsx"), "utf8");
 const publicStyles = readFileSync(resolve(process.cwd(), "styles/public-live.css"), "utf8");
 

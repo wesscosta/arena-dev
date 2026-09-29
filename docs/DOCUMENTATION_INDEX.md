@@ -5,13 +5,15 @@
 1. [`../README.md`](../README.md) — visão pública e operacional do projeto.
 2. [`STATUS_ATUAL.md`](STATUS_ATUAL.md) — estado técnico corrente.
 3. [`ROADMAP_0_8.md`](ROADMAP_0_8.md) — roadmap da linha ativa.
-4. [`INCREMENT_16_1.md`](INCREMENT_16_1.md) — execução do Journey Core.
-5. [`INCREMENT_16_0.md`](INCREMENT_16_0.md) — fechamento do Professor Arena Experience.
-6. [`ROADMAP_0_7.md`](ROADMAP_0_7.md) — fechamento histórico da linha de integrações.
-7. [`RELEASE_0_7.md`](RELEASE_0_7.md) — release publicada da v0.7.0.
-8. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
-9. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
-10. [`adr/README.md`](adr/README.md).
+4. [`INCREMENT_16_3.md`](INCREMENT_16_3.md) — plano técnico de Journey Study Experience.
+5. [`INCREMENT_16_2.md`](INCREMENT_16_2.md) — fechamento de Learning Resources & Content Ingestion.
+6. [`INCREMENT_16_1.md`](INCREMENT_16_1.md) — fechamento do Journey Core.
+7. [`INCREMENT_16_0.md`](INCREMENT_16_0.md) — fechamento do Professor Arena Experience.
+8. [`ROADMAP_0_7.md`](ROADMAP_0_7.md) — fechamento histórico da linha de integrações.
+9. [`RELEASE_0_7.md`](RELEASE_0_7.md) — release publicada da v0.7.0.
+10. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+11. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
+12. [`adr/README.md`](adr/README.md).
 
 ## Baseline encerrada — v0.6
 
@@ -29,9 +31,9 @@
 
 ## Linha ativa — v0.8
 
-O `16.0 — Professor Arena Experience` foi integrado à `main` pelo PR #21.
+Os incrementos `16.0 — Professor Arena Experience` e `16.1 — Journey Core` foram integrados à `main` pelos PRs #21 e #22.
 
-A execução atual é `16.1 — Journey Core`, na branch `feat/v0.8-journey-core`.
+O 16.2 — Learning Resources & Content Ingestion e o 16.3 — Study Experience & Structured Import estão concluídos. O 16.4 — Student Experience está implementado tecnicamente até 16.4D — Achievements Foundation. Em 16.5 — Content Library & Reuse, a auditoria arquitetural, Library Core, workspace/reuse, refinamento editorial e snapshot hardening estão implementados até 16.5B.2; o próximo incremento planejado é 16.5C — Semantic Content Foundation & Ingestion → Library.
 
 ## Histórico
 
@@ -54,10 +56,25 @@ A execução atual é `16.1 — Journey Core`, na branch `feat/v0.8-journey-core
 1. código, migrations e configuração da branch ativa;
 2. `STATUS_ATUAL.md`;
 3. `ROADMAP_0_8.md`;
-4. `INCREMENT_16_0.md`;
-5. ADRs aceitos;
-6. documentos históricos.
+4. `INCREMENT_16_3.md`;
+5. `INCREMENT_16_2.md`;
+6. ADRs aceitos;
+7. documentos históricos.
 
 Não reescrever documentação histórica para fabricar evidência retroativa. Quando houver divergência entre fechamento técnico e publicação externa, registrar explicitamente a evidência disponível.
 
-**Atualizado em 24/09/2026 para a execução da v0.8 / incremento 16.0.**
+**Atualizado em 28/09/2026 para consolidar 16.4A–C, reservar 16.4D sem implementação e preparar o gate de entrada do 16.5 — Content Library & Reuse.**
+- [`CLOSURE_16_4_STUDENT_EXPERIENCE.md`](CLOSURE_16_4_STUDENT_EXPERIENCE.md) — fechamento do ciclo 16.4, decisões consolidadas, gates e pendências.
+- [INCREMENT_16_4D.md](INCREMENT_16_4D.md) — Achievements Foundation: domínio, persistência, reconciliação, API, UX e gates.
+- [INCREMENT_16_5_0_ARCHITECTURE_AUDIT.md](INCREMENT_16_5_0_ARCHITECTURE_AUDIT.md) — gate arquitetural da Content Library: LearningResource, ownership, snapshot, ingestão e migration strategy.
+- [INCREMENT_16_5A.md](INCREMENT_16_5A.md) — Library Core: lifecycle global, revision, archive e snapshot Library → Journey.
+- [INCREMENT_16_5B.md](INCREMENT_16_5B.md) — Library Workspace & Reuse: UX editorial, busca, lifecycle e reuso bidirecional com Journey.
+- [INCREMENT_16_5C_PLAN.md](INCREMENT_16_5C_PLAN.md) — Planejamento de Semantic Content Foundation, ingestão canônica e preparação arquitetural para RAG.
+
+## Sequência de fechamento v0.8
+
+`16.5C → 16.5D → 16.5E → 16.5F → Release Hardening → v0.8`.
+
+`16.6 — Knowledge & Retrieval Foundation` é pós-v0.8/opcional e não bloqueia a release. O planejamento semântico/RAG inicial permanece em [`INCREMENT_16_5C_PLAN.md`](INCREMENT_16_5C_PLAN.md).
+
+- [`INCREMENT_16_5B_2_SNAPSHOT_HARDENING.md`](INCREMENT_16_5B_2_SNAPSHOT_HARDENING.md) — integridade do snapshot Biblioteca → Journey e preservação de revisão em updates comuns.

@@ -112,6 +112,7 @@ export interface Classroom {
   active?: boolean;
   themeColor?: ClassroomThemeColor;
   themeIcon?: ClassroomThemeIcon;
+  studentStudyAccessEnabled?: boolean;
   createdAt: string;
 }
 

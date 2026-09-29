@@ -16,7 +16,8 @@ export type ClassroomIntegrationState = {
 export async function fetchClassroomIntegrationState(): Promise<ClassroomIntegrationState> {
   const connections = await fetchIntegrationConnections();
   const activeConnections = connections.filter(
-    (connection) => connection.status === "ACTIVE",
+    (connection): connection is IntegrationConnection & { provider: ClassroomIntegrationPlatform } =>
+      connection.status === "ACTIVE" && connection.provider !== "NOTION",
   );
 
   const linkGroups = await Promise.all(

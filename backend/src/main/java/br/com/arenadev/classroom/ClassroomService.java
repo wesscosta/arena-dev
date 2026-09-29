@@ -81,7 +81,7 @@ public class ClassroomService {
 
     @Transactional
     public ClassroomView update(UUID id, String name, String code, boolean active) {
-        return update(id, name, code, active, null, null);
+        return update(id, name, code, active, null, null, getClassroom(id).isStudentStudyAccessEnabled());
     }
 
     @Transactional
@@ -92,6 +92,19 @@ public class ClassroomService {
             boolean active,
             String themeColor,
             String themeIcon
+    ) {
+        return update(id, name, code, active, themeColor, themeIcon, getClassroom(id).isStudentStudyAccessEnabled());
+    }
+
+    @Transactional
+    public ClassroomView update(
+            UUID id,
+            String name,
+            String code,
+            boolean active,
+            String themeColor,
+            String themeIcon,
+            boolean studentStudyAccessEnabled
     ) {
         Classroom classroom = getClassroom(id);
         String normalizedCode = normalizeOptionalCode(code);
@@ -108,6 +121,7 @@ public class ClassroomService {
                 normalizeThemeColor(themeColor, classroom.getThemeColor()),
                 normalizeThemeIcon(themeIcon, classroom.getThemeIcon())
         );
+        classroom.setStudentStudyAccessEnabled(studentStudyAccessEnabled);
         return ClassroomView.from(classroom);
     }
 
@@ -239,6 +253,7 @@ public class ClassroomService {
             boolean active,
             String themeColor,
             String themeIcon,
+            boolean studentStudyAccessEnabled,
             Instant createdAt
     ) {
         static ClassroomView from(Classroom classroom) {
@@ -249,6 +264,7 @@ public class ClassroomService {
                     classroom.isActive(),
                     classroom.getThemeColor(),
                     classroom.getThemeIcon(),
+                    classroom.isStudentStudyAccessEnabled(),
                     classroom.getCreatedAt()
             );
         }
