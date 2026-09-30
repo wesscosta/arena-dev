@@ -3257,8 +3257,6 @@
 
 /* v0.8 · 16.0F.6 — composition and density pass */
 .arena-live-topbar {
-  width: calc(100% + 1.75rem);
-  margin: -.75rem -.875rem 0;
   position: sticky;
   top: 0;
   z-index: 30;
@@ -3477,10 +3475,6 @@
 }
 
 @media (max-width: 74rem) {
-  .arena-live-topbar {
-    width: calc(100% + 1.75rem);
-  }
-
   .arena-content-full .draw-wheel-hero-stage {
     width: 100%;
     margin-inline: 0;
@@ -3489,11 +3483,6 @@
 }
 
 @media (max-width: 48rem) {
-  .arena-live-topbar {
-    width: calc(100% + 1.25rem);
-    margin: -.625rem -.625rem 0;
-  }
-
   .arena-live-context {
     display: none;
   }
