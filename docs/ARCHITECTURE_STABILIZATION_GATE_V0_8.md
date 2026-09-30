@@ -38,21 +38,24 @@ retomada de 16.5C e demais incrementos
 | Gate | Resultado observado |
 | --- | --- |
 | Frontend typecheck | OK |
-| Frontend unit/source tests | 272/273 · 1 falha |
-| Backend unit tests | 101/101 |
-| Backend `mvn verify` | unit + integration phases verdes; 86 ITs no failsafe |
+| Frontend unit/source tests | 273/273 |
+| Backend unit tests | 106/106 |
+| Backend `mvn verify` | BUILD SUCCESS · 106 unitários + 86 ITs |
 | Flyway | V1–V37 aplicado com sucesso nos ITs |
-| Frontend build | OK na baseline corrente da Arena |
-| `npm audit --omit=dev` | 1 vulnerabilidade crítica em Next.js 16.3.3 |
+| Frontend build | OK com Next.js 16.3.8 |
+| `npm audit --omit=dev --audit-level=high` | 0 vulnerabilidades |
+| E2E críticos | 4/4 |
+| E2E Arena shell multi-viewport | 4/4 em 1366×768, 1440×900, 1536×864 e 1920×1080 |
 
-A falha frontend atual está em um teste que inspeciona o código-fonte e ainda exige `className="arena-nav-context"`, removido durante a refatoração da navegação. O teste precisa ser classificado como contrato válido ou teste obsoleto antes de ser ajustado.
+A baseline P0 foi restaurada. O teste estrutural obsoleto da navegação foi substituído por assertions alinhadas ao contrato atual do shell, sem reintroduzir o bloco redundante removido.
 
 ### 2.2 Frontend
 
-- `ArenaApp.tsx`: ~4.690 linhas;
-- `ArenaView` concentra estado, efeitos, WebSocket, comandos, shell, participantes, dinâmicas e pontuação;
-- 48 `useState` e 20 `useEffect` no arquivo;
-- `arena-polish.css`: ~4.868 linhas;
+- `ArenaApp.tsx`: 4.563 linhas após a extração do chrome estrutural;
+- `ArenaLiveChrome.tsx`: 229 linhas, owner de shell/sidebar/header da Arena;
+- `ArenaView` ainda concentra estado, efeitos, WebSocket, comandos, participantes, dinâmicas e pontuação;
+- 48 `useState` e 20 `useEffect` permaneciam no diagnóstico inicial e serão recontados após P1;
+- `arena-polish.css`: 4.857 linhas;
 - `globals.css`: ~3.280 linhas;
 - 104 usos de `!important`;
 - centenas de cores literais fora dos tokens;
@@ -115,9 +118,11 @@ Riscos estruturais:
 
 ## P0.1 Atualizar Next.js vulnerável
 
-Problema observado:
+Problema observado na auditoria inicial:
 - Next.js 16.3.3;
-- `npm audit --omit=dev` reporta vulnerabilidade crítica com correção disponível em 16.3.8.
+- `npm audit --omit=dev` reportava vulnerabilidade crítica com correção disponível em 16.3.8.
+
+**Status:** concluído. O frontend foi atualizado para Next.js 16.3.8 e o audit de produção passou com 0 vulnerabilidades.
 
 Ações:
 1. atualizar Next.js para versão corrigida compatível;
@@ -144,6 +149,8 @@ Fluxo:
 
 **Gate:** 273/273 ou novo total equivalente, sem teste alterado apenas para mascarar regressão.
 
+**Status:** concluído em 273/273. As assertions da Arena foram atualizadas para verificar o contrato extraído em `ArenaLiveChrome.tsx`, em vez de exigir markup legado removido.
+
 ## P0.3 Congelar baseline
 
 Criar checkpoint verificável:
@@ -155,6 +162,8 @@ Criar checkpoint verificável:
 - documentação corrente sincronizada.
 
 Não criar tag/release pública sem gate formal.
+
+**Checkpoint técnico P0:** `99d00a2` na branch `chore/v0.8-architecture-stabilization`, schema V37, frontend 273/273, typecheck/build verdes, audit 0 vulnerabilidades, backend `mvn verify` verde com 106 unitários + 86 ITs e E2E críticos/shell verdes.
 
 ---
 
@@ -185,6 +194,8 @@ Regras:
 - perfil do professor permanece acessível;
 - sem `margin-left/calc()` para simular colunas estruturais.
 
+**Status:** concluído para desktop. `ArenaLiveShell`, `ArenaSidebar` e `ArenaSessionHeader` estão extraídos; o header deixou de usar compensações negativas de largura/margem e o shell passou em E2E geométrico nos quatro viewports definidos pelo gate.
+
 ## P1.2 Extrair ArenaApp sem big bang
 
 Objetivo: reduzir responsabilidades, não perseguir número arbitrário de linhas.
@@ -199,6 +210,8 @@ Extrações candidatas:
 - `useParticipantSelection.ts` somente quando o selector for implementado.
 
 Não mover código apenas para gerar arquivos menores. Cada extração precisa ter responsabilidade e contrato próprios.
+
+**Status:** em andamento. O chrome estrutural da Arena foi removido de `ArenaApp.tsx` e consolidado em `components/arena/live/ArenaLiveChrome.tsx`. `ArenaContextRail`, realtime e session orchestration permanecem no owner atual e só serão extraídos com contratos explícitos.
 
 ## P1.3 Normalizar acesso à API
 

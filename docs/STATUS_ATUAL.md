@@ -8,7 +8,7 @@
 
 **Incremento atual:** **Gate de Estabilização Arquitetural v0.8**. `16.4` está implementado até Achievements Foundation e `16.5` até `16.5B.2`; `16.5C` e novos incrementos funcionais ficam pausados até segurança, baseline, shell da Arena, CSS/design ownership, boundaries backend e quality gates serem estabilizados.
 
-**Branch ativa:** `feat/v0.8-content-ingestion`.
+**Branch ativa:** `chore/v0.8-architecture-stabilization`.
 
 **Plano transversal:** [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md).
 
@@ -27,8 +27,8 @@ baseline publicada        v0.7.0
 linha ativa               v0.8
 último integrado à main   16.1 · PR #22
 incremento atual           Gate de Estabilização Arquitetural v0.8
-fatia atual                P0 · segurança + baseline confiável
-branch                     feat/v0.8-content-ingestion
+fatia atual                P1 · Arena Live Shell e fronteiras frontend
+branch                     chore/v0.8-architecture-stabilization
 schema                     Flyway V1–V37
 providers                  Microsoft Teams + Notion OAuth
 Google Classroom           standby
@@ -88,10 +88,14 @@ Google Classroom           standby
 - confinamento `100dvh`/`overflow: hidden` ficou restrito à Arena ao vivo via `arena-fullscreen-shell`;
 - scroll lock de overlays centralizado e seguro para locks simultâneos;
 - tela de participantes simplificada com busca, nome de exibição sob demanda e ações por ícones;
-- baseline atual: typecheck e build passam; a suíte frontend está em 272/273 por um teste estrutural obsoleto/candidato a revisão após a refatoração da navegação da Arena;
+- baseline atual: Next.js 16.3.8; `npm audit --omit=dev --audit-level=high` com 0 vulnerabilidades; frontend 273/273, typecheck e build verdes; backend `mvn verify` verde com 106 testes unitários + 86 ITs;
 
 ## Professor Arena Experience — implementado
 
+- shell estrutural extraído em `ArenaLiveShell`, `ArenaSidebar` e `ArenaSessionHeader`;
+- header restrito ao workspace, sem compensações negativas de largura/margem;
+- E2E do shell verde em 1366×768, 1440×900, 1536×864 e 1920×1080, sem overflow horizontal ou sobreposição;
+- seleção balanceada extraída para `ParticipantSelectionService`, mantendo o backend como autoridade;
 - tabs antigas removidas da Arena;
 - sidebar persistente por ação;
 - Dinâmicas e Ferramentas separadas;
