@@ -6,7 +6,7 @@
 >
 > **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Execução atual:** 16.4 Student Experience está concluído tecnicamente até 16.4D — Achievements Foundation. A linha 16.5 — Content Library & Reuse já possui 16.5.0, 16.5A, 16.5B, 16.5B.1 e 16.5B.2 implementados; o próximo incremento planejado é 16.5C — Semantic Content Foundation & Ingestion → Library.
+> **Execução atual:** 16.4 Student Experience está concluído tecnicamente até 16.4D e 16.5 — Content Library & Reuse até 16.5B.2. Em 30/09/2026 foi aberto um **Gate de Estabilização Arquitetural v0.8**; 16.5C e novos incrementos funcionais ficam pausados até o fechamento dos gates de segurança, arquitetura, design system e qualidade.
 
 ## Modelo do produto
 
@@ -245,6 +245,7 @@ O histórico detalhado de release permanece em `docs/RELEASE_0_6.md`. A document
 
 - [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
 - [`docs/ROADMAP_0_8.md`](docs/ROADMAP_0_8.md)
+- [`docs/ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](docs/ARCHITECTURE_STABILIZATION_GATE_V0_8.md)
 - [`docs/INCREMENT_16_3.md`](docs/INCREMENT_16_3.md)
 - [`docs/INCREMENT_16_2.md`](docs/INCREMENT_16_2.md)
 - [`docs/INCREMENT_16_0.md`](docs/INCREMENT_16_0.md)
@@ -268,7 +269,7 @@ Histórico da v0.6:
 - `v0.5.0` — histórica;
 - `v0.6.0` — baseline técnica encerrada e congelada;
 - `v0.7.0` — Educational Integrations; publicada e encerrada;
-- `v0.8` — Professor Experience & Journey MVP; linha ativa com Student Experience concluída tecnicamente até 16.4D e Content Library implementada até 16.5B.2; próximo incremento planejado: 16.5C.
+- `v0.8` — Professor Experience & Journey MVP; linha ativa com Student Experience concluída até 16.4D e Content Library até 16.5B.2; Gate de Estabilização Arquitetural em execução antes de 16.5C.
 
 ## Licença
 
@@ -325,7 +326,7 @@ A Biblioteca agora possui workspace global do professor, autoria manual, busca, 
 
 ### Sequência de fechamento da v0.8
 
-Após o refinamento `16.5B.1`, a linha ativa segue por `16.5C` (fundação semântica e ingestão), `16.5D` (organização/discovery), `16.5E` (revision awareness e hardening de snapshots) e `16.5F` (reuso avançado/fechamento da Biblioteca). Em seguida, a v0.8 entra em **Release Hardening** transversal antes do release candidate.
+Após `16.5B.2`, a linha ativa passa primeiro pelo **Gate de Estabilização Arquitetural v0.8**. Com o gate fechado, a sequência funcional retoma em `16.5C` (fundação semântica e ingestão), `16.5D` (organização/discovery), `16.5E` (revision awareness e hardening de snapshots) e `16.5F` (reuso avançado/fechamento da Biblioteca), seguida do Release Hardening final.
 
 A futura `16.6 — Knowledge & Retrieval Foundation` fica fora do gate da v0.8: chunks, índices lexical/vetorial, embeddings, avaliação de retrieval e RAG/LLM só serão iniciados depois da estabilização do corpus e da Biblioteca.
 

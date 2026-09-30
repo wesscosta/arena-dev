@@ -2,7 +2,7 @@
 
 **Linha ativa:** v0.8
 **Branch de execução:** `feat/v0.8-content-ingestion`
-**Estado atual:** `16.4 — Student Experience Shell & Workspace Visibility` implementado tecnicamente em A–C; gate visual integrado pendente. O próximo domínio funcional é `16.5 — Content Library & Reuse`, iniciado por auditoria de `LearningResource`.
+**Estado atual:** `16.4` está implementado até Achievements Foundation e `16.5` até Library Snapshot Hardening, mas a auditoria transversal de 30/09/2026 abriu um **Gate de Estabilização Arquitetural** antes de novos incrementos funcionais. O próximo trabalho obrigatório é segurança, baseline, Arena Live Shell, CSS/design ownership, boundaries backend e quality gates. `16.5C` permanece planejado, porém pausado até o fechamento desse gate.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
@@ -19,14 +19,17 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | 16.1 | Journey Core | **Concluído · PR #22 mergeado** |
 | 16.2 | Learning Resources & Content Ingestion | **Concluído na branch ativa** |
 | 16.3 | Journey Study Experience | **Fechamento técnico concluído na branch ativa** |
-| 16.4 | Student Experience Shell & Workspace Visibility | **16.4A–C implementados tecnicamente · gate visual integrado pendente** |
-| 16.5 | Content Library & Reuse | **Próximo domínio · iniciar por auditoria de LearningResource após gate visual do 16.4** |
-| 16.6 | Question Attempts & Skills | **Candidato pós-validação do 16.3** |
+| 16.4 | Student Experience Shell & Workspace Visibility | **16.4A–D implementados tecnicamente** |
+| 16.5 | Content Library & Reuse | **Implementado até 16.5B.2 · 16.5C pausado** |
+| Gate transversal | Estabilização arquitetural v0.8 | **Obrigatório antes de novos incrementos funcionais** |
+| 16.6 | Question Attempts & Skills | **Candidato pós-validação do 16.3 e do gate arquitetural** |
 | 16.7 | Mastery básico | **Candidato pós-validação do 16.3** |
 | 16.8 | Review | **Candidato pós-validação do 16.3** |
 | 16.9 | Teacher Journey Dashboard | **Candidato pós-validação do 16.3** |
 | 16.10 | Minimal Gamification | **Candidato pós-validação do 16.3** |
 | 16.11 | Pilot, Metrics & Hardening | Planejado |
+
+Plano do gate transversal: [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md).
 
 ### Product Gate após 16.3
 
@@ -379,7 +382,7 @@ Markdown / Notion / Arquivo / IA
 
 `16.4A`, `16.4B` e `16.4C` estão implementados e o refinamento transversal do Student Shell foi consolidado. O ciclo é considerado fechado como **checkpoint**, não como release final da v0.8.
 
-Pendências de hardening daquele corte: auditoria manual de acessibilidade, validação visual mobile/ultrawide, consolidação do CSS histórico, E2E e gates de release. Posteriormente, 16.4D — Achievements Foundation e 16.5 até 16.5B.2 foram implementados; a sequência corrente segue em 16.5C.
+Pendências de hardening daquele corte: auditoria manual de acessibilidade, validação visual mobile/ultrawide, consolidação do CSS histórico, E2E e gates de release. Posteriormente, 16.4D — Achievements Foundation e 16.5 até 16.5B.2 foram implementados. A auditoria de 30/09/2026 interrompeu a sequência funcional para o Gate de Estabilização Arquitetural; 16.5C retoma somente após seu fechamento.
 
 Ver [`CLOSURE_16_4_STUDENT_EXPERIENCE.md`](CLOSURE_16_4_STUDENT_EXPERIENCE.md).
 
@@ -399,7 +402,7 @@ V37 evolui LearningResource para recurso reutilizável, com visibilidade de Bibl
 
 ### 16.5B — Library Workspace & Reuse — implementado
 
-Biblioteca global do professor com lista editorial, busca, criação/edição, archive/restore e reuso nos dois contextos: Biblioteca → Journey e Journey → Biblioteca. O incremento prova o produto sem acoplar Notion/ingestão. Próximo: **16.5C — Ingestion → Library**.
+Biblioteca global do professor com lista editorial, busca, criação/edição, archive/restore e reuso nos dois contextos: Biblioteca → Journey e Journey → Biblioteca. O incremento prova o produto sem acoplar Notion/ingestão. Próximo funcional após o gate transversal: **16.5C — Ingestion → Library**.
 
 ### 16.5B.1 — Library Editorial Refinement — implementado
 
@@ -411,7 +414,7 @@ Próximo incremento documentado em INCREMENT_16_5C_PLAN.md: metadata semântica,
 
 ### Sequência final planejada do 16.5 e fechamento da v0.8
 
-- `16.5C — Semantic Content Foundation & Ingestion → Library`: próximo incremento; canonicalização, metadata, estrutura semântica, ingestão revisável e contrato de RAG.
+- `16.5C — Semantic Content Foundation & Ingestion → Library`: próximo incremento funcional após o Gate de Estabilização Arquitetural; canonicalização, metadata, estrutura semântica, ingestão revisável e contrato de RAG.
 - `16.5D — Organization & Discovery`: filtros, áreas/tags, paginação/ordenação e descoberta do acervo, sem taxonomia rígida prematura.
 - `16.5E — Revision Awareness & Snapshot Hardening`: atualização de snapshot somente por operação explícita, aviso de revisão disponível e preservação de snapshots existentes.
 - `16.5F — Advanced Reuse & Library Closure`: fechamento do domínio de Biblioteca e reuso avançado somente onde houver necessidade comprovada.

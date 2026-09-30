@@ -1,18 +1,20 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 28 de setembro de 2026
+**Última sincronização documental:** 30 de setembro de 2026
 
 **Baseline publicada:** `v0.7.0 — Educational Integrations`.
 
 **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 
-**Incremento atual:** `16.4 — Student Experience Shell & Workspace Visibility`, com 16.4A–C implementados tecnicamente e gate visual integrado pendente.
+**Incremento atual:** **Gate de Estabilização Arquitetural v0.8**. `16.4` está implementado até Achievements Foundation e `16.5` até `16.5B.2`; `16.5C` e novos incrementos funcionais ficam pausados até segurança, baseline, shell da Arena, CSS/design ownership, boundaries backend e quality gates serem estabilizados.
 
 **Branch ativa:** `feat/v0.8-content-ingestion`.
 
+**Plano transversal:** [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md).
+
 ## Estado resumido
 
-A v0.7.0 está encerrada e publicada. `16.0` e `16.1` foram integrados à `main`; a branch ativa acumula 16.2, o fechamento técnico do 16.3 e a implementação de 16.4A–C.
+A v0.7.0 está encerrada e publicada. A branch ativa já contém a evolução de `16.2`, `16.3`, `16.4A–D` e `16.5` até `16.5B.2`. A auditoria de 30/09/2026 identificou dívida arquitetural suficiente para abrir um gate transversal antes de ampliar o escopo funcional.
 
 A Journey já possui Study API própria, `/learn`, Reader, progresso e retomada, prévia do professor na mesma experiência, Builder reduzido a módulos + conteúdos e Progression UX com estados `COMPLETED`, `CURRENT` e `LOCKED`.
 
@@ -24,10 +26,10 @@ A frente de ingestão `16.3.8` cobre contrato normalizado, adapters Markdown/Tex
 baseline publicada        v0.7.0
 linha ativa               v0.8
 último integrado à main   16.1 · PR #22
-incremento atual           16.4 · Student Experience Shell & Workspace Visibility
-fatia atual                16.4A–C · implementadas tecnicamente; gate visual integrado pendente
+incremento atual           Gate de Estabilização Arquitetural v0.8
+fatia atual                P0 · segurança + baseline confiável
 branch                     feat/v0.8-content-ingestion
-schema                     Flyway V1–V35
+schema                     Flyway V1–V37
 providers                  Microsoft Teams + Notion OAuth
 Google Classroom           standby
 ```
@@ -66,19 +68,19 @@ Google Classroom           standby
 - `/learn/journeys` é a biblioteca pessoal de percursos, com busca, filtro por turma/estado e agrupamento multi-turma;
 - `/learn/live` integra a entrada ao vivo ao shell autenticado reutilizando o mesmo `StudentJoinFlow` de `/join`;
 - `/join` permanece porta pública para QR/código e não depende do espaço persistente de estudo;
-- `/learn/achievements` está reservado para conquistas baseadas em critérios acadêmicos reais;
+- `/learn/achievements` possui Achievements Foundation persistente baseada em marcos reais de progresso, sem XP automático, moedas ou streaks;
 - `16.4A — Student Workspace Visibility`: `studentStudyAccessEnabled` controla exposição persistente sem afetar Live e sem apagar progresso;
 - `16.4B — Live dentro do Student Shell`: Live Hub descobre sessões ativas em todas as matrículas do aluno, oferece CTA contextual na Home e reutiliza `StudentJoinFlow`;
 - `16.4C — Journey Discovery & Redemption`: professor gera/regenera/desativa código de Journey; aluno reconhecido resgata uma vez e mantém material/progresso no perfil, sem matrícula artificial;
 - `16.4D — Achievements Foundation`: implementado tecnicamente; conquistas persistentes, avaliação idempotente e integração ao Student Experience.
 - `Student Shell Style Guide v1`: referência visual/acessível criada; alvo AAA onde aplicável, com auditoria formal ainda pendente.
 
-## Marcador de roadmap — 16.5 Content Library & Reuse
+## 16.5 Content Library & Reuse — estado atual
 
-- biblioteca futura será construída sobre auditoria/evolução de `LearningResource`, evitando um segundo modelo paralelo de conteúdo;
-- materiais poderão nascer de Markdown, Notion, arquivo ou IA e ser reutilizados em Journey/Activity/Arena;
-- o acervo do professor não será automaticamente visível ao aluno;
-- primeiro gate: fechar a validação visual integrada do `16.4A–C`; depois auditar ownership, metadados, dependências, ciclo de vida e semântica de reuso/snapshot.
+- `LearningResource` foi evoluído como unidade reutilizável, sem criar um modelo paralelo de biblioteca;
+- Library Core, workspace/reuse, refinamento editorial e snapshot hardening estão implementados até `16.5B.2`;
+- materiais continuam preparados para nascer de Markdown, Notion, arquivo ou IA sem exposição automática ao aluno;
+- `16.5C — Semantic Content Foundation & Ingestion → Library` permanece planejado, porém pausado até o fechamento do Gate de Estabilização Arquitetural v0.8.
 
 ## UX transversal — shell e participantes
 
@@ -86,7 +88,7 @@ Google Classroom           standby
 - confinamento `100dvh`/`overflow: hidden` ficou restrito à Arena ao vivo via `arena-fullscreen-shell`;
 - scroll lock de overlays centralizado e seguro para locks simultâneos;
 - tela de participantes simplificada com busca, nome de exibição sob demanda e ações por ícones;
-- regressão transversal atual validada com 268 testes de frontend, typecheck e build de produção;
+- baseline atual: typecheck e build passam; a suíte frontend está em 272/273 por um teste estrutural obsoleto/candidato a revisão após a refatoração da navegação da Arena;
 
 ## Professor Arena Experience — implementado
 
@@ -173,9 +175,9 @@ Decisão: nenhuma V37 será criada antes de definir o desacoplamento Library Res
 
 **28/09/2026:** autoria Markdown passou a aproveitar a largura útil e ganhou preview renderizado; desktop usa edição + preview lado a lado e telas menores alternam as superfícies. O plano semântico/RAG permanece documentado para 16.5C e não foi implementado.
 
-## Sequência corrente após 16.5B.1
+## Sequência corrente após 16.5B.2
 
-O próximo incremento funcional é `16.5C — Semantic Content Foundation & Ingestion → Library`. O fechamento da Biblioteca seguirá, em ordem, por `16.5D — Organization & Discovery`, `16.5E — Revision Awareness & Snapshot Hardening` e `16.5F — Advanced Reuse & Library Closure`. Depois disso, a v0.8 entra em Release Hardening transversal; não deve abrir outro domínio funcional automaticamente.
+O próximo trabalho é o **Gate de Estabilização Arquitetural v0.8**. Depois de fechado, o próximo incremento funcional será `16.5C — Semantic Content Foundation & Ingestion → Library`, seguido por `16.5D — Organization & Discovery`, `16.5E — Revision Awareness & Snapshot Hardening` e `16.5F — Advanced Reuse & Library Closure`. Depois disso, a v0.8 entra em Release Hardening final.
 
 `16.6 — Knowledge & Retrieval Foundation` é evolução pós-v0.8/opcional para chunks derivados, lexical/vector retrieval, embeddings, avaliação e futuro RAG/LLM. Não faz parte do gate de release v0.8.
 
