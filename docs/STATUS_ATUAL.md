@@ -94,7 +94,7 @@ Google Classroom           standby
 
 - shell estrutural extraído em `ArenaLiveShell`, `ArenaSidebar` e `ArenaSessionHeader`;
 - header restrito ao workspace, sem compensações negativas de largura/margem;
-- E2E do shell verde em 1366×768, 1440×900, 1536×864 e 1920×1080, sem overflow horizontal ou sobreposição;
+- E2E do shell verde em 1366×768, 1440×900, 1536×864 e 1920×1080, mais cenário com 22 participantes em 1821×831; sem overflow horizontal/vertical estrutural, com Ações rápidas e código/QR dentro da viewport;
 - seleção balanceada extraída para `ParticipantSelectionService`, mantendo o backend como autoridade;
 - tabs antigas removidas da Arena;
 - sidebar persistente por ação;

@@ -45,7 +45,7 @@ retomada de 16.5C e demais incrementos
 | Frontend build | OK com Next.js 16.3.8 |
 | `npm audit --omit=dev --audit-level=high` | 0 vulnerabilidades |
 | E2E críticos | 4/4 |
-| E2E Arena shell multi-viewport | 4/4 em 1366×768, 1440×900, 1536×864 e 1920×1080 |
+| E2E Arena shell / vertical contract | 5/5 · 4 viewports + cenário com 22 participantes em 1821×831 |
 
 A baseline P0 foi restaurada. O teste estrutural obsoleto da navegação foi substituído por assertions alinhadas ao contrato atual do shell, sem reintroduzir o bloco redundante removido.
 
@@ -194,7 +194,7 @@ Regras:
 - perfil do professor permanece acessível;
 - sem `margin-left/calc()` para simular colunas estruturais.
 
-**Status:** concluído para desktop. `ArenaLiveShell`, `ArenaSidebar` e `ArenaSessionHeader` estão extraídos; o header deixou de usar compensações negativas de largura/margem e o shell passou em E2E geométrico nos quatro viewports definidos pelo gate.
+**Status:** concluído para desktop. `ArenaLiveShell`, `ArenaSidebar` e `ArenaSessionHeader` estão extraídos; o header deixou de usar compensações negativas de largura/margem e o shell passou em E2E geométrico nos quatro viewports definidos pelo gate. O contrato vertical também foi estabilizado: Stage e Context Rail ficam contidos na viewport, a roleta adapta sua altura disponível, Ações rápidas e código/QR permanecem visíveis e apenas a lista de participantes rola. Há cobertura adicional com 22 participantes em 1821×831.
 
 ## P1.2 Extrair ArenaApp sem big bang
 

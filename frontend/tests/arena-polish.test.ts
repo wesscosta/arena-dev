@@ -735,7 +735,7 @@ test("Arena sidebar owns product identity while the session context stays in the
   const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
 
   assert.match(app, /<ArenaLiveShell/);
-  assert.match(chrome, /className="arena-live-shell"/);
+  assert.match(chrome, /arena-live-shell/);
   assert.match(chrome, /<aside className="arena-cockpit-nav" aria-label="Ferramentas da Arena">/);
   assert.match(chrome, /className="arena-nav-brand"/);
   assert.match(chrome, /className="arena-live-context"/);

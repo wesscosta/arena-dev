@@ -31,6 +31,7 @@ async function authenticatedApi() {
 async function createArenaFixture(
   api: APIRequestContext,
   csrfHeaders: Record<string, string>,
+  studentCount = 1,
 ) {
   const suffix = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
   const classroomName = `Turma Shell ${suffix}`;
@@ -43,28 +44,32 @@ async function createArenaFixture(
   await expectOk(classroomResponse, "Criação da turma");
   const classroom = (await classroomResponse.json()) as ClassroomView;
 
-  const studentResponse = await api.post("/api/students", {
-    data: {
-      registration: `SHELL-${suffix}`,
-      name: `Aluno Shell ${suffix}`,
-      nickname: `Shell-${suffix.slice(-6)}`,
-    },
-    headers: csrfHeaders,
-  });
-  await expectOk(studentResponse, "Criação do aluno");
-  const student = (await studentResponse.json()) as StudentView;
+  const presentStudentIds: string[] = [];
+  for (let index = 0; index < studentCount; index += 1) {
+    const studentResponse = await api.post("/api/students", {
+      data: {
+        registration: `SHELL-${suffix}-${index + 1}`,
+        name: `Aluno Shell ${String(index + 1).padStart(2, "0")}`,
+        nickname: `Shell ${index + 1}`,
+      },
+      headers: csrfHeaders,
+    });
+    await expectOk(studentResponse, `Criação do aluno ${index + 1}`);
+    const student = (await studentResponse.json()) as StudentView;
+    presentStudentIds.push(student.id);
 
-  const enrollment = await api.post(
-    `/api/classrooms/${classroom.id}/students/${student.id}`,
-    { headers: csrfHeaders },
-  );
-  await expectOk(enrollment, "Matrícula");
+    const enrollment = await api.post(
+      `/api/classrooms/${classroom.id}/students/${student.id}`,
+      { headers: csrfHeaders },
+    );
+    await expectOk(enrollment, `Matrícula ${index + 1}`);
+  }
 
   const sessionResponse = await api.post("/api/sessions", {
     data: {
       classroomId: classroom.id,
       title: sessionTitle,
-      presentStudentIds: [student.id],
+      presentStudentIds,
     },
     headers: csrfHeaders,
   });
@@ -115,6 +120,10 @@ for (const viewport of [
       const header = page.locator(".arena-live-topbar");
       const main = page.locator(".arena-cockpit-main");
       const rail = page.locator(".arena-context-rail");
+      const hero = page.locator(".smart-draw-hero");
+      const result = page.locator(".selected-student-bar");
+      const quickScore = page.locator(".quick-score-dock");
+      const sessionCode = page.locator(".arena-session-code-card");
       const professor = page.locator(".arena-nav-professor");
 
       await expect(sidebar).toBeVisible();
@@ -122,41 +131,142 @@ for (const viewport of [
       await expect(header).toBeVisible();
       await expect(main).toBeVisible();
       await expect(rail).toBeVisible();
+      await expect(hero).toBeVisible();
+      await expect(result).toBeVisible();
+      await expect(quickScore).toBeVisible();
+      await expect(sessionCode).toBeVisible();
       await expect(professor).toBeVisible();
 
-      const [sidebarBox, workspaceBox, headerBox, mainBox, railBox, professorBox] =
-        await Promise.all([
-          sidebar.boundingBox(),
-          workspace.boundingBox(),
-          header.boundingBox(),
-          main.boundingBox(),
-          rail.boundingBox(),
-          professor.boundingBox(),
-        ]);
+      const [
+        sidebarBox,
+        workspaceBox,
+        headerBox,
+        mainBox,
+        railBox,
+        heroBox,
+        resultBox,
+        quickScoreBox,
+        sessionCodeBox,
+        professorBox,
+      ] = await Promise.all([
+        sidebar.boundingBox(),
+        workspace.boundingBox(),
+        header.boundingBox(),
+        main.boundingBox(),
+        rail.boundingBox(),
+        hero.boundingBox(),
+        result.boundingBox(),
+        quickScore.boundingBox(),
+        sessionCode.boundingBox(),
+        professor.boundingBox(),
+      ]);
 
       expect(sidebarBox).not.toBeNull();
       expect(workspaceBox).not.toBeNull();
       expect(headerBox).not.toBeNull();
       expect(mainBox).not.toBeNull();
       expect(railBox).not.toBeNull();
+      expect(heroBox).not.toBeNull();
+      expect(resultBox).not.toBeNull();
+      expect(quickScoreBox).not.toBeNull();
+      expect(sessionCodeBox).not.toBeNull();
       expect(professorBox).not.toBeNull();
 
-      if (!sidebarBox || !workspaceBox || !headerBox || !mainBox || !railBox || !professorBox) {
+      if (
+        !sidebarBox
+        || !workspaceBox
+        || !headerBox
+        || !mainBox
+        || !railBox
+        || !heroBox
+        || !resultBox
+        || !quickScoreBox
+        || !sessionCodeBox
+        || !professorBox
+      ) {
         return;
       }
 
       expect(sidebarBox.x + sidebarBox.width).toBeLessThanOrEqual(workspaceBox.x + 1);
       expect(headerBox.x).toBeGreaterThanOrEqual(workspaceBox.x - 1);
       expect(mainBox.width).toBeGreaterThan(railBox.width);
+      expect(heroBox.y + heroBox.height).toBeLessThanOrEqual(mainBox.y + mainBox.height + 1);
+      expect(resultBox.y + resultBox.height).toBeLessThanOrEqual(heroBox.y + heroBox.height + 1);
+      expect(quickScoreBox.y + quickScoreBox.height).toBeLessThanOrEqual(viewport.height + 1);
+      expect(sessionCodeBox.y + sessionCodeBox.height).toBeLessThanOrEqual(viewport.height + 1);
       expect(professorBox.y + professorBox.height).toBeLessThanOrEqual(viewport.height + 1);
 
-      const horizontalOverflow = await page.evaluate(
-        () => document.documentElement.scrollWidth - window.innerWidth,
-      );
-      expect(horizontalOverflow).toBeLessThanOrEqual(1);
+      const overflow = await page.evaluate(() => ({
+        horizontal: document.documentElement.scrollWidth - window.innerWidth,
+        mainVertical: document.querySelector(".arena-cockpit-main")
+          ? (document.querySelector(".arena-cockpit-main") as HTMLElement).scrollHeight
+            - (document.querySelector(".arena-cockpit-main") as HTMLElement).clientHeight
+          : 0,
+        railVertical: document.querySelector(".arena-context-rail")
+          ? (document.querySelector(".arena-context-rail") as HTMLElement).scrollHeight
+            - (document.querySelector(".arena-context-rail") as HTMLElement).clientHeight
+          : 0,
+      }));
+      expect(overflow.horizontal).toBeLessThanOrEqual(1);
+      expect(overflow.mainVertical).toBeLessThanOrEqual(1);
+      expect(overflow.railVertical).toBeLessThanOrEqual(1);
     } finally {
       await context.close();
       await api.dispose();
     }
   });
 }
+
+test("Arena com 22 participantes mantém controles e código visíveis em 1821x831", async ({ browser }) => {
+  const viewport = { width: 1821, height: 831 };
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport });
+  const page = await context.newPage();
+
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 22);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+
+    const participantRows = page.locator(".arena-participant-row");
+    const quickScore = page.locator(".quick-score-dock");
+    const sessionCode = page.locator(".arena-session-code-card");
+
+    await expect(participantRows).toHaveCount(12);
+    await expect(page.getByRole("button", { name: "Ver todos (22) →" })).toBeVisible();
+    await expect(quickScore).toBeVisible();
+    await expect(sessionCode).toBeVisible();
+
+    const [quickScoreBox, sessionCodeBox] = await Promise.all([
+      quickScore.boundingBox(),
+      sessionCode.boundingBox(),
+    ]);
+
+    expect(quickScoreBox).not.toBeNull();
+    expect(sessionCodeBox).not.toBeNull();
+
+    if (!quickScoreBox || !sessionCodeBox) {
+      return;
+    }
+
+    expect(quickScoreBox.y + quickScoreBox.height).toBeLessThanOrEqual(viewport.height + 1);
+    expect(sessionCodeBox.y + sessionCodeBox.height).toBeLessThanOrEqual(viewport.height + 1);
+
+    const geometry = await page.evaluate(() => {
+      const list = document.querySelector(".arena-participant-list") as HTMLElement | null;
+      const contextRail = document.querySelector(".arena-context-rail") as HTMLElement | null;
+      const main = document.querySelector(".arena-cockpit-main") as HTMLElement | null;
+      return {
+        listScrolls: Boolean(list && list.scrollHeight > list.clientHeight),
+        railOverflow: contextRail ? contextRail.scrollHeight - contextRail.clientHeight : 0,
+        mainOverflow: main ? main.scrollHeight - main.clientHeight : 0,
+      };
+    });
+
+    expect(geometry.listScrolls).toBe(true);
+    expect(geometry.railOverflow).toBeLessThanOrEqual(1);
+    expect(geometry.mainOverflow).toBeLessThanOrEqual(1);
+  } finally {
+    await context.close();
+    await api.dispose();
+  }
+});

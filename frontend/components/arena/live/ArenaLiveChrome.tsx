@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Badge, Button, Menu, MenuItem } from "@/components/ui";
+import styles from "./ArenaLiveChrome.module.css";
 
 export type ArenaDynamic = "runbook" | "draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss";
 export type ArenaTool = "timer" | "groups" | "attendance" | "score" | null;
@@ -218,9 +219,9 @@ export function ArenaLiveShell({
   children: ReactNode;
 }) {
   return (
-    <div className="arena-live-shell">
+    <div className={`arena-live-shell ${styles.liveShell}`}>
       {sidebar}
-      <div className="arena-session-workspace">
+      <div className={`arena-session-workspace ${styles.workspace}`}>
         {header}
         {children}
       </div>
