@@ -57,16 +57,17 @@ test("globals imports Arena polish after accessibility foundation", () => {
 
 test("Professor Arena cockpit replaces the old session tabs", () => {
   const app = read("components/ArenaApp.tsx");
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
   const css = read("styles/arena-polish.css");
 
   assert.match(app, /className="arena-cockpit"/);
-  assert.match(app, /className="arena-cockpit-nav"/);
+  assert.match(chrome, /className="arena-cockpit-nav"/);
   assert.doesNotMatch(app, /className="arena-tabs-six"/);
   assert.match(css, /\.arena-cockpit\s*\{/);
 });
 
 test("Professor Arena cockpit exposes dynamics and transversal tools together", () => {
-  const app = read("components/ArenaApp.tsx");
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
 
   for (const label of [
     "Sorteio",
@@ -80,7 +81,7 @@ test("Professor Arena cockpit exposes dynamics and transversal tools together", 
     "Presença",
     "Pontuação rápida",
   ]) {
-    assert.ok(app.includes(label), `missing Arena action: ${label}`);
+    assert.ok(chrome.includes(label), `missing Arena action: ${label}`);
   }
 });
 
@@ -142,9 +143,10 @@ test("Draw history comes from persisted session events instead of a frontend-onl
 
 test("Arena separates primary dynamics from contextual tools", () => {
   const app = read("components/ArenaApp.tsx");
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
 
-  assert.match(app, /type ArenaDynamic = "runbook" \| "draw"/);
-  assert.match(app, /type ArenaTool = "timer" \| "groups" \| "attendance" \| "score" \| null/);
+  assert.match(chrome, /export type ArenaDynamic = "runbook" \| "draw"/);
+  assert.match(chrome, /export type ArenaTool = "timer" \| "groups" \| "attendance" \| "score" \| null/);
   assert.match(app, /const \[activeDynamic, setActiveDynamic\]/);
   assert.match(app, /const \[activeTool, setActiveTool\]/);
   assert.doesNotMatch(app, /const \[arenaTab, setArenaTab\]/);
@@ -152,11 +154,12 @@ test("Arena separates primary dynamics from contextual tools", () => {
 
 test("Arena contextual tools open without replacing the primary dynamic", () => {
   const app = read("components/ArenaApp.tsx");
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
 
-  assert.match(app, /setActiveTool\("timer"\)/);
-  assert.match(app, /setActiveTool\("groups"\)/);
-  assert.match(app, /setActiveTool\("attendance"\)/);
-  assert.match(app, /setActiveTool\("score"\)/);
+  assert.match(chrome, /onSelectTool\("timer"\)/);
+  assert.match(chrome, /onSelectTool\("groups"\)/);
+  assert.match(chrome, /onSelectTool\("attendance"\)/);
+  assert.match(chrome, /onSelectTool\("score"\)/);
   assert.match(app, /open=\{activeTool === "timer"\}/);
   assert.match(app, /open=\{activeTool === "attendance"\}/);
 });
@@ -716,25 +719,28 @@ test("Live Arena stretches the cockpit to the full dynamic viewport height", () 
 
 test("Live Arena replaces the duplicated root header with one operational topbar", () => {
   const app = read("components/ArenaApp.tsx");
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
   const css = read("styles/arena-polish.css");
 
   assert.match(app, /arena-root-topbar-hidden/);
-  assert.match(app, /className="topbar app-topbar arena-live-topbar"/);
-  assert.match(app, /Modo Projetor ↗/);
-  assert.match(app, /Encerrar sessão/);
+  assert.match(chrome, /className="topbar app-topbar arena-live-topbar"/);
+  assert.match(chrome, /Modo Projetor ↗/);
+  assert.match(chrome, /Encerrar sessão/);
   assert.doesNotMatch(app, /arena-desktop-session-header/);
   assert.match(css, /\.topbar\.arena-root-topbar-hidden\s*\{\s*display:\s*none/);
 });
 
 test("Arena sidebar owns product identity while the session context stays in the workspace header", () => {
   const app = read("components/ArenaApp.tsx");
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
 
-  assert.match(app, /className="arena-live-shell"/);
-  assert.match(app, /<aside className="arena-cockpit-nav" aria-label="Ferramentas da Arena">/);
-  assert.match(app, /className="arena-nav-brand"/);
-  assert.match(app, /className="arena-live-context"/);
-  assert.doesNotMatch(app, /className="arena-nav-context"/);
-  assert.doesNotMatch(app, /Condução ao vivo/);
-  assert.match(app, /function ArenaGlyph/);
-  assert.match(app, /<ArenaGlyph name="draw" \/>/);
+  assert.match(app, /<ArenaLiveShell/);
+  assert.match(chrome, /className="arena-live-shell"/);
+  assert.match(chrome, /<aside className="arena-cockpit-nav" aria-label="Ferramentas da Arena">/);
+  assert.match(chrome, /className="arena-nav-brand"/);
+  assert.match(chrome, /className="arena-live-context"/);
+  assert.doesNotMatch(chrome, /className="arena-nav-context"/);
+  assert.doesNotMatch(chrome, /Condução ao vivo/);
+  assert.match(chrome, /function ArenaGlyph/);
+  assert.match(chrome, /\["draw", "draw", "Sorteio"\]/);
 });
