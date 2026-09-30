@@ -726,12 +726,15 @@ test("Live Arena replaces the duplicated root header with one operational topbar
   assert.match(css, /\.topbar\.arena-root-topbar-hidden\s*\{\s*display:\s*none/);
 });
 
-test("Arena navigation exposes classroom context before dynamics and uses internal SVG glyphs", () => {
+test("Arena sidebar owns product identity while the session context stays in the workspace header", () => {
   const app = read("components/ArenaApp.tsx");
 
-  assert.match(app, /className="arena-nav-context"/);
-  assert.doesNotMatch(app, /className="arena-nav-back"/);
-  assert.match(app, /Condução ao vivo/);
+  assert.match(app, /className="arena-live-shell"/);
+  assert.match(app, /<aside className="arena-cockpit-nav" aria-label="Ferramentas da Arena">/);
+  assert.match(app, /className="arena-nav-brand"/);
+  assert.match(app, /className="arena-live-context"/);
+  assert.doesNotMatch(app, /className="arena-nav-context"/);
+  assert.doesNotMatch(app, /Condução ao vivo/);
   assert.match(app, /function ArenaGlyph/);
   assert.match(app, /<ArenaGlyph name="draw" \/>/);
 });
