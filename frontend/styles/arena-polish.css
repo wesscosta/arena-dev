@@ -647,25 +647,96 @@
 }
 
 /* v0.8 · 16.0 — Professor Arena Experience */
-.arena-cockpit {
+.arena-live-shell {
+  width: 100%;
+  min-height: 100dvh;
   display: grid;
   grid-template-columns: 13rem minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: .75rem var(--content-gutter);
+  box-sizing: border-box;
+}
+.arena-live-shell > .arena-session-workspace {
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+.arena-cockpit {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 15.5rem;
   gap: var(--space-4);
   align-items: start;
 }
 .arena-cockpit-nav {
   position: sticky;
-  top: var(--space-4);
+  top: .75rem;
+  height: calc(100dvh - 1.5rem);
   display: grid;
-  gap: var(--space-4);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  min-height: 0;
   padding: var(--space-4);
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, transparent), transparent 36%), var(--surface);
 }
+.arena-cockpit-main {
+  min-width: 0;
+}
+.arena-nav-scroll {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
 .arena-cockpit-nav-group {
   display: grid;
   gap: .4rem;
+}
+.arena-nav-brand {
+  min-height: 3.35rem !important;
+  grid-template-columns: 2.35rem minmax(0, 1fr) !important;
+  padding: 0 0 var(--space-3) !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  color: var(--text) !important;
+}
+.arena-nav-brand .topbar-brand-mark {
+  width: 2.35rem;
+  height: 2.35rem;
+}
+.arena-nav-brand-copy {
+  display: grid;
+  gap: .12rem;
+}
+.arena-nav-brand-copy strong {
+  font-size: .9rem !important;
+  letter-spacing: .04em;
+}
+.arena-nav-brand-copy small {
+  color: var(--muted);
+  font-size: .68rem;
+}
+.arena-nav-professor {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+.arena-nav-professor .arena-live-profile {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  color: var(--text);
 }
 .arena-cockpit-nav-group + .arena-cockpit-nav-group {
   padding-top: var(--space-4);
@@ -721,14 +792,21 @@
   min-width: 0;
 }
 @media (max-width: 72rem) {
-  .arena-cockpit {
+  .arena-live-shell {
     grid-template-columns: 4.75rem minmax(0, 1fr);
   }
   .arena-cockpit-nav {
     padding: .55rem;
   }
+  .arena-nav-brand {
+    grid-template-columns: 1fr !important;
+    justify-items: center;
+  }
+  .arena-nav-brand-copy,
   .arena-cockpit-nav-label,
-  .arena-cockpit-nav button strong {
+  .arena-cockpit-nav button strong,
+  .arena-nav-professor .topbar-profile-copy,
+  .arena-nav-professor .topbar-profile-chevron {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -741,13 +819,22 @@
     justify-items: center;
     padding-inline: .35rem;
   }
+  .arena-cockpit {
+    grid-template-columns: minmax(0, 1fr) 14rem;
+  }
 }
 @media (max-width: 48rem) {
+  .arena-live-shell {
+    display: block;
+    padding: .5rem;
+  }
   .arena-cockpit {
     display: block;
   }
   .arena-cockpit-nav {
     position: static;
+    width: 100%;
+    height: auto;
     display: flex;
     overflow-x: auto;
     gap: .4rem;
@@ -837,10 +924,13 @@
   }
 }
 
-/* v0.8 · Arena fidelity pass — shell + smart draw workspace */
-.arena-cockpit {
-  grid-template-columns: 12.5rem minmax(0, 1fr) 17rem;
-  gap: .85rem;
+/* v0.8 · Arena fidelity pass — shell + smart draw workspace
+ * The global Arena sidebar now lives outside .arena-cockpit.
+ * Keep this grid restricted to workspace content + context rail.
+ */
+.arena-live-shell .arena-cockpit {
+  grid-template-columns: minmax(0, 1fr) 15.5rem;
+  gap: var(--space-4);
 }
 .arena-cockpit-main {
   min-width: 0;
@@ -2906,10 +2996,12 @@
 }
 
 .arena-live-topbar {
+  width: 100%;
   min-height: 4.75rem;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-5);
-  padding: .65rem var(--content-gutter);
+  padding: .65rem 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -3086,14 +3178,14 @@
 
 @media (min-width: 90.01rem) {
   .arena-content-full .arena-cockpit {
-    grid-template-columns: 15rem minmax(0, 1fr) 18rem;
+    grid-template-columns: minmax(0, 1fr) 18rem;
     gap: .8rem;
   }
 }
 
 @media (max-width: 90rem) {
   .arena-content-full .arena-cockpit {
-    grid-template-columns: 12.5rem minmax(0, 1fr) 16rem;
+    grid-template-columns: minmax(0, 1fr) 16rem;
     gap: .7rem;
   }
 
@@ -3109,6 +3201,15 @@
 }
 
 @media (max-width: 74rem) {
+  .arena-content-full .arena-cockpit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .arena-content-full .arena-context-rail {
+    grid-column: 1;
+    grid-template-columns: minmax(0, 1fr) 15rem;
+  }
+
   .arena-live-topbar {
     grid-template-columns: auto minmax(0, 1fr) auto;
     padding-inline: var(--space-3);

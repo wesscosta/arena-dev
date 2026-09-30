@@ -2986,94 +2986,22 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   }
 
   return (
-    <div className="stack-lg arena-session-workspace">
-      <header className="topbar app-topbar arena-live-topbar">
+    <div className="arena-live-shell">
+      <aside className="arena-cockpit-nav" aria-label="Ferramentas da Arena">
         <button
           type="button"
-          className="topbar-brand arena-live-brand"
+          className="arena-nav-brand"
           onClick={onGoDashboard}
           title="Voltar para a Visão geral"
         >
           <span className="topbar-brand-mark">A</span>
-          <span>
+          <span className="arena-nav-brand-copy">
             <strong>ARENA DEV</strong>
             <small>Classroom Edition</small>
           </span>
         </button>
 
-        <nav className="arena-live-context" aria-label="Contexto da sessão">
-          <button type="button" onClick={onGoDashboard}>Turmas</button>
-          <span aria-hidden="true">›</span>
-          <button type="button" onClick={onBack}>{classroom?.name ?? "Turma"}</button>
-          <span aria-hidden="true">›</span>
-          <strong>{currentSession.title}</strong>
-          <Badge variant="live" dot>AO VIVO</Badge>
-        </nav>
-
-        <div className="topbar-actions arena-session-actions">
-          <div className="arena-session-elapsed" aria-label={`Tempo de sessão ${formatSessionElapsed(currentSession.startedAt, sessionNow)}`}>
-            <span aria-hidden="true">◷</span>
-            <div>
-              <strong>{formatSessionElapsed(currentSession.startedAt, sessionNow)}</strong>
-              <small>Tempo de sessão</small>
-            </div>
-          </div>
-          <Button
-            variant="secondary"
-            onClick={openProjector}
-            disabled={!joinCode}
-          >
-            Modo Projetor ↗
-          </Button>
-          <Button
-            variant="danger"
-            loading={sessionBusy}
-            loadingLabel="Encerrando..."
-            onClick={() => { void endSession(); }}
-          >
-            Encerrar sessão
-          </Button>
-          <Menu
-            trigger={(triggerProps) => (
-              <button
-                {...triggerProps}
-                type="button"
-                className="topbar-profile arena-live-profile"
-                aria-label="Abrir menu do professor"
-              >
-                <span className="topbar-profile-avatar">
-                  {teacherUsername.trim().charAt(0).toUpperCase() || "P"}
-                </span>
-                <span className="topbar-profile-copy">
-                  <strong>{teacherUsername}</strong>
-                  <small>Professor</small>
-                </span>
-                <span className="topbar-profile-chevron">⌄</span>
-              </button>
-            )}
-          >
-            <MenuItem icon="⚙" description="Perfil, sistema e backup" onSelect={onOpenSettings}>
-              Configurações
-            </MenuItem>
-            <MenuItem icon="↪" danger description="Encerrar sessão do professor" onSelect={onLogout}>
-              Sair
-            </MenuItem>
-          </Menu>
-        </div>
-      </header>
-
-      <div className="arena-cockpit">
-        <aside className="arena-cockpit-nav" aria-label="Ferramentas da Arena">
-          <div className="arena-nav-context">
-            <div className="arena-nav-arena-card" aria-current="page">
-              <span className="arena-nav-arena-icon" aria-hidden="true"><ArenaGlyph name="arena" /></span>
-              <div>
-                <strong>Arena</strong>
-                <small>Condução ao vivo</small>
-              </div>
-            </div>
-          </div>
-
+        <div className="arena-nav-scroll">
           <div className="arena-cockpit-nav-group">
             <span className="arena-cockpit-nav-label">DINÂMICAS</span>
             {([
@@ -3118,9 +3046,66 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <span aria-hidden="true"><ArenaGlyph name="score" /></span><strong>Pontuação rápida</strong>
             </button>
           </div>
-        </aside>
+        </div>
 
-        <main className="arena-cockpit-main">
+        <div className="arena-nav-professor">
+          <Menu
+            trigger={(triggerProps) => (
+              <button {...triggerProps} type="button" className="topbar-profile arena-live-profile" aria-label="Abrir menu do professor">
+                <span className="topbar-profile-avatar">{teacherUsername.trim().charAt(0).toUpperCase() || "P"}</span>
+                <span className="topbar-profile-copy">
+                  <strong>{teacherUsername}</strong>
+                  <small>Professor</small>
+                </span>
+                <span className="topbar-profile-chevron">⌄</span>
+              </button>
+            )}
+          >
+            <MenuItem icon="⚙" description="Perfil, sistema e backup" onSelect={onOpenSettings}>Configurações</MenuItem>
+            <MenuItem icon="↪" danger description="Encerrar sessão do professor" onSelect={onLogout}>Sair</MenuItem>
+          </Menu>
+        </div>
+      </aside>
+
+      <div className="arena-session-workspace">
+      <header className="topbar app-topbar arena-live-topbar">
+        <nav className="arena-live-context" aria-label="Contexto da sessão">
+          <button type="button" onClick={onGoDashboard}>Turmas</button>
+          <span aria-hidden="true">›</span>
+          <button type="button" onClick={onBack}>{classroom?.name ?? "Turma"}</button>
+          <span aria-hidden="true">›</span>
+          <strong>{currentSession.title}</strong>
+          <Badge variant="live" dot>AO VIVO</Badge>
+        </nav>
+
+        <div className="topbar-actions arena-session-actions">
+          <div className="arena-session-elapsed" aria-label={`Tempo de sessão ${formatSessionElapsed(currentSession.startedAt, sessionNow)}`}>
+            <span aria-hidden="true">◷</span>
+            <div>
+              <strong>{formatSessionElapsed(currentSession.startedAt, sessionNow)}</strong>
+              <small>Tempo de sessão</small>
+            </div>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={openProjector}
+            disabled={!joinCode}
+          >
+            Modo Projetor ↗
+          </Button>
+          <Button
+            variant="danger"
+            loading={sessionBusy}
+            loadingLabel="Encerrando..."
+            onClick={() => { void endSession(); }}
+          >
+            Encerrar sessão
+          </Button>
+        </div>
+      </header>
+
+      <div className="arena-cockpit">
+      <main className="arena-cockpit-main">
 
       {activeDynamic === "runbook" && (
         <div className="stack-lg arena-tab-content">
@@ -4046,6 +4031,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           </div>
         </div>
       </ArenaToolDrawer>
+      </div>
     </div>
   );
 }
