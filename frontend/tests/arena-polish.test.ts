@@ -86,25 +86,32 @@ test("Professor Arena cockpit exposes dynamics and transversal tools together", 
 });
 
 
-test("Sorteio Inteligente 2.0 delegates roulette geometry to the SVG DrawWheel", () => {
+test("Participant selection defaults to Grid + Spotlight and preserves the wheel as a legacy fallback", () => {
   const app = read("components/ArenaApp.tsx");
-  const wheel = read("components/arena/draw/DrawWheel.tsx");
-  const css = read("components/arena/draw/DrawWheel.module.css");
+  const selection = read("components/arena/selection/ParticipantSelectionExperience.tsx");
+  const selectorMode = read("components/arena/selection/selector-mode.ts");
+  const legacy = read("components/arena/selection/legacy/LegacyWheelSelector.tsx");
 
-  assert.match(app, /<DrawWheel/);
-  assert.match(app, /currentSession\.presentStudentIds\.includes\(student\.id\)/);
-  assert.match(wheel, /segmentPath\(start, end\)/);
-  assert.match(wheel, /viewBox=/);
-  assert.match(css, /\.commandHub\s*\{/);
+  assert.match(app, /ARENA_SELECTOR_MODE/);
+  assert.match(selectorMode, /NEXT_PUBLIC_ARENA_SELECTOR_MODE/);
+  assert.match(selectorMode, /"grid-spotlight"/);
+  assert.match(app, /<ParticipantSelectionExperience/);
+  assert.match(app, /<LegacyWheelSelector/);
+  assert.match(selection, /Selecionando participante/);
+  assert.match(selection, /PARTICIPANTE SELECIONADO/);
+  assert.match(legacy, /<DrawWheel/);
 });
 
-test("Sorteio Inteligente 2.0 keeps scoring evidence visible after the draw", () => {
+test("Grid + Spotlight keeps scoring and draw evidence visible without duplicating the selection algorithm", () => {
   const app = read("components/ArenaApp.tsx");
+  const selection = read("components/arena/selection/ParticipantSelectionExperience.tsx");
+  const orchestration = read("components/arena/selection/useParticipantSelection.ts");
 
-  assert.match(app, /Sorteado agora/i);
-  assert.match(app, /currentSession\.drawCounts\[selected\.id\]/);
-  assert.match(app, /selectedXp/);
+  assert.match(selection, /drawCounts/);
+  assert.match(selection, /Continuar para pontuação/);
+  assert.match(selection, /Já sorteado/);
   assert.match(app, /Pontuação rápida/);
+  assert.match(orchestration, /drawStudent\(sessionId\)/);
 });
 
 
@@ -119,16 +126,18 @@ test("Professor Arena fidelity pass exposes persistent context rail and QR entry
   assert.match(css, /\.arena-session-code-card\s*\{/);
 });
 
-test("Smart Draw workspace prioritizes the roulette and moves policies to settings", () => {
+test("Smart Draw workspace uses a participant Grid, transient Spotlight and contextual history", () => {
   const app = read("components/ArenaApp.tsx");
+  const selection = read("components/arena/selection/ParticipantSelectionExperience.tsx");
+  const rail = read("components/arena/selection/DrawSessionRail.tsx");
 
   assert.match(app, /className="smart-draw-workspace"/);
   assert.match(app, /setDrawSettingsOpen\(true\)/);
   assert.match(app, /title="Configurações do Sorteio"/);
   assert.match(app, /POLÍTICAS DO BACKEND/);
-  assert.match(app, /className="draw-history-popover draw-history-inline"/);
-  assert.match(app, /drawCoverage/);
-  assert.match(app, /Confirmar e pontuar/);
+  assert.match(selection, /className=\{styles\.grid\}/);
+  assert.match(selection, /className=\{styles\.spotlightLayer\}/);
+  assert.match(rail, /Últimos sorteados/);
   assert.match(app, /className="quick-score-dock"/);
 });
 
@@ -309,14 +318,16 @@ test("Arena desktop fidelity pass removes the global content max width only insi
   assert.match(globals, /max-width:\s*none/);
 });
 
-test("Semicircle roulette keeps backend authority and only animates presentation", () => {
-  const app = read("components/ArenaApp.tsx");
+test("Legacy wheel keeps backend authority and only animates presentation", () => {
+  const orchestration = read("components/arena/selection/useParticipantSelection.ts");
+  const legacy = read("components/arena/selection/legacy/LegacyWheelSelector.tsx");
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
-  assert.match(app, /const result = await drawStudentApi\(currentSession\.id\)/);
-  assert.match(app, /setSelectedId\(result\.studentId\)/);
+  assert.match(orchestration, /const result = await drawStudent\(sessionId\)/);
+  assert.match(orchestration, /setSelectedStudentId\(result\.studentId\)/);
+  assert.match(legacy, /<DrawWheel/);
   assert.match(wheel, /drawing \? styles\.drawing/);
-  assert.doesNotMatch(app, /Math\.random\(\).*student|student.*Math\.random\(\)/);
+  assert.doesNotMatch(orchestration, /Math\.random\(\).*student|student.*Math\.random\(\)/);
 });
 
 test("Draw settings expose backend policies as information instead of fake controls", () => {
@@ -503,9 +514,9 @@ test("DrawWheel rotates participant labels toward the radial center with a bound
   assert.match(wheel, /rotate\(\$\{rotation\.toFixed\(2\)\}\)/);
 });
 
-test("DrawWheel settles the winner in the fixed focus slot for adaptive and fully visible modes", () => {
+test("Legacy DrawWheel settles the winner in the fixed focus slot after server selection", () => {
   const wheel = read("components/arena/draw/DrawWheel.tsx");
-  const app = read("components/ArenaApp.tsx");
+  const orchestration = read("components/arena/selection/useParticipantSelection.ts");
 
   assert.match(wheel, /const baseSlotCount = carouselMode \? visibleSlots : Math\.max\(participants\.length, 1\)/);
   assert.match(wheel, /baseSlotCount > 1 && baseSlotCount % 2 === 0/);
@@ -513,9 +524,9 @@ test("DrawWheel settles the winner in the fixed focus slot for adaptive and full
   assert.match(wheel, /const centerSlotIndex = Math\.floor\(renderedSlotCount \/ 2\)/);
   assert.match(wheel, /winnerIndex - centerSlotIndex/);
   assert.match(wheel, /const segmentCount = renderedSlotCount/);
-  assert.match(app, /setTimeout\(resolve, 850\)/);
-  assert.match(app, /setSelectedId\(result\.studentId\)/);
-  assert.match(app, /setTimeout\(resolve, 950\)/);
+  assert.match(orchestration, /setTimeout\(resolve, 850\)/);
+  assert.match(orchestration, /setSelectedStudentId\(result\.studentId\)/);
+  assert.match(orchestration, /setTimeout\(resolve, 950\)/);
 });
 
 test("DrawWheel uses neutral placeholders after settling instead of duplicating students in even classes", () => {

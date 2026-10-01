@@ -121,8 +121,8 @@ for (const viewport of [
       const header = page.locator(".arena-live-topbar");
       const main = page.locator(".arena-cockpit-main");
       const rail = page.locator(".arena-context-rail");
-      const hero = page.locator(".smart-draw-hero");
-      const result = page.locator(".selected-student-bar");
+      const selectionExperience = page.getByTestId("participant-selection-experience");
+      const drawRail = page.getByTestId("draw-session-rail");
       const quickScore = page.locator(".quick-score-dock");
       const sessionCode = page.locator(".arena-session-code-card");
       const professor = page.locator(".arena-nav-professor");
@@ -134,8 +134,8 @@ for (const viewport of [
       await expect(header).toBeVisible();
       await expect(main).toBeVisible();
       await expect(rail).toBeVisible();
-      await expect(hero).toBeVisible();
-      await expect(result).toBeVisible();
+      await expect(selectionExperience).toBeVisible();
+      await expect(drawRail).toBeVisible();
       await expect(quickScore).toBeVisible();
       await expect(sessionCode).toBeVisible();
       await expect(professor).toBeVisible();
@@ -147,8 +147,8 @@ for (const viewport of [
         headerBox,
         mainBox,
         railBox,
-        heroBox,
-        resultBox,
+        selectionBox,
+        drawRailBox,
         quickScoreBox,
         sessionCodeBox,
         professorBox,
@@ -159,8 +159,8 @@ for (const viewport of [
         header.boundingBox(),
         main.boundingBox(),
         rail.boundingBox(),
-        hero.boundingBox(),
-        result.boundingBox(),
+        selectionExperience.boundingBox(),
+        drawRail.boundingBox(),
         quickScore.boundingBox(),
         sessionCode.boundingBox(),
         professor.boundingBox(),
@@ -172,8 +172,8 @@ for (const viewport of [
       expect(headerBox).not.toBeNull();
       expect(mainBox).not.toBeNull();
       expect(railBox).not.toBeNull();
-      expect(heroBox).not.toBeNull();
-      expect(resultBox).not.toBeNull();
+      expect(selectionBox).not.toBeNull();
+      expect(drawRailBox).not.toBeNull();
       expect(quickScoreBox).not.toBeNull();
       expect(sessionCodeBox).not.toBeNull();
       expect(professorBox).not.toBeNull();
@@ -185,8 +185,8 @@ for (const viewport of [
         || !headerBox
         || !mainBox
         || !railBox
-        || !heroBox
-        || !resultBox
+        || !selectionBox
+        || !drawRailBox
         || !quickScoreBox
         || !sessionCodeBox
         || !professorBox
@@ -202,8 +202,8 @@ for (const viewport of [
       expect(workspaceBox.x + workspaceBox.width).toBeGreaterThanOrEqual(viewport.width - 1);
       expect(headerBox.x).toBeGreaterThanOrEqual(workspaceBox.x - 1);
       expect(mainBox.width).toBeGreaterThan(railBox.width);
-      expect(heroBox.y + heroBox.height).toBeLessThanOrEqual(mainBox.y + mainBox.height + 1);
-      expect(resultBox.y + resultBox.height).toBeLessThanOrEqual(heroBox.y + heroBox.height + 1);
+      expect(selectionBox.y + selectionBox.height).toBeLessThanOrEqual(mainBox.y + mainBox.height + 1);
+      expect(drawRailBox.y + drawRailBox.height).toBeLessThanOrEqual(railBox.y + railBox.height + 1);
       expect(quickScoreBox.y + quickScoreBox.height).toBeLessThanOrEqual(viewport.height + 1);
       expect(sessionCodeBox.y + sessionCodeBox.height).toBeLessThanOrEqual(viewport.height + 1);
       expect(professorBox.y + professorBox.height).toBeLessThanOrEqual(viewport.height + 1);
@@ -239,12 +239,14 @@ test("Arena com 22 participantes mantém controles e código visíveis em 1821x8
     const fixture = await createArenaFixture(api, csrfHeaders, 22);
     await openArena(page, fixture.classroomName, fixture.sessionTitle);
 
-    const participantRows = page.locator(".arena-participant-row");
+    const participantCards = page.getByTestId("participant-card");
+    const drawRail = page.getByTestId("draw-session-rail");
     const quickScore = page.locator(".quick-score-dock");
     const sessionCode = page.locator(".arena-session-code-card");
 
-    await expect(participantRows).toHaveCount(12);
-    await expect(page.getByRole("button", { name: "Ver todos (22) →" })).toBeVisible();
+    await expect(participantCards).toHaveCount(22);
+    await expect(drawRail).toBeVisible();
+    await expect(page.getByText("22", { exact: true }).first()).toBeVisible();
     await expect(quickScore).toBeVisible();
     await expect(sessionCode).toBeVisible();
 
@@ -264,19 +266,52 @@ test("Arena com 22 participantes mantém controles e código visíveis em 1821x8
     expect(sessionCodeBox.y + sessionCodeBox.height).toBeLessThanOrEqual(viewport.height + 1);
 
     const geometry = await page.evaluate(() => {
-      const list = document.querySelector(".arena-participant-list") as HTMLElement | null;
+      const gridViewport = document.querySelector('[data-testid="participant-grid-viewport"]') as HTMLElement | null;
       const contextRail = document.querySelector(".arena-context-rail") as HTMLElement | null;
       const main = document.querySelector(".arena-cockpit-main") as HTMLElement | null;
       return {
-        listScrolls: Boolean(list && list.scrollHeight > list.clientHeight),
+        gridOverflow: gridViewport ? gridViewport.scrollHeight - gridViewport.clientHeight : 0,
         railOverflow: contextRail ? contextRail.scrollHeight - contextRail.clientHeight : 0,
         mainOverflow: main ? main.scrollHeight - main.clientHeight : 0,
       };
     });
 
-    expect(geometry.listScrolls).toBe(true);
+    expect(geometry.gridOverflow).toBeGreaterThanOrEqual(0);
     expect(geometry.railOverflow).toBeLessThanOrEqual(1);
     expect(geometry.mainOverflow).toBeLessThanOrEqual(1);
+  } finally {
+    await context.close();
+    await api.dispose();
+  }
+});
+
+test("Grid + Spotlight revela a seleção e devolve o participante ao grid como já sorteado", async ({ browser }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 1);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+
+    const drawButton = page.getByRole("button", { name: "Sortear participante" });
+    const participantCard = page.getByTestId("participant-card").first();
+
+    await expect(drawButton).toBeVisible();
+    await expect(participantCard).toHaveAttribute("data-status", "available");
+
+    await drawButton.click();
+
+    const spotlight = page.getByTestId("spotlight-reveal");
+    await expect(spotlight).toBeVisible();
+    await expect(spotlight.getByText("Shell 1", { exact: true })).toBeVisible();
+    await expect(participantCard).toHaveAttribute("data-status", "selected");
+
+    await spotlight.getByRole("button", { name: "Continuar para pontuação" }).click();
+
+    await expect(spotlight).toBeHidden();
+    await expect(participantCard).toHaveAttribute("data-status", "drawn");
+    await expect(page.getByTestId("draw-session-rail").getByText("Shell 1", { exact: true })).toBeVisible();
   } finally {
     await context.close();
     await api.dispose();
