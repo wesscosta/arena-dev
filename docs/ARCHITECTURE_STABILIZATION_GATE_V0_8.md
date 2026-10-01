@@ -38,14 +38,14 @@ retomada de 16.5C e demais incrementos
 | Gate | Resultado observado |
 | --- | --- |
 | Frontend typecheck | OK |
-| Frontend unit/source tests | 273/273 |
+| Frontend unit/source tests | 274/274 |
 | Backend unit tests | 106/106 |
-| Backend `mvn verify` | BUILD SUCCESS · 106 unitários + 86 ITs |
+| Backend `mvn verify` | BUILD SUCCESS · 106 unitários + 87 ITs |
 | Flyway | V1–V37 aplicado com sucesso nos ITs |
 | Frontend build | OK com Next.js 16.3.8 |
 | `npm audit --omit=dev --audit-level=high` | 0 vulnerabilidades |
 | E2E críticos | 4/4 |
-| E2E Arena shell / vertical contract | 5/5 · 4 viewports + cenário com 22 participantes em 1821×831 |
+| E2E Arena shell + selector | 8/8 · 4 viewports + 22 participantes + Grid↔Roleta + cards compactos |
 
 A baseline P0 foi restaurada. O teste estrutural obsoleto da navegação foi substituído por assertions alinhadas ao contrato atual do shell, sem reintroduzir o bloco redundante removido.
 
@@ -521,7 +521,7 @@ Pipeline mínimo:
 
 # P5 — Participant Selector / Grid + Spotlight transitório
 
-**Status:** implementação candidata iniciada antecipadamente por decisão de produto, protegida por feature flag interna. Isso não encerra P5 nem elimina os gates P2–P4: o novo selector só poderá perder o fallback legado depois da consolidação de Design System, boundaries e quality gates.
+**Status:** implementação candidata avançada e operacional. Grid + Spotlight permanece como padrão, enquanto a Roleta foi promovida de fallback técnico para apresentação alternativa selecionável e persistida por sessão. Isso não encerra P5 nem elimina os gates P2–P4: a decisão de manter ambas as apresentações no produto continua dependente de validação em aula.
 
 ## P5.1 Extrair seleção da representação
 
@@ -535,16 +535,16 @@ ParticipantSelection
 
 Views
 ├── ParticipantGrid + TransientSpotlight
-└── LegacyWheelSelector
+└── WheelParticipantSelector
 ```
 
 ## P5.2 Preservar roleta
 
-A roleta atual virou visualização legada reversível em `LegacyWheelSelector`.
+A roleta atual está isolada em `WheelParticipantSelector` e pode ser selecionada pelo professor no drawer de configurações.
 
-O modo padrão é `grid-spotlight`; `legacy-wheel` permanece disponível via `NEXT_PUBLIC_ARENA_SELECTOR_MODE`.
+O critério continua `BALANCED`; a escolha `GRID_SPOTLIGHT` ou `WHEEL` altera somente a apresentação. A preferência é persistida no estado `QUICK_DRAW` da sessão e sobrevive à recarga sem nova migration.
 
-Não há regra de sorteio duplicada no frontend: ambos os modos usam o mesmo comando server-authoritative.
+Não há regra de sorteio duplicada no frontend: ambas as apresentações usam o mesmo comando server-authoritative.
 
 ## P5.3 Spotlight MVP
 
@@ -567,17 +567,20 @@ Implementado em CSS Module com estados:
 
 O Grid é contexto da turma, não autoridade de seleção. O rail do Sorteio deixou de duplicar o roster e agora mostra resumo da sessão + histórico persistido de sorteios; QR/código permanece como contexto separado.
 
+Em desktop, os cards usam largura limitada (máximo de 13.5rem) e alinhamento inicial, evitando que 1–8 participantes sejam esticados para ocupar todo o Stage.
+
 ## P5.5 Rollout
 
-- feature flag interna implementada;
-- `grid-spotlight` é o default técnico;
-- `legacy-wheel` é o fallback reversível;
+- `grid-spotlight` é o default de produto;
+- `GRID_SPOTLIGHT` e `WHEEL` são persistidos por sessão no backend;
+- o drawer usa radios nativos acessíveis para troca de apresentação;
+- `NEXT_PUBLIC_ARENA_SELECTOR_MODE` fica restrito a fallback de compatibilidade;
 - eventos `DRAW_COMPLETED` registram `method=BALANCED` e `drawCount`;
 - `useParticipantSelection` concentra a orquestração frontend;
-- E2E cobre Grid, Spotlight, retorno ao Grid, 22 participantes e os viewports do shell;
-- validação em aula continua obrigatória antes de deprecar a Wheel.
+- E2E cobre Grid, Spotlight, retorno ao Grid, troca Grid ↔ Roleta, persistência, cards compactos, 22 participantes e os viewports do shell;
+- validação em aula continua obrigatória para decidir se ambas as apresentações permanecem no produto.
 
-**Validação técnica corrente:** frontend 273/273, typecheck/build verdes; Arena shell + selector 6/6 E2E; fluxos críticos 4/4; backend `mvn verify` verde com 106 testes unitários + 86 ITs.
+**Validação técnica corrente:** frontend 274/274, typecheck/build verdes; Arena shell + selector 8/8 E2E; fluxos críticos 4/4; backend `mvn verify` verde com 106 testes unitários + 87 ITs.
 
 ---
 

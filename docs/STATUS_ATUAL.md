@@ -88,7 +88,7 @@ Google Classroom           standby
 - confinamento `100dvh`/`overflow: hidden` ficou restrito à Arena ao vivo via `arena-fullscreen-shell`;
 - scroll lock de overlays centralizado e seguro para locks simultâneos;
 - tela de participantes simplificada com busca, nome de exibição sob demanda e ações por ícones;
-- baseline atual: Next.js 16.3.8; `npm audit --omit=dev --audit-level=high` com 0 vulnerabilidades; frontend 273/273, typecheck e build verdes; backend `mvn verify` verde com 106 testes unitários + 86 ITs;
+- baseline atual: Next.js 16.3.8; `npm audit --omit=dev --audit-level=high` com 0 vulnerabilidades; frontend 274/274, typecheck e build verdes; backend `mvn verify` verde com 106 testes unitários + 87 ITs;
 
 ## Professor Arena Experience — implementado
 
@@ -102,9 +102,12 @@ Google Classroom           standby
 - Spotlight aparece apenas no reveal, sem simulação de nomes, roleta falsa ou slot-machine;
 - rail do Sorteio mostra resumo da sessão e histórico persistido em vez de duplicar o roster;
 - `DRAW_COMPLETED` registra `method=BALANCED` e `drawCount`;
-- roleta SVG preservada em `LegacyWheelSelector` como fallback reversível;
-- feature flag interna: `grid-spotlight` (default) ou `legacy-wheel`;
-- E2E do selector: 6/6, incluindo reveal → retorno ao Grid, 22 participantes e quatro viewports do shell;
+- Grid + Spotlight continua como apresentação padrão, mas a Roleta agora é uma apresentação alternativa real em `WheelParticipantSelector`;
+- a apresentação (`GRID_SPOTLIGHT` ou `WHEEL`) é persistida por sessão no estado `QUICK_DRAW`, sem nova migration e sem alterar o algoritmo balanceado;
+- drawer separa explicitamente Critério de Seleção, Apresentação e Regras da Seleção;
+- Grid limita os cards a 13.5rem no desktop, evitando expansão excessiva em turmas pequenas;
+- `NEXT_PUBLIC_ARENA_SELECTOR_MODE` permanece somente como fallback de compatibilidade/default frontend;
+- E2E do selector: 8/8, incluindo reveal → retorno ao Grid, alternância Grid ↔ Roleta, persistência da apresentação, cards compactos, 22 participantes e quatro viewports do shell;
 - tabs antigas removidas da Arena;
 - sidebar persistente por ação;
 - Dinâmicas e Ferramentas separadas;
@@ -113,7 +116,7 @@ Google Classroom           standby
 - QR/código de sessão preservado no rail;
 - Timer, Organização e Presença como ferramentas contextuais;
 - Pontuação Rápida transversal;
-- Configurações exibem apenas políticas reais;
+- Configurações exibem apenas regras reais e permitem trocar a apresentação sem alterar o critério de seleção;
 - QR ampliável em Presença e acesso;
 - indicadores de online e presença consolidados no roster;
 - selects nativos com contraste dark consistente;

@@ -139,13 +139,17 @@ Esses itens permanecem nos incrementos posteriores da v0.8.
 
 Durante o Gate de Estabilização Arquitetural, o Sorteio recebeu uma implementação candidata de **Participant Grid + Spotlight transitório**, sem reabrir o incremento histórico 16.0 nem mover a autoridade do sorteio para o frontend.
 
-- Grid passa a ser a representação permanente da turma no Sorteio;
+- Grid passa a ser a representação permanente da turma no modo padrão;
 - Spotlight aparece apenas no momento do reveal;
 - rail do Sorteio passa a exibir resumo + histórico persistido;
 - `ParticipantSelectionService` continua sendo a autoridade da seleção balanceada;
-- `LegacyWheelSelector` preserva a roleta SVG como fallback;
-- `NEXT_PUBLIC_ARENA_SELECTOR_MODE=grid-spotlight|legacy-wheel` controla o rollout;
-- a roleta só poderá ser depreciada após validação em aula e fechamento dos gates arquiteturais restantes.
+- `WheelParticipantSelector` preserva a roleta SVG como apresentação alternativa;
+- Grid + Spotlight e Roleta usam exatamente o mesmo resultado server-authoritative;
+- a apresentação escolhida é persistida por sessão no estado `QUICK_DRAW` como `GRID_SPOTLIGHT` ou `WHEEL`;
+- o drawer separa Critério de Seleção, Apresentação e Regras da Seleção;
+- cards do Grid possuem largura máxima no desktop para não se expandirem em turmas pequenas;
+- `NEXT_PUBLIC_ARENA_SELECTOR_MODE` permanece apenas como fallback de compatibilidade frontend, não como controle principal do professor;
+- a permanência das duas apresentações será validada em aula antes de qualquer depreciação.
 
 O acompanhamento técnico desta evolução pertence ao **P5 do Gate de Estabilização Arquitetural**, evitando conflito com o já existente `16.4B — Live dentro do Student Shell`.
 
