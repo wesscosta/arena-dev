@@ -519,9 +519,9 @@ Pipeline mínimo:
 
 ---
 
-# P5 — Participant Selector / Spotlight + Grid
+# P5 — Participant Selector / Grid + Spotlight transitório
 
-Só começa depois de P0–P4.
+**Status:** implementação candidata iniciada antecipadamente por decisão de produto, protegida por feature flag interna. Isso não encerra P5 nem elimina os gates P2–P4: o novo selector só poderá perder o fallback legado depois da consolidação de Design System, boundaries e quality gates.
 
 ## P5.1 Extrair seleção da representação
 
@@ -534,41 +534,50 @@ ParticipantSelection
 └── selected participant
 
 Views
-├── SpotlightSelector
+├── ParticipantGrid + TransientSpotlight
 └── LegacyWheelSelector
 ```
 
 ## P5.2 Preservar roleta
 
-A roleta atual vira visualização legada reversível.
+A roleta atual virou visualização legada reversível em `LegacyWheelSelector`.
 
-Não duplicar regra de sorteio no frontend.
+O modo padrão é `grid-spotlight`; `legacy-wheel` permanece disponível via `NEXT_PUBLIC_ARENA_SELECTOR_MODE`.
+
+Não há regra de sorteio duplicada no frontend: ambos os modos usam o mesmo comando server-authoritative.
 
 ## P5.3 Spotlight MVP
+
+Implementado como Spotlight transitório, sem ocupar permanentemente o Stage.
 
 Estados:
 - READY;
 - SELECTING;
-- SELECTED.
+- REVEALED.
 
-Motion curto, sem metáfora de cassino.
+O Grid permanece como contexto visual da turma; durante o reveal, o Spotlight assume o foco sem simular nomes passando ou slot machine. Motion curto e `prefers-reduced-motion` preservado.
 
 ## P5.4 Grid de participantes
 
-Estados:
-- presente;
+Implementado em CSS Module com estados:
+- disponível;
 - ausente;
 - já sorteado;
-- selecionado.
+- selecionado agora.
 
-Grid é contexto da turma, não autoridade de seleção.
+O Grid é contexto da turma, não autoridade de seleção. O rail do Sorteio deixou de duplicar o roster e agora mostra resumo da sessão + histórico persistido de sorteios; QR/código permanece como contexto separado.
 
 ## P5.5 Rollout
 
-- feature flag interna;
-- Spotlight como candidato a default;
-- Wheel como fallback;
-- validação em aula antes de deprecar.
+- feature flag interna implementada;
+- `grid-spotlight` é o default técnico;
+- `legacy-wheel` é o fallback reversível;
+- eventos `DRAW_COMPLETED` registram `method=BALANCED` e `drawCount`;
+- `useParticipantSelection` concentra a orquestração frontend;
+- E2E cobre Grid, Spotlight, retorno ao Grid, 22 participantes e os viewports do shell;
+- validação em aula continua obrigatória antes de deprecar a Wheel.
+
+**Validação técnica corrente:** frontend 273/273, typecheck/build verdes; Arena shell + selector 6/6 E2E; fluxos críticos 4/4; backend `mvn verify` verde com 106 testes unitários + 86 ITs.
 
 ---
 
