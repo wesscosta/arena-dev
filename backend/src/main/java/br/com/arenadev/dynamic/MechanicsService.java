@@ -78,7 +78,7 @@ public class MechanicsService {
                 sessionId,
                 DynamicType.QUICK_DRAW,
                 DrawState.class,
-                new DrawState(new HashMap<>(), null)
+                new DrawState(new HashMap<>(), null, ParticipantSelectorPresentation.GRID_SPOTLIGHT)
         );
         ParticipantSelectionService.Selection selection = participantSelectionService.select(
                 present,
@@ -89,7 +89,11 @@ public class MechanicsService {
         saveState(
                 session,
                 DynamicType.QUICK_DRAW,
-                new DrawState(selection.drawCounts(), drawnWinner.toString())
+                new DrawState(
+                        selection.drawCounts(),
+                        drawnWinner.toString(),
+                        resolveSelectorPresentation(state)
+                )
         );
         liveStageService.showDraw(sessionId, drawnWinner);
         String winnerName = participantRepository.findBySessionIdOrderByStudentNameAsc(sessionId).stream()
@@ -110,6 +114,38 @@ public class MechanicsService {
                 )
         );
         return new DrawResult(drawnWinner, runtime(sessionId));
+    }
+
+    @Transactional
+    public RuntimeView setDrawPresentation(
+            UUID sessionId,
+            ParticipantSelectorPresentation presentation
+    ) {
+        if (presentation == null) {
+            throw new IllegalArgumentException("Apresentação do sorteio é obrigatória.");
+        }
+
+        ClassSession session = requireActiveSession(sessionId);
+        DrawState state = readState(
+                sessionId,
+                DynamicType.QUICK_DRAW,
+                DrawState.class,
+                new DrawState(
+                        new HashMap<>(),
+                        null,
+                        ParticipantSelectorPresentation.GRID_SPOTLIGHT
+                )
+        );
+        saveState(
+                session,
+                DynamicType.QUICK_DRAW,
+                new DrawState(
+                        state.drawCounts() == null ? Map.of() : state.drawCounts(),
+                        state.lastDrawnStudentId(),
+                        presentation
+                )
+        );
+        return runtime(sessionId);
     }
 
     @Transactional
@@ -409,7 +445,7 @@ public class MechanicsService {
                 sessionId,
                 DynamicType.QUICK_DRAW,
                 DrawState.class,
-                new DrawState(Map.of(), null)
+                new DrawState(Map.of(), null, ParticipantSelectorPresentation.GRID_SPOTLIGHT)
         );
         BossState boss = readState(
                 sessionId,
@@ -429,6 +465,7 @@ public class MechanicsService {
                 sessionId,
                 draw.drawCounts() == null ? Map.of() : draw.drawCounts(),
                 draw.lastDrawnStudentId(),
+                resolveSelectorPresentation(draw),
                 boss,
                 arena.activityId(),
                 arena.currentQuestionId(),
@@ -832,9 +869,16 @@ public class MechanicsService {
 
     private static String pairKey(String a, String b) { return a.compareTo(b) <= 0 ? a + "|" + b : b + "|" + a; }
 
+    private static ParticipantSelectorPresentation resolveSelectorPresentation(DrawState state) {
+        return state != null && state.selectorPresentation() != null
+                ? state.selectorPresentation()
+                : ParticipantSelectorPresentation.GRID_SPOTLIGHT;
+    }
+
     private record DrawState(
             Map<String, Integer> drawCounts,
-            String lastDrawnStudentId
+            String lastDrawnStudentId,
+            ParticipantSelectorPresentation selectorPresentation
     ) {}
     private enum FlowMovement {
         START,
@@ -857,6 +901,7 @@ public class MechanicsService {
             UUID sessionId,
             Map<String, Integer> drawCounts,
             String lastDrawnStudentId,
+            ParticipantSelectorPresentation selectorPresentation,
             BossState boss,
             String activityId,
             String currentQuestionId,

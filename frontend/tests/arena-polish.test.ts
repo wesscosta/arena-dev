@@ -86,20 +86,20 @@ test("Professor Arena cockpit exposes dynamics and transversal tools together", 
 });
 
 
-test("Participant selection defaults to Grid + Spotlight and preserves the wheel as a legacy fallback", () => {
+test("Participant selection defaults to Grid + Spotlight and keeps Wheel as a presentation option", () => {
   const app = read("components/ArenaApp.tsx");
   const selection = read("components/arena/selection/ParticipantSelectionExperience.tsx");
   const selectorMode = read("components/arena/selection/selector-mode.ts");
-  const legacy = read("components/arena/selection/legacy/LegacyWheelSelector.tsx");
+  const wheel = read("components/arena/selection/WheelParticipantSelector.tsx");
 
-  assert.match(app, /ARENA_SELECTOR_MODE/);
-  assert.match(selectorMode, /NEXT_PUBLIC_ARENA_SELECTOR_MODE/);
-  assert.match(selectorMode, /"grid-spotlight"/);
+  assert.match(app, /presentationToSelectorMode\(currentSession\?\.selectorPresentation\)/);
+  assert.match(selectorMode, /GRID_SPOTLIGHT/);
+  assert.match(selectorMode, /WHEEL/);
   assert.match(app, /<ParticipantSelectionExperience/);
-  assert.match(app, /<LegacyWheelSelector/);
+  assert.match(app, /<WheelParticipantSelector/);
   assert.match(selection, /Selecionando participante/);
   assert.match(selection, /PARTICIPANTE SELECIONADO/);
-  assert.match(legacy, /<DrawWheel/);
+  assert.match(wheel, /<DrawWheel/);
 });
 
 test("Grid + Spotlight keeps scoring and draw evidence visible without duplicating the selection algorithm", () => {
@@ -134,7 +134,7 @@ test("Smart Draw workspace uses a participant Grid, transient Spotlight and cont
   assert.match(app, /className="smart-draw-workspace"/);
   assert.match(app, /setDrawSettingsOpen\(true\)/);
   assert.match(app, /title="Configurações do Sorteio"/);
-  assert.match(app, /POLÍTICAS DO BACKEND/);
+  assert.match(app, /REGRAS DA SELEÇÃO/);
   assert.match(selection, /className=\{styles\.grid\}/);
   assert.match(selection, /className=\{styles\.spotlightLayer\}/);
   assert.match(rail, /Últimos sorteados/);
@@ -318,26 +318,40 @@ test("Arena desktop fidelity pass removes the global content max width only insi
   assert.match(globals, /max-width:\s*none/);
 });
 
-test("Legacy wheel keeps backend authority and only animates presentation", () => {
+test("Wheel presentation keeps backend authority and only animates presentation", () => {
   const orchestration = read("components/arena/selection/useParticipantSelection.ts");
-  const legacy = read("components/arena/selection/legacy/LegacyWheelSelector.tsx");
+  const selector = read("components/arena/selection/WheelParticipantSelector.tsx");
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
   assert.match(orchestration, /const result = await drawStudent\(sessionId\)/);
   assert.match(orchestration, /setSelectedStudentId\(result\.studentId\)/);
-  assert.match(legacy, /<DrawWheel/);
+  assert.match(selector, /<DrawWheel/);
   assert.match(wheel, /drawing \? styles\.drawing/);
   assert.doesNotMatch(orchestration, /Math\.random\(\).*student|student.*Math\.random\(\)/);
 });
 
-test("Draw settings expose backend policies as information instead of fake controls", () => {
+test("Draw settings separate selection criterion, presentation and selection rules", () => {
   const app = read("components/ArenaApp.tsx");
+  const mechanics = read("lib/mechanics-api.ts");
 
-  assert.match(app, /MODO ATIVO/);
+  assert.match(app, /CRITÉRIO DE SELEÇÃO/);
+  assert.match(app, /APRESENTAÇÃO/);
+  assert.match(app, /REGRAS DA SELEÇÃO/);
+  assert.match(app, /Grid \+ Spotlight/);
+  assert.match(app, /Roleta/);
   assert.match(app, /Balanceado/);
   assert.match(app, /Apenas presentes/);
   assert.match(app, /Evita repetição imediata/);
-  assert.doesNotMatch(app, /draw-settings-rule[\s\S]{0,120}<input/);
+  assert.match(app, /setDrawPresentationApi/);
+  assert.match(mechanics, /mechanics\/draw\/presentation/);
+});
+
+test("Participant grid caps card width when the class has few students", () => {
+  const css = read("components/arena/selection/ParticipantSelectionExperience.module.css");
+
+  assert.match(css, /repeat\(auto-fill, minmax\(min\(100%, 10\.5rem\), 13\.5rem\)\)/);
+  assert.match(css, /max-width:\s*13\.5rem/);
+  assert.match(css, /justify-content:\s*start/);
 });
 
 

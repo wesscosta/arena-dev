@@ -53,6 +53,7 @@ class SessionRuntimeSnapshotServiceTest {
                 sessionId,
                 java.util.Map.of(),
                 null,
+                br.com.arenadev.dynamic.ParticipantSelectorPresentation.GRID_SPOTLIGHT,
                 boss,
                 null,
                 null,

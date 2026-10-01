@@ -3,6 +3,7 @@ import type {
   ActivityStepType,
   BossState,
   GameSession,
+  ParticipantSelectorPresentation,
   PollOption,
   SessionRuntimeState,
 } from "./types";
@@ -36,6 +37,7 @@ type RuntimeView = {
   sessionId: string;
   drawCounts: Record<string, number>;
   lastDrawnStudentId: string | null;
+  selectorPresentation: ParticipantSelectorPresentation | null;
   boss: BossState | null;
   activityId: string | null;
   currentQuestionId: string | null;
@@ -145,6 +147,7 @@ export function mapRuntime(row: RuntimeView): SessionRuntimeState {
     sessionId: row.sessionId,
     drawCounts: row.drawCounts ?? {},
     lastDrawnStudentId: row.lastDrawnStudentId ?? undefined,
+    selectorPresentation: row.selectorPresentation ?? "GRID_SPOTLIGHT",
     boss: row.boss ?? undefined,
     activityId: row.activityId ?? undefined,
     currentQuestionId: row.currentQuestionId ?? undefined,
@@ -161,6 +164,7 @@ export function mergeSessionMechanics(session: GameSession, runtime: SessionRunt
     ...session,
     drawCounts: runtime.drawCounts ?? {},
     lastDrawnStudentId: runtime.lastDrawnStudentId,
+    selectorPresentation: runtime.selectorPresentation ?? session.selectorPresentation ?? "GRID_SPOTLIGHT",
     boss: runtime.boss,
     activityId: runtime.activityId,
     currentQuestionId: runtime.currentQuestionId,
@@ -179,6 +183,19 @@ export async function fetchSessionMechanics(sessionId: string): Promise<SessionR
 export async function drawStudent(sessionId: string): Promise<{ studentId: string; runtime: SessionRuntimeState }> {
   const result = await request<DrawResult>(`/api/sessions/${sessionId}/mechanics/draw`, { method: "POST" });
   return { studentId: result.studentId, runtime: mapRuntime(result.runtime) };
+}
+
+export async function setDrawPresentation(
+  sessionId: string,
+  presentation: ParticipantSelectorPresentation,
+): Promise<SessionRuntimeState> {
+  return mapRuntime(await request<RuntimeView>(
+    `/api/sessions/${sessionId}/mechanics/draw/presentation`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ presentation }),
+    },
+  ));
 }
 
 export async function organizeGroups(sessionId: string, groupSize: number): Promise<{ groups: string[][]; runtime: SessionRuntimeState }> {

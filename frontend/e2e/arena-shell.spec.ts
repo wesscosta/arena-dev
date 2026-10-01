@@ -317,3 +317,79 @@ test("Grid + Spotlight revela a seleção e devolve o participante ao grid como 
     await api.dispose();
   }
 });
+
+
+test("Configurações do sorteio alternam Grid + Spotlight e Roleta sem mudar o critério balanceado", async ({ browser }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 3);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+
+    await page.getByRole("button", { name: /Ajustes/ }).click();
+    const dialog = page.getByRole("dialog", { name: "Configurações do Sorteio" });
+    const gridOption = dialog.getByRole("radio", { name: /Grid \+ Spotlight/ });
+    const wheelOption = dialog.getByRole("radio", { name: /Roleta/ });
+
+    await expect(gridOption).toBeChecked();
+    await expect(dialog.getByText("Balanceado", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("REGRAS DA SELEÇÃO", { exact: true })).toBeVisible();
+
+    await dialog.locator("label.draw-settings-choice").filter({ hasText: "Roleta" }).click();
+    await expect(wheelOption).toBeChecked();
+
+    const runtimeResponse = await api.get(
+      `/api/sessions/${fixture.session.id}/mechanics`,
+    );
+    await expectOk(runtimeResponse, "Leitura da apresentação persistida");
+    const runtime = (await runtimeResponse.json()) as { selectorPresentation: string };
+    expect(runtime.selectorPresentation).toBe("WHEEL");
+
+    await dialog.getByRole("button", { name: "Fechar ferramenta" }).click();
+    await expect(page.getByText("Sorteio Inteligente", { exact: true })).toBeVisible();
+    await expect(page.locator(".arena-participants-card")).toBeVisible();
+    await expect(page.getByTestId("participant-selection-experience")).toHaveCount(0);
+
+    await page.getByRole("button", { name: /Ajustes/ }).click();
+    const reopenedDialog = page.getByRole("dialog", { name: "Configurações do Sorteio" });
+    await reopenedDialog
+      .locator("label.draw-settings-choice")
+      .filter({ hasText: "Grid + Spotlight" })
+      .click();
+
+    await expect(page.getByTestId("participant-selection-experience")).toBeVisible();
+    await expect(page.getByTestId("draw-session-rail")).toBeVisible();
+  } finally {
+    await context.close();
+    await api.dispose();
+  }
+});
+
+test("Grid mantém cards compactos quando há poucos participantes", async ({ browser }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 3);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+
+    const cards = page.getByTestId("participant-card");
+    await expect(cards).toHaveCount(3);
+
+    const widths = await cards.evaluateAll((elements) =>
+      elements.map((element) => element.getBoundingClientRect().width),
+    );
+    const gridWidth = await page.getByTestId("participant-grid").evaluate(
+      (element) => element.getBoundingClientRect().width,
+    );
+
+    expect(Math.max(...widths)).toBeLessThanOrEqual(218);
+    expect(gridWidth).toBeGreaterThan(Math.max(...widths) * 2);
+  } finally {
+    await context.close();
+    await api.dispose();
+  }
+});

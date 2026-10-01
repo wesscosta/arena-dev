@@ -90,6 +90,7 @@ function mapSession(item: SessionView, participants: SessionParticipant[], runti
     presentStudentIds: participants.filter((participant) => participant.present).map((participant) => participant.studentId),
     drawCounts: runtime?.drawCounts ?? {},
     lastDrawnStudentId: runtime?.lastDrawnStudentId,
+    selectorPresentation: runtime?.selectorPresentation ?? "GRID_SPOTLIGHT",
     boss: runtime?.boss,
     activityId: runtime?.activityId,
     currentQuestionId: runtime?.currentQuestionId,

@@ -3,7 +3,7 @@
 import type { Student } from "@/lib/types";
 import DrawWheel from "@/components/arena/draw/DrawWheel";
 
-export default function LegacyWheelSelector({
+export default function WheelParticipantSelector({
   participants,
   selectedStudentId,
   drawing,

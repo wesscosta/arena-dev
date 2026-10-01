@@ -11,8 +11,12 @@ import TimerPanel from "@/components/TimerPanel";
 import ArenaToolDrawer from "@/components/ArenaToolDrawer";
 import ParticipantSelectionExperience from "@/components/arena/selection/ParticipantSelectionExperience";
 import DrawSessionRail from "@/components/arena/selection/DrawSessionRail";
-import LegacyWheelSelector from "@/components/arena/selection/legacy/LegacyWheelSelector";
-import { ARENA_SELECTOR_MODE } from "@/components/arena/selection/selector-mode";
+import WheelParticipantSelector from "@/components/arena/selection/WheelParticipantSelector";
+import {
+  presentationToSelectorMode,
+  selectorModeToPresentation,
+} from "@/components/arena/selection/selector-mode";
+import type { ParticipantSelectorMode } from "@/components/arena/selection/selection.types";
 import { useParticipantSelection } from "@/components/arena/selection/useParticipantSelection";
 import {
   ArenaGlyph,
@@ -62,6 +66,7 @@ import {
   previousLiveFlow,
   restartArenaQuestions as restartArenaQuestionsApi,
   setArenaActivity as setArenaActivityApi,
+  setDrawPresentation as setDrawPresentationApi,
   startBoss as startBossApi,
   startLiveFlow,
   type LiveFlowState,
@@ -2191,6 +2196,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [activeTool, setActiveTool] = useState<ArenaTool>(null);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
   const [drawSettingsOpen, setDrawSettingsOpen] = useState(false);
+  const [drawPresentationBusy, setDrawPresentationBusy] = useState(false);
   const [sessionQrOpen, setSessionQrOpen] = useState(false);
   const [reason, setReason] = useState("Resposta correta");
   const [customPoints, setCustomPoints] = useState(10);
@@ -2225,6 +2231,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     [data.activities, classroomId],
   );
   const [activityId, setActivityId] = useState<string>(currentSession?.activityId ?? preferredActivityId ?? "");
+  const selectorMode = presentationToSelectorMode(currentSession?.selectorPresentation);
   const {
     busy: drawBusy,
     phase: selectionPhase,
@@ -2237,7 +2244,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     sessionId: currentSession?.id,
     presentStudentIds: currentSession?.presentStudentIds ?? [],
     initialSelectedStudentId: currentSession?.lastDrawnStudentId,
-    mode: ARENA_SELECTOR_MODE,
+    mode: selectorMode,
     onRuntime: (runtime) => {
       if (!currentSession) return;
       patch((current) => ({
@@ -2553,6 +2560,36 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     if (!spotlightStudentId) return;
     setSelectedId(spotlightStudentId);
     closeSpotlight();
+  }
+
+  async function changeDrawPresentation(mode: ParticipantSelectorMode) {
+    if (!currentSession || drawPresentationBusy || mode === selectorMode) return;
+
+    setDrawPresentationBusy(true);
+    try {
+      const runtime = await setDrawPresentationApi(
+        currentSession.id,
+        selectorModeToPresentation(mode),
+      );
+      closeSpotlight();
+      patch((current) => ({
+        ...current,
+        sessions: current.sessions.map((session) =>
+          session.id === currentSession.id
+            ? mergeSessionMechanics(session, runtime)
+            : session
+        ),
+      }));
+      notify(
+        mode === "wheel"
+          ? "Apresentação do sorteio alterada para Roleta."
+          : "Apresentação do sorteio alterada para Grid + Spotlight.",
+      );
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setDrawPresentationBusy(false);
+    }
   }
 
   async function addScore(
@@ -3070,7 +3107,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         <div className="stack-lg arena-tab-content">
           {activeDynamic === "draw" ? (
           <div className="smart-draw-workspace">
-            {ARENA_SELECTOR_MODE === "grid-spotlight" ? (
+            {selectorMode === "grid-spotlight" ? (
               <ParticipantSelectionExperience
                 students={students}
                 presentStudentIds={currentSession.presentStudentIds}
@@ -3097,7 +3134,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 </button>
               </div>
 
-              <LegacyWheelSelector
+              <WheelParticipantSelector
                 participants={students.filter((student) => currentSession.presentStudentIds.includes(student.id))}
                 selectedStudentId={selectedId}
                 drawing={drawBusy}
@@ -3567,7 +3604,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </main>
 
         <aside className="arena-context-rail" aria-label="Contexto da sessão">
-          {activeDynamic === "draw" && ARENA_SELECTOR_MODE === "grid-spotlight" ? (
+          {activeDynamic === "draw" && selectorMode === "grid-spotlight" ? (
             <DrawSessionRail
               students={students}
               presentCount={currentSession.presentStudentIds.length}
@@ -3735,12 +3772,12 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       <ArenaToolDrawer
         open={drawSettingsOpen}
         title="Configurações do Sorteio"
-        subtitle="Entenda as políticas ativas sem ocupar o palco da dinâmica."
+        subtitle="Defina a apresentação sem alterar as regras de seleção da turma."
         onClose={() => setDrawSettingsOpen(false)}
       >
         <div className="draw-settings-panel">
           <section className="draw-settings-mode">
-            <span className="draw-settings-label">MODO ATIVO</span>
+            <span className="draw-settings-label">CRITÉRIO DE SELEÇÃO</span>
             <div className="draw-settings-mode-card">
               <span className="draw-mode-radio" aria-hidden="true" />
               <div>
@@ -3750,8 +3787,53 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             </div>
           </section>
 
+          <section className="draw-settings-presentation">
+            <span className="draw-settings-label">APRESENTAÇÃO</span>
+            <div
+              className="draw-settings-choice-list"
+              role="radiogroup"
+              aria-label="Apresentação do sorteio"
+            >
+              <label className={selectorMode === "grid-spotlight" ? "draw-settings-choice active" : "draw-settings-choice"}>
+                <input
+                  className="draw-settings-choice-input"
+                  type="radio"
+                  name="draw-presentation"
+                  value="grid-spotlight"
+                  checked={selectorMode === "grid-spotlight"}
+                  disabled={drawPresentationBusy}
+                  onChange={() => { void changeDrawPresentation("grid-spotlight"); }}
+                />
+                <span className="draw-settings-choice-radio" aria-hidden="true" />
+                <span>
+                  <strong>Grid + Spotlight</strong>
+                  <small>Mostra a turma em cards e destaca apenas o participante sorteado.</small>
+                </span>
+              </label>
+              <label className={selectorMode === "wheel" ? "draw-settings-choice active" : "draw-settings-choice"}>
+                <input
+                  className="draw-settings-choice-input"
+                  type="radio"
+                  name="draw-presentation"
+                  value="wheel"
+                  checked={selectorMode === "wheel"}
+                  disabled={drawPresentationBusy}
+                  onChange={() => { void changeDrawPresentation("wheel"); }}
+                />
+                <span className="draw-settings-choice-radio" aria-hidden="true" />
+                <span>
+                  <strong>Roleta</strong>
+                  <small>Mantém a seleção balanceada e altera somente a apresentação visual.</small>
+                </span>
+              </label>
+            </div>
+            <p className="draw-settings-persistence-note">
+              A apresentação escolhida fica salva nesta sessão.
+            </p>
+          </section>
+
           <section className="draw-settings-rules">
-            <span className="draw-settings-label">POLÍTICAS DO BACKEND</span>
+            <span className="draw-settings-label">REGRAS DA SELEÇÃO</span>
             <div className="draw-settings-rule">
               <span aria-hidden="true">✓</span>
               <div>
@@ -3772,7 +3854,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             <strong>Como o balanceamento funciona</strong>
             <p>
               Todos continuam com chance de serem sorteados, mas o peso aumenta para quem participou menos.
-              A decisão final continua sendo feita pelo servidor.
+              A apresentação não altera o resultado: a decisão final continua sendo feita pelo servidor.
             </p>
           </section>
         </div>
