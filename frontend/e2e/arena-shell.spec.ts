@@ -115,6 +115,7 @@ for (const viewport of [
       const fixture = await createArenaFixture(api, csrfHeaders);
       await openArena(page, fixture.classroomName, fixture.sessionTitle);
 
+      const shell = page.locator(".arena-live-shell");
       const sidebar = page.locator("aside.arena-cockpit-nav");
       const workspace = page.locator(".arena-session-workspace");
       const header = page.locator(".arena-live-topbar");
@@ -126,8 +127,10 @@ for (const viewport of [
       const sessionCode = page.locator(".arena-session-code-card");
       const professor = page.locator(".arena-nav-professor");
 
+      await expect(shell).toBeVisible();
       await expect(sidebar).toBeVisible();
       await expect(workspace).toBeVisible();
+      await expect(page.locator(".arena-nav-professor .topbar-profile-copy")).toBeVisible();
       await expect(header).toBeVisible();
       await expect(main).toBeVisible();
       await expect(rail).toBeVisible();
@@ -138,6 +141,7 @@ for (const viewport of [
       await expect(professor).toBeVisible();
 
       const [
+        shellBox,
         sidebarBox,
         workspaceBox,
         headerBox,
@@ -149,6 +153,7 @@ for (const viewport of [
         sessionCodeBox,
         professorBox,
       ] = await Promise.all([
+        shell.boundingBox(),
         sidebar.boundingBox(),
         workspace.boundingBox(),
         header.boundingBox(),
@@ -161,6 +166,7 @@ for (const viewport of [
         professor.boundingBox(),
       ]);
 
+      expect(shellBox).not.toBeNull();
       expect(sidebarBox).not.toBeNull();
       expect(workspaceBox).not.toBeNull();
       expect(headerBox).not.toBeNull();
@@ -173,7 +179,8 @@ for (const viewport of [
       expect(professorBox).not.toBeNull();
 
       if (
-        !sidebarBox
+        !shellBox
+        || !sidebarBox
         || !workspaceBox
         || !headerBox
         || !mainBox
@@ -187,7 +194,12 @@ for (const viewport of [
         return;
       }
 
+      expect(shellBox.x).toBeLessThanOrEqual(1);
+      expect(shellBox.x + shellBox.width).toBeGreaterThanOrEqual(viewport.width - 1);
+      expect(sidebarBox.x).toBeLessThanOrEqual(1);
+      expect(sidebarBox.width).toBeGreaterThanOrEqual(220);
       expect(sidebarBox.x + sidebarBox.width).toBeLessThanOrEqual(workspaceBox.x + 1);
+      expect(workspaceBox.x + workspaceBox.width).toBeGreaterThanOrEqual(viewport.width - 1);
       expect(headerBox.x).toBeGreaterThanOrEqual(workspaceBox.x - 1);
       expect(mainBox.width).toBeGreaterThan(railBox.width);
       expect(heroBox.y + heroBox.height).toBeLessThanOrEqual(mainBox.y + mainBox.height + 1);

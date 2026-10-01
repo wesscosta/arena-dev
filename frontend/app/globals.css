@@ -3203,7 +3203,7 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 .app-shell-no-sidebar .content.arena-content-full {
   width: 100%;
   max-width: none;
-  padding: 12px 14px 32px;
+  padding: 0;
 }
 
 @media (max-width: 48rem) {
