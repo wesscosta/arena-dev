@@ -652,7 +652,7 @@
   min-height: 100dvh;
   display: grid;
   grid-template-columns: 14.5rem minmax(0, 1fr);
-  gap: .75rem;
+  gap: 1rem;
   padding: 0;
   box-sizing: border-box;
 }
@@ -704,12 +704,21 @@
   gap: .4rem;
 }
 .arena-nav-brand {
-  min-height: 3.35rem !important;
+  appearance: none;
+  width: 100%;
+  min-height: 3rem !important;
+  display: grid;
   grid-template-columns: 2.35rem minmax(0, 1fr) !important;
-  padding: 0 0 var(--space-3) !important;
+  align-items: center;
+  gap: .65rem;
+  padding: 0 0 .7rem !important;
+  border: 0 !important;
   border-bottom: 1px solid var(--border) !important;
   border-radius: 0 !important;
+  background: transparent !important;
   color: var(--text) !important;
+  text-align: left;
+  cursor: pointer;
 }
 .arena-nav-brand .topbar-brand-mark {
   width: 2.35rem;
@@ -728,9 +737,15 @@
   font-size: .68rem;
 }
 .arena-nav-professor {
+  width: 100%;
   margin-top: auto;
   padding-top: var(--space-3);
   border-top: 1px solid var(--border);
+}
+
+.arena-nav-professor > div {
+  width: 100%;
+  display: block;
 }
 .arena-nav-professor .arena-live-profile {
   width: 100%;
