@@ -102,7 +102,12 @@ public class MechanicsService {
                 SessionEventType.DRAW_COMPLETED,
                 SessionEventActor.TEACHER,
                 "Sorteio concluído: " + winnerName,
-                Map.of("studentId", drawnWinner.toString(), "studentName", winnerName)
+                Map.of(
+                        "studentId", drawnWinner.toString(),
+                        "studentName", winnerName,
+                        "method", "BALANCED",
+                        "drawCount", selection.drawCounts().getOrDefault(drawnWinner.toString(), 1)
+                )
         );
         return new DrawResult(drawnWinner, runtime(sessionId));
     }

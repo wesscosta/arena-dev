@@ -9,7 +9,11 @@ import LiveFlowConductor from "@/components/LiveFlowConductor";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
 import ArenaToolDrawer from "@/components/ArenaToolDrawer";
-import DrawWheel from "@/components/arena/draw/DrawWheel";
+import ParticipantSelectionExperience from "@/components/arena/selection/ParticipantSelectionExperience";
+import DrawSessionRail from "@/components/arena/selection/DrawSessionRail";
+import LegacyWheelSelector from "@/components/arena/selection/legacy/LegacyWheelSelector";
+import { ARENA_SELECTOR_MODE } from "@/components/arena/selection/selector-mode";
+import { useParticipantSelection } from "@/components/arena/selection/useParticipantSelection";
 import {
   ArenaGlyph,
   ArenaLiveShell,
@@ -50,7 +54,6 @@ import { fetchActivitySteps, replaceActivitySteps } from "@/lib/activity-step-ap
 import { validateActivitySteps } from "@/lib/activity-steps";
 import {
   damageBoss as damageBossApi,
-  drawStudent as drawStudentApi,
   fetchLiveFlow,
   mergeSessionMechanics,
   nextArenaQuestion as nextArenaQuestionApi,
@@ -2187,8 +2190,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [activeDynamic, setActiveDynamic] = useState<ArenaDynamic>("draw");
   const [activeTool, setActiveTool] = useState<ArenaTool>(null);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
-  const [selectedId, setSelectedId] = useState<string | undefined>(currentSession?.lastDrawnStudentId);
-  const [drawPhase, setDrawPhase] = useState<"idle" | "drawing">("idle");
   const [drawSettingsOpen, setDrawSettingsOpen] = useState(false);
   const [sessionQrOpen, setSessionQrOpen] = useState(false);
   const [reason, setReason] = useState("Resposta correta");
@@ -2224,6 +2225,38 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     [data.activities, classroomId],
   );
   const [activityId, setActivityId] = useState<string>(currentSession?.activityId ?? preferredActivityId ?? "");
+  const {
+    busy: drawBusy,
+    phase: selectionPhase,
+    selectedStudentId: selectedId,
+    spotlightStudentId,
+    setSelectedStudentId: setSelectedId,
+    draw,
+    closeSpotlight,
+  } = useParticipantSelection({
+    sessionId: currentSession?.id,
+    presentStudentIds: currentSession?.presentStudentIds ?? [],
+    initialSelectedStudentId: currentSession?.lastDrawnStudentId,
+    mode: ARENA_SELECTOR_MODE,
+    onRuntime: (runtime) => {
+      if (!currentSession) return;
+      patch((current) => ({
+        ...current,
+        sessions: current.sessions.map((session) =>
+          session.id === currentSession.id
+            ? mergeSessionMechanics(session, runtime)
+            : session
+        ),
+      }));
+    },
+    onAfterDraw: () => {
+      if (!currentSession) return;
+      void fetchSessionEventsBySession(currentSession.id)
+        .then(setSessionEvents)
+        .catch(() => undefined);
+    },
+    onError: (error) => notify(errorMessage(error)),
+  });
 
   useEffect(() => {
     if (typeof window !== "undefined") setPublicBaseUrl(window.location.origin);
@@ -2516,55 +2549,24 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     }
   }
 
-  async function draw() {
-    if (!currentSession || drawPhase === "drawing" || mechanicsBusy) return;
-    const participants = students.filter((student) => currentSession.presentStudentIds.includes(student.id));
-    if (!participants.length) {
-      notify("Nenhum aluno presente está disponível para o sorteio.");
-      return;
-    }
-
-    setDrawPhase("drawing");
-    setMechanicsBusy(true);
-    setSelectedId(undefined);
-
-    try {
-      const result = await drawStudentApi(currentSession.id);
-      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      patch((current) => ({
-        ...current,
-        sessions: current.sessions.map((session) => session.id === currentSession.id
-          ? mergeSessionMechanics(session, result.runtime)
-          : session),
-      }));
-
-      if (reducedMotion) {
-        setSelectedId(result.studentId);
-        await new Promise((resolve) => window.setTimeout(resolve, 80));
-      } else {
-        await new Promise((resolve) => window.setTimeout(resolve, 850));
-        setSelectedId(result.studentId);
-        await new Promise((resolve) => window.setTimeout(resolve, 950));
-      }
-
-      void fetchSessionEventsBySession(currentSession.id)
-        .then(setSessionEvents)
-        .catch(() => undefined);
-    } catch (error) {
-      notify(errorMessage(error));
-    } finally {
-      setDrawPhase("idle");
-      setMechanicsBusy(false);
-    }
+  function confirmSpotlight() {
+    if (!spotlightStudentId) return;
+    setSelectedId(spotlightStudentId);
+    closeSpotlight();
   }
 
-  async function addScore(points: number, category: ScoreCategory, description: string) {
-    if (!selectedId || !currentSession) return;
+  async function addScore(
+    points: number,
+    category: ScoreCategory,
+    description: string,
+    studentIdOverride?: string,
+  ) {
+    const scoringStudentId = studentIdOverride ?? selectedId;
+    if (!scoringStudentId || !currentSession) return;
     try {
       const event = await createScoreEventApi({
         classroomId,
-        studentId: selectedId,
+        studentId: scoringStudentId,
         sessionId: currentSession.id,
         points,
         category,
@@ -2960,6 +2962,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           onSelectDynamic={(dynamic) => {
             setActiveDynamic(dynamic);
             setActiveTool(null);
+            if (dynamic !== "draw") {
+              closeSpotlight();
+            }
           }}
           onSelectTool={setActiveTool}
         />
@@ -3065,6 +3070,18 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         <div className="stack-lg arena-tab-content">
           {activeDynamic === "draw" ? (
           <div className="smart-draw-workspace">
+            {ARENA_SELECTOR_MODE === "grid-spotlight" ? (
+              <ParticipantSelectionExperience
+                students={students}
+                presentStudentIds={currentSession.presentStudentIds}
+                drawCounts={currentSession.drawCounts}
+                selectedStudentId={spotlightStudentId}
+                phase={selectionPhase}
+                onDraw={() => { void draw(); }}
+                onConfirm={confirmSpotlight}
+                onOpenSettings={() => setDrawSettingsOpen(true)}
+              />
+            ) : (
             <div className="smart-draw-hero">
               <div className="smart-draw-titlebar">
                 <div className="smart-draw-title-copy">
@@ -3080,14 +3097,12 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 </button>
               </div>
 
-              <div className="draw-wheel-hero-stage">
-                <DrawWheel
-                  participants={students.filter((student) => currentSession.presentStudentIds.includes(student.id))}
-                  selectedStudentId={selectedId}
-                  drawing={drawPhase === "drawing"}
-                  onDraw={() => { void draw(); }}
-                />
-              </div>
+              <LegacyWheelSelector
+                participants={students.filter((student) => currentSession.presentStudentIds.includes(student.id))}
+                selectedStudentId={selectedId}
+                drawing={drawBusy}
+                onDraw={() => { void draw(); }}
+              />
 
               <div className={selected ? "selected-student-bar active" : "selected-student-bar"}>
                 <div className="selected-student-primary">
@@ -3171,6 +3186,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 </section>
               </div>
             </div>
+
+            )}
 
             <section className="quick-score-dock" aria-label="Ações rápidas de pontuação">
               <div className="quick-score-head">
@@ -3550,6 +3567,20 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </main>
 
         <aside className="arena-context-rail" aria-label="Contexto da sessão">
+          {activeDynamic === "draw" && ARENA_SELECTOR_MODE === "grid-spotlight" ? (
+            <DrawSessionRail
+              students={students}
+              presentCount={currentSession.presentStudentIds.length}
+              totalCount={sessionParticipants.length}
+              drawnCount={drawnStudentIds.size}
+              history={recentDrawEvents.map((event) => ({
+                id: event.id,
+                studentId: typeof event.payload.studentId === "string" ? event.payload.studentId : "",
+                occurredAt: event.occurredAt,
+              }))}
+              onOpenAttendance={() => setActiveTool("attendance")}
+            />
+          ) : (
           <section className="arena-participants-card">
             <div className="arena-context-head">
               <div>
@@ -3626,6 +3657,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               </button>
             )}
           </section>
+
+          )}
 
           <section className="arena-session-code-card">
             <div>

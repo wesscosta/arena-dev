@@ -62,6 +62,7 @@
   --ds-text-secondary: var(--muted);
   --ds-accent: var(--accent);
   --ds-accent-strong: var(--accent-2, var(--accent));
+  --ds-accent-contrast: var(--theme-accent-contrast);
   --ds-surface: var(--surface);
   --ds-surface-raised: var(--surface-2, var(--surface));
   --ds-border: var(--border);

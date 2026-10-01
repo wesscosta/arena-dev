@@ -6,7 +6,9 @@ RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 FROM node:22-alpine AS build
 WORKDIR /app
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_ARENA_SELECTOR_MODE
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_ARENA_SELECTOR_MODE=${NEXT_PUBLIC_ARENA_SELECTOR_MODE}
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
