@@ -10,7 +10,8 @@ import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
 import ArenaToolDrawer from "@/components/ArenaToolDrawer";
 import ParticipantSelectionExperience from "@/components/arena/selection/ParticipantSelectionExperience";
-import DrawSessionRail from "@/components/arena/selection/DrawSessionRail";
+import DrawSettingsDrawer from "@/components/arena/selection/DrawSettingsDrawer";
+import ArenaContextRail from "@/components/arena/live/ArenaContextRail";
 import WheelParticipantSelector from "@/components/arena/selection/WheelParticipantSelector";
 import {
   presentationToSelectorMode,
@@ -2222,8 +2223,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [liveFlowState, setLiveFlowState] = useState<LiveFlowState | null>(null);
   const [liveFlowBusy, setLiveFlowBusy] = useState(false);
   const [sessionEvents, setSessionEvents] = useState<SessionEvent[]>([]);
-  const [participantSearch, setParticipantSearch] = useState("");
-  const [participantFilter, setParticipantFilter] = useState<"present" | "all">("present");
   const [sessionNow, setSessionNow] = useState(() => Date.now());
   const classroom = data.classrooms.find((item) => item.id === classroomId);
   const classActivities = useMemo(
@@ -2920,22 +2919,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     : currentSession.boss.currentHp === 0
       ? "RESULTADO"
       : "AO VIVO";
-  const visibleParticipants = sessionParticipants.filter((participant) => {
-    if (participantFilter === "present" && !currentSession?.presentStudentIds.includes(participant.studentId)) {
-      return false;
-    }
-
-    const student = data.students.find((item) => item.id === participant.studentId);
-    const query = participantSearch.trim().toLowerCase();
-    if (!query) return true;
-    return [
-      student?.name,
-      student?.nickname,
-      participant.displayName,
-      participant.preferredName,
-    ].some((value) => value?.toLowerCase().includes(query));
-  });
-
   if (!currentSession) {
     return (
       <div className="two-col uneven">
@@ -3603,135 +3586,25 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
         </main>
 
-        <aside className="arena-context-rail" aria-label="Contexto da sessão">
-          {activeDynamic === "draw" && selectorMode === "grid-spotlight" ? (
-            <DrawSessionRail
-              students={students}
-              presentCount={currentSession.presentStudentIds.length}
-              totalCount={sessionParticipants.length}
-              drawnCount={drawnStudentIds.size}
-              history={recentDrawEvents.map((event) => ({
-                id: event.id,
-                studentId: typeof event.payload.studentId === "string" ? event.payload.studentId : "",
-                occurredAt: event.occurredAt,
-              }))}
-              onOpenAttendance={() => setActiveTool("attendance")}
-            />
-          ) : (
-          <section className="arena-participants-card">
-            <div className="arena-context-head">
-              <div>
-                <strong>Participantes</strong>
-                <small>{currentSession.presentStudentIds.length}/{sessionParticipants.length}</small>
-              </div>
-              <button type="button" onClick={() => setActiveTool("attendance")}>Presença</button>
-            </div>
-
-            <div className="arena-participant-filter" role="group" aria-label="Filtrar participantes">
-              <button
-                type="button"
-                className={participantFilter === "present" ? "active" : ""}
-                aria-pressed={participantFilter === "present"}
-                onClick={() => setParticipantFilter("present")}
-              >
-                Presentes <span>{currentSession.presentStudentIds.length}</span>
-              </button>
-              <button
-                type="button"
-                className={participantFilter === "all" ? "active" : ""}
-                aria-pressed={participantFilter === "all"}
-                onClick={() => setParticipantFilter("all")}
-              >
-                Todos <span>{sessionParticipants.length}</span>
-              </button>
-            </div>
-
-            <label className="arena-participant-search">
-              <span aria-hidden="true">⌕</span>
-              <input
-                value={participantSearch}
-                onChange={(event) => setParticipantSearch(event.target.value)}
-                placeholder="Buscar aluno..."
-                aria-label="Buscar participante"
-              />
-            </label>
-
-            <div className="arena-participant-list">
-              {visibleParticipants.length === 0 && (
-                <div className="arena-participant-empty" role="status">
-                  <strong>{participantSearch.trim() ? "Nenhum participante encontrado" : participantFilter === "present" ? "Nenhum aluno presente" : "Nenhum participante disponível"}</strong>
-                  <span>{participantSearch.trim() ? "Tente outro termo de busca." : participantFilter === "present" ? "Use Presença para incluir alunos na dinâmica." : "A turma ainda não possui participantes."}</span>
-                </div>
-              )}
-              {visibleParticipants.slice(0, 12).map((participant) => {
-                const student = data.students.find((item) => item.id === participant.studentId);
-                if (!student) return null;
-                return (
-                  <div className="arena-participant-row" key={participant.id}>
-                    <Avatar student={student} />
-                    <div>
-                      <strong>{student.nickname || student.name}</strong>
-                      <small>
-                        {participant.connected
-                          ? "Online"
-                          : participant.present
-                            ? "Presente · offline"
-                            : "Ausente"}
-                      </small>
-                    </div>
-                    <span
-                      className={participant.connected ? "arena-status-dot online" : participant.present ? "arena-status-dot present" : "arena-status-dot offline"}
-                      aria-label={participant.connected ? "Online" : participant.present ? "Presente, offline" : "Ausente"}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-
-            {visibleParticipants.length > 12 && (
-              <button className="arena-context-more" type="button" onClick={() => setActiveTool("attendance")}>
-                Ver todos ({visibleParticipants.length}) →
-              </button>
-            )}
-          </section>
-
-          )}
-
-          <section className="arena-session-code-card">
-            <div>
-              <span className="arena-context-label">CÓDIGO DA SESSÃO</span>
-              <div className="arena-session-code-row">
-                <strong>{joinCode?.code ?? "------"}</strong>
-                <button
-                  type="button"
-                  onClick={() => { void copySessionCode(); }}
-                  disabled={!joinCode}
-                  aria-label="Copiar código da sessão"
-                  title="Copiar código"
-                >
-                  ⧉
-                </button>
-              </div>
-              <small>Aponte a câmera para participar</small>
-            </div>
-            {joinCode && publicBaseUrl ? (
-              <button
-                type="button"
-                className="arena-session-qr-trigger"
-                onClick={() => setSessionQrOpen(true)}
-                aria-label="Ampliar QR Code da sessão"
-                title="Ampliar QR Code"
-              >
-                <img
-                  src={joinQrImageUrl(currentSession.id, publicBaseUrl, joinCode.code, 180)}
-                  alt={`QR Code da sessão ${joinCode.code}`}
-                />
-              </button>
-            ) : (
-              <div className="arena-qr-placeholder">QR</div>
-            )}
-          </section>
-        </aside>
+        <ArenaContextRail
+          activeDynamic={activeDynamic}
+          selectorMode={selectorMode}
+          students={students}
+          presentStudentIds={currentSession.presentStudentIds}
+          sessionParticipants={sessionParticipants}
+          drawnCount={drawnStudentIds.size}
+          drawHistory={recentDrawEvents.map((event) => ({
+            id: event.id,
+            studentId: typeof event.payload.studentId === "string" ? event.payload.studentId : "",
+            occurredAt: event.occurredAt,
+          }))}
+          sessionId={currentSession.id}
+          joinCode={joinCode}
+          publicBaseUrl={publicBaseUrl}
+          onOpenAttendance={() => setActiveTool("attendance")}
+          onCopySessionCode={() => { void copySessionCode(); }}
+          onOpenQr={() => setSessionQrOpen(true)}
+        />
       </div>
 
       {sessionQrOpen && joinCode && publicBaseUrl && (
@@ -3769,96 +3642,13 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         </div>
       )}
 
-      <ArenaToolDrawer
+      <DrawSettingsDrawer
         open={drawSettingsOpen}
-        title="Configurações do Sorteio"
-        subtitle="Defina a apresentação sem alterar as regras de seleção da turma."
+        mode={selectorMode}
+        busy={drawPresentationBusy}
         onClose={() => setDrawSettingsOpen(false)}
-      >
-        <div className="draw-settings-panel">
-          <section className="draw-settings-mode">
-            <span className="draw-settings-label">CRITÉRIO DE SELEÇÃO</span>
-            <div className="draw-settings-mode-card">
-              <span className="draw-mode-radio" aria-hidden="true" />
-              <div>
-                <strong>Balanceado</strong>
-                <p>Prioriza quem foi sorteado menos vezes durante a sessão.</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="draw-settings-presentation">
-            <span className="draw-settings-label">APRESENTAÇÃO</span>
-            <div
-              className="draw-settings-choice-list"
-              role="radiogroup"
-              aria-label="Apresentação do sorteio"
-            >
-              <label className={selectorMode === "grid-spotlight" ? "draw-settings-choice active" : "draw-settings-choice"}>
-                <input
-                  className="draw-settings-choice-input"
-                  type="radio"
-                  name="draw-presentation"
-                  value="grid-spotlight"
-                  checked={selectorMode === "grid-spotlight"}
-                  disabled={drawPresentationBusy}
-                  onChange={() => { void changeDrawPresentation("grid-spotlight"); }}
-                />
-                <span className="draw-settings-choice-radio" aria-hidden="true" />
-                <span>
-                  <strong>Grid + Spotlight</strong>
-                  <small>Mostra a turma em cards e destaca apenas o participante sorteado.</small>
-                </span>
-              </label>
-              <label className={selectorMode === "wheel" ? "draw-settings-choice active" : "draw-settings-choice"}>
-                <input
-                  className="draw-settings-choice-input"
-                  type="radio"
-                  name="draw-presentation"
-                  value="wheel"
-                  checked={selectorMode === "wheel"}
-                  disabled={drawPresentationBusy}
-                  onChange={() => { void changeDrawPresentation("wheel"); }}
-                />
-                <span className="draw-settings-choice-radio" aria-hidden="true" />
-                <span>
-                  <strong>Roleta</strong>
-                  <small>Mantém a seleção balanceada e altera somente a apresentação visual.</small>
-                </span>
-              </label>
-            </div>
-            <p className="draw-settings-persistence-note">
-              A apresentação escolhida fica salva nesta sessão.
-            </p>
-          </section>
-
-          <section className="draw-settings-rules">
-            <span className="draw-settings-label">REGRAS DA SELEÇÃO</span>
-            <div className="draw-settings-rule">
-              <span aria-hidden="true">✓</span>
-              <div>
-                <strong>Apenas presentes</strong>
-                <p>Somente alunos marcados como presentes entram no sorteio.</p>
-              </div>
-            </div>
-            <div className="draw-settings-rule">
-              <span aria-hidden="true">✓</span>
-              <div>
-                <strong>Evita repetição imediata</strong>
-                <p>Quando há mais de um participante, o último sorteado não é escolhido novamente na rodada seguinte.</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="draw-settings-explainer">
-            <strong>Como o balanceamento funciona</strong>
-            <p>
-              Todos continuam com chance de serem sorteados, mas o peso aumenta para quem participou menos.
-              A apresentação não altera o resultado: a decisão final continua sendo feita pelo servidor.
-            </p>
-          </section>
-        </div>
-      </ArenaToolDrawer>
+        onPresentationChange={(mode) => { void changeDrawPresentation(mode); }}
+      />
 
       <ArenaToolDrawer
         open={activeTool === "timer"}

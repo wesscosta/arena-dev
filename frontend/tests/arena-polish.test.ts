@@ -117,11 +117,13 @@ test("Grid + Spotlight keeps scoring and draw evidence visible without duplicati
 
 test("Professor Arena fidelity pass exposes persistent context rail and QR entry", () => {
   const app = read("components/ArenaApp.tsx");
+  const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /className="arena-context-rail"/);
-  assert.match(app, /placeholder="Buscar aluno\.\.\."/);
-  assert.match(app, /joinQrImageUrl\(currentSession\.id/);
+  assert.match(app, /<ArenaContextRail/);
+  assert.match(rail, /className="arena-context-rail"/);
+  assert.match(rail, /placeholder="Buscar aluno\.\.\."/);
+  assert.match(rail, /joinQrImageUrl\(sessionId/);
   assert.match(css, /\.arena-context-rail\s*\{/);
   assert.match(css, /\.arena-session-code-card\s*\{/);
 });
@@ -129,12 +131,14 @@ test("Professor Arena fidelity pass exposes persistent context rail and QR entry
 test("Smart Draw workspace uses a participant Grid, transient Spotlight and contextual history", () => {
   const app = read("components/ArenaApp.tsx");
   const selection = read("components/arena/selection/ParticipantSelectionExperience.tsx");
+  const settings = read("components/arena/selection/DrawSettingsDrawer.tsx");
   const rail = read("components/arena/selection/DrawSessionRail.tsx");
 
   assert.match(app, /className="smart-draw-workspace"/);
   assert.match(app, /setDrawSettingsOpen\(true\)/);
-  assert.match(app, /title="Configurações do Sorteio"/);
-  assert.match(app, /REGRAS DA SELEÇÃO/);
+  assert.match(app, /<DrawSettingsDrawer/);
+  assert.match(settings, /title="Configurações do Sorteio"/);
+  assert.match(settings, /REGRAS DA SELEÇÃO/);
   assert.match(selection, /className=\{styles\.grid\}/);
   assert.match(selection, /className=\{styles\.spotlightLayer\}/);
   assert.match(rail, /Últimos sorteados/);
@@ -332,16 +336,17 @@ test("Wheel presentation keeps backend authority and only animates presentation"
 
 test("Draw settings separate selection criterion, presentation and selection rules", () => {
   const app = read("components/ArenaApp.tsx");
+  const settings = read("components/arena/selection/DrawSettingsDrawer.tsx");
   const mechanics = read("lib/mechanics-api.ts");
 
-  assert.match(app, /CRITÉRIO DE SELEÇÃO/);
-  assert.match(app, /APRESENTAÇÃO/);
-  assert.match(app, /REGRAS DA SELEÇÃO/);
-  assert.match(app, /Grid \+ Spotlight/);
-  assert.match(app, /Roleta/);
-  assert.match(app, /Balanceado/);
-  assert.match(app, /Apenas presentes/);
-  assert.match(app, /Evita repetição imediata/);
+  assert.match(settings, /CRITÉRIO DE SELEÇÃO/);
+  assert.match(settings, /APRESENTAÇÃO/);
+  assert.match(settings, /REGRAS DA SELEÇÃO/);
+  assert.match(settings, /Grid \+ Spotlight/);
+  assert.match(settings, /Roleta/);
+  assert.match(settings, /Balanceado/);
+  assert.match(settings, /Apenas presentes/);
+  assert.match(settings, /Evita repetição imediata/);
   assert.match(app, /setDrawPresentationApi/);
   assert.match(mechanics, /mechanics\/draw\/presentation/);
 });
@@ -391,21 +396,23 @@ test("Presence drawer uses the dedicated compact SessionAccessCard variant", () 
 
 test("Arena right rail exposes truthful participant status and copyable session code", () => {
   const app = read("components/ArenaApp.tsx");
+  const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /Presente · offline/);
-  assert.match(app, /copySessionCode/);
-  assert.match(app, /aria-label="Copiar código da sessão"/);
+  assert.match(rail, /Presente · offline/);
+  assert.match(app, /onCopySessionCode=\{\(\) => \{ void copySessionCode\(\); \}\}/);
+  assert.match(rail, /aria-label="Copiar código da sessão"/);
   assert.match(css, /\.arena-session-code-row\s*\{/);
   assert.match(css, /\.arena-status-dot\.present/);
 });
 
 test("Arena QR preview expands into a projector-friendly modal", () => {
   const app = read("components/ArenaApp.tsx");
+  const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /setSessionQrOpen\(true\)/);
-  assert.match(app, /aria-label="Ampliar QR Code da sessão"/);
+  assert.match(app, /onOpenQr=\{\(\) => setSessionQrOpen\(true\)\}/);
+  assert.match(rail, /aria-label="Ampliar QR Code da sessão"/);
   assert.match(app, /className="arena-session-qr-modal"/);
   assert.match(app, /joinQrImageUrl\(currentSession\.id, publicBaseUrl, joinCode\.code, 720\)/);
   assert.match(css, /\.arena-session-qr-modal\s*\{/);
@@ -557,13 +564,13 @@ test("DrawWheel uses neutral placeholders after settling instead of duplicating 
 });
 
 test("Arena participant rail defaults to present students and exposes an explicit all-students filter", () => {
-  const app = read("components/ArenaApp.tsx");
+  const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /useState<"present" \| "all">\("present"\)/);
-  assert.match(app, /participantFilter === "present"/);
-  assert.match(app, /Presentes <span>\{currentSession\.presentStudentIds\.length\}<\/span>/);
-  assert.match(app, /Todos <span>\{sessionParticipants\.length\}<\/span>/);
+  assert.match(rail, /useState<"present" \| "all">\("present"\)/);
+  assert.match(rail, /participantFilter === "present"/);
+  assert.match(rail, /Presentes <span>\{presentStudentIds\.length\}<\/span>/);
+  assert.match(rail, /Todos <span>\{sessionParticipants\.length\}<\/span>/);
   assert.match(css, /\.arena-participant-filter\s*\{/);
 });
 
@@ -640,12 +647,13 @@ test("Arena polish no longer carries the legacy CSS wheel implementation", () =>
 
 test("Arena exposes explicit empty states for the roster and draw when nobody is present", () => {
   const app = read("components/ArenaApp.tsx");
+  const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /Nenhum aluno presente/);
+  assert.match(rail, /Nenhum aluno presente/);
   assert.match(app, /Marque a presença dos alunos para habilitar o sorteio\./);
-  assert.match(app, /className="arena-participant-empty" role="status"/);
-  assert.match(app, /Use Presença para incluir alunos na dinâmica\./);
+  assert.match(rail, /className="arena-participant-empty" role="status"/);
+  assert.match(rail, /Use Presença para incluir alunos na dinâmica\./);
   assert.match(css, /\.arena-participant-empty\s*\{/);
 });
 
