@@ -12,6 +12,7 @@ import ArenaToolDrawer from "@/components/ArenaToolDrawer";
 import ParticipantSelectionExperience from "@/components/arena/selection/ParticipantSelectionExperience";
 import DrawSettingsDrawer from "@/components/arena/selection/DrawSettingsDrawer";
 import ArenaContextRail from "@/components/arena/live/ArenaContextRail";
+import { useArenaRealtime } from "@/components/arena/live/useArenaRealtime";
 import WheelParticipantSelector from "@/components/arena/selection/WheelParticipantSelector";
 import {
   presentationToSelectorMode,
@@ -73,13 +74,9 @@ import {
   type LiveFlowState,
 } from "@/lib/mechanics-api";
 import { createScoreEvent as createScoreEventApi, createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
-import { closeBuzzer as closeBuzzerApi, connectSessionSocket, fetchBuzzerState, fetchJoinCode, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode, type BuzzerState, type JoinCode, type SessionRealtimeEvent } from "@/lib/realtime-api";
+import { closeBuzzer as closeBuzzerApi, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode } from "@/lib/realtime-api";
 import { fetchSessionEventsBySession, type SessionEvent } from "@/lib/session-event-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
-import type { TimerState } from "@/lib/timer-api";
-import { fetchWordCloudState, type WordCloudState } from "@/lib/word-cloud-api";
-import { fetchPollState, type PollState } from "@/lib/poll-api";
-import { fetchQuizState, type QuizState } from "@/lib/quiz-api";
 import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
 import { activeSessionId, selectPreferredClassroomId } from "@/lib/app-state";
 import {
@@ -2210,14 +2207,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [sessionBusy, setSessionBusy] = useState(false);
   const [presenceBusyId, setPresenceBusyId] = useState<string | undefined>();
   const [mechanicsBusy, setMechanicsBusy] = useState(false);
-  const [joinCode, setJoinCode] = useState<JoinCode | null>(null);
-  const [buzzerState, setBuzzerState] = useState<BuzzerState>({ status: "IDLE", presses: [] });
-  const [timerState, setTimerState] = useState<TimerState>({ timer: null });
-  const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
-  const [pollState, setPollState] = useState<PollState>({ round: null });
-  const [quizState, setQuizState] = useState<QuizState>({ round: null });
-  const [realtimeStatus, setRealtimeStatus] = useState<"offline" | "connecting" | "online">("offline");
-  const [realtimeVersion, setRealtimeVersion] = useState(0);
   const [publicBaseUrl, setPublicBaseUrl] = useState("");
   const [realtimeBusy, setRealtimeBusy] = useState(false);
   const [liveFlowState, setLiveFlowState] = useState<LiveFlowState | null>(null);
@@ -2262,6 +2251,27 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         .catch(() => undefined);
     },
     onError: (error) => notify(errorMessage(error)),
+  });
+
+  const {
+    joinCode,
+    setJoinCode,
+    buzzerState,
+    setBuzzerState,
+    timerState,
+    setTimerState,
+    wordCloudState,
+    setWordCloudState,
+    pollState,
+    setPollState,
+    quizState,
+    setQuizState,
+    realtimeStatus,
+  } = useArenaRealtime({
+    sessionId: currentSession?.id,
+    notify,
+    onSelectedStudent: setSelectedId,
+    onParticipantsChanged: refreshRealtimeParticipants,
   });
 
   useEffect(() => {
@@ -2345,82 +2355,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     }
   }
 
-  useEffect(() => {
-    if (!currentSession) {
-      setJoinCode(null);
-      setBuzzerState({ status: "IDLE", presses: [] });
-      setTimerState({ timer: null });
-      setWordCloudState({ round: null });
-      setPollState({ round: null });
-      setQuizState({ round: null });
-      setRealtimeStatus("offline");
-      return;
-    }
-
-    let active = true;
-    let reconnectTimer: number | undefined;
-    setRealtimeStatus("connecting");
-
-    void Promise.all([
-      fetchJoinCode(currentSession.id),
-      fetchBuzzerState(currentSession.id),
-      fetchWordCloudState(currentSession.id),
-      fetchPollState(currentSession.id),
-      fetchQuizState(currentSession.id),
-    ])
-      .then(([code, buzzer, wordCloud, poll, quiz]) => {
-        if (!active) return;
-        setJoinCode(code);
-        setBuzzerState(buzzer);
-        setWordCloudState(wordCloud);
-        setPollState(poll);
-        setQuizState(quiz);
-        if (buzzer.presses[0]) setSelectedId(buzzer.presses[0].studentId);
-      })
-      .catch((error) => { if (active) notify(errorMessage(error)); });
-
-    const socket = connectSessionSocket(currentSession.id, (event: SessionRealtimeEvent) => {
-      if (!active) return;
-      if (event.type === "BUZZER_STATE") {
-        const state = event.payload as BuzzerState;
-        setBuzzerState(state);
-        if (state.presses[0]) setSelectedId(state.presses[0].studentId);
-      }
-      if (event.type === "TIMER_STATE") {
-        setTimerState({
-          ...(event.payload as TimerState),
-          serverOccurredAt: event.occurredAt,
-          receivedAtMs: Date.now(),
-        });
-      }
-      if (event.type === "WORD_CLOUD_STATE") {
-        setWordCloudState(event.payload as WordCloudState);
-      }
-      if (event.type === "POLL_STATE") {
-        setPollState(event.payload as PollState);
-      }
-      if (event.type === "QUIZ_STATE") {
-        setQuizState(event.payload as QuizState);
-      }
-      if (event.type === "PARTICIPANT_CONNECTED" || event.type === "PARTICIPANT_DISCONNECTED") {
-        void refreshRealtimeParticipants(currentSession.id);
-      }
-      if (event.type === "SESSION_FINISHED") setRealtimeStatus("offline");
-    });
-    socket.onopen = () => setRealtimeStatus("online");
-    socket.onerror = () => setRealtimeStatus("offline");
-    socket.onclose = () => {
-      if (!active) return;
-      setRealtimeStatus("offline");
-      reconnectTimer = window.setTimeout(() => setRealtimeVersion((value) => value + 1), 1500);
-    };
-
-    return () => {
-      active = false;
-      if (reconnectTimer) window.clearTimeout(reconnectTimer);
-      socket.close();
-    };
-  }, [currentSession?.id, realtimeVersion]);
 
   useEffect(() => {
     if (preferredActivityId) {

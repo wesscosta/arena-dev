@@ -27,7 +27,7 @@ baseline publicada        v0.7.0
 linha ativa               v0.8
 último integrado à main   16.1 · PR #22
 incremento atual           Gate de Estabilização Arquitetural v0.8
-fatia atual                P1.2 · Arena boundaries; P1.3 HTTP Client e P1.4 CSS ownership concluídos
+fatia atual                P1 concluído · iniciar P2 Design System / P3 boundaries incrementais
 branch                     chore/v0.8-architecture-stabilization
 schema                     Flyway V1–V37
 providers                  Microsoft Teams + Notion OAuth
@@ -95,6 +95,7 @@ Google Classroom           standby
 ## Professor Arena Experience — implementado
 
 - shell estrutural extraído em `ArenaLiveShell`, `ArenaSidebar` e `ArenaSessionHeader`;
+- `ArenaContextRail`, configurações do sorteio e realtime da Arena possuem boundaries próprios; `useArenaRealtime` concentra Join Code + WebSocket + estados Buzzer/Timer/Word Cloud/Poll/Quiz;
 - header restrito ao workspace, sem compensações negativas de largura/margem;
 - E2E do shell verde em 1366×768, 1440×900, 1536×864 e 1920×1080, mais cenário com 22 participantes em 1821×831; sem overflow horizontal/vertical estrutural, com Ações rápidas e código/QR dentro da viewport;
 - seleção balanceada extraída para `ParticipantSelectionService`, mantendo o backend como autoridade;

@@ -211,7 +211,7 @@ Extrações candidatas:
 
 Não mover código apenas para gerar arquivos menores. Cada extração precisa ter responsabilidade e contrato próprios.
 
-**Status:** em andamento. O chrome estrutural da Arena foi removido de `ArenaApp.tsx` e consolidado em `components/arena/live/ArenaLiveChrome.tsx`. `ArenaContextRail`, realtime e session orchestration permanecem no owner atual e só serão extraídos com contratos explícitos.
+**Status:** fronteira principal concluída. O chrome estrutural está em `ArenaLiveChrome.tsx`; `ArenaContextRail` e `DrawSettingsDrawer` possuem owners próprios; a sincronização de Join Code, Buzzer, Timer, Word Cloud, Poll e Quiz/WebSocket foi extraída para `useArenaRealtime`. `ArenaApp.tsx` caiu de aproximadamente 4.690 para cerca de 4.400 linhas sem mover lógica apenas por tamanho. A orquestração de ciclo de sessão e algumas dinâmicas ainda permanecem no `ArenaView` e serão tratadas em boundaries posteriores, sem bloquear o Gate P1.
 
 ## P1.3 Normalizar acesso à API
 
