@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { fetchStudyJourney, fetchTeacherStudyPreview, studyDeviceClaims, type JourneyContentView, type JourneyStudyView } from "@/lib/study-api";
-import styles from "../../study.module.css";
+import styles from "@/components/study/study.module.css";
 import { studyExcerpt } from "@/lib/study-excerpt";
 
 function moduleProgress(contents: JourneyContentView[]) {

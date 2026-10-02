@@ -21,7 +21,7 @@ import {
   timerRemainingSeconds,
   timerStatusLabel,
 } from "@/lib/timer-clock";
-import styles from "@/app/projector/projector.module.css";
+import styles from "./ProjectorView.module.css";
 
 function errorMessage(error: unknown) {
   return error instanceof Error

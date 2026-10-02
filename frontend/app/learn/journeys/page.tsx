@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect,useMemo,useState } from "react";
 import { fetchAllStudyJourneys,redeemJourneyCode,type MultiClassroomJourneySummary } from "@/lib/study-api";
-import styles from "../study.module.css";
+import styles from "@/components/study/study.module.css";
 export default function JourneysPage(){
  const [journeys,setJourneys]=useState<MultiClassroomJourneySummary[]>([]);const [state,setState]=useState<"loading"|"ready"|"error">("loading");const [query,setQuery]=useState("");const [classroom,setClassroom]=useState("ALL");const [status,setStatus]=useState("ALL");const [redeemOpen,setRedeemOpen]=useState(false);const [redeemCode,setRedeemCode]=useState("");const [redeemMessage,setRedeemMessage]=useState("");const [redeeming,setRedeeming]=useState(false);
  useEffect(()=>{let active=true;void fetchAllStudyJourneys().then(data=>{if(active){setJourneys(data);setState("ready")}}).catch(()=>active&&setState("error"));return()=>{active=false}},[]);

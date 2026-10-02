@@ -22,10 +22,10 @@ import {
   type WordCloudParticipantState,
   type WordCloudState,
 } from "@/lib/word-cloud-api";
-import wordStyles from "@/app/join/word-cloud.module.css";
-import pollStyles from "@/app/join/poll.module.css";
-import quizStyles from "@/app/join/quiz.module.css";
-import stepStyles from "@/app/join/prepared-step.module.css";
+import wordStyles from "./student-join/word-cloud.module.css";
+import pollStyles from "./student-join/poll.module.css";
+import quizStyles from "./student-join/quiz.module.css";
+import stepStyles from "./student-join/prepared-step.module.css";
 import { emptyPollParticipantState, sendPollVote, type PollParticipantState, type PollState } from "@/lib/poll-api";
 import { emptyQuizParticipantState, quizOptionMatchesAnswer, sendQuizAnswer, type QuizParticipantState, type QuizState } from "@/lib/quiz-api";
 import { reconnectDelayMs, type BuzzerParticipantState, type ParticipantRuntimeSnapshot, type PublicBossState, type PublicBuzzerState } from "@/lib/runtime-snapshot";

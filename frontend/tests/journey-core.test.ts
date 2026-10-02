@@ -106,7 +106,7 @@ test("16.3.8.4 reviews large drafts through master-detail navigation", () => {
 
 test("16.3.7B converges the study shell and learning hierarchy with the product reference", () => {
   const shell = readFileSync(resolve(process.cwd(), "components/study/StudyShell.tsx"), "utf8");
-  const studyCss = readFileSync(resolve(process.cwd(), "app/learn/study.module.css"), "utf8");
+  const studyCss = readFileSync(resolve(process.cwd(), "components/study/study.module.css"), "utf8");
   const reader = readFileSync(resolve(process.cwd(), "app/learn/journeys/[journeyId]/content/[contentId]/page.tsx"), "utf8");
 
   assert.match(shell, /studySidebar/);
@@ -121,7 +121,7 @@ test("16.3.7B converges the study shell and learning hierarchy with the product 
 
 test("study journey view uses vertical modules instead of nested cards", () => {
   const studyView = readFileSync(resolve(process.cwd(), "app/learn/journeys/[journeyId]/page.tsx"), "utf8");
-  const studyCss = readFileSync(resolve(process.cwd(), "app/learn/study.module.css"), "utf8");
+  const studyCss = readFileSync(resolve(process.cwd(), "components/study/study.module.css"), "utf8");
   assert.match(studyView, /studyModule/);
   assert.match(studyView, /studyContentRow/);
   assert.match(studyView, /Conclua o conteúdo anterior para avançar/);

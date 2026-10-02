@@ -248,6 +248,8 @@ Mover estilos compartilhados para:
 - CSS Module do próprio componente; ou
 - primitives/tokens compartilhados.
 
+**Status:** concluído para as dependências invertidas identificadas na auditoria. `ProjectorView`, `StudentJoinFlow` e a experiência Study deixaram de importar CSS privado de `app/`; os estilos passaram para ownership de feature em `components/ProjectorView.module.css`, `components/student-join/*` e `components/study/study.module.css`. As páginas podem consumir esses estilos de feature, mas os componentes não dependem mais da camada de rotas.
+
 **Gate P1:**
 - shell estável em 1366×768, 1440×900, 1536×864 e 1920×1080;
 - zero sobreposição;
