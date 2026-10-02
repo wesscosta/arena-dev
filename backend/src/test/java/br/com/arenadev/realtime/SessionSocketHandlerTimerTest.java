@@ -66,7 +66,8 @@ class SessionSocketHandlerTimerTest {
                 wordCloudService,
                 pollService,
                 liveStageService,
-                runtimeSnapshotService
+                runtimeSnapshotService,
+                tools.jackson.databind.json.JsonMapper.builder().build()
         );
 
         WebSocketSession socket = socket(sessionId, () -> "teacher");
@@ -123,7 +124,8 @@ class SessionSocketHandlerTimerTest {
                 wordCloudService,
                 pollService,
                 liveStageService,
-                runtimeSnapshotService
+                runtimeSnapshotService,
+                tools.jackson.databind.json.JsonMapper.builder().build()
         );
 
         WebSocketSession socket = socket(sessionId, null);
@@ -170,7 +172,8 @@ class SessionSocketHandlerTimerTest {
                 wordCloudService,
                 pollService,
                 liveStageService,
-                runtimeSnapshotService
+                runtimeSnapshotService,
+                tools.jackson.databind.json.JsonMapper.builder().build()
         );
 
         WebSocketSession socket = socket(sessionId, null);

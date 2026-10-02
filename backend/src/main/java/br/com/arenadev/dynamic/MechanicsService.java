@@ -34,7 +34,7 @@ public class MechanicsService {
     private final SessionRealtimeGateway realtimeGateway;
     private final SessionEventService sessionEventService;
     private final ParticipantSelectionService participantSelectionService;
-    private final JsonMapper objectMapper = JsonMapper.builder().build();
+    private final JsonMapper objectMapper;
 
     public MechanicsService(
             ClassSessionRepository sessionRepository,
@@ -47,7 +47,8 @@ public class MechanicsService {
             PollService pollService,
             SessionRealtimeGateway realtimeGateway,
             SessionEventService sessionEventService,
-            ParticipantSelectionService participantSelectionService
+            ParticipantSelectionService participantSelectionService,
+            JsonMapper objectMapper
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -60,6 +61,7 @@ public class MechanicsService {
         this.realtimeGateway = realtimeGateway;
         this.sessionEventService = sessionEventService;
         this.participantSelectionService = participantSelectionService;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional(readOnly = true)

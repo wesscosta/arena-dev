@@ -22,7 +22,7 @@ public class AiAssessmentService {
     private final AiAssessmentSuggestionRepository suggestionRepository;
     private final AiAssessmentCriterionSuggestionRepository criterionSuggestionRepository;
     private final AssessmentAiProvider provider;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
 
     public AiAssessmentService(
             AssessmentRubricService rubricService,
@@ -32,7 +32,8 @@ public class AiAssessmentService {
             ActivityQuestionRepository questionRepository,
             AiAssessmentSuggestionRepository suggestionRepository,
             AiAssessmentCriterionSuggestionRepository criterionSuggestionRepository,
-            AssessmentAiProvider provider
+            AssessmentAiProvider provider,
+            JsonMapper json
     ) {
         this.rubricService = rubricService;
         this.assessmentRepository = assessmentRepository;
@@ -42,7 +43,8 @@ public class AiAssessmentService {
         this.suggestionRepository = suggestionRepository;
         this.criterionSuggestionRepository = criterionSuggestionRepository;
         this.provider = provider;
-    }
+            this.json = json;
+}
 
     @Transactional
     public SuggestionView generate(UUID activityId, UUID submissionId) {

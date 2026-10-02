@@ -20,14 +20,17 @@ public class NotionPageDiscoveryService {
     private final IntegrationCredentialStore credentials;
     private final RestClient client;
     private final String apiVersion;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
 
     public NotionPageDiscoveryService(IntegrationConnectionRepository connections, IntegrationCredentialStore credentials,
             @Value("${app.integrations.notion.api-version:2022-06-28}") String apiVersion,
-            @Value("${app.integrations.notion.base-url:https://api.notion.com/v1}") String baseUrl) {
+            @Value("${app.integrations.notion.base-url:https://api.notion.com/v1}") String baseUrl,
+            JsonMapper json
+    ) {
         this.connections = connections; this.credentials = credentials; this.apiVersion = apiVersion;
         this.client = RestClient.builder().baseUrl(baseUrl.replaceAll("/+$", "")).build();
-    }
+            this.json = json;
+}
 
     public List<PageSummary> search(String query) {
         String token = activeToken();

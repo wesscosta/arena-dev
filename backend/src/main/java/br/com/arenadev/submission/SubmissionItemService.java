@@ -19,19 +19,21 @@ public class SubmissionItemService {
     private final SubmissionItemRepository itemRepository;
     private final ActivityQuestionRepository questionRepository;
     private final SubmissionProcessEvidenceService processEvidenceService;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
 
     public SubmissionItemService(
             ActivitySubmissionRepository submissionRepository,
             SubmissionItemRepository itemRepository,
             ActivityQuestionRepository questionRepository,
-            SubmissionProcessEvidenceService processEvidenceService
+            SubmissionProcessEvidenceService processEvidenceService,
+            JsonMapper json
     ) {
         this.submissionRepository = submissionRepository;
         this.itemRepository = itemRepository;
         this.questionRepository = questionRepository;
         this.processEvidenceService = processEvidenceService;
-    }
+            this.json = json;
+}
 
     @Transactional
     public SubmissionItem saveItem(

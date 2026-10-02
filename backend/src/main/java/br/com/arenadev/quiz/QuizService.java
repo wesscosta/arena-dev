@@ -39,7 +39,7 @@ public class QuizService {
     private final LiveStageService liveStageService;
     private final ScoreEventService scoreEventService;
     private final SessionEventService sessionEventService;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
 
     public QuizService(
             QuizRoundRepository roundRepository,
@@ -50,7 +50,8 @@ public class QuizService {
             SessionRealtimeGateway realtimeGateway,
             LiveStageService liveStageService,
             ScoreEventService scoreEventService,
-            SessionEventService sessionEventService
+            SessionEventService sessionEventService,
+            JsonMapper json
     ) {
         this.roundRepository = roundRepository;
         this.answerRepository = answerRepository;
@@ -61,6 +62,7 @@ public class QuizService {
         this.liveStageService = liveStageService;
         this.scoreEventService = scoreEventService;
         this.sessionEventService = sessionEventService;
+        this.json = json;
     }
 
     @Transactional
