@@ -337,7 +337,7 @@ test("Configurações do sorteio alternam Grid + Spotlight e Roleta sem mudar o 
     await expect(dialog.getByText("Balanceado", { exact: true })).toBeVisible();
     await expect(dialog.getByText("REGRAS DA SELEÇÃO", { exact: true })).toBeVisible();
 
-    await dialog.locator("label.draw-settings-choice").filter({ hasText: "Roleta" }).click();
+    await dialog.locator("label").filter({ hasText: "Roleta" }).click();
     await expect(wheelOption).toBeChecked();
 
     const runtimeResponse = await api.get(
@@ -355,7 +355,7 @@ test("Configurações do sorteio alternam Grid + Spotlight e Roleta sem mudar o 
     await page.getByRole("button", { name: /Ajustes/ }).click();
     const reopenedDialog = page.getByRole("dialog", { name: "Configurações do Sorteio" });
     await reopenedDialog
-      .locator("label.draw-settings-choice")
+      .locator("label")
       .filter({ hasText: "Grid + Spotlight" })
       .click();
 

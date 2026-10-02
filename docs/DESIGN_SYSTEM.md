@@ -17,8 +17,9 @@ Princípios:
 
 | Papel | Token | Referência |
 |---|---|---:|
-| Metadado mínimo | `--font-size-xs` | 12px |
-| Label / breadcrumb / botão | `--font-size-sm` | 14px |
+| Metadado mínimo / apoio compacto | `--font-size-2xs` | 12px |
+| Label compacto / status | `--font-size-xs` | 13px |
+| Label / breadcrumb / botão | `--font-size-sm` | 15px |
 | Corpo / campo | `--font-size-md` | 16px |
 | Título menor | `--font-size-lg` | 18px |
 | Título de card/seção | `--font-size-xl` | 20px |
@@ -91,7 +92,8 @@ Os primitives vivem em `frontend/components/ui/`.
 - `Breadcrumb`: localização hierárquica;
 - `Field`: label, hint, erro e controle;
 - `Card`: agrupamento visual sem impor heading;
-- `EmptyState`: ausência de conteúdo com orientação.
+- `EmptyState`: ausência de conteúdo com orientação;
+- `RadioCard`: escolha única com semântica nativa de radio e superfície visual reutilizável.
 
 Novas interfaces devem consumir esses primitives antes de criar padrões locais.
 A migração do legado é progressiva para evitar uma refatoração big bang.
@@ -118,6 +120,7 @@ A Arena passa a ter uma camada de composição específica em
 
 Essa camada pode organizar componentes existentes, mas não pode inventar
 novos valores de tipografia, spacing ou controles quando já existir token.
+Novas features devem preferir CSS Modules sob ownership do componente; `arena-polish.css` fica restrito a composição/hardening legado enquanto a migração avança.
 
 Princípios aplicados:
 

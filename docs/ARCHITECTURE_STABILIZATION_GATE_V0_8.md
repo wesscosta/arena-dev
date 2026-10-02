@@ -38,7 +38,7 @@ retomada de 16.5C e demais incrementos
 | Gate | Resultado observado |
 | --- | --- |
 | Frontend typecheck | OK |
-| Frontend unit/source tests | 274/274 |
+| Frontend unit/source tests | 275/275 |
 | Backend unit tests | 106/106 |
 | Backend `mvn verify` | BUILD SUCCESS · 106 unitários + 87 ITs |
 | Flyway | V1–V37 aplicado com sucesso nos ITs |
@@ -278,6 +278,8 @@ page-specific styles
 
 `arena-polish.css` deixa de ser destino padrão de novas regras.
 
+**Status:** iniciado. `DrawSettingsDrawer` migrou seu styling local para CSS Module e reutiliza o novo primitive `RadioCard`; as regras específicas foram removidas de `arena-polish.css`. O trabalho continua incremental sobre os próximos componentes tocados.
+
 ## P2.2 Consolidar tokens
 
 Cobrir explicitamente:
@@ -326,6 +328,8 @@ Aumentar adoção real de:
 - LiveRegion.
 
 Raw HTML continua permitido quando o primitive não agrega valor. O objetivo é consistência, não banimento.
+
+**Status:** `RadioCard` adicionado ao Core UI com radio nativo, foco, disabled state e tokens do Design System; `DrawSettingsDrawer` é o primeiro consumidor. O primitive possui contrato estático próprio na suíte frontend.
 
 ## P2.5 Arena visual
 
@@ -584,7 +588,7 @@ Em desktop, os cards usam largura limitada (máximo de 13.5rem) e alinhamento in
 - E2E cobre Grid, Spotlight, retorno ao Grid, troca Grid ↔ Roleta, persistência, cards compactos, 22 participantes e os viewports do shell;
 - validação em aula continua obrigatória para decidir se ambas as apresentações permanecem no produto.
 
-**Validação técnica corrente:** frontend 274/274, typecheck/build verdes; Arena shell + selector 8/8 E2E; fluxos críticos 4/4; backend `mvn verify` verde com 106 testes unitários + 87 ITs.
+**Validação técnica corrente:** frontend 275/275, typecheck/build verdes; Arena shell + selector 8/8 E2E; fluxos críticos 4/4; backend `mvn verify` verde com 106 testes unitários + 87 ITs.
 
 ---
 

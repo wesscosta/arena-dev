@@ -1,6 +1,8 @@
 "use client";
 
 import ArenaToolDrawer from "@/components/ArenaToolDrawer";
+import { RadioCard } from "@/components/ui";
+import styles from "./DrawSettingsDrawer.module.css";
 import type { ParticipantSelectorMode } from "./selection.types";
 
 type DrawSettingsDrawerProps = {
@@ -25,11 +27,11 @@ export default function DrawSettingsDrawer({
       subtitle="Defina a apresentação sem alterar as regras de seleção da turma."
       onClose={onClose}
     >
-      <div className="draw-settings-panel">
-        <section className="draw-settings-mode">
-          <span className="draw-settings-label">CRITÉRIO DE SELEÇÃO</span>
-          <div className="draw-settings-mode-card">
-            <span className="draw-mode-radio" aria-hidden="true" />
+      <div className={styles.panel}>
+        <section className={styles.section}>
+          <span className={styles.label}>CRITÉRIO DE SELEÇÃO</span>
+          <div className={styles.modeCard}>
+            <span className={styles.modeIndicator} aria-hidden="true" />
             <div>
               <strong>Balanceado</strong>
               <p>Prioriza quem foi sorteado menos vezes durante a sessão.</p>
@@ -37,63 +39,48 @@ export default function DrawSettingsDrawer({
           </div>
         </section>
 
-        <section className="draw-settings-presentation">
-          <span className="draw-settings-label">APRESENTAÇÃO</span>
+        <section className={styles.section}>
+          <span className={styles.label}>APRESENTAÇÃO</span>
           <div
-            className="draw-settings-choice-list"
+            className={styles.choiceList}
             role="radiogroup"
             aria-label="Apresentação do sorteio"
           >
-            <label className={mode === "grid-spotlight" ? "draw-settings-choice active" : "draw-settings-choice"}>
-              <input
-                className="draw-settings-choice-input"
-                type="radio"
-                name="draw-presentation"
-                value="grid-spotlight"
-                checked={mode === "grid-spotlight"}
-                disabled={busy}
-                onChange={() => onPresentationChange("grid-spotlight")}
-              />
-              <span className="draw-settings-choice-radio" aria-hidden="true" />
-              <span>
-                <strong>Grid + Spotlight</strong>
-                <small>Mostra a turma em cards e destaca apenas o participante sorteado.</small>
-              </span>
-            </label>
-
-            <label className={mode === "wheel" ? "draw-settings-choice active" : "draw-settings-choice"}>
-              <input
-                className="draw-settings-choice-input"
-                type="radio"
-                name="draw-presentation"
-                value="wheel"
-                checked={mode === "wheel"}
-                disabled={busy}
-                onChange={() => onPresentationChange("wheel")}
-              />
-              <span className="draw-settings-choice-radio" aria-hidden="true" />
-              <span>
-                <strong>Roleta</strong>
-                <small>Mantém a seleção balanceada e altera somente a apresentação visual.</small>
-              </span>
-            </label>
+            <RadioCard
+              name="draw-presentation"
+              value="grid-spotlight"
+              checked={mode === "grid-spotlight"}
+              disabled={busy}
+              label="Grid + Spotlight"
+              description="Mostra a turma em cards e destaca apenas o participante sorteado."
+              onChange={() => onPresentationChange("grid-spotlight")}
+            />
+            <RadioCard
+              name="draw-presentation"
+              value="wheel"
+              checked={mode === "wheel"}
+              disabled={busy}
+              label="Roleta"
+              description="Mantém a seleção balanceada e altera somente a apresentação visual."
+              onChange={() => onPresentationChange("wheel")}
+            />
           </div>
-          <p className="draw-settings-persistence-note">
+          <p className={styles.persistenceNote}>
             A apresentação escolhida fica salva nesta sessão.
           </p>
         </section>
 
-        <section className="draw-settings-rules">
-          <span className="draw-settings-label">REGRAS DA SELEÇÃO</span>
-          <div className="draw-settings-rule">
-            <span aria-hidden="true">✓</span>
+        <section className={styles.section}>
+          <span className={styles.label}>REGRAS DA SELEÇÃO</span>
+          <div className={styles.rule}>
+            <span className={styles.ruleIcon} aria-hidden="true">✓</span>
             <div>
               <strong>Apenas presentes</strong>
               <p>Somente alunos marcados como presentes entram no sorteio.</p>
             </div>
           </div>
-          <div className="draw-settings-rule">
-            <span aria-hidden="true">✓</span>
+          <div className={styles.rule}>
+            <span className={styles.ruleIcon} aria-hidden="true">✓</span>
             <div>
               <strong>Evita repetição imediata</strong>
               <p>
@@ -103,7 +90,7 @@ export default function DrawSettingsDrawer({
           </div>
         </section>
 
-        <section className="draw-settings-explainer">
+        <section className={`${styles.section} ${styles.explainer}`}>
           <strong>Como o balanceamento funciona</strong>
           <p>
             Todos continuam com chance de serem sorteados, mas o peso aumenta para quem participou menos.
