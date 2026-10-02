@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
 export type WordCloudStatus = "COLLECTING" | "REVEALED" | "CLOSED";
 
@@ -42,7 +42,6 @@ export type CreateWordCloudInput = {
   maxWordsPerParticipant: number;
 };
 
-type ApiErrorBody = { message?: string };
 
 export class WordCloudApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -51,22 +50,11 @@ export class WordCloudApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, init);
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try {
-      body = (await response.json()) as ApiErrorBody;
-    } catch {
-      body = undefined;
-    }
-    throw new WordCloudApiError(
-      body?.message || `Falha na API da Nuvem de Palavras (${response.status}).`,
-      response.status,
-    );
-  }
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+function wordCloudRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na API da Nuvem de Palavras (${status}).`,
+    errorFactory: (message, status) => new WordCloudApiError(message, status),
+  });
 }
 
 function wordCloudPath(sessionId: string, roundId?: string) {
@@ -75,24 +63,24 @@ function wordCloudPath(sessionId: string, roundId?: string) {
 }
 
 export function fetchWordCloudState(sessionId: string) {
-  return request<WordCloudState>(wordCloudPath(sessionId));
+  return wordCloudRequest<WordCloudState>(wordCloudPath(sessionId));
 }
 
 export function createWordCloud(sessionId: string, input: CreateWordCloudInput) {
-  return request<WordCloudState>(wordCloudPath(sessionId), {
+  return wordCloudRequest<WordCloudState>(wordCloudPath(sessionId), {
     method: "POST",
     body: JSON.stringify(input),
   });
 }
 
 export function revealWordCloud(sessionId: string, roundId: string) {
-  return request<WordCloudState>(`${wordCloudPath(sessionId, roundId)}/reveal`, {
+  return wordCloudRequest<WordCloudState>(`${wordCloudPath(sessionId, roundId)}/reveal`, {
     method: "POST",
   });
 }
 
 export function closeWordCloud(sessionId: string, roundId: string) {
-  return request<WordCloudState>(`${wordCloudPath(sessionId, roundId)}/close`, {
+  return wordCloudRequest<WordCloudState>(`${wordCloudPath(sessionId, roundId)}/close`, {
     method: "POST",
   });
 }

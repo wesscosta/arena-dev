@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
 export type SubmissionEvidence = {
   submissionId: string;
@@ -21,15 +21,10 @@ export type SubmissionEvidence = {
   }>;
 };
 
-export async function fetchSubmissionEvidence(activityId: string, submissionId: string) {
-  const response = await apiFetch(`/api/activities/${activityId}/submissions/${submissionId}/evidence`);
-  if (!response.ok) {
-    let message = `Falha ao carregar evidências (${response.status}).`;
-    try {
-      const body = await response.json() as { message?: string };
-      if (body.message) message = body.message;
-    } catch {}
-    throw new Error(message);
-  }
-  return await response.json() as SubmissionEvidence;
+export function fetchSubmissionEvidence(activityId: string, submissionId: string) {
+  return apiRequest<SubmissionEvidence>(
+    `/api/activities/${activityId}/submissions/${submissionId}/evidence`,
+    undefined,
+    { errorMessage: (status) => `Falha ao carregar evidências (${status}).` },
+  );
 }

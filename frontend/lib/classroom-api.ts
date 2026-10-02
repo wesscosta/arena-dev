@@ -1,11 +1,6 @@
 import type { Classroom, ClassroomThemeColor, ClassroomThemeIcon, Enrollment, Student } from "./types";
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
-
-type ApiErrorBody = {
-  message?: string;
-  fields?: Record<string, string>;
-};
 
 export class ArenaApiError extends Error {
   constructor(
@@ -18,27 +13,11 @@ export class ArenaApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
+function classroomRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na API (${status}).`,
+    errorFactory: (message, status, fields) => new ArenaApiError(message, status, fields),
   });
-
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try {
-      body = (await response.json()) as ApiErrorBody;
-    } catch {
-      body = undefined;
-    }
-    throw new ArenaApiError(body?.message || `Falha na API (${response.status}).`, response.status, body?.fields);
-  }
-
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
 }
 
 type ClassroomView = {
@@ -114,15 +93,15 @@ export async function fetchClassroomDomain(): Promise<{
   enrollments: Enrollment[];
 }> {
   const [classroomViews, studentViews] = await Promise.all([
-    request<ClassroomView[]>("/api/classrooms?includeInactive=true"),
-    request<StudentView[]>("/api/students?includeInactive=true"),
+    classroomRequest<ClassroomView[]>("/api/classrooms?includeInactive=true"),
+    classroomRequest<StudentView[]>("/api/students?includeInactive=true"),
   ]);
 
   const classrooms = classroomViews.map(mapClassroom);
   const students = studentViews.map(mapStudent);
   const enrollmentGroups = await Promise.all(
     classrooms.map(async (classroom) => {
-      const rows = await request<EnrollmentView[]>(`/api/classrooms/${classroom.id}/students?includeInactive=true`);
+      const rows = await classroomRequest<EnrollmentView[]>(`/api/classrooms/${classroom.id}/students?includeInactive=true`);
       return rows.map((row) => mapEnrollment(classroom.id, row));
     }),
   );
@@ -140,7 +119,7 @@ export async function createClassroom(input: {
   themeColor?: ClassroomThemeColor;
   themeIcon?: ClassroomThemeIcon;
 }): Promise<Classroom> {
-  const result = await request<ClassroomView>("/api/classrooms", {
+  const result = await classroomRequest<ClassroomView>("/api/classrooms", {
     method: "POST",
     body: JSON.stringify({
       name: input.name,
@@ -162,7 +141,7 @@ export async function updateClassroom(input: {
   themeIcon?: ClassroomThemeIcon;
   studentStudyAccessEnabled: boolean;
 }): Promise<Classroom> {
-  const result = await request<ClassroomView>(`/api/classrooms/${input.id}`, {
+  const result = await classroomRequest<ClassroomView>(`/api/classrooms/${input.id}`, {
     method: "PUT",
     body: JSON.stringify({
       name: input.name,
@@ -177,14 +156,14 @@ export async function updateClassroom(input: {
 }
 
 export async function deleteClassroom(classroomId: string, confirmationName: string): Promise<void> {
-  await request<void>(`/api/classrooms/${classroomId}`, {
+  await classroomRequest<void>(`/api/classrooms/${classroomId}`, {
     method: "DELETE",
     body: JSON.stringify({ confirmationName }),
   });
 }
 
 export async function createStudent(input: { name: string; nickname?: string; registration?: string }): Promise<Student> {
-  const result = await request<StudentView>("/api/students", {
+  const result = await classroomRequest<StudentView>("/api/students", {
     method: "POST",
     body: JSON.stringify({
       name: input.name,
@@ -196,14 +175,14 @@ export async function createStudent(input: { name: string; nickname?: string; re
 }
 
 export async function enrollStudent(classroomId: string, studentId: string): Promise<Enrollment> {
-  const result = await request<EnrollmentView>(`/api/classrooms/${classroomId}/students/${studentId}`, {
+  const result = await classroomRequest<EnrollmentView>(`/api/classrooms/${classroomId}/students/${studentId}`, {
     method: "POST",
   });
   return mapEnrollment(classroomId, result);
 }
 
 export async function setEnrollmentActive(classroomId: string, studentId: string, active: boolean): Promise<Enrollment> {
-  const result = await request<EnrollmentView>(`/api/classrooms/${classroomId}/students/${studentId}`, {
+  const result = await classroomRequest<EnrollmentView>(`/api/classrooms/${classroomId}/students/${studentId}`, {
     method: "PATCH",
     body: JSON.stringify({ active }),
   });
@@ -212,7 +191,7 @@ export async function setEnrollmentActive(classroomId: string, studentId: string
 
 
 export async function updateEnrollmentPreferredName(classroomId: string, studentId: string, preferredName: string): Promise<Enrollment> {
-  const result = await request<EnrollmentView>(`/api/classrooms/${classroomId}/students/${studentId}/preferred-name`, {
+  const result = await classroomRequest<EnrollmentView>(`/api/classrooms/${classroomId}/students/${studentId}/preferred-name`, {
     method: "PATCH",
     body: JSON.stringify({ preferredName: preferredName.trim() || null }),
   });
@@ -220,7 +199,7 @@ export async function updateEnrollmentPreferredName(classroomId: string, student
 }
 
 export async function removeEnrollment(classroomId: string, studentId: string): Promise<void> {
-  await request<void>(`/api/classrooms/${classroomId}/students/${studentId}`, {
+  await classroomRequest<void>(`/api/classrooms/${classroomId}/students/${studentId}`, {
     method: "DELETE",
   });
 }

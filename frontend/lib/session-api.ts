@@ -1,12 +1,7 @@
 import { fetchSessionMechanics } from "./mechanics-api";
 import type { Classroom, GameSession, SessionParticipant, SessionRuntimeState } from "./types";
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
-
-type ApiErrorBody = {
-  message?: string;
-  fields?: Record<string, string>;
-};
 
 export class SessionApiError extends Error {
   constructor(
@@ -19,27 +14,11 @@ export class SessionApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
+function sessionRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na API de sessão (${status}).`,
+    errorFactory: (message, status, fields) => new SessionApiError(message, status, fields),
   });
-
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try {
-      body = (await response.json()) as ApiErrorBody;
-    } catch {
-      body = undefined;
-    }
-    throw new SessionApiError(body?.message || `Falha na API de sessão (${response.status}).`, response.status, body?.fields);
-  }
-
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
 }
 
 type SessionView = {
@@ -101,7 +80,7 @@ function mapSession(item: SessionView, participants: SessionParticipant[], runti
 }
 
 export async function fetchSessionParticipants(sessionId: string): Promise<SessionParticipant[]> {
-  const rows = await request<ParticipantView[]>(`/api/sessions/${sessionId}/participants`);
+  const rows = await sessionRequest<ParticipantView[]>(`/api/sessions/${sessionId}/participants`);
   return rows.map((row) => mapParticipant(sessionId, row));
 }
 
@@ -109,7 +88,7 @@ export async function fetchSessionDomain(
   classrooms: Classroom[],
 ): Promise<{ sessions: GameSession[]; sessionParticipants: SessionParticipant[] }> {
   const sessionGroups = await Promise.all(
-    classrooms.map((classroom) => request<SessionView[]>(`/api/sessions?classroomId=${encodeURIComponent(classroom.id)}`)),
+    classrooms.map((classroom) => sessionRequest<SessionView[]>(`/api/sessions?classroomId=${encodeURIComponent(classroom.id)}`)),
   );
   const sessionViews = sessionGroups.flat();
   const activeSessionViews = sessionViews.filter((session) => session.status === "ACTIVE" && !session.endedAt);
@@ -138,7 +117,7 @@ export async function fetchSessionDomain(
 
 
 export async function releaseParticipantDevice(sessionId: string, participantId: string): Promise<SessionParticipant> {
-  const row = await request<ParticipantView>(`/api/sessions/${sessionId}/participants/${participantId}/release-device`, { method: "POST" });
+  const row = await sessionRequest<ParticipantView>(`/api/sessions/${sessionId}/participants/${participantId}/release-device`, { method: "POST" });
   return mapParticipant(sessionId, row);
 }
 
@@ -147,7 +126,7 @@ export async function createSession(input: {
   title: string;
   presentStudentIds: string[];
 }): Promise<{ session: GameSession; participants: SessionParticipant[] }> {
-  const created = await request<SessionView>("/api/sessions", {
+  const created = await sessionRequest<SessionView>("/api/sessions", {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -159,7 +138,7 @@ export async function createSession(input: {
 }
 
 export async function finishSession(sessionId: string): Promise<GameSession> {
-  const result = await request<SessionView>(`/api/sessions/${sessionId}/finish`, {
+  const result = await sessionRequest<SessionView>(`/api/sessions/${sessionId}/finish`, {
     method: "POST",
   });
   return mapSession(result, []);
@@ -170,7 +149,7 @@ export async function setParticipantPresence(
   participantId: string,
   present: boolean,
 ): Promise<SessionParticipant> {
-  const result = await request<ParticipantView>(`/api/sessions/${sessionId}/participants/${participantId}/presence`, {
+  const result = await sessionRequest<ParticipantView>(`/api/sessions/${sessionId}/participants/${participantId}/presence`, {
     method: "PATCH",
     body: JSON.stringify({ present }),
   });

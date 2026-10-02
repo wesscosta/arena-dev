@@ -27,7 +27,7 @@ baseline publicada        v0.7.0
 linha ativa               v0.8
 último integrado à main   16.1 · PR #22
 incremento atual           Gate de Estabilização Arquitetural v0.8
-fatia atual                P1 · Arena Live Shell e fronteiras frontend
+fatia atual                P1.2/P1.4 · Arena boundaries e CSS ownership; P1.3 HTTP Client concluído
 branch                     chore/v0.8-architecture-stabilization
 schema                     Flyway V1–V37
 providers                  Microsoft Teams + Notion OAuth
@@ -89,6 +89,7 @@ Google Classroom           standby
 - scroll lock de overlays centralizado e seguro para locks simultâneos;
 - tela de participantes simplificada com busca, nome de exibição sob demanda e ações por ícones;
 - baseline atual: Next.js 16.3.8; `npm audit --omit=dev --audit-level=high` com 0 vulnerabilidades; frontend 274/274, typecheck e build verdes; backend `mvn verify` verde com 106 testes unitários + 87 ITs;
+- transporte HTTP frontend consolidado em `lib/http/client.ts`; módulos de domínio não implementam mais parsing/CSRF/credentials de forma independente;
 
 ## Professor Arena Experience — implementado
 

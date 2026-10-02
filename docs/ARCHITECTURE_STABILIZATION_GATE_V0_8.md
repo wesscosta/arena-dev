@@ -236,6 +236,8 @@ http-client.ts
 
 Não criar um SDK genérico excessivamente abstrato.
 
+**Status:** concluído. `lib/http/client.ts` centraliza transporte HTTP, CSRF/credentials via `apiFetch`, parsing de erro, `204` e fábrica de erros tipados. Os módulos de domínio continuam separados e passam apenas sua política de erro/credencial. Os wrappers independentes `request<T>()` foram removidos dos módulos frontend; `apiFetch` permanece restrito à camada de autenticação e ao próprio client HTTP.
+
 ## P1.4 Corrigir direção das dependências CSS
 
 Regra:
