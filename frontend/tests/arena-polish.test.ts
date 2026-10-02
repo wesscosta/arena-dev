@@ -134,8 +134,11 @@ test("Smart Draw workspace uses a participant Grid, transient Spotlight and cont
   const settings = read("components/arena/selection/DrawSettingsDrawer.tsx");
   const rail = read("components/arena/selection/DrawSessionRail.tsx");
 
+  const toolState = read("components/arena/live/useArenaToolState.ts");
+
   assert.match(app, /className="smart-draw-workspace"/);
-  assert.match(app, /setDrawSettingsOpen\(true\)/);
+  assert.match(app, /onOpenSettings=\{openDrawSettings\}/);
+  assert.match(toolState, /openDrawSettings:\s*\(\) => setDrawSettingsOpen\(true\)/);
   assert.match(app, /<DrawSettingsDrawer/);
   assert.match(settings, /title="Configurações do Sorteio"/);
   assert.match(settings, /REGRAS DA SELEÇÃO/);
@@ -157,11 +160,13 @@ test("Draw history comes from persisted session events instead of a frontend-onl
 test("Arena separates primary dynamics from contextual tools", () => {
   const app = read("components/ArenaApp.tsx");
   const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
+  const toolState = read("components/arena/live/useArenaToolState.ts");
 
   assert.match(chrome, /export type ArenaDynamic = "runbook" \| "draw"/);
   assert.match(chrome, /export type ArenaTool = "timer" \| "groups" \| "attendance" \| "score" \| null/);
-  assert.match(app, /const \[activeDynamic, setActiveDynamic\]/);
-  assert.match(app, /const \[activeTool, setActiveTool\]/);
+  assert.match(toolState, /const \[activeDynamic, setActiveDynamic\]/);
+  assert.match(toolState, /const \[activeTool, setActiveTool\]/);
+  assert.match(app, /useArenaToolState\(\)/);
   assert.doesNotMatch(app, /const \[arenaTab, setArenaTab\]/);
 });
 
@@ -411,7 +416,9 @@ test("Arena QR preview expands into a projector-friendly modal", () => {
   const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /onOpenQr=\{\(\) => setSessionQrOpen\(true\)\}/);
+  const toolState = read("components/arena/live/useArenaToolState.ts");
+  assert.match(app, /onOpenQr=\{openSessionQr\}/);
+  assert.match(toolState, /openSessionQr:\s*\(\) => setSessionQrOpen\(true\)/);
   assert.match(rail, /aria-label="Ampliar QR Code da sessão"/);
   assert.match(app, /className="arena-session-qr-modal"/);
   assert.match(app, /joinQrImageUrl\(currentSession\.id, publicBaseUrl, joinCode\.code, 720\)/);
@@ -589,7 +596,9 @@ test("Attendance drawer QR reuses the enlarged Arena QR experience", () => {
 
   assert.match(access, /onExpandQr\?: \(\) => void/);
   assert.match(access, /className=\{styles\.qrTrigger\}/);
-  assert.match(app, /onExpandQr=\{\(\) => setSessionQrOpen\(true\)\}/);
+  const toolState = read("components/arena/live/useArenaToolState.ts");
+  assert.match(app, /onExpandQr=\{openSessionQr\}/);
+  assert.match(toolState, /openSessionQr:\s*\(\) => setSessionQrOpen\(true\)/);
   assert.match(css, /\.qrTrigger\s*\{/);
 });
 

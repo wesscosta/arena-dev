@@ -13,6 +13,8 @@ import ParticipantSelectionExperience from "@/components/arena/selection/Partici
 import DrawSettingsDrawer from "@/components/arena/selection/DrawSettingsDrawer";
 import ArenaContextRail from "@/components/arena/live/ArenaContextRail";
 import { useArenaRealtime } from "@/components/arena/live/useArenaRealtime";
+import { useArenaScoring } from "@/components/arena/live/useArenaScoring";
+import { useArenaToolState } from "@/components/arena/live/useArenaToolState";
 import WheelParticipantSelector from "@/components/arena/selection/WheelParticipantSelector";
 import {
   presentationToSelectorMode,
@@ -25,8 +27,6 @@ import {
   ArenaLiveShell,
   ArenaSessionHeader,
   ArenaSidebar,
-  type ArenaDynamic,
-  type ArenaTool,
 } from "@/components/arena/live/ArenaLiveChrome";
 import WordCloudPanel from "@/components/WordCloudPanel";
 import PollPanel from "@/components/PollPanel";
@@ -73,7 +73,7 @@ import {
   startLiveFlow,
   type LiveFlowState,
 } from "@/lib/mechanics-api";
-import { createScoreEvent as createScoreEventApi, createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
+import { createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
 import { closeBuzzer as closeBuzzerApi, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode } from "@/lib/realtime-api";
 import { fetchSessionEventsBySession, type SessionEvent } from "@/lib/session-event-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
@@ -2190,16 +2190,25 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   notify: (message: string) => void;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
-  const [activeDynamic, setActiveDynamic] = useState<ArenaDynamic>("draw");
-  const [activeTool, setActiveTool] = useState<ArenaTool>(null);
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
-  const [drawSettingsOpen, setDrawSettingsOpen] = useState(false);
   const [drawPresentationBusy, setDrawPresentationBusy] = useState(false);
-  const [sessionQrOpen, setSessionQrOpen] = useState(false);
-  const [reason, setReason] = useState("Resposta correta");
-  const [customPoints, setCustomPoints] = useState(10);
-  const [customScoreOpen, setCustomScoreOpen] = useState(false);
-  const [scoreFeedback, setScoreFeedback] = useState(false);
+  const {
+    activeDynamic,
+    activeTool,
+    drawSettingsOpen,
+    sessionQrOpen,
+    customScoreOpen,
+    selectDynamic,
+    selectTool,
+    closeTool,
+    resetNavigation,
+    openDrawSettings,
+    closeDrawSettings,
+    openSessionQr,
+    closeSessionQr,
+    toggleCustomScore,
+    closeCustomScore,
+  } = useArenaToolState();
   const [groups, setGroups] = useState<string[][]>(currentSession?.groups ?? []);
   const [groupSize, setGroupSize] = useState(currentSession?.groupSize ?? 2);
   const [bossName, setBossName] = useState("Spaghetti Code");
@@ -2254,6 +2263,29 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   });
 
   const {
+    reason,
+    setReason,
+    customPoints,
+    setCustomPoints,
+    scoreFeedback,
+    addScore,
+    addBuzzerScore,
+  } = useArenaScoring({
+    classroomId,
+    sessionId: currentSession?.id,
+    activityId: currentSession?.activityId,
+    questionId: currentSession?.currentQuestionId,
+    selectedStudentId: selectedId,
+    onScoreEvent: (event) => {
+      patch((current) => ({
+        ...current,
+        scoreEvents: [...current.scoreEvents, event],
+      }));
+    },
+    notify,
+  });
+
+  const {
     joinCode,
     setJoinCode,
     buzzerState,
@@ -2282,7 +2314,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     if (!sessionQrOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSessionQrOpen(false);
+      if (event.key === "Escape") closeSessionQr();
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -2402,8 +2434,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         ],
         currentSessionId: started.id,
       }));
-      setActiveDynamic(activityId ? "runbook" : "draw");
-      setActiveTool(null);
+      resetNavigation(activityId ? "runbook" : "draw");
       notify("Arena iniciada. Sessão e mecânicas estão no PostgreSQL.");
     } catch (error) {
       notify(errorMessage(error));
@@ -2433,8 +2464,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }));
       setSelectedId(undefined);
       setGroups([]);
-      setActiveDynamic("draw");
-      setActiveTool(null);
+      resetNavigation("draw");
       setLiveFlowState(null);
       onPreferredActivityChange(undefined);
       notify("Sessão encerrada e persistida.");
@@ -2522,35 +2552,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       notify(errorMessage(error));
     } finally {
       setDrawPresentationBusy(false);
-    }
-  }
-
-  async function addScore(
-    points: number,
-    category: ScoreCategory,
-    description: string,
-    studentIdOverride?: string,
-  ) {
-    const scoringStudentId = studentIdOverride ?? selectedId;
-    if (!scoringStudentId || !currentSession) return;
-    try {
-      const event = await createScoreEventApi({
-        classroomId,
-        studentId: scoringStudentId,
-        sessionId: currentSession.id,
-        points,
-        category,
-        description,
-        source: "ARENA",
-        activityId: currentSession.activityId,
-        questionId: currentSession.currentQuestionId,
-      });
-      patch((current) => ({ ...current, scoreEvents: [...current.scoreEvents, event] }));
-      setScoreFeedback(true);
-      window.setTimeout(() => setScoreFeedback(false), 900);
-      notify(`${points >= 0 ? "+" : ""}${points} XP registrado no PostgreSQL.`);
-    } catch (error) {
-      notify(errorMessage(error));
     }
   }
 
@@ -2772,25 +2773,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     }
   }
 
-  async function addBuzzerScore(studentId: string, points: number) {
-    if (!currentSession) return;
-    try {
-      const event = await createScoreEventApi({
-        classroomId,
-        studentId,
-        sessionId: currentSession.id,
-        points,
-        category: "QUESTION",
-        description: "Buzzer · resposta correta",
-        source: "BUZZER",
-      });
-      patch((current) => ({ ...current, scoreEvents: [...current.scoreEvents, event] }));
-      notify(`+${points} XP do Buzzer registrado.`);
-    } catch (error) {
-      notify(errorMessage(error));
-    }
-  }
-
   async function copySessionCode() {
     if (!joinCode) {
       notify("Aguarde a geração do código da sessão.");
@@ -2914,13 +2896,12 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           onOpenSettings={onOpenSettings}
           onLogout={onLogout}
           onSelectDynamic={(dynamic) => {
-            setActiveDynamic(dynamic);
-            setActiveTool(null);
+            selectDynamic(dynamic);
             if (dynamic !== "draw") {
               closeSpotlight();
             }
           }}
-          onSelectTool={setActiveTool}
+          onSelectTool={selectTool}
         />
       }
       header={
@@ -2964,8 +2945,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 onPrevious={() => { void movePreparedFlow("previous"); }}
                 onNext={() => { void movePreparedFlow("next"); }}
                 onOpenWordCloud={() => {
-                  setActiveDynamic("wordcloud");
-                  setActiveTool(null);
+                  selectDynamic("wordcloud");
                 }}
               />
             ) : activeActivity ? (
@@ -3033,7 +3013,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 phase={selectionPhase}
                 onDraw={() => { void draw(); }}
                 onConfirm={confirmSpotlight}
-                onOpenSettings={() => setDrawSettingsOpen(true)}
+                onOpenSettings={openDrawSettings}
               />
             ) : (
             <div className="smart-draw-hero">
@@ -3046,7 +3026,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                     <p>Escolha um aluno de forma justa e dinâmica, mantendo toda a turma em jogo.</p>
                   </div>
                 </div>
-                <button type="button" className="smart-draw-settings" onClick={() => setDrawSettingsOpen(true)}>
+                <button type="button" className="smart-draw-settings" onClick={openDrawSettings}>
                   ⚙ Ajustes
                 </button>
               </div>
@@ -3178,7 +3158,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                     aria-expanded={customScoreOpen}
                     onClick={() => {
                       setReason("Outra pontuação");
-                      setCustomScoreOpen((open) => !open);
+                      toggleCustomScore();
                     }}
                   >
                     <b>✎</b><span>Personalizar</span>
@@ -3198,7 +3178,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                         disabled={!selected || !reason.trim()}
                         onClick={() => {
                           void addScore(customPoints, "ADJUSTMENT", reason);
-                          setCustomScoreOpen(false);
+                          closeCustomScore();
                         }}
                       >
                         Aplicar
@@ -3535,9 +3515,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           sessionId={currentSession.id}
           joinCode={joinCode}
           publicBaseUrl={publicBaseUrl}
-          onOpenAttendance={() => setActiveTool("attendance")}
+          onOpenAttendance={() => selectTool("attendance")}
           onCopySessionCode={() => { void copySessionCode(); }}
-          onOpenQr={() => setSessionQrOpen(true)}
+          onOpenQr={openSessionQr}
         />
       </div>
 
@@ -3545,7 +3525,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         <div
           className="arena-session-qr-modal"
           role="presentation"
-          onClick={() => setSessionQrOpen(false)}
+          onClick={closeSessionQr}
         >
           <section
             className="arena-session-qr-dialog"
@@ -3557,7 +3537,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             <button
               type="button"
               className="arena-session-qr-close"
-              onClick={() => setSessionQrOpen(false)}
+              onClick={closeSessionQr}
               aria-label="Fechar QR Code ampliado"
             >
               ×
@@ -3580,7 +3560,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         open={drawSettingsOpen}
         mode={selectorMode}
         busy={drawPresentationBusy}
-        onClose={() => setDrawSettingsOpen(false)}
+        onClose={closeDrawSettings}
         onPresentationChange={(mode) => { void changeDrawPresentation(mode); }}
       />
 
@@ -3588,7 +3568,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         open={activeTool === "timer"}
         title="Timer"
         subtitle="Controle o tempo sem sair da dinâmica atual."
-        onClose={() => setActiveTool(null)}
+        onClose={closeTool}
       >
         <TimerPanel
           sessionId={currentSession.id}
@@ -3602,7 +3582,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         open={activeTool === "groups"}
         title="Organizar turma"
         subtitle="Monte duplas e grupos mantendo a dinâmica principal visível."
-        onClose={() => setActiveTool(null)}
+        onClose={closeTool}
       >
         <div className="arena-tool-groups">
           <div className="group-controls">
@@ -3644,7 +3624,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         title="Presença e acesso"
         subtitle="Gerencie check-in, presença e dispositivos sem abandonar a dinâmica."
         size="wide"
-        onClose={() => setActiveTool(null)}
+        onClose={closeTool}
       >
         <div className="arena-tool-attendance">
           <SessionAccessCard
@@ -3658,7 +3638,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             drawer
             title="Entrada dos alunos"
             subtitle=""
-            onExpandQr={() => setSessionQrOpen(true)}
+            onExpandQr={openSessionQr}
           />
 
           <div className="arena-tool-roster">
@@ -3711,7 +3691,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         open={activeTool === "score"}
         title="Pontuação rápida"
         subtitle="Aplique XP mantendo a dinâmica principal no palco."
-        onClose={() => setActiveTool(null)}
+        onClose={closeTool}
       >
         <div className="arena-tool-score">
           <label className="field-label">Aluno</label>

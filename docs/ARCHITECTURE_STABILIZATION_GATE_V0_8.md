@@ -211,7 +211,7 @@ Extrações candidatas:
 
 Não mover código apenas para gerar arquivos menores. Cada extração precisa ter responsabilidade e contrato próprios.
 
-**Status:** fronteira principal concluída. O chrome estrutural está em `ArenaLiveChrome.tsx`; `ArenaContextRail` e `DrawSettingsDrawer` possuem owners próprios; a sincronização de Join Code, Buzzer, Timer, Word Cloud, Poll e Quiz/WebSocket foi extraída para `useArenaRealtime`. `ArenaApp.tsx` caiu de aproximadamente 4.690 para cerca de 4.400 linhas sem mover lógica apenas por tamanho. A orquestração de ciclo de sessão e algumas dinâmicas ainda permanecem no `ArenaView` e serão tratadas em boundaries posteriores, sem bloquear o Gate P1.
+**Status:** fronteira principal concluída. O chrome estrutural está em `ArenaLiveChrome.tsx`; `ArenaContextRail` e `DrawSettingsDrawer` possuem owners próprios; a sincronização de Join Code, Buzzer, Timer, Word Cloud, Poll e Quiz/WebSocket foi extraída para `useArenaRealtime`. A navegação/abertura de ferramentas foi isolada em `useArenaToolState` e a pontuação da Arena/Buzzer em `useArenaScoring`, retirando estado e side effects de scoring do `ArenaView`. `ArenaApp.tsx` caiu de aproximadamente 4.690 para cerca de 4.380 linhas sem mover lógica apenas por tamanho. A orquestração de ciclo de sessão, grupos/Boss e Live Flow ainda permanece no `ArenaView` e será tratada em boundaries posteriores, sem bloquear o Gate P1.
 
 ## P1.3 Normalizar acesso à API
 
@@ -495,7 +495,7 @@ Backend:
 
 Depois, habilitar análise incremental para novo código.
 
-**Status:** baseline frontend implantada. ESLint 9 + `eslint-config-next` executa com **0 errors** e mantém 79 warnings históricos como dívida explícita; regras de correção arquitetural/React não foram desabilitadas, apenas rebaixadas para warning onde a base existente ainda não está migrada. Prettier e EditorConfig foram adicionados; o gate de formatação começa incrementalmente em `lib/http` + arquivos de configuração, enquanto `format:check:all` expõe o backlog legado sem bloquear o release atual.
+**Status:** baseline frontend implantada. ESLint 9 + `eslint-config-next` executa com **0 errors** e mantém 80 warnings históricos como dívida explícita; regras de correção arquitetural/React não foram desabilitadas, apenas rebaixadas para warning onde a base existente ainda não está migrada. Prettier e EditorConfig foram adicionados; o gate de formatação começa incrementalmente em `lib/http` + arquivos de configuração, enquanto `format:check:all` expõe o backlog legado sem bloquear o release atual.
 
 ## P4.4 Testes visuais críticos
 
