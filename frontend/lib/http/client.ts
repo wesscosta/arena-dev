@@ -13,10 +13,7 @@ export type ApiRequestOptions = {
   errorFactory?: ApiErrorFactory;
 };
 
-function fallbackMessage(
-  value: ApiRequestOptions["errorMessage"],
-  status: number,
-) {
+function fallbackMessage(value: ApiRequestOptions["errorMessage"], status: number) {
   if (typeof value === "function") return value(status);
   return value ?? `Falha na API (${status}).`;
 }
@@ -34,15 +31,12 @@ export async function apiRequest<T>(
   init?: RequestInit,
   options: ApiRequestOptions = {},
 ): Promise<T> {
-  const response = await apiFetch(
-    path,
-    init,
-    options.credentials ?? "include",
-  );
+  const response = await apiFetch(path, init, options.credentials ?? "include");
 
   if (!response.ok) {
     const body = await readErrorBody(response);
-    const message = body?.message ?? body?.detail ?? fallbackMessage(options.errorMessage, response.status);
+    const message =
+      body?.message ?? body?.detail ?? fallbackMessage(options.errorMessage, response.status);
     if (options.errorFactory) {
       throw options.errorFactory(message, response.status, body?.fields);
     }

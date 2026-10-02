@@ -8,7 +8,10 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "node -e \"require('fs').rmSync('.test-dist',{recursive:true,force:true})\" && tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "lint": "eslint .",
+    "format:check": "prettier --check lib/http eslint.config.mjs package.json .prettierrc.json",
+    "format:check:all": "prettier --check app components lib styles tests e2e *.ts *.mjs *.json"
   },
   "dependencies": {
     "next": "16.3.8",
@@ -22,6 +25,9 @@
     "@types/node": "^22.15.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.8",
+    "prettier": "^3.9.9",
     "typescript": "^5.9.2"
   }
 }

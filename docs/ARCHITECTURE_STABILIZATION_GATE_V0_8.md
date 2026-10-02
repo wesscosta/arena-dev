@@ -425,6 +425,8 @@ Centralizar via DI:
 
 Não criar uma pasta `utils` genérica.
 
+**Status:** `JsonMapper` centralizado por DI no código produtivo. Os builders locais identificados na auditoria foram removidos de services, controllers, providers de ingestão/IA e realtime; o projeto passa a depender do mapper gerenciado pelo Spring, preservando uma única política de serialização. Clock/HTTP clients/hashing continuam sendo tratados apenas quando houver duplicação real de política.
+
 ## P3.6 Exceções de domínio
 
 Criar exceções com intenção:
@@ -493,6 +495,8 @@ Backend:
 
 Depois, habilitar análise incremental para novo código.
 
+**Status:** baseline frontend implantada. ESLint 9 + `eslint-config-next` executa com **0 errors** e mantém 79 warnings históricos como dívida explícita; regras de correção arquitetural/React não foram desabilitadas, apenas rebaixadas para warning onde a base existente ainda não está migrada. Prettier e EditorConfig foram adicionados; o gate de formatação começa incrementalmente em `lib/http` + arquivos de configuração, enquanto `format:check:all` expõe o backlog legado sem bloquear o release atual.
+
 ## P4.4 Testes visuais críticos
 
 Playwright em:
@@ -522,6 +526,8 @@ Pipeline mínimo:
 6. audit/dependency check;
 7. E2E crítico;
 8. `git diff --check`.
+
+**Status:** o release gate local agora executa lint e o gate incremental de formatação antes de testes/typecheck/build. O pipeline final continuará exigindo backend verify, audit, stack isolado e E2E. A migração do formatter para toda a base permanece incremental para evitar um commit mecânico massivo de centenas de arquivos.
 
 **Gate P4:** CI reproduzível e verde antes de novo incremento funcional.
 

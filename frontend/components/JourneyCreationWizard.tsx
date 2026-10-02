@@ -174,7 +174,7 @@ export default function JourneyCreationWizard({
     onClose();
   }
 
-  async function useDraft() {
+  async function applyDraft() {
     if (!draft || busy) return;
     setBusy(true);
     try {
@@ -326,7 +326,7 @@ export default function JourneyCreationWizard({
             busy={busy}
             onChange={setDraft}
             onBack={() => setMode("choose")}
-            onUse={() => void useDraft()}
+            onUse={() => void applyDraft()}
           />
         )}
       </section>
