@@ -1,6 +1,6 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 2 de outubro de 2026
+**Última sincronização documental:** 3 de outubro de 2026
 
 **Baseline publicada:** `v0.7.0 — Educational Integrations`.
 
@@ -88,9 +88,21 @@ Google Classroom           standby
 - confinamento `100dvh`/`overflow: hidden` ficou restrito à Arena ao vivo via `arena-fullscreen-shell`;
 - scroll lock de overlays centralizado e seguro para locks simultâneos;
 - tela de participantes simplificada com busca, nome de exibição sob demanda e ações por ícones;
-- baseline atual: Next.js 16.3.8; `npm audit --omit=dev --audit-level=high` com 0 vulnerabilidades; frontend 275/275, typecheck e build verdes; backend `mvn verify` verde com 106 testes unitários + 87 ITs;
+- baseline atual: Next.js 16.3.8; `npm audit --omit=dev --audit-level=high` com 0 vulnerabilidades; frontend 278/278, typecheck e build verdes; backend `mvn verify` verde com 106 testes unitários + 87 ITs;
 - transporte HTTP frontend consolidado em `lib/http/client.ts`; módulos de domínio não implementam mais parsing/CSRF/credentials de forma independente;
 - direção de dependência CSS corrigida: componentes não importam mais módulos de estilo privados de `app/`; Projector, Student Join e Study possuem ownership de feature em `components/`;
+
+## Visão geral de turmas — consolidação MVP
+
+- o shell do professor continua sem sidebar; `Visão geral` permanece o nível global do sistema;
+- `Biblioteca` passou a destino explícito da navegação global no topbar, em vez de CTA isolado da página;
+- a página `Suas turmas` mantém busca por nome/código, filtros Ativas/Inativas e ordenação por MRU/nome/código;
+- cards foram compactados e limitados em largura, sem carrossel, categorias, tags ou progresso inventado;
+- XP saiu do card de descoberta; o card mostra somente código, alunos, atividades e estado operacional;
+- light/dark usam os tokens semânticos existentes e a matriz E2E cobre reload em 390, 768, 1024, 1440, 1920 e 2560 px;
+- categorias, shelves estilo Netflix, favoritos e taxonomias adicionais continuam fora do MVP até existir necessidade observada.
+
+Documento: [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md).
 
 ## Professor Arena Experience — implementado
 
@@ -134,7 +146,7 @@ Google Classroom           standby
 
 ```text
 backend tests        OK (suíte Maven completa)
-frontend tests       OK · última baseline registrada: 275/275
+frontend tests       OK · baseline corrente: 278/278
 frontend typecheck   OK
 frontend build       OK
 git diff --check     OK

@@ -11,8 +11,9 @@
 ## Modelo do produto
 
 ```text
-Visão geral = nível do sistema
+Visão geral = nível do sistema e descoberta de turmas
 Turma       = contexto pedagógico
+Biblioteca  = acervo global reutilizável do professor
 Arena       = operação da aula ao vivo
 Entregas    = fluxo assíncrono de submissão, correção e feedback
 Integrações = ponte provider-independent com plataformas educacionais
@@ -254,6 +255,7 @@ O histórico detalhado de release permanece em `docs/RELEASE_0_6.md`. A document
 - [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)
 - [`docs/ACCESSIBILITY.md`](docs/ACCESSIBILITY.md)
 - [`docs/LEARNING_VALIDATION_ROADMAP.md`](docs/LEARNING_VALIDATION_ROADMAP.md)
+- [`docs/CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](docs/CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md)
 - [`docs/adr/README.md`](docs/adr/README.md)
 
 Histórico da v0.6:

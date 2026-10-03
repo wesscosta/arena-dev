@@ -15,7 +15,8 @@
 11. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
 12. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
 13. [`LEARNING_VALIDATION_ROADMAP.md`](LEARNING_VALIDATION_ROADMAP.md) — plano pós-v0.8 para taxonomia, roadmaps/editais, questões de concurso, evidências, Mastery, revisão e progressão visual.
-14. [`adr/README.md`](adr/README.md).
+14. [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md) — decisões e gates da Visão geral de turmas, Biblioteca global, cards, temas e responsividade.
+15. [`adr/README.md`](adr/README.md).
 
 ## Baseline encerrada — v0.6
 
