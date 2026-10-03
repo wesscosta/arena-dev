@@ -6,6 +6,7 @@ import {
   fetchClassroomIntegrationSummary,
   type ClassroomIntegrationSummary,
 } from "@/lib/classroom-integrations";
+import styles from "@/components/ClassroomIntegrationWorkspace.module.css";
 
 function providerLabel(provider?: string | null) {
   if (provider === "MICROSOFT_TEAMS") return "Microsoft Teams";
@@ -24,22 +25,20 @@ export default function ClassroomIntegrationWorkspace({
   activityCount: number;
   onManage: () => void;
 }) {
-  const [summary, setSummary] = useState<ClassroomIntegrationSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [resolvedSummary, setResolvedSummary] = useState<{
+    classroomId: string;
+    summary: ClassroomIntegrationSummary | null;
+  } | null>(null);
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
 
     fetchClassroomIntegrationSummary(classroomId)
       .then((result) => {
-        if (active) setSummary(result);
+        if (active) setResolvedSummary({ classroomId, summary: result });
       })
       .catch(() => {
-        if (active) setSummary(null);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
+        if (active) setResolvedSummary({ classroomId, summary: null });
       });
 
     return () => {
@@ -47,9 +46,15 @@ export default function ClassroomIntegrationWorkspace({
     };
   }, [classroomId]);
 
+  const loading = resolvedSummary?.classroomId !== classroomId;
+  const summary = loading ? null : resolvedSummary.summary;
+
   if (loading) {
     return (
-      <section className="classroom-integration-workspace subtle">
+      <section
+        className={`${styles.workspace} ${styles.subtle}`}
+        data-testid="classroom-integration-workspace"
+      >
         <div>
           <span className="eyebrow">INTEGRAÇÕES</span>
           <strong>Verificando integração...</strong>
@@ -62,13 +67,14 @@ export default function ClassroomIntegrationWorkspace({
 
   if (!integration) {
     return (
-      <section className="classroom-integration-workspace empty">
-        <div className="classroom-integration-copy">
+      <section
+        className={`${styles.workspace} ${styles.empty}`}
+        data-testid="classroom-integration-workspace"
+      >
+        <div className={styles.copy}>
           <span className="eyebrow">INTEGRAÇÕES</span>
           <strong>Nenhuma plataforma conectada</strong>
-          <small>
-            Opcional — a turma funciona normalmente sem integração externa.
-          </small>
+          <small>Opcional — a turma funciona normalmente sem integração externa.</small>
         </div>
         <Button size="sm" variant="ghost" onClick={onManage}>
           Vincular plataforma
@@ -85,9 +91,9 @@ export default function ClassroomIntegrationWorkspace({
     : 0;
 
   return (
-    <section className="classroom-integration-workspace">
-      <div className="classroom-integration-main">
-        <div className="classroom-integration-title">
+    <section className={styles.workspace} data-testid="classroom-integration-workspace">
+      <div className={styles.main}>
+        <div className={styles.title}>
           <span className="eyebrow">INTEGRAÇÕES</span>
           <div>
             <Badge variant="success" dot>
@@ -97,21 +103,25 @@ export default function ClassroomIntegrationWorkspace({
           </div>
         </div>
 
-        <div className="classroom-integration-kpis">
+        <div className={styles.kpis}>
           <div>
-            <strong>{integration.linkedStudents}/{studentCount}</strong>
+            <strong>
+              {integration.linkedStudents}/{studentCount}
+            </strong>
             <span>alunos vinculados</span>
             <small>{studentCoverage}% da turma</small>
           </div>
           <div>
-            <strong>{integration.mappedActivities}/{activityCount}</strong>
+            <strong>
+              {integration.mappedActivities}/{activityCount}
+            </strong>
             <span>atividades mapeadas</span>
             <small>{activityCoverage}% das atividades</small>
           </div>
         </div>
       </div>
 
-      <div className="classroom-integration-actions">
+      <div className={styles.actions}>
         <small>
           {integration.connectionName}
           {integration.connectionStatus ? ` · ${integration.connectionStatus}` : ""}

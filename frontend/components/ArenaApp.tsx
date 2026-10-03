@@ -318,6 +318,7 @@ export default function ArenaApp() {
   function openClassroom(tab: ClassroomTab = "home") {
     setClassroomTab(tab);
     setView("classroom");
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }
 
   function openClassroomSettings(classroomId?: string, intent: "general" | "delete" = "general") {
@@ -1133,7 +1134,7 @@ function ClassroomHome({ classroom, data, students, currentSession, onOpenArena,
           <button className="button small" onClick={onManageClassroom}>Gerenciar turma</button>
         </div>
       )}
-      <section className={`classroom-home-hero-v2 ${classroomHomeStyles.hero}`} style={classroomTheme.style}>
+      <section className={classroomHomeStyles.hero} style={classroomTheme.style} data-testid="classroom-home-hero">
         <div className={classroomHomeStyles.watermark} aria-hidden>{classroomTheme.glyph}</div>
 
         <div className={classroomHomeStyles.heroHeader}>
@@ -1150,7 +1151,7 @@ function ClassroomHome({ classroom, data, students, currentSession, onOpenArena,
           </button>
         </div>
 
-        <div className={`${classroomHomeStyles.sessionPanel} ${arenaCta.live ? classroomHomeStyles.sessionPanelLive : ""} ${arenaCta.disabled ? classroomHomeStyles.sessionPanelDisabled : ""}`}>
+        <div className={`${classroomHomeStyles.sessionPanel} ${arenaCta.live ? classroomHomeStyles.sessionPanelLive : ""} ${arenaCta.disabled ? classroomHomeStyles.sessionPanelDisabled : ""}`} data-testid="classroom-session-panel">
           <div className={classroomHomeStyles.sessionCopy}>
             <span className={classroomHomeStyles.sessionKicker}>
               {arenaCta.live && <i className={classroomHomeStyles.liveDot} aria-hidden />}
@@ -1172,12 +1173,19 @@ function ClassroomHome({ classroom, data, students, currentSession, onOpenArena,
           </div>
 
           <button
-            className={`arena-launch-button arena-launch-button-${arenaCta.tone} ${classroomHomeStyles.sessionAction}`}
+            className={`${classroomHomeStyles.sessionAction} ${
+              arenaCta.tone === "start"
+                ? classroomHomeStyles.sessionActionStart
+                : arenaCta.tone === "resume"
+                  ? classroomHomeStyles.sessionActionResume
+                  : classroomHomeStyles.sessionActionDisabled
+            }`}
             onClick={onOpenArena}
             disabled={arenaCta.disabled}
+            data-testid="classroom-session-action"
           >
-            <span className="arena-launch-icon" aria-hidden>{arenaCta.icon}</span>
-            <span className="arena-launch-content">
+            <span className={classroomHomeStyles.sessionActionIcon} aria-hidden>{arenaCta.icon}</span>
+            <span className={classroomHomeStyles.sessionActionContent}>
               <strong>{arenaCta.buttonLabel}</strong>
               <small>{arenaCta.supportingLabel}</small>
             </span>
@@ -1185,7 +1193,7 @@ function ClassroomHome({ classroom, data, students, currentSession, onOpenArena,
         </div>
       </section>
 
-      <section className={classroomHomeStyles.summaryGrid} aria-label="Resumo da turma">
+      <section className={classroomHomeStyles.summaryGrid} aria-label="Resumo da turma" data-testid="classroom-summary">
         <div className={classroomHomeStyles.summaryCard}>
           <span>ALUNOS MATRICULADOS</span>
           <strong>{students.length}</strong>
