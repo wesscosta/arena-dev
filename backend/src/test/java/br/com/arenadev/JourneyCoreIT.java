@@ -6,6 +6,7 @@ import br.com.arenadev.achievement.*;
 import br.com.arenadev.classroom.*;
 import br.com.arenadev.journey.*;
 import br.com.arenadev.content.*;
+import br.com.arenadev.identity.EnrollmentDeviceClaimRepository;
 import br.com.arenadev.study.*;
 import br.com.arenadev.submission.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +55,7 @@ class JourneyCoreIT {
     @Autowired private JourneyRedemptionCodeRepository redemptionCodeRepository;
     @Autowired private StudentJourneyAccessRepository studentJourneyAccessRepository;
     @Autowired private StudentJourneyStageProgressRepository studentJourneyProgressRepository;
+    @Autowired private EnrollmentDeviceClaimRepository deviceClaimRepository;
     @Autowired private StudentAchievementRepository studentAchievementRepository;
     @Autowired private AchievementService achievementService;
 
@@ -62,6 +64,7 @@ class JourneyCoreIT {
         studentAchievementRepository.deleteAll();
         studentJourneyProgressRepository.deleteAll();
         studentJourneyAccessRepository.deleteAll();
+        deviceClaimRepository.deleteAll();
         redemptionCodeRepository.deleteAll();
         progressRepository.deleteAll();
         journeyRepository.deleteAll();
@@ -387,6 +390,33 @@ class JourneyCoreIT {
         redemptionService.disable(journey.id());
         assertThat(journeyStudyService.get(journey.id(), principal).progress().percent()).isEqualTo(50);
         assertThat(redemptionService.status(journey.id()).redeemedCount()).isEqualTo(1);
+    }
+
+    @Test
+    void journeyCodeCanBootstrapFirstStudyAccessWithoutPriorLiveSession() {
+        Fixture fixture = fixture("Primeiro acesso", "JRNY-BOOT");
+        JourneyService.JourneyView journey = createPublishedJourney(fixture, List.of(
+                stage("Conteúdo inicial", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL)
+        ));
+        var code = redemptionService.enable(journey.id());
+
+        var preview = redemptionService.preview(code.code());
+        assertThat(preview.journeyId()).isEqualTo(journey.id());
+        assertThat(preview.classroomId()).isEqualTo(fixture.classroom().getId());
+
+        var result = redemptionService.redeemWithIdentity(
+                code.code(),
+                fixture.enrollment().getStudent().getRegistration()
+        );
+
+        assertThat(result.classroomId()).isEqualTo(fixture.classroom().getId());
+        assertThat(result.deviceToken()).isNotBlank();
+        assertThat(result.redemption().journeyId()).isEqualTo(journey.id());
+        assertThat(result.redemption().alreadyAdded()).isFalse();
+        assertThat(studentJourneyAccessRepository.findByStudentIdAndJourneyId(
+                fixture.enrollment().getStudent().getId(), journey.id()
+        )).isPresent();
+        assertThat(deviceClaimRepository.count()).isEqualTo(1);
     }
 
     @Test

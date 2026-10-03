@@ -67,6 +67,10 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
   async function resolveCode(nextCode: string) {
     const normalized = normalizeJoinCode(nextCode);
     if (!normalized) return;
+    if (normalized.startsWith("J-")) {
+      window.location.assign(`/learn/journeys?redeem=${encodeURIComponent(normalized)}`);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -400,7 +404,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
 
         {!session && (
           <form className="student-join-form" onSubmit={submitCode}>
-            <div className="student-join-heading"><span>ENTRAR NA AULA</span><h1>Código da sessão</h1><p>Digite o código exibido pelo professor.</p></div>
+            <div className="student-join-heading"><span>ENTRAR</span><h1>Código de acesso</h1><p>Use o código da aula ao vivo ou o código J-... de uma Jornada compartilhada pelo professor.</p></div>
             <input className="student-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} maxLength={8} placeholder="ABC123" autoFocus />
             <button className="student-primary-button" disabled={loading || !code.trim()}>{loading ? "Validando..." : "Continuar"}</button>
           </form>

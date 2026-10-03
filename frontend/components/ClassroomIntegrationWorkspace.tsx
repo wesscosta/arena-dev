@@ -51,7 +51,7 @@ export default function ClassroomIntegrationWorkspace({
     return (
       <section className="classroom-integration-workspace subtle">
         <div>
-          <span className="eyebrow">PLATAFORMA EDUCACIONAL</span>
+          <span className="eyebrow">INTEGRAÇÕES</span>
           <strong>Verificando integração...</strong>
         </div>
       </section>
@@ -64,10 +64,10 @@ export default function ClassroomIntegrationWorkspace({
     return (
       <section className="classroom-integration-workspace empty">
         <div className="classroom-integration-copy">
-          <span className="eyebrow">PLATAFORMA EDUCACIONAL</span>
-          <strong>Sem integração externa</strong>
+          <span className="eyebrow">INTEGRAÇÕES</span>
+          <strong>Nenhuma plataforma conectada</strong>
           <small>
-            Esta turma funciona normalmente no Arena. Você pode vinculá-la ao Teams ou a outra plataforma quando precisar.
+            Opcional — a turma funciona normalmente sem integração externa.
           </small>
         </div>
         <Button size="sm" variant="ghost" onClick={onManage}>
@@ -88,7 +88,7 @@ export default function ClassroomIntegrationWorkspace({
     <section className="classroom-integration-workspace">
       <div className="classroom-integration-main">
         <div className="classroom-integration-title">
-          <span className="eyebrow">PLATAFORMA EDUCACIONAL</span>
+          <span className="eyebrow">INTEGRAÇÕES</span>
           <div>
             <Badge variant="success" dot>
               {providerLabel(integration.provider)}

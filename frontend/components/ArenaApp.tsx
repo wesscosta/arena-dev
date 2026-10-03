@@ -39,6 +39,7 @@ import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
 import MicrosoftIntegrationConsole from "@/components/MicrosoftIntegrationConsole";
 import IntegrationSettingsSummary from "@/components/IntegrationSettingsSummary";
 import ClassroomIntegrationWorkspace from "@/components/ClassroomIntegrationWorkspace";
+import classroomHomeStyles from "@/components/ClassroomHome.module.css";
 import {
   Badge,
   Breadcrumb,
@@ -517,14 +518,10 @@ export default function ArenaApp() {
                     classroom={activeClassroom}
                     data={data}
                     students={classStudents}
-                    leaderboard={leaderboard}
-                    events={data.scoreEvents.filter((event) => event.classroomId === activeClassroom.id)}
                     currentSession={currentSession}
                     onOpenArena={() => setView("arena")}
                     onManageClassroom={() => openClassroomSettings(activeClassroom.id)}
                     onManageIntegration={() => setView("integrations")}
-                    notify={notify}
-                    refreshClassroomDomain={refreshClassroomDomain}
                   />
                 )}
                 {classroomTab === "students" && (
@@ -1107,23 +1104,20 @@ function ClassroomWorkspaceTabs({ tab, onTabChange, studentCount, activityCount,
   );
 }
 
-function ClassroomHome({ classroom, data, students, leaderboard, events, currentSession, onOpenArena, onManageClassroom, onManageIntegration, notify, refreshClassroomDomain }: {
+function ClassroomHome({ classroom, data, students, currentSession, onOpenArena, onManageClassroom, onManageIntegration }: {
   classroom: Classroom;
   data: ArenaData;
   students: Student[];
-  leaderboard: { student: Student; xp: number }[];
-  events: ArenaData["scoreEvents"];
   currentSession?: ArenaData["sessions"][number];
   onOpenArena: () => void;
   onManageClassroom: () => void;
   onManageIntegration: () => void;
-  notify: (message: string) => void;
-  refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
-  const totalXp = leaderboard.reduce((sum, row) => sum + row.xp, 0);
-  const today = new Date().toDateString();
-  const todayEvents = events.filter((event) => new Date(event.createdAt).toDateString() === today);
   const activityCount = data.activities.filter((activity) => activity.classroomId === classroom.id).length;
+  const sessionParticipants = currentSession
+    ? data.sessionParticipants.filter((participant) => participant.sessionId === currentSession.id)
+    : [];
+  const presentParticipantCount = sessionParticipants.filter((participant) => participant.present).length;
   const arenaCta = classroomArenaCtaState(
     classroom.active !== false,
     currentSession?.title,
@@ -1139,50 +1133,70 @@ function ClassroomHome({ classroom, data, students, leaderboard, events, current
           <button className="button small" onClick={onManageClassroom}>Gerenciar turma</button>
         </div>
       )}
-      <section className="classroom-home-hero-v2" style={classroomTheme.style}>
-        <div className="classroom-home-watermark" aria-hidden>{classroomTheme.glyph}</div>
-        <div className="classroom-home-hero-main">
-          <div>
+      <section className={`classroom-home-hero-v2 ${classroomHomeStyles.hero}`} style={classroomTheme.style}>
+        <div className={classroomHomeStyles.watermark} aria-hidden>{classroomTheme.glyph}</div>
+
+        <div className={classroomHomeStyles.heroHeader}>
+          <div className={classroomHomeStyles.identity}>
             <span className="eyebrow accent">HOME DA TURMA</span>
             <h2>{classroom.name}</h2>
-            <p>Contexto pedagógico para alunos, atividades, ranking, histórico e preparação da aula.</p>
           </div>
 
           <button
-            className="button ghost classroom-manage-button"
+            className={`button ghost ${classroomHomeStyles.manageButton}`}
             onClick={onManageClassroom}
           >
             Gerenciar turma
           </button>
         </div>
 
-        <div className="classroom-home-hero-cta">
-          <div className="arena-launch-shell">
-            <button
-              className={`arena-launch-button arena-launch-button-centered arena-launch-button-${arenaCta.tone} ${arenaCta.live ? "live" : ""}`}
-              onClick={onOpenArena}
-              disabled={arenaCta.disabled}
-            >
-              <span className="arena-launch-icon" aria-hidden>{arenaCta.icon}</span>
-              <span className="arena-launch-content">
-                <strong>{arenaCta.buttonLabel}</strong>
-                <small>{arenaCta.supportingLabel}</small>
-              </span>
-            </button>
+        <div className={`${classroomHomeStyles.sessionPanel} ${arenaCta.live ? classroomHomeStyles.sessionPanelLive : ""} ${arenaCta.disabled ? classroomHomeStyles.sessionPanelDisabled : ""}`}>
+          <div className={classroomHomeStyles.sessionCopy}>
+            <span className={classroomHomeStyles.sessionKicker}>
+              {arenaCta.live && <i className={classroomHomeStyles.liveDot} aria-hidden />}
+              {arenaCta.live ? "SESSÃO EM ANDAMENTO" : "AULA AO VIVO"}
+            </span>
+            <strong className={classroomHomeStyles.sessionTitle}>
+              {arenaCta.live
+                ? arenaCta.title
+                : arenaCta.disabled
+                  ? "Arena indisponível"
+                  : "Nenhuma sessão em andamento"}
+            </strong>
+            <p>{arenaCta.description}</p>
+            {arenaCta.live && sessionParticipants.length > 0 && (
+              <small className={classroomHomeStyles.sessionMeta}>
+                {presentParticipantCount} de {students.length} aluno(s) presente(s)
+              </small>
+            )}
           </div>
+
+          <button
+            className={`arena-launch-button arena-launch-button-${arenaCta.tone} ${classroomHomeStyles.sessionAction}`}
+            onClick={onOpenArena}
+            disabled={arenaCta.disabled}
+          >
+            <span className="arena-launch-icon" aria-hidden>{arenaCta.icon}</span>
+            <span className="arena-launch-content">
+              <strong>{arenaCta.buttonLabel}</strong>
+              <small>{arenaCta.supportingLabel}</small>
+            </span>
+          </button>
         </div>
       </section>
 
-      <div className="metrics-grid">
-        <Metric label="Alunos ativos" value={students.length.toString()} hint="matriculados nesta turma" />
-        <Metric label="Atividades" value={activityCount.toString()} hint="conteúdo da turma" />
-        <Metric label="XP distribuído" value={totalXp.toString()} hint="acumulado da turma" />
-        <Metric
-          label="Sessão"
-          value={currentSession ? "SESSÃO EM ANDAMENTO" : "—"}
-          hint={currentSession ? currentSession.title : `${todayEvents.length} evento(s) hoje`}
-        />
-      </div>
+      <section className={classroomHomeStyles.summaryGrid} aria-label="Resumo da turma">
+        <div className={classroomHomeStyles.summaryCard}>
+          <span>ALUNOS MATRICULADOS</span>
+          <strong>{students.length}</strong>
+          <small>vínculos ativos nesta turma</small>
+        </div>
+        <div className={classroomHomeStyles.summaryCard}>
+          <span>ATIVIDADES</span>
+          <strong>{activityCount}</strong>
+          <small>conteúdos preparados para a turma</small>
+        </div>
+      </section>
 
       <ClassroomIntegrationWorkspace
         classroomId={classroom.id}

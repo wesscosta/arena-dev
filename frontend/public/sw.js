@@ -1,5 +1,5 @@
-const SHELL_CACHE = "arena-dev-shell-v0.5-1";
-const STATIC_CACHE = "arena-dev-static-v0.5-1";
+const SHELL_CACHE = "arena-dev-shell-v0.8-join-fix-1";
+const STATIC_CACHE = "arena-dev-static-v0.8-join-fix-1";
 const SHELL_URLS = [
   "/join",
   "/offline.html",
