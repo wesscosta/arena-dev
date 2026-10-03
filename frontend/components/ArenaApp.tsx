@@ -362,20 +362,34 @@ export default function ArenaApp() {
             </span>
           </button>
 
-          <Breadcrumb
-            className="context-trail"
-            items={[
-              {
-                id: "dashboard",
-                label: "Visão geral",
-                current: view === "dashboard",
-                onClick: view === "dashboard"
-                  ? undefined
-                  : () => {
-                      setView("dashboard");
-                    },
-              },
-              ...((view === "classroom" || view === "classroom-settings" || view === "arena") && activeClassroom
+          <nav className="topbar-global-nav" aria-label="Navegação global">
+            <button
+              type="button"
+              className={view === "dashboard" ? "topbar-global-nav-item active" : "topbar-global-nav-item"}
+              aria-label="Visão geral"
+              aria-current={view === "dashboard" ? "page" : undefined}
+              onClick={() => setView("dashboard")}
+            >
+              <span aria-hidden="true">▦</span>
+              <strong>Visão geral</strong>
+            </button>
+            <button
+              type="button"
+              className={view === "library" ? "topbar-global-nav-item active" : "topbar-global-nav-item"}
+              aria-label="Biblioteca"
+              aria-current={view === "library" ? "page" : undefined}
+              onClick={() => setView("library")}
+            >
+              <span aria-hidden="true">▤</span>
+              <strong>Biblioteca</strong>
+            </button>
+          </nav>
+
+          {view !== "dashboard" && view !== "library" ? (
+            <Breadcrumb
+              className="context-trail"
+              items={[
+                ...((view === "classroom" || view === "classroom-settings" || view === "arena") && activeClassroom
                 ? [{
                     id: "classroom",
                     label: (
@@ -400,14 +414,7 @@ export default function ArenaApp() {
                     current: view === "classroom",
                   } satisfies BreadcrumbItem]
                 : []),
-              ...(view === "library"
-                ? [{
-                    id: "library",
-                    label: "Biblioteca",
-                    current: true,
-                  } satisfies BreadcrumbItem]
-                : []),
-              ...(view === "arena"
+                ...(view === "arena"
                 ? [{
                     id: "arena",
                     label: "Arena",
@@ -435,11 +442,13 @@ export default function ArenaApp() {
                     current: true,
                   } satisfies BreadcrumbItem]
                 : []),
-            ]}
-          />
+              ]}
+            />
+          ) : (
+            <span className="context-trail-spacer" aria-hidden="true" />
+          )}
 
           <div className="topbar-actions app-topbar-actions">
-            <button type="button" className="button ghost" aria-current={view === "library" ? "page" : undefined} onClick={() => setView("library")}>Biblioteca</button>
             <Menu
               trigger={(triggerProps) => (
                 <button
@@ -498,7 +507,6 @@ export default function ArenaApp() {
               data={data}
               onSelectClassroom={(classroomId) => { setActiveClassroom(classroomId); openClassroom("home"); }}
               onManageClassroom={(classroomId, intent) => openClassroomSettings(classroomId, intent)}
-              onOpenIntegrations={() => setView("integrations")}
               notify={notify}
               refreshClassroomDomain={refreshClassroomDomain}
             />
@@ -780,11 +788,10 @@ export default function ArenaApp() {
   );
 }
 
-function OverviewView({ data, onSelectClassroom, onManageClassroom, onOpenIntegrations, notify, refreshClassroomDomain }: {
+function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refreshClassroomDomain }: {
   data: ArenaData;
   onSelectClassroom: (classroomId: string) => void;
   onManageClassroom: (classroomId: string, intent: "general" | "delete") => void;
-  onOpenIntegrations: () => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
@@ -812,6 +819,8 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, onOpenIntegr
   }, []);
 
   const activeSessions = data.sessions.filter((session) => session.status === "ACTIVE" && !session.endedAt);
+  const activeCount = data.classrooms.filter((classroom) => classroom.active).length;
+  const inactiveCount = data.classrooms.length - activeCount;
   const filteredClassrooms = data.classrooms.filter((classroom) => {
     if (filter === "ACTIVE") return classroom.active;
     if (filter === "INACTIVE") return !classroom.active;
@@ -826,6 +835,7 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, onOpenIntegr
   });
   const activeClassroomIds = new Set(data.classrooms.filter((classroom) => classroom.active).map((classroom) => classroom.id));
   const activeEnrollments = data.enrollments.filter((enrollment) => enrollment.active && activeClassroomIds.has(enrollment.classroomId));
+  const hasActiveFilters = Boolean(query.trim()) || filter !== "ALL";
 
   async function toggleClassroomActive(classroom: Classroom) {
     const hasActiveSession = activeSessions.some(
@@ -855,10 +865,26 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, onOpenIntegr
     }
   }
 
+  function clearOverviewFilters() {
+    setQuery("");
+    setFilter("ALL");
+  }
+
   return (
     <div className="stack-lg overview-page">
-      <div className="metrics-grid overview-metrics">
-        <Metric label="Turmas ativas" value={data.classrooms.filter((item) => item.active).length.toString()} hint={`${data.classrooms.length} cadastradas`} />
+      <header className="overview-page-header">
+        <div>
+          <span className="eyebrow accent">TURMAS</span>
+          <h1>Suas turmas</h1>
+          <p>Encontre rapidamente uma turma e continue o trabalho no contexto certo.</p>
+        </div>
+        <button className="button primary overview-new-classroom" onClick={() => setCreateOpen(true)}>
+          + Nova turma
+        </button>
+      </header>
+
+      <div className="metrics-grid overview-metrics" aria-label="Resumo das turmas">
+        <Metric label="Turmas ativas" value={activeCount.toString()} hint={`${data.classrooms.length} cadastradas`} />
         <Metric label="Matrículas ativas" value={activeEnrollments.length.toString()} hint="vínculos em todas as turmas" />
         <Metric label="Atividades" value={data.activities.length.toString()} hint="conteúdo preparado" />
         <Metric label="Sessões agora" value={activeSessions.length.toString()} hint="sessões em andamento" />
@@ -868,8 +894,8 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, onOpenIntegr
         <div className="overview-toolbar-main">
           <div className="segmented-control" aria-label="Filtrar turmas">
             <button className={filter === "ALL" ? "active" : ""} onClick={() => setFilter("ALL")}>Todas <span>{data.classrooms.length}</span></button>
-            <button className={filter === "ACTIVE" ? "active" : ""} onClick={() => setFilter("ACTIVE")}>Ativas <span>{data.classrooms.filter((item) => item.active).length}</span></button>
-            <button className={filter === "INACTIVE" ? "active" : ""} onClick={() => setFilter("INACTIVE")}>Inativas <span>{data.classrooms.filter((item) => !item.active).length}</span></button>
+            <button className={filter === "ACTIVE" ? "active" : ""} onClick={() => setFilter("ACTIVE")}>Ativas <span>{activeCount}</span></button>
+            <button className={filter === "INACTIVE" ? "active" : ""} onClick={() => setFilter("INACTIVE")}>Inativas <span>{inactiveCount}</span></button>
           </div>
 
           <label className="overview-search">
@@ -898,19 +924,23 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, onOpenIntegr
             onChange={(event) => setSortMode(event.target.value as ClassroomSortMode)}
             aria-label="Ordenar cards das turmas"
           >
-            <option value="RECENT">Recentes primeiro</option>
+            <option value="RECENT">Acesso recente</option>
             <option value="NAME_ASC">Nome A–Z</option>
             <option value="NAME_DESC">Nome Z–A</option>
             <option value="CODE_ASC">Código A–Z</option>
             <option value="CODE_DESC">Código Z–A</option>
           </select>
         </div>
-
-        <div className="overview-toolbar-actions">
-          <button className="button ghost" onClick={onOpenIntegrations}>⇄ Vincular plataforma</button>
-          <button className="button primary overview-new-classroom" onClick={() => setCreateOpen(true)}>+ Nova turma</button>
-        </div>
       </div>
+
+      {data.classrooms.length > 0 && (
+        <div className="overview-results-meta" aria-live="polite">
+          <span>{visibleClassrooms.length} {visibleClassrooms.length === 1 ? "turma" : "turmas"}</span>
+          {hasActiveFilters && (
+            <button type="button" onClick={clearOverviewFilters}>Limpar filtros</button>
+          )}
+        </div>
+      )}
 
       {!data.classrooms.length ? (
         <EmptyState
@@ -920,132 +950,132 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, onOpenIntegr
           onAction={() => setCreateOpen(true)}
         />
       ) : !visibleClassrooms.length ? (
-        <MiniEmpty text={query ? "Nenhuma turma encontrada para esta busca." : "Nenhuma turma corresponde a este filtro."} />
+        <div className="overview-empty-filter">
+          <strong>{query ? `Nenhuma turma encontrada para “${query.trim()}”.` : "Nenhuma turma corresponde a este filtro."}</strong>
+          <p>Altere a busca ou mostre novamente todas as turmas.</p>
+          <button type="button" className="button ghost" onClick={clearOverviewFilters}>Limpar filtros</button>
+        </div>
       ) : (
         <div className="classroom-card-grid">
           {visibleClassrooms.map((classroom) => {
             const studentCount = data.enrollments.filter((item) => item.classroomId === classroom.id && item.active).length;
             const activityCount = data.activities.filter((item) => item.classroomId === classroom.id).length;
-            const eventCount = data.scoreEvents.filter((item) => item.classroomId === classroom.id).length;
             const session = activeSessions.find((item) => item.classroomId === classroom.id);
             return (
               <article
                 key={classroom.id}
                 className={`overview-class-card ${classroom.active ? "" : "inactive"} ${data.activeClassroomId === classroom.id ? "selected" : ""}`}
-                role="button"
-                tabIndex={0}
-                onClick={() => onSelectClassroom(classroom.id)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onSelectClassroom(classroom.id);
-                  }
-                }}
+                data-testid="classroom-overview-card"
               >
-                <div className="overview-class-card-head">
-                  <div className="overview-class-identity">
-                    <div className="classroom-monogram">{classroom.name.trim().charAt(0).toUpperCase()}</div>
-                    <div>
-                      {!classroom.active && (
-                        <div className="status-line">
-                          <span className="status">Inativa</span>
-                        </div>
-                      )}
-                      <h3>{classroom.name}</h3>
-                      <p>{classroom.code || "Sem código"}</p>
-                      {platformsByClassroomId[classroom.id]?.length ? (
-                        <div className="classroom-integration-badges">
-                          {platformsByClassroomId[classroom.id].map((platform) => (
-                            <Badge key={platform} variant="success" dot>
-                              {platform === "MICROSOFT_TEAMS"
-                                ? "Microsoft Teams"
-                                : platform === "GOOGLE_CLASSROOM"
-                                  ? "Google Classroom"
-                                  : platform}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : null}
+                <button
+                  type="button"
+                  className="overview-class-card-open"
+                  aria-label={`Abrir turma ${classroom.name}`}
+                  onClick={() => onSelectClassroom(classroom.id)}
+                >
+                  <div className="overview-class-card-head">
+                    <div className="overview-class-identity">
+                      <div className="classroom-monogram">{classroom.name.trim().charAt(0).toUpperCase()}</div>
+                      <div>
+                        <h3>{classroom.name}</h3>
+                        <p>{classroom.code || "Sem código"}</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="overview-card-actions">
-                    <div
-                      className="classroom-card-menu-wrap"
-                      onClick={(event) => event.stopPropagation()}
-                    >
+
+                  {platformsByClassroomId[classroom.id]?.length ? (
+                    <div className="classroom-integration-badges" aria-label="Plataformas vinculadas">
+                      {platformsByClassroomId[classroom.id].map((platform) => (
+                        <Badge key={platform} variant="success" dot>
+                          {platform === "MICROSOFT_TEAMS"
+                            ? "Microsoft Teams"
+                            : platform === "GOOGLE_CLASSROOM"
+                              ? "Google Classroom"
+                              : platform}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <div className="overview-class-meta">
+                    <span><strong>{studentCount}</strong> alunos</span>
+                    <span><strong>{activityCount}</strong> atividades</span>
+                  </div>
+
+                  <div className="overview-class-card-foot">
+                    <span>
+                      {session ? (
+                        <span className="live-pill compact"><span /> AO VIVO</span>
+                      ) : (
+                        <span className={`classroom-state ${classroom.active ? "active" : "inactive"}`}>
+                          {classroom.active ? "Ativa" : "Inativa"}
+                        </span>
+                      )}
+                    </span>
+                    <strong>Abrir <span aria-hidden="true">→</span></strong>
+                  </div>
+                </button>
+
+                <div
+                  className="classroom-card-menu-wrap overview-card-actions"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    className="icon-action classroom-card-menu-trigger"
+                    title="Ações da turma"
+                    aria-label={`Ações de ${classroom.name}`}
+                    aria-expanded={openCardMenuId === classroom.id}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setOpenCardMenuId((current) =>
+                        current === classroom.id ? null : classroom.id
+                      );
+                    }}
+                  >
+                    ⋯
+                  </button>
+
+                  {openCardMenuId === classroom.id && (
+                    <div className="classroom-card-menu">
                       <button
                         type="button"
-                        className="icon-action classroom-card-menu-trigger"
-                        title="Ações da turma"
-                        aria-label={`Ações de ${classroom.name}`}
-                        aria-expanded={openCardMenuId === classroom.id}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setOpenCardMenuId((current) =>
-                            current === classroom.id ? null : classroom.id
-                          );
+                        onClick={() => {
+                          setOpenCardMenuId(null);
+                          onManageClassroom(classroom.id, "general");
                         }}
                       >
-                        ⋯
+                        <span>✎</span>
+                        Editar turma
                       </button>
 
-                      {openCardMenuId === classroom.id && (
-                        <div className="classroom-card-menu">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setOpenCardMenuId(null);
-                              onManageClassroom(classroom.id, "general");
-                            }}
-                          >
-                            <span>✎</span>
-                            Editar turma
-                          </button>
+                      <button
+                        type="button"
+                        disabled={classroom.active && Boolean(session)}
+                        title={
+                          classroom.active && session
+                            ? "Encerre a sessão antes de desativar."
+                            : undefined
+                        }
+                        onClick={() => { void toggleClassroomActive(classroom); }}
+                      >
+                        <span>{classroom.active ? "○" : "●"}</span>
+                        {classroom.active ? "Desativar turma" : "Reativar turma"}
+                      </button>
 
-                          <button
-                            type="button"
-                            disabled={classroom.active && Boolean(session)}
-                            title={
-                              classroom.active && session
-                                ? "Encerre a sessão antes de desativar."
-                                : undefined
-                            }
-                            onClick={() => { void toggleClassroomActive(classroom); }}
-                          >
-                            <span>{classroom.active ? "○" : "●"}</span>
-                            {classroom.active ? "Desativar turma" : "Reativar turma"}
-                          </button>
-
-                          <button
-                            type="button"
-                            className="danger"
-                            onClick={() => {
-                              setOpenCardMenuId(null);
-                              onManageClassroom(classroom.id, "delete");
-                            }}
-                          >
-                            <span>⌫</span>
-                            Excluir turma
-                          </button>
-                        </div>
-                      )}
+                      <button
+                        type="button"
+                        className="danger"
+                        onClick={() => {
+                          setOpenCardMenuId(null);
+                          onManageClassroom(classroom.id, "delete");
+                        }}
+                      >
+                        <span>⌫</span>
+                        Excluir turma
+                      </button>
                     </div>
-                  </div>
-                </div>
-                <div className="overview-class-stats">
-                  <div><strong>{studentCount}</strong><span>alunos</span></div>
-                  <div><strong>{activityCount}</strong><span>atividades</span></div>
-                  <div><strong>{eventCount}</strong><span>eventos XP</span></div>
-                </div>
-                <div className="overview-class-card-foot">
-                  <span>
-                    {session ? (
-                      <span className="live-pill compact"><span /> SESSÃO EM ANDAMENTO</span>
-                    ) : classroom.active ? null : (
-                      "Arquivada do fluxo ativo"
-                    )}
-                  </span>
-                  <strong>Abrir</strong>
+                  )}
                 </div>
               </article>
             );

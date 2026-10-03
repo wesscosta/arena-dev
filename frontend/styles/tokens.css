@@ -87,6 +87,8 @@
   --ds-avatar-text: var(--theme-avatar-text);
   --ds-sticky-top: var(--theme-sticky-top);
   --ds-sticky-bottom: var(--theme-sticky-bottom);
+  --ds-shadow-panel: var(--theme-shadow-panel);
+  --ds-shadow-elevated: var(--theme-shadow-elevated);
 
   --motion-fast: 120ms;
   --motion-base: 180ms;
