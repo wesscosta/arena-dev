@@ -14,7 +14,8 @@
 10. [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md) — gate transversal de segurança, arquitetura, design system e quality gates antes de novos incrementos funcionais.
 11. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
 12. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
-13. [`adr/README.md`](adr/README.md).
+13. [`LEARNING_VALIDATION_ROADMAP.md`](LEARNING_VALIDATION_ROADMAP.md) — plano pós-v0.8 para taxonomia, roadmaps/editais, questões de concurso, evidências, Mastery, revisão e progressão visual.
+14. [`adr/README.md`](adr/README.md).
 
 ## Baseline encerrada — v0.6
 
@@ -66,7 +67,7 @@ O 16.2 — Learning Resources & Content Ingestion e o 16.3 — Study Experience 
 
 Não reescrever documentação histórica para fabricar evidência retroativa. Quando houver divergência entre fechamento técnico e publicação externa, registrar explicitamente a evidência disponível.
 
-**Atualizado em 30/09/2026:** 16.4 está concluído até 16.4D, 16.5 está implementado até 16.5B.2 e o Gate de Estabilização Arquitetural tem precedência antes de 16.5C.
+**Atualizado em 02/10/2026:** 16.4 está concluído até 16.4D, 16.5 está implementado até 16.5B.2 e o Gate de Estabilização Arquitetural tem precedência antes de 16.5C. O eixo pedagógico posterior foi renumerado para 17.x para não colidir com `16.6 — Knowledge & Retrieval Foundation`.
 - [`CLOSURE_16_4_STUDENT_EXPERIENCE.md`](CLOSURE_16_4_STUDENT_EXPERIENCE.md) — fechamento do ciclo 16.4, decisões consolidadas, gates e pendências.
 - [INCREMENT_16_4D.md](INCREMENT_16_4D.md) — Achievements Foundation: domínio, persistência, reconciliação, API, UX e gates.
 - [INCREMENT_16_5_0_ARCHITECTURE_AUDIT.md](INCREMENT_16_5_0_ARCHITECTURE_AUDIT.md) — gate arquitetural da Content Library: LearningResource, ownership, snapshot, ingestão e migration strategy.

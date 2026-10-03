@@ -1,6 +1,6 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 30 de setembro de 2026
+**Última sincronização documental:** 2 de outubro de 2026
 
 **Baseline publicada:** `v0.7.0 — Educational Integrations`.
 
@@ -134,16 +134,16 @@ Google Classroom           standby
 
 ```text
 backend tests        OK (suíte Maven completa)
-frontend tests       268 passed
+frontend tests       OK · última baseline registrada: 275/275
 frontend typecheck   OK
 frontend build       OK
 git diff --check     OK
-Flyway               V1–V35
+Flyway               V1–V37
 ```
 
 ## Próximo gate
 
-Validar visualmente o conjunto `16.4A–C` em desktop/mobile, incluindo Workspace Visibility, Live Hub, regressão de `/join`/Arena e resgate de Journey por código. Com esse gate fechado, iniciar a auditoria de `LearningResource` que abre o `16.5 — Content Library & Reuse`.
+Concluir o **Gate de Estabilização Arquitetural v0.8** antes de retomar novos incrementos funcionais. Depois do gate, a sequência permanece `16.5C → 16.5D → 16.5E → 16.5F → Release Hardening`. O eixo pedagógico de roadmaps, questões, Mastery e progressão foi separado em `17.x` e não deve ser iniciado por pressão de escopo durante o fechamento da v0.8.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)
@@ -192,6 +192,8 @@ Decisão: nenhuma V37 será criada antes de definir o desacoplamento Library Res
 O próximo trabalho é o **Gate de Estabilização Arquitetural v0.8**. Depois de fechado, o próximo incremento funcional será `16.5C — Semantic Content Foundation & Ingestion → Library`, seguido por `16.5D — Organization & Discovery`, `16.5E — Revision Awareness & Snapshot Hardening` e `16.5F — Advanced Reuse & Library Closure`. Depois disso, a v0.8 entra em Release Hardening final.
 
 `16.6 — Knowledge & Retrieval Foundation` é evolução pós-v0.8/opcional para chunks derivados, lexical/vector retrieval, embeddings, avaliação e futuro RAG/LLM. Não faz parte do gate de release v0.8.
+
+O plano pedagógico seguinte foi renumerado para evitar colisão com 16.6: `17.0` audita o modelo de evidência; `17.1` cria Knowledge Taxonomy; `17.2` roadmaps/editais; `17.3` Question Bank & Provenance; `17.4` Assessment Blueprint & Mastery; `17.5` Review & Retention; `17.6` dashboard docente; `17.7` progressão/avatar; `17.8` recomendações adaptativas. A regra é explícita: progresso de leitura, clique em Próximo e uma questão isolada não validam domínio. Documento: [`LEARNING_VALIDATION_ROADMAP.md`](LEARNING_VALIDATION_ROADMAP.md).
 
 ### 16.5B.2 — Journey Snapshot Integrity Hardening — implementado
 

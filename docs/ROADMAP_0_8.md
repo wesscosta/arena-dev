@@ -1,7 +1,7 @@
 # Roadmap v0.8 — Professor Experience & Journey MVP
 
 **Linha ativa:** v0.8
-**Branch de execução:** `feat/v0.8-content-ingestion`
+**Branch de execução:** `chore/v0.8-architecture-stabilization`
 **Estado atual:** `16.4` está implementado até Achievements Foundation e `16.5` até Library Snapshot Hardening, mas a auditoria transversal de 30/09/2026 abriu um **Gate de Estabilização Arquitetural** antes de novos incrementos funcionais. O próximo trabalho obrigatório é segurança, baseline, Arena Live Shell, CSS/design ownership, boundaries backend e quality gates. `16.5C` permanece planejado, porém pausado até o fechamento desse gate.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
@@ -22,18 +22,22 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | 16.4 | Student Experience Shell & Workspace Visibility | **16.4A–D implementados tecnicamente** |
 | 16.5 | Content Library & Reuse | **Implementado até 16.5B.2 · 16.5C pausado** |
 | Gate transversal | Estabilização arquitetural v0.8 | **Obrigatório antes de novos incrementos funcionais** |
-| 16.6 | Question Attempts & Skills | **Candidato pós-validação do 16.3 e do gate arquitetural** |
-| 16.7 | Mastery básico | **Candidato pós-validação do 16.3** |
-| 16.8 | Review | **Candidato pós-validação do 16.3** |
-| 16.9 | Teacher Journey Dashboard | **Candidato pós-validação do 16.3** |
-| 16.10 | Minimal Gamification | **Candidato pós-validação do 16.3** |
-| 16.11 | Pilot, Metrics & Hardening | Planejado |
+| 16.6 | Knowledge & Retrieval Foundation | **Pós-v0.8 / opcional; não bloqueia release** |
+| 17.0 | Learning Architecture Audit & Evidence Model | **Planejado pós-v0.8** |
+| 17.1 | Knowledge Taxonomy | **Planejado pós-v0.8** |
+| 17.2 | Roadmaps & Edital Mapping | **Planejado pós-v0.8** |
+| 17.3 | Question Bank & Provenance | **Planejado pós-v0.8** |
+| 17.4 | Assessment Blueprint & Mastery | **Planejado pós-v0.8** |
+| 17.5 | Review & Retention | **Planejado pós-v0.8** |
+| 17.6 | Teacher Learning Dashboard | **Planejado pós-v0.8** |
+| 17.7 | Meaningful Progression & Avatar | **Planejado pós-v0.8** |
+| 17.8 | Adaptive Recommendations | **Opcional; após evidência real** |
 
 Plano do gate transversal: [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md).
 
 ### Product Gate após 16.3
 
-Os incrementos de mastery/gamificação posteriores à biblioteca não são uma fila automática. Só avançam após validação real da Journey como experiência de estudo: estrutura compreensível, retomada correta, leitura/conclusão com baixa fricção e progresso útil. Mastery, Skills, Review e gamificação persistente permanecem hipóteses de evolução até esse gate.
+Os incrementos de aprendizagem posteriores à Biblioteca não são uma fila automática. A v0.8 fecha a experiência atual e a Biblioteca antes de abrir o eixo 17.x. O plano pós-v0.8 passa por auditoria de domínio e evidência, taxonomia, roadmaps/editais, banco de questões com proveniência, Assessment Blueprint e somente então Mastery, revisão e progressão visual. Ler 100%, clicar em Próximo ou acertar uma única questão não constitui domínio. O plano completo está em [`LEARNING_VALIDATION_ROADMAP.md`](LEARNING_VALIDATION_ROADMAP.md).
 ## 16.0 — Professor Arena Experience
 
 ### Objetivo
