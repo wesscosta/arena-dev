@@ -31,6 +31,8 @@ test("Timer drawer uses one configuration surface without redundant headings", (
   assert.match(css, /\.timer-duration-editor[\s\S]*repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /\.timer-preset-chips[\s\S]*repeat\(8, minmax\(0, 1fr\)\)/);
   assert.doesNotMatch(css, /\.timer-preset-chips[\s\S]{0,260}overflow-x:\s*auto/);
+  assert.match(css, /@media \(max-width: 42rem\)[\s\S]*\.timer-preset-chips \{[\s\S]*min-width:\s*0;[\s\S]*gap:\s*0\.125rem/);
+  assert.match(css, /@media \(max-width: 42rem\)[\s\S]*\.timer-preset-chips button \{[\s\S]*padding-inline:\s*0;/);
   assert.match(css, /\.timer-config-preferences[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(layout, /import "\.\.\/styles\/timer-panel\.css"/);
 });

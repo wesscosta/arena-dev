@@ -15,6 +15,7 @@ type ClassroomView = {
 };
 
 const apiBaseUrl = process.env.E2E_API_URL ?? "http://127.0.0.1:8080";
+const browserApiBaseUrl = process.env.E2E_BROWSER_API_URL ?? "http://localhost:8080";
 const teacherUsername = process.env.E2E_TEACHER_USERNAME ?? "professor";
 const teacherPassword = process.env.E2E_TEACHER_PASSWORD ?? "arena-dev-change-me";
 
@@ -94,14 +95,16 @@ async function removeClassroom(
 }
 
 async function login(page: Page) {
+  const csrfResponse = await page.request.get(`${browserApiBaseUrl}/api/auth/csrf`);
+  await expectOk(csrfResponse, "Token CSRF do navegador");
+  const { token } = (await csrfResponse.json()) as { token: string };
+  const loginResponse = await page.request.post(`${browserApiBaseUrl}/api/auth/login`, {
+    headers: { "X-XSRF-TOKEN": token },
+    data: { username: teacherUsername, password: teacherPassword },
+  });
+  await expectOk(loginResponse, "Login do navegador");
   await page.goto("/");
-  const user = page.getByLabel("Usuário");
-  if (await user.isVisible().catch(() => false)) {
-    await user.fill(teacherUsername);
-    await page.getByLabel("Senha").fill(teacherPassword);
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  }
-  await expect(page.getByRole("heading", { name: "Suas turmas" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Suas turmas" })).toBeVisible({ timeout: 10_000 });
 }
 
 async function setThemeAndReload(page: Page, theme: "dark" | "light") {
