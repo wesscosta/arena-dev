@@ -220,6 +220,8 @@ Readiness: `http://localhost:8080/api/health/ready`
 
 Liveness: `http://localhost:8080/api/health/live`
 
+Em acesso pela rede local, compartilhe apenas o frontend, por exemplo `http://<IP-DA-MAQUINA>:3000`. No perfil Docker de desenvolvimento, o browser usa essa mesma origem para `/api/*` e `/ws/*`, e o Next.js encaminha as requisições para o backend pela rede interna do Compose. Assim, Join, Learn e tempo real não dependem de a porta `:8080` estar acessível no dispositivo do aluno.
+
 ## Gates de desenvolvimento
 
 Backend:
