@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
 export type RubricCriterion = {
   id: string;
@@ -34,34 +34,29 @@ export type StructuredAssessment = {
   criteria: AssessmentCriterion[];
 };
 
-type ApiErrorBody = { message?: string };
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, init);
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new Error(body?.message || `Falha na avaliação (${response.status}).`);
-  }
-  return (await response.json()) as T;
+function assessmentRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na avaliação (${status}).`,
+  });
 }
 
 export function fetchActivityRubric(activityId: string) {
-  return request<ActivityRubric>(`/api/activities/${activityId}/rubric`);
+  return assessmentRequest<ActivityRubric>(`/api/activities/${activityId}/rubric`);
 }
 
 export function replaceActivityRubric(
   activityId: string,
   criteria: Array<{ title: string; description?: string | null; maxPoints: number }>,
 ) {
-  return request<ActivityRubric>(`/api/activities/${activityId}/rubric`, {
+  return assessmentRequest<ActivityRubric>(`/api/activities/${activityId}/rubric`, {
     method: "PUT",
     body: JSON.stringify({ criteria }),
   });
 }
 
 export function fetchStructuredAssessment(activityId: string, submissionId: string) {
-  return request<StructuredAssessment>(`/api/activities/${activityId}/submissions/${submissionId}/assessment`);
+  return assessmentRequest<StructuredAssessment>(`/api/activities/${activityId}/submissions/${submissionId}/assessment`);
 }
 
 export function scoreAssessmentCriterion(
@@ -71,7 +66,7 @@ export function scoreAssessmentCriterion(
   awardedPoints: number,
   teacherComment?: string | null,
 ) {
-  return request<StructuredAssessment>(
+  return assessmentRequest<StructuredAssessment>(
     `/api/activities/${activityId}/submissions/${submissionId}/assessment/criteria/${criterionId}`,
     {
       method: "PUT",
@@ -81,7 +76,7 @@ export function scoreAssessmentCriterion(
 }
 
 export function gradeStructuredAssessment(activityId: string, submissionId: string) {
-  return request<StructuredAssessment>(
+  return assessmentRequest<StructuredAssessment>(
     `/api/activities/${activityId}/submissions/${submissionId}/assessment/grade`,
     { method: "POST" },
   );

@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
 export type LearningResourceFormat = "MARKDOWN" | "PLAIN_TEXT" | "LINK";
 export type LearningResourceSourceType = "MANUAL" | "AI" | "TEMPLATE" | "TEXT" | "MARKDOWN" | "FILE" | "URL" | "NOTION";
@@ -31,7 +31,6 @@ export type LearningResourceInput = {
   sourceLabel?: string;
 };
 
-type ApiErrorBody = { message?: string };
 
 export class LearningResourceApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -40,42 +39,38 @@ export class LearningResourceApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+function learningResourceRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na API de conteúdos (${status}).`,
+    errorFactory: (message, status) => new LearningResourceApiError(message, status),
   });
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new LearningResourceApiError(body?.message || `Falha na API de conteúdos (${response.status}).`, response.status);
-  }
-  return (await response.json()) as T;
 }
 
 export function fetchLearningResources(classroomId: string) {
-  return request<LearningResource[]>(`/api/learning-resources?classroomId=${encodeURIComponent(classroomId)}`);
+  return learningResourceRequest<LearningResource[]>(`/api/learning-resources?classroomId=${encodeURIComponent(classroomId)}`);
 }
 
 export function fetchLearningResource(id: string) {
-  return request<LearningResource>(`/api/learning-resources/${encodeURIComponent(id)}`);
+  return learningResourceRequest<LearningResource>(`/api/learning-resources/${encodeURIComponent(id)}`);
 }
 
 export function createLearningResource(input: LearningResourceInput) {
-  return request<LearningResource>("/api/learning-resources", { method: "POST", body: JSON.stringify(input) });
+  return learningResourceRequest<LearningResource>("/api/learning-resources", { method: "POST", body: JSON.stringify(input) });
 }
 
 export function updateLearningResource(id: string, input: LearningResourceInput) {
-  return request<LearningResource>(`/api/learning-resources/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(input) });
+  return learningResourceRequest<LearningResource>(`/api/learning-resources/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(input) });
 }
 
-export async function deleteLearningResource(id: string) {
-  const response = await apiFetch(`/api/learning-resources/${encodeURIComponent(id)}`, { method: "DELETE" });
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new LearningResourceApiError(body?.message || `Falha ao excluir conteúdo (${response.status}).`, response.status);
-  }
+export function deleteLearningResource(id: string) {
+  return apiRequest<void>(
+    `/api/learning-resources/${encodeURIComponent(id)}`,
+    { method: "DELETE" },
+    {
+      errorMessage: (status) => `Falha ao excluir conteúdo (${status}).`,
+      errorFactory: (message, status) => new LearningResourceApiError(message, status),
+    },
+  );
 }
 
 export type LibraryResourceInput = Omit<LearningResourceInput, "classroomId">;
@@ -85,29 +80,31 @@ export function fetchContentLibrary(query = "", archived = false) {
   if (query.trim()) params.set("q", query.trim());
   if (archived) params.set("archived", "true");
   const suffix = params.toString() ? `?${params.toString()}` : "";
-  return request<LearningResource[]>(`/api/library/resources${suffix}`);
+  return learningResourceRequest<LearningResource[]>(`/api/library/resources${suffix}`);
 }
 
 export function fetchLibraryResource(id: string) {
-  return request<LearningResource>(`/api/library/resources/${encodeURIComponent(id)}`);
+  return learningResourceRequest<LearningResource>(`/api/library/resources/${encodeURIComponent(id)}`);
 }
 
 export function createLibraryResource(input: LibraryResourceInput) {
-  return request<LearningResource>("/api/library/resources", { method: "POST", body: JSON.stringify(input) });
+  return learningResourceRequest<LearningResource>("/api/library/resources", { method: "POST", body: JSON.stringify(input) });
 }
 
 export function updateLibraryResource(id: string, input: LibraryResourceInput) {
-  return request<LearningResource>(`/api/library/resources/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(input) });
+  return learningResourceRequest<LearningResource>(`/api/library/resources/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(input) });
 }
 
-export async function archiveLibraryResource(id: string) {
-  const response = await apiFetch(`/api/library/resources/${encodeURIComponent(id)}/archive`, { method: "POST" });
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new LearningResourceApiError(body?.message || `Falha ao arquivar conteúdo (${response.status}).`, response.status);
-  }
+export function archiveLibraryResource(id: string) {
+  return apiRequest<void>(
+    `/api/library/resources/${encodeURIComponent(id)}/archive`,
+    { method: "POST" },
+    {
+      errorMessage: (status) => `Falha ao arquivar conteúdo (${status}).`,
+      errorFactory: (message, status) => new LearningResourceApiError(message, status),
+    },
+  );
 }
 export function restoreLibraryResource(id: string) {
-  return request<LearningResource>(`/api/library/resources/${encodeURIComponent(id)}/restore`, { method: "POST", body: "{}" });
+  return learningResourceRequest<LearningResource>(`/api/library/resources/${encodeURIComponent(id)}/restore`, { method: "POST", body: "{}" });
 }

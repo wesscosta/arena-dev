@@ -17,6 +17,14 @@ public class MechanicsController {
     @PostMapping("/draw")
     public MechanicsService.DrawResult draw(@PathVariable UUID sessionId) { return service.draw(sessionId); }
 
+    @PutMapping("/draw/presentation")
+    public MechanicsService.RuntimeView drawPresentation(
+            @PathVariable UUID sessionId,
+            @RequestBody DrawPresentationInput input
+    ) {
+        return service.setDrawPresentation(sessionId, input.presentation());
+    }
+
     @PostMapping("/groups")
     public MechanicsService.GroupsResult groups(@PathVariable UUID sessionId, @RequestBody GroupsInput input) {
         return service.organizeGroups(sessionId, input.groupSize());
@@ -67,6 +75,7 @@ public class MechanicsController {
         return service.previousLiveFlow(sessionId);
     }
 
+    public record DrawPresentationInput(ParticipantSelectorPresentation presentation) {}
     public record GroupsInput(int groupSize) {}
     public record BossInput(String name, int maxHp) {}
     public record DamageInput(int amount) {}

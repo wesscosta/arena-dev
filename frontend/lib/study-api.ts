@@ -1,4 +1,5 @@
-import { browserApiBaseUrl } from "./auth-api";
+import { apiRequest } from "./http/client";
+import { deviceClaimStorageKey } from "./app-state";
 
 export type StudyState = "COMPLETED" | "CURRENT" | "LOCKED";
 export type JourneyProgressSummary = { completedContents: number; totalContents: number; percent: number };
@@ -47,18 +48,22 @@ export class StudyApiError extends Error {
   constructor(message: string, public readonly status: number) { super(message); this.name = "StudyApiError"; }
 }
 
-async function request<T>(path: string, token: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${browserApiBaseUrl()}${path}`, {
-    ...init,
-    credentials: "omit",
-    headers: { "Content-Type": "application/json", "X-Study-Token": token, ...init?.headers },
-  });
-  if (!response.ok) {
-    let message = `Falha ao carregar estudos (${response.status}).`;
-    try { message = ((await response.json()) as { message?: string }).message || message; } catch { /* response without JSON */ }
-    throw new StudyApiError(message, response.status);
-  }
-  return (await response.json()) as T;
+function studyRequest<T>(path: string, token: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(
+    path,
+    {
+      ...init,
+      headers: {
+        "X-Study-Token": token,
+        ...init?.headers,
+      },
+    },
+    {
+      credentials: "omit",
+      errorMessage: (status) => `Falha ao carregar estudos (${status}).`,
+      errorFactory: (message, status) => new StudyApiError(message, status),
+    },
+  );
 }
 
 export type LiveSessionSummary = {
@@ -71,7 +76,7 @@ export type LiveSessionSummary = {
 };
 
 export function fetchStudyAchievements(token: string) {
-  return request<AchievementSummary>("/api/learn/achievements", token);
+  return studyRequest<AchievementSummary>("/api/learn/achievements", token);
 }
 export async function fetchAllStudyAchievements(): Promise<AchievementSummary> {
   for (const claim of studyDeviceClaims()) {
@@ -81,9 +86,37 @@ export async function fetchAllStudyAchievements(): Promise<AchievementSummary> {
 }
 
 export function fetchStudyLiveSessions(token: string) {
-  return request<LiveSessionSummary[]>("/api/learn/live", token);
+  return studyRequest<LiveSessionSummary[]>("/api/learn/live", token);
 }
 export type JourneyRedemptionResult = { journeyId: string; title: string; description: string | null; alreadyAdded: boolean };
+export type JourneyRedemptionPreview = { journeyId: string; title: string; classroomId: string; classroomName: string };
+export type JourneyBootstrapRedemption = {
+  classroomId: string;
+  deviceToken: string;
+  deviceExpiresAt: string;
+  redemption: JourneyRedemptionResult;
+};
+
+export function previewJourneyCode(code: string) {
+  return apiRequest<JourneyRedemptionPreview>(`/api/learn/journeys/redeem/${encodeURIComponent(code.trim().toUpperCase())}`, undefined, {
+    credentials: "omit",
+    errorMessage: (status) => `Não foi possível validar o código da Jornada (${status}).`,
+    errorFactory: (message, status) => new StudyApiError(message, status),
+  });
+}
+
+export async function bootstrapJourneyRedemption(code: string, identity: string): Promise<JourneyBootstrapRedemption> {
+  const result = await apiRequest<JourneyBootstrapRedemption>("/api/learn/journeys/redeem/bootstrap", {
+    method: "POST",
+    body: JSON.stringify({ code: code.trim().toUpperCase(), identity: identity.trim() }),
+  }, {
+    credentials: "omit",
+    errorMessage: (status) => `Não foi possível vincular a Jornada (${status}).`,
+    errorFactory: (message, status) => new StudyApiError(message, status),
+  });
+  window.localStorage.setItem(deviceClaimStorageKey(result.classroomId), result.deviceToken);
+  return result;
+}
 
 export async function redeemJourneyCode(code: string): Promise<JourneyRedemptionResult> {
   const claims = studyDeviceClaims();
@@ -91,7 +124,7 @@ export async function redeemJourneyCode(code: string): Promise<JourneyRedemption
   let lastError: unknown;
   for (const claim of claims) {
     try {
-      return await request<JourneyRedemptionResult>("/api/learn/journeys/redeem", claim.token, {
+      return await studyRequest<JourneyRedemptionResult>("/api/learn/journeys/redeem", claim.token, {
         method: "POST", body: JSON.stringify({ code: code.trim().toUpperCase() }),
       });
     } catch (error) { lastError = error; }
@@ -99,16 +132,16 @@ export async function redeemJourneyCode(code: string): Promise<JourneyRedemption
   throw lastError instanceof Error ? lastError : new StudyApiError("Não foi possível adicionar a Jornada.", 400);
 }
 
-export function fetchStudyJourneys(token: string) { return request<JourneyStudySummary[]>("/api/learn/journeys", token); }
-export function fetchStudyJourney(id: string, token: string) { return request<JourneyStudyView>(`/api/learn/journeys/${encodeURIComponent(id)}`, token); }
+export function fetchStudyJourneys(token: string) { return studyRequest<JourneyStudySummary[]>("/api/learn/journeys", token); }
+export function fetchStudyJourney(id: string, token: string) { return studyRequest<JourneyStudyView>(`/api/learn/journeys/${encodeURIComponent(id)}`, token); }
 export function fetchStudyContent(journeyId: string, contentId: string, token: string) {
-  return request<JourneyContentDetailView>(`/api/learn/journeys/${encodeURIComponent(journeyId)}/contents/${encodeURIComponent(contentId)}`, token);
+  return studyRequest<JourneyContentDetailView>(`/api/learn/journeys/${encodeURIComponent(journeyId)}/contents/${encodeURIComponent(contentId)}`, token);
 }
 export function startStudyContent(journeyId: string, contentId: string, token: string) {
-  return request<JourneyStudyView>(`/api/learn/journeys/${encodeURIComponent(journeyId)}/contents/${encodeURIComponent(contentId)}/start`, token, { method: "POST", body: "{}" });
+  return studyRequest<JourneyStudyView>(`/api/learn/journeys/${encodeURIComponent(journeyId)}/contents/${encodeURIComponent(contentId)}/start`, token, { method: "POST", body: "{}" });
 }
 export function completeStudyContent(journeyId: string, contentId: string, token: string) {
-  return request<JourneyStudyView>(`/api/learn/journeys/${encodeURIComponent(journeyId)}/contents/${encodeURIComponent(contentId)}/complete`, token, { method: "POST", body: "{}" });
+  return studyRequest<JourneyStudyView>(`/api/learn/journeys/${encodeURIComponent(journeyId)}/contents/${encodeURIComponent(contentId)}/complete`, token, { method: "POST", body: "{}" });
 }
 
 export function studyDeviceClaims(): Array<{ classroomId: string; token: string }> {
@@ -146,11 +179,11 @@ export async function fetchAllStudyJourneys(): Promise<MultiClassroomJourneySumm
   return [...unique.values()].sort((a,b) => (b.lastStudiedAt ?? "").localeCompare(a.lastStudiedAt ?? ""));
 }
 
-async function teacherPreviewRequest<T>(path: string): Promise<T> {
-  const { apiFetch } = await import("./auth-api");
-  const response = await apiFetch(path);
-  if (!response.ok) throw new StudyApiError(`Falha ao abrir prévia da jornada (${response.status}).`, response.status);
-  return (await response.json()) as T;
+function teacherPreviewRequest<T>(path: string): Promise<T> {
+  return apiRequest<T>(path, undefined, {
+    errorMessage: (status) => `Falha ao abrir prévia da jornada (${status}).`,
+    errorFactory: (message, status) => new StudyApiError(message, status),
+  });
 }
 
 export function fetchTeacherStudyPreview(journeyId: string) {

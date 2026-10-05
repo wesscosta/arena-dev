@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 import type { Journey } from "./journey-api";
 
 export type ContentIngestionSource =
@@ -66,30 +66,18 @@ export type ContentPreviewRequest = {
   sourceLabel?: string;
 };
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+function contentIngestionRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na preparação da jornada (${status}).`,
   });
-  if (!response.ok) {
-    let message = `Falha na preparação da jornada (${response.status}).`;
-    try {
-      const body = (await response.json()) as { message?: string; detail?: string };
-      message = body.message || body.detail || message;
-    } catch {
-      // Preserve the HTTP fallback when the body is not JSON.
-    }
-    throw new Error(message);
-  }
-  return (await response.json()) as T;
 }
 
 export function fetchContentIngestionCapabilities() {
-  return request<ContentIngestionCapabilities>("/api/content-ingestion/capabilities");
+  return contentIngestionRequest<ContentIngestionCapabilities>("/api/content-ingestion/capabilities");
 }
 
 export function previewContentIngestion(input: ContentPreviewRequest) {
-  return request<ContentDraft>("/api/content-ingestion/preview", {
+  return contentIngestionRequest<ContentDraft>("/api/content-ingestion/preview", {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -101,25 +89,20 @@ export async function previewContentFile(classroomId: string, file: File, title?
   if (title?.trim()) form.append("title", title.trim());
   form.append("file", file);
 
-  const response = await apiFetch("/api/content-ingestion/file-preview", {
-    method: "POST",
-    body: form,
-  });
-  if (!response.ok) {
-    let message = `Falha ao analisar o arquivo (${response.status}).`;
-    try {
-      const body = (await response.json()) as { message?: string; detail?: string };
-      message = body.message || body.detail || message;
-    } catch {
-      // Preserve the HTTP fallback when the body is not JSON.
-    }
-    throw new Error(message);
-  }
-  return (await response.json()) as ContentDraft;
+  return apiRequest<ContentDraft>(
+    "/api/content-ingestion/file-preview",
+    {
+      method: "POST",
+      body: form,
+    },
+    {
+      errorMessage: (status) => `Falha ao analisar o arquivo (${status}).`,
+    },
+  );
 }
 
 export function materializeContentDraft(classroomId: string, draft: ContentDraft) {
-  return request<Journey>("/api/content-ingestion/materialize", {
+  return contentIngestionRequest<Journey>("/api/content-ingestion/materialize", {
     method: "POST",
     body: JSON.stringify({ classroomId, draft }),
   });

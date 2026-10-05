@@ -1,11 +1,10 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 import type {
   ActivityStep,
   ActivityStepType,
   PollOption,
 } from "./types";
 
-type ApiErrorBody = { message?: string };
 
 export class ActivityStepApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -34,30 +33,11 @@ type StepView = {
   } | null;
 };
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
+function activityStepRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na API do roteiro (${status}).`,
+    errorFactory: (message, status) => new ActivityStepApiError(message, status),
   });
-
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try {
-      body = (await response.json()) as ApiErrorBody;
-    } catch {
-      body = undefined;
-    }
-
-    throw new ActivityStepApiError(
-      body?.message || `Falha na API do roteiro (${response.status}).`,
-      response.status,
-    );
-  }
-
-  return (await response.json()) as T;
 }
 
 function mapStep(row: StepView): ActivityStep {
@@ -75,7 +55,7 @@ function mapStep(row: StepView): ActivityStep {
 }
 
 export async function fetchActivitySteps(activityId: string): Promise<ActivityStep[]> {
-  const rows = await request<StepView[]>(
+  const rows = await activityStepRequest<StepView[]>(
     `/api/activities/${encodeURIComponent(activityId)}/steps`,
   );
   return rows.map(mapStep);
@@ -111,7 +91,7 @@ export async function replaceActivitySteps(
       : null,
   }));
 
-  const rows = await request<StepView[]>(
+  const rows = await activityStepRequest<StepView[]>(
     `/api/activities/${encodeURIComponent(activityId)}/steps`,
     {
       method: "PUT",

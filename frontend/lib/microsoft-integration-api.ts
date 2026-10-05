@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
 export type MicrosoftReadiness = {
   provider: "MICROSOFT_TEAMS";
@@ -103,62 +103,46 @@ export type StudentMatchPreview = {
   ignored: number;
 };
 
-type ProblemBody = { detail?: string; message?: string };
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+function integrationRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na integração (${status}).`,
   });
-
-  if (!response.ok) {
-    let body: ProblemBody | undefined;
-    try {
-      body = (await response.json()) as ProblemBody;
-    } catch {
-      body = undefined;
-    }
-    throw new Error(body?.detail || body?.message || `Falha na integração (${response.status}).`);
-  }
-
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
 }
 
 export const fetchMicrosoftReadiness = () =>
-  request<MicrosoftReadiness>("/api/integrations/microsoft/readiness");
+  integrationRequest<MicrosoftReadiness>("/api/integrations/microsoft/readiness");
 
 export const fetchIntegrationConnections = () =>
-  request<IntegrationConnection[]>("/api/integrations/connections");
+  integrationRequest<IntegrationConnection[]>("/api/integrations/connections");
 
 export const connectMicrosoft = (input: { displayName: string; tenantId: string }) =>
-  request<IntegrationConnection>("/api/integrations/microsoft/connect", {
+  integrationRequest<IntegrationConnection>("/api/integrations/microsoft/connect", {
     method: "POST",
     body: JSON.stringify(input),
   });
 
 export const discoverMicrosoftClasses = (connectionId: string) =>
-  request<MicrosoftClassDiscovery>(`/api/integrations/microsoft/connections/${connectionId}/classes`);
+  integrationRequest<MicrosoftClassDiscovery>(`/api/integrations/microsoft/connections/${connectionId}/classes`);
 
 export const fetchClassroomLinks = (connectionId: string) =>
-  request<ClassroomLink[]>(`/api/integrations/connections/${connectionId}/classroom-links`);
+  integrationRequest<ClassroomLink[]>(`/api/integrations/connections/${connectionId}/classroom-links`);
 
 export const linkMicrosoftClass = (
   connectionId: string,
   input: { classroomId: string; microsoftClassId: string },
 ) =>
-  request<MicrosoftClassLinkResult>(
+  integrationRequest<MicrosoftClassLinkResult>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links`,
     { method: "POST", body: JSON.stringify(input) },
   );
 
 export const fetchMicrosoftRoster = (connectionId: string, classroomLinkId: string) =>
-  request<MicrosoftRoster>(
+  integrationRequest<MicrosoftRoster>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/roster`,
   );
 
 export const fetchStudentMatchPreview = (connectionId: string, classroomLinkId: string) =>
-  request<StudentMatchPreview>(
+  integrationRequest<StudentMatchPreview>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/student-match-preview`,
   );
 
@@ -186,7 +170,7 @@ export const applyStudentMatch = (
     localStudentId?: string | null;
   },
 ) =>
-  request<StudentMatchApplyResult>(
+  integrationRequest<StudentMatchApplyResult>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/student-match-apply`,
     {
       method: "POST",
@@ -244,7 +228,7 @@ export const fetchRosterReconciliation = (
   connectionId: string,
   classroomLinkId: string,
 ) =>
-  request<RosterReconciliation>(
+  integrationRequest<RosterReconciliation>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/reconciliation`,
   );
 
@@ -254,7 +238,7 @@ export const applyRosterReconciliation = (
   externalStudentLinkId: string,
   action: RosterReconciliationAction,
 ) =>
-  request<RosterReconciliationApplyResult>(
+  integrationRequest<RosterReconciliationApplyResult>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/reconciliation/${externalStudentLinkId}`,
     {
       method: "POST",
@@ -301,7 +285,7 @@ export const fetchActivityMapping = (
   connectionId: string,
   classroomLinkId: string,
 ) =>
-  request<MicrosoftActivityMapping>(
+  integrationRequest<MicrosoftActivityMapping>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-mapping`,
   );
 
@@ -313,7 +297,7 @@ export const linkMicrosoftAssignment = (
     microsoftAssignmentId: string;
   },
 ) =>
-  request<MicrosoftActivityLinkMapping>(
+  integrationRequest<MicrosoftActivityLinkMapping>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-mapping`,
     {
       method: "POST",
@@ -361,7 +345,7 @@ export const fetchSubmissionTracking = (
   classroomLinkId: string,
   activityLinkId: string,
 ) =>
-  request<MicrosoftSubmissionTracking>(
+  integrationRequest<MicrosoftSubmissionTracking>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-links/${activityLinkId}/submissions`,
   );
 
@@ -386,7 +370,7 @@ export const fetchMicrosoftSubmissionOutcome = (
   activityLinkId: string,
   microsoftSubmissionId: string,
 ) =>
-  request<MicrosoftSubmissionOutcomePreview>(
+  integrationRequest<MicrosoftSubmissionOutcomePreview>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-links/${activityLinkId}/submissions/${encodeURIComponent(microsoftSubmissionId)}/outcomes`,
   );
 
@@ -413,7 +397,7 @@ export const applyMicrosoftSubmissionOutcome = (
   microsoftSubmissionId: string,
   action: MicrosoftOutcomeApplyAction,
 ) =>
-  request<MicrosoftOutcomeApplyResult>(
+  integrationRequest<MicrosoftOutcomeApplyResult>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-links/${activityLinkId}/submissions/${encodeURIComponent(microsoftSubmissionId)}/outcomes/apply`,
     {
       method: "POST",
@@ -441,7 +425,7 @@ export const publishMicrosoftSubmissionOutcome = (
   microsoftSubmissionId: string,
   action: MicrosoftOutcomePublishAction,
 ) =>
-  request<MicrosoftOutcomePublishResult>(
+  integrationRequest<MicrosoftOutcomePublishResult>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-links/${activityLinkId}/submissions/${encodeURIComponent(microsoftSubmissionId)}/outcomes/publish`,
     {
       method: "POST",
@@ -450,7 +434,7 @@ export const publishMicrosoftSubmissionOutcome = (
   );
 
 export const startMicrosoftOAuth = () =>
-  request<{ authorizationUrl: string }>(
+  integrationRequest<{ authorizationUrl: string }>(
     "/api/integrations/microsoft/oauth/start",
   );
 
@@ -474,7 +458,7 @@ export const importMicrosoftSubmission = (
   activityLinkId: string,
   microsoftSubmissionId: string,
 ) =>
-  request<MicrosoftSubmissionImportResult>(
+  integrationRequest<MicrosoftSubmissionImportResult>(
     `/api/integrations/microsoft/connections/${connectionId}/class-links/${classroomLinkId}/activity-links/${activityLinkId}/submissions/import`,
     {
       method: "POST",
@@ -483,8 +467,8 @@ export const importMicrosoftSubmission = (
   );
 
 export type NotionReadiness = { provider: "NOTION"; delegatedOAuthConfigured: boolean };
-export const fetchNotionReadiness = () => request<NotionReadiness>("/api/integrations/notion/readiness");
-export const startNotionOAuth = () => request<{ authorizationUrl: string }>("/api/integrations/notion/oauth/start");
-export const disableIntegrationConnection = (connectionId: string) => request<IntegrationConnection>(`/api/integrations/connections/${connectionId}/disable`, { method: "POST" });
+export const fetchNotionReadiness = () => integrationRequest<NotionReadiness>("/api/integrations/notion/readiness");
+export const startNotionOAuth = () => integrationRequest<{ authorizationUrl: string }>("/api/integrations/notion/oauth/start");
+export const disableIntegrationConnection = (connectionId: string) => integrationRequest<IntegrationConnection>(`/api/integrations/connections/${connectionId}/disable`, { method: "POST" });
 export type NotionPageSummary = { id: string; title: string; url: string };
-export const fetchNotionPages = (query = "") => request<NotionPageSummary[]>(`/api/integrations/notion/pages?query=${encodeURIComponent(query)}`);
+export const fetchNotionPages = (query = "") => integrationRequest<NotionPageSummary[]>(`/api/integrations/notion/pages?query=${encodeURIComponent(query)}`);

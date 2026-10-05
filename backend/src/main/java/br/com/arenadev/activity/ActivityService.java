@@ -16,12 +16,13 @@ import java.util.*;
 public class ActivityService {
     private final ActivityRepository activityRepository;
     private final ClassroomRepository classroomRepository;
-    private final JsonMapper objectMapper = JsonMapper.builder().build();
+    private final JsonMapper objectMapper;
 
-    public ActivityService(ActivityRepository activityRepository, ClassroomRepository classroomRepository) {
+    public ActivityService(ActivityRepository activityRepository, ClassroomRepository classroomRepository, JsonMapper objectMapper) {
         this.activityRepository = activityRepository;
         this.classroomRepository = classroomRepository;
-    }
+            this.objectMapper = objectMapper;
+}
 
     @Transactional(readOnly = true)
     public List<ActivityView> list(UUID classroomId) {

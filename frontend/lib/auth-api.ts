@@ -8,25 +8,39 @@ type ApiErrorBody = { message?: string };
 const CONFIGURED_API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 let csrfTokenPromise: Promise<string> | undefined;
 
-export function browserApiBaseUrl() {
-  if (CONFIGURED_API_URL) {
-    if (typeof window !== "undefined") {
-      try {
-        const configured = new URL(CONFIGURED_API_URL);
-        const configuredIsLocal = configured.hostname === "localhost" || configured.hostname === "127.0.0.1";
-        const browserIsRemote = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
-        if (configuredIsLocal && browserIsRemote) {
-          configured.hostname = window.location.hostname;
-          return configured.toString().replace(/\/$/, "");
-        }
-      } catch {
-        // Mantém a URL configurada.
+function isLoopbackHostname(hostname: string) {
+  const normalized = hostname.toLowerCase().replace(/^\[(.*)\]$/, "$1");
+  return normalized === "localhost"
+    || normalized === "127.0.0.1"
+    || normalized === "::1"
+    || normalized === "0.0.0.0";
+}
+
+export function resolveBrowserApiBaseUrl(configuredApiUrl?: string, browserOrigin?: string) {
+  const configured = configuredApiUrl?.replace(/\/$/, "");
+
+  if (browserOrigin) {
+    const origin = browserOrigin.replace(/\/$/, "");
+    if (!configured) return origin;
+
+    try {
+      const configuredUrl = new URL(configured);
+      if (isLoopbackHostname(configuredUrl.hostname)) {
+        return origin;
       }
+    } catch {
+      // URL inválida: mantém o valor configurado para expor o erro de configuração.
     }
-    return CONFIGURED_API_URL;
   }
-  if (typeof window !== "undefined") return `${window.location.protocol}//${window.location.hostname}:8080`;
-  return "http://localhost:8080";
+
+  return configured || "http://localhost:8080";
+}
+
+export function browserApiBaseUrl() {
+  return resolveBrowserApiBaseUrl(
+    CONFIGURED_API_URL,
+    typeof window !== "undefined" ? window.location.origin : undefined,
+  );
 }
 
 function requiresCsrf(method?: string) {

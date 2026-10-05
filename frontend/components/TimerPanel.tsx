@@ -354,20 +354,18 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
 
       {showCreate && (
         <section className="timer-setup-card">
-          <div className="timer-setup-heading">
-            <div>
-              <span className="eyebrow accent">NOVO TEMPORIZADOR</span>
-              <h3>{timer ? "Preparar o próximo tempo" : "Defina o tempo da atividade"}</h3>
-            </div>
-            <div className="timer-selected-duration">
-              <small>DURAÇÃO</small>
-              <strong>{formatTimer(durationSeconds)}</strong>
-            </div>
-          </div>
+          <div className="timer-config-card">
+            <section className="timer-config-section timer-config-time" aria-labelledby="timer-config-time-title">
+              <div className="timer-config-section-heading">
+                <div>
+                  <h4 id="timer-config-time-title">Tempo da atividade</h4>
+                </div>
+                <div className="timer-selected-duration" aria-label={`Duração selecionada ${formatTimer(durationSeconds)}`}>
+                  <small>DURAÇÃO</small>
+                  <strong>{formatTimer(durationSeconds)}</strong>
+                </div>
+              </div>
 
-          <div className="timer-setup-grid">
-            <div className="timer-duration-box">
-              <span className="field-label">Contagem regressiva</span>
               <div className="timer-duration-editor" aria-label="Duração do temporizador">
                 <DurationSegment
                   label="Horas"
@@ -409,105 +407,123 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
                   </button>
                 ))}
               </div>
-            </div>
+            </section>
 
-            <div className="timer-details-box">
-              <label className="field">
-                <span>Título</span>
-                <input
-                  className="input"
-                  value={title}
-                  maxLength={160}
-                  onChange={(event) => setTitle(event.target.value)}
-                  placeholder="Ex.: Pesquisa OSI × TCP/IP"
-                />
-              </label>
-
-              <label className="field">
-                <span>Instruções opcionais</span>
-                <textarea
-                  className="textarea"
-                  value={instructions}
-                  maxLength={500}
-                  rows={4}
-                  onChange={(event) => setInstructions(event.target.value)}
-                  placeholder="Ex.: Pesquisem e preparem uma síntese para apresentação."
-                />
-              </label>
-
-              <label className="timer-option-row">
-                <input
-                  type="checkbox"
-                  checked={openFocusOnStart}
-                  onChange={(event) => setOpenFocusOnStart(event.target.checked)}
-                />
+            <section className="timer-config-section" aria-labelledby="timer-config-content-title">
+              <div className="timer-config-section-heading">
                 <div>
-                  <strong>Abrir em tela cheia ao iniciar</strong>
+                  <h4 id="timer-config-content-title">Conteúdo</h4>
                 </div>
-              </label>
-            </div>
+              </div>
+
+              <div className="timer-config-fields">
+                <label className="field timer-field-block">
+                  <span>Título</span>
+                  <input
+                    className="input"
+                    value={title}
+                    maxLength={160}
+                    onChange={(event) => setTitle(event.target.value)}
+                    placeholder="Ex.: Pesquisa OSI × TCP/IP"
+                  />
+                </label>
+
+                <label className="field timer-field-block">
+                  <span>Instruções <em>(opcional)</em></span>
+                  <textarea
+                    className="textarea"
+                    value={instructions}
+                    maxLength={500}
+                    rows={2}
+                    onChange={(event) => setInstructions(event.target.value)}
+                    placeholder="Ex.: Pesquisem e preparem uma síntese para apresentação."
+                  />
+                  <small className="timer-field-count">{instructions.length}/500</small>
+                </label>
+              </div>
+            </section>
+
+            <section className="timer-config-section timer-config-preferences" aria-labelledby="timer-config-display-title">
+              <div className="timer-config-preference-group">
+                <div className="timer-config-section-heading">
+                  <div>
+                    <h4 id="timer-config-display-title">Exibição</h4>
+                  </div>
+                </div>
+                <label className="timer-option-row timer-display-block">
+                  <input
+                    type="checkbox"
+                    checked={openFocusOnStart}
+                    onChange={(event) => setOpenFocusOnStart(event.target.checked)}
+                  />
+                  <div>
+                    <strong>Abrir em tela cheia ao iniciar</strong>
+                  </div>
+                </label>
+              </div>
+
+              <div className="timer-config-preference-group">
+                <div className="timer-config-section-heading">
+                  <div>
+                    <h4>Alertas locais</h4>
+                  </div>
+                </div>
+                <div className="timer-alert-options">
+                  <label className="timer-option-row">
+                    <input
+                      type="checkbox"
+                      checked={alerts.five}
+                      onChange={(event) =>
+                        setAlerts((current) => ({ ...current, five: event.target.checked }))
+                      }
+                    />
+                    <span>5 minutos</span>
+                  </label>
+                  <label className="timer-option-row">
+                    <input
+                      type="checkbox"
+                      checked={alerts.one}
+                      onChange={(event) =>
+                        setAlerts((current) => ({ ...current, one: event.target.checked }))
+                      }
+                    />
+                    <span>1 minuto</span>
+                  </label>
+                  <label className="timer-option-row">
+                    <input
+                      type="checkbox"
+                      checked={alerts.end}
+                      onChange={(event) =>
+                        setAlerts((current) => ({ ...current, end: event.target.checked }))
+                      }
+                    />
+                    <span>Ao encerrar</span>
+                  </label>
+                </div>
+              </div>
+            </section>
           </div>
 
-          <div className="timer-setup-actions">
-            <button
-              className="button ghost"
-              disabled={busy || durationSeconds < 1}
-              onClick={() => void prepareTimer()}
-            >
-              Apenas preparar
-            </button>
-            <button
-              className="button primary large"
-              disabled={busy || durationSeconds < 1}
-              onClick={() => void createAndStartTimer()}
-            >
-              {busy ? "Iniciando..." : "Iniciar agora"}
-            </button>
+          <div className="timer-setup-actions timer-actions-block">
+            <div className="timer-action-buttons">
+              <button
+                className="button ghost"
+                disabled={busy || durationSeconds < 1}
+                onClick={() => void prepareTimer()}
+              >
+                Apenas preparar
+              </button>
+              <button
+                className="button primary large"
+                disabled={busy || durationSeconds < 1}
+                onClick={() => void createAndStartTimer()}
+              >
+                {busy ? "Iniciando..." : "Iniciar agora"}
+              </button>
+            </div>
           </div>
         </section>
       )}
-
-      <details className="timer-settings-panel">
-        <summary>
-          <div>
-            <strong>Alertas locais</strong>
-            <span>5 min · 1 min · encerramento</span>
-          </div>
-          <span>Configurar</span>
-        </summary>
-        <div className="timer-settings-content">
-          <label className="timer-option-row">
-            <input
-              type="checkbox"
-              checked={alerts.five}
-              onChange={(event) =>
-                setAlerts((current) => ({ ...current, five: event.target.checked }))
-              }
-            />
-            <span>Avisar quando faltarem 5 minutos</span>
-          </label>
-          <label className="timer-option-row">
-            <input
-              type="checkbox"
-              checked={alerts.one}
-              onChange={(event) =>
-                setAlerts((current) => ({ ...current, one: event.target.checked }))
-              }
-            />
-            <span>Avisar quando faltar 1 minuto</span>
-          </label>
-          <label className="timer-option-row">
-            <input
-              type="checkbox"
-              checked={alerts.end}
-              onChange={(event) =>
-                setAlerts((current) => ({ ...current, end: event.target.checked }))
-              }
-            />
-            <span>Avisar ao encerrar</span>
-          </label>
-        </div>
-      </details>
 
       {focusOpen && timer && (
         <div

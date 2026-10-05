@@ -18,19 +18,21 @@ public class SubmissionReviewService {
     private final SubmissionItemRepository itemRepository;
     private final SubmissionAssessmentRepository assessmentRepository;
     private final ActivityQuestionRepository questionRepository;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
 
     public SubmissionReviewService(
             ActivitySubmissionRepository submissionRepository,
             SubmissionItemRepository itemRepository,
             SubmissionAssessmentRepository assessmentRepository,
-            ActivityQuestionRepository questionRepository
+            ActivityQuestionRepository questionRepository,
+            JsonMapper json
     ) {
         this.submissionRepository = submissionRepository;
         this.itemRepository = itemRepository;
         this.assessmentRepository = assessmentRepository;
         this.questionRepository = questionRepository;
-    }
+            this.json = json;
+}
 
     @Transactional
     public ReviewView open(UUID activityId, UUID submissionId) {

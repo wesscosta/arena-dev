@@ -21,21 +21,23 @@ public class NotionApiPageProvider implements NotionPageProvider {
     private final IntegrationCredentialStore credentials;
     private final String apiVersion;
     private final RestClient client;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
 
     public NotionApiPageProvider(
             @Value("${app.integrations.notion.token:}") String token,
             IntegrationConnectionRepository connections,
             IntegrationCredentialStore credentials,
             @Value("${app.integrations.notion.api-version:2022-06-28}") String apiVersion,
-            @Value("${app.integrations.notion.base-url:https://api.notion.com/v1}") String baseUrl
+            @Value("${app.integrations.notion.base-url:https://api.notion.com/v1}") String baseUrl,
+            JsonMapper json
     ) {
         this.fallbackToken = token == null ? "" : token.trim();
         this.connections = connections;
         this.credentials = credentials;
         this.apiVersion = apiVersion == null || apiVersion.isBlank() ? "2022-06-28" : apiVersion.trim();
         this.client = RestClient.builder().baseUrl(baseUrl == null || baseUrl.isBlank() ? "https://api.notion.com/v1" : baseUrl.trim().replaceAll("/+$", "")).build();
-    }
+            this.json = json;
+}
 
     @Override public boolean isConfigured() {
         return !fallbackToken.isBlank() || !connections.findByProviderAndStatus(LearningPlatformProvider.NOTION, IntegrationConnectionStatus.ACTIVE).isEmpty();

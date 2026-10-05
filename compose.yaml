@@ -63,10 +63,14 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
+        INTERNAL_API_URL: ${INTERNAL_API_URL:-http://backend:8080}
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+        NEXT_PUBLIC_ARENA_SELECTOR_MODE: ${NEXT_PUBLIC_ARENA_SELECTOR_MODE:-grid-spotlight}
     container_name: arena-dev-frontend
     environment:
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://backend:8080}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      NEXT_PUBLIC_ARENA_SELECTOR_MODE: ${NEXT_PUBLIC_ARENA_SELECTOR_MODE:-grid-spotlight}
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:

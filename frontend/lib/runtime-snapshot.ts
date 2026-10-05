@@ -1,4 +1,5 @@
 import type { LiveStageState } from "./live-stage-api";
+import type { PublicRankingState } from "./ranking-api";
 import type { PollParticipantState, PollState } from "./poll-api";
 import type { QuizParticipantState, QuizState } from "./quiz-api";
 import type { TimerState } from "./timer-api";
@@ -37,6 +38,7 @@ export type PublicRuntimeSnapshot = {
   poll: PollState;
   quiz: QuizState;
   boss?: PublicBossState | null;
+  ranking: PublicRankingState;
 };
 
 export type ParticipantRuntimeSnapshot = PublicRuntimeSnapshot & {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchAllStudyAchievements, type AchievementCode, type AchievementSummary } from "@/lib/study-api";
-import styles from "../study.module.css";
+import styles from "@/components/study/study.module.css";
 
 function MilestoneIcon({ code, unlocked }: { code: AchievementCode; unlocked: boolean }) {
   if (unlocked) return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4.2L19 7" /></svg>;

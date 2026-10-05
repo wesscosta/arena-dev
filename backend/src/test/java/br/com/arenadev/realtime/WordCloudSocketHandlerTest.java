@@ -76,7 +76,8 @@ class WordCloudSocketHandlerTest {
                 wordCloudService,
                 pollService,
                 liveStageService,
-                runtimeSnapshotService
+                runtimeSnapshotService,
+                tools.jackson.databind.json.JsonMapper.builder().build()
         );
 
         WebSocketSession socket = mock(WebSocketSession.class);

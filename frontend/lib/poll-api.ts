@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
 export type PollStatus = "OPEN" | "REVEALED" | "CLOSED";
 
@@ -39,7 +39,6 @@ export type CreatePollInput = {
   liveResults: boolean;
 };
 
-type ApiErrorBody = { message?: string };
 
 export class PollApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -48,15 +47,11 @@ export class PollApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, init);
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new PollApiError(body?.message || `Falha na API de Votação (${response.status}).`, response.status);
-  }
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+function pollRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na API de Votação (${status}).`,
+    errorFactory: (message, status) => new PollApiError(message, status),
+  });
 }
 
 function pollPath(sessionId: string, roundId?: string) {
@@ -65,22 +60,22 @@ function pollPath(sessionId: string, roundId?: string) {
 }
 
 export function fetchPollState(sessionId: string) {
-  return request<PollState>(pollPath(sessionId));
+  return pollRequest<PollState>(pollPath(sessionId));
 }
 
 export function createPoll(sessionId: string, input: CreatePollInput) {
-  return request<PollState>(pollPath(sessionId), {
+  return pollRequest<PollState>(pollPath(sessionId), {
     method: "POST",
     body: JSON.stringify(input),
   });
 }
 
 export function revealPoll(sessionId: string, roundId: string) {
-  return request<PollState>(`${pollPath(sessionId, roundId)}/reveal`, { method: "POST" });
+  return pollRequest<PollState>(`${pollPath(sessionId, roundId)}/reveal`, { method: "POST" });
 }
 
 export function closePoll(sessionId: string, roundId: string) {
-  return request<PollState>(`${pollPath(sessionId, roundId)}/close`, { method: "POST" });
+  return pollRequest<PollState>(`${pollPath(sessionId, roundId)}/close`, { method: "POST" });
 }
 
 export function emptyPollParticipantState(): PollParticipantState {

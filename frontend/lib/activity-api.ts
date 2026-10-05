@@ -1,8 +1,6 @@
 import type { Activity, ActivityQuestion, ActivityResource, Classroom } from "./types";
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
-
-type ApiErrorBody = { message?: string; fields?: Record<string, string> };
 
 export class ActivityApiError extends Error {
   constructor(message: string, public readonly status: number, public readonly fields?: Record<string, string>) {
@@ -11,17 +9,11 @@ export class ActivityApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+function activityRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na API de atividades (${status}).`,
+    errorFactory: (message, status, fields) => new ActivityApiError(message, status, fields),
   });
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new ActivityApiError(body?.message || `Falha na API de atividades (${response.status}).`, response.status, body?.fields);
-  }
-  return (await response.json()) as T;
 }
 
 type ActivityView = {
@@ -71,7 +63,7 @@ function mapActivity(row: ActivityView): Activity {
 }
 
 export async function fetchActivities(classroomId: string): Promise<Activity[]> {
-  const rows = await request<ActivityView[]>(`/api/activities?classroomId=${encodeURIComponent(classroomId)}`);
+  const rows = await activityRequest<ActivityView[]>(`/api/activities?classroomId=${encodeURIComponent(classroomId)}`);
   return rows.map(mapActivity);
 }
 
@@ -82,17 +74,17 @@ export async function fetchActivityDomain(classrooms: Classroom[]): Promise<Acti
 }
 
 export async function createActivity(input: ActivityUpsertInput): Promise<Activity> {
-  const row = await request<ActivityView>("/api/activities", { method: "POST", body: JSON.stringify(input) });
+  const row = await activityRequest<ActivityView>("/api/activities", { method: "POST", body: JSON.stringify(input) });
   return mapActivity(row);
 }
 
 export async function updateActivity(id: string, input: ActivityUpsertInput): Promise<Activity> {
-  const row = await request<ActivityView>(`/api/activities/${id}`, { method: "PUT", body: JSON.stringify(input) });
+  const row = await activityRequest<ActivityView>(`/api/activities/${id}`, { method: "PUT", body: JSON.stringify(input) });
   return mapActivity(row);
 }
 
 export async function copyActivity(id: string, destinationClassroomId: string): Promise<Activity> {
-  const row = await request<ActivityView>(`/api/activities/${id}/copy`, {
+  const row = await activityRequest<ActivityView>(`/api/activities/${id}/copy`, {
     method: "POST",
     body: JSON.stringify({ destinationClassroomId }),
   });

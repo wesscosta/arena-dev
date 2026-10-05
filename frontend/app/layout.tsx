@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import PwaRuntime from "@/components/PwaRuntime";
 import "./globals.css";
+import "../styles/classroom-overview.css";
+import "../styles/timer-panel.css";
 
 export const metadata: Metadata = {
   title: "Arena Dev",

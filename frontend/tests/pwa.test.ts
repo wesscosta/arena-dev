@@ -17,7 +17,7 @@ test("manifest makes the join experience installable", () => {
 });
 
 test("service worker caches shell and static assets but never API domain state", () => {
-  assert.match(worker, /arena-dev-shell-v0\.5-1/);
+  assert.match(worker, /arena-dev-shell-v0\.8-join-fix-1/);
   assert.match(worker, /url\.pathname\.startsWith\("\/api\/"\)/);
   assert.match(worker, /if \(isDomainRequest\(url\)\) return/);
 });
@@ -29,7 +29,9 @@ test("offline navigation falls back only to interface shell", () => {
 });
 
 test("client registers worker and treats installation as progressive enhancement", () => {
-  assert.match(runtime, /navigator\.serviceWorker\.register\("\/sw\.js"/);
+  assert.match(runtime, /navigator\.serviceWorker[\s\S]*\.register\("\/sw\.js"/);
+  assert.match(runtime, /updateViaCache: "none"/);
+  assert.match(runtime, /registration\.update\(\)/);
   assert.match(runtime, /beforeinstallprompt/);
   assert.match(runtime, /Instalar Arena Dev/);
 });

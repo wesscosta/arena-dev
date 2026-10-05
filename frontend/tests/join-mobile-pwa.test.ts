@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 
 const join = readFileSync(resolve(process.cwd(), "components/StudentJoinFlow.tsx"), "utf8");
 const globals = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
-const quizCss = readFileSync(resolve(process.cwd(), "app/join/quiz.module.css"), "utf8");
+const quizCss = readFileSync(resolve(process.cwd(), "components/student-join/quiz.module.css"), "utf8");
 
 test("join exposes explicit reconnect instead of relying only on backoff", () => {
   assert.match(join, /function reconnectNow\(\)/);

@@ -29,7 +29,7 @@ public class ParticipantSubmissionController {
     private final ActivitySubmissionService submissionService;
     private final SubmissionItemService itemService;
     private final SubmissionAssessmentRepository assessmentRepository;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
 
     public ParticipantSubmissionController(
             SessionJoinService joinService,
@@ -39,7 +39,8 @@ public class ParticipantSubmissionController {
             ActivitySubmissionRepository submissionRepository,
             ActivitySubmissionService submissionService,
             SubmissionItemService itemService,
-            SubmissionAssessmentRepository assessmentRepository
+            SubmissionAssessmentRepository assessmentRepository,
+            JsonMapper json
     ) {
         this.joinService = joinService;
         this.activityRepository = activityRepository;
@@ -49,7 +50,8 @@ public class ParticipantSubmissionController {
         this.submissionService = submissionService;
         this.itemService = itemService;
         this.assessmentRepository = assessmentRepository;
-    }
+            this.json = json;
+}
 
     @GetMapping
     public List<ActivityCard> list(

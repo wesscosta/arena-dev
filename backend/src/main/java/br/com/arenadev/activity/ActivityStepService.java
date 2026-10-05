@@ -15,11 +15,12 @@ public class ActivityStepService {
     private static final int MAX_SLIDE_CONTENT = 12_000;
 
     private final ActivityRepository activityRepository;
-    private final JsonMapper objectMapper = JsonMapper.builder().build();
+    private final JsonMapper objectMapper;
 
-    public ActivityStepService(ActivityRepository activityRepository) {
+    public ActivityStepService(ActivityRepository activityRepository, JsonMapper objectMapper) {
         this.activityRepository = activityRepository;
-    }
+            this.objectMapper = objectMapper;
+}
 
     @Transactional(readOnly = true)
     public List<StepView> list(UUID activityId) {

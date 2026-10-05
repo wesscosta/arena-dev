@@ -140,10 +140,13 @@ export interface BossState {
   currentHp: number;
 }
 
+export type ParticipantSelectorPresentation = "GRID_SPOTLIGHT" | "WHEEL";
+
 export interface SessionRuntimeState {
   sessionId: string;
   drawCounts: Record<string, number>;
   lastDrawnStudentId?: string;
+  selectorPresentation?: ParticipantSelectorPresentation;
   boss?: BossState;
   activityId?: string;
   currentQuestionId?: string;
@@ -177,6 +180,7 @@ export interface GameSession {
   presentStudentIds: string[];
   drawCounts: Record<string, number>;
   lastDrawnStudentId?: string;
+  selectorPresentation?: ParticipantSelectorPresentation;
   boss?: BossState;
   activityId?: string;
   currentQuestionId?: string;

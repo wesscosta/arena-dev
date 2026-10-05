@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { fetchAllStudyJourneys, fetchAllStudyLiveSessions, type LiveSessionSummary, type MultiClassroomJourneySummary } from "@/lib/study-api";
-import styles from "./study.module.css";
+import styles from "@/components/study/study.module.css";
 
 type Loaded = { journeys: MultiClassroomJourneySummary[]; liveSessions: LiveSessionSummary[] };
 function learnerDescription(description: string | null | undefined) {

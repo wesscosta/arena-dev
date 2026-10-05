@@ -33,7 +33,7 @@ public class LiveStageService {
     private final SessionRealtimeGateway realtimeGateway;
     private final DisplayNameService displayNameService;
     private final ActivityStepRepository activityStepRepository;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
 
     public LiveStageService(
             ClassSessionRepository sessionRepository,
@@ -41,7 +41,8 @@ public class LiveStageService {
             SessionDynamicRepository dynamicRepository,
             SessionRealtimeGateway realtimeGateway,
             DisplayNameService displayNameService,
-            ActivityStepRepository activityStepRepository
+            ActivityStepRepository activityStepRepository,
+            JsonMapper json
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -49,6 +50,7 @@ public class LiveStageService {
         this.realtimeGateway = realtimeGateway;
         this.displayNameService = displayNameService;
         this.activityStepRepository = activityStepRepository;
+        this.json = json;
     }
 
     @Transactional(readOnly = true)

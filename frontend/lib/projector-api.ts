@@ -1,4 +1,5 @@
-import { apiFetch, browserApiBaseUrl } from "./auth-api";
+import { browserApiBaseUrl } from "./auth-api";
+import { apiRequest } from "./http/client";
 import { normalizeJoinCode } from "./app-state";
 import type { SessionRealtimeEvent } from "./realtime-api";
 import type { PublicRuntimeSnapshot } from "./runtime-snapshot";
@@ -13,7 +14,6 @@ export type ProjectorSnapshot = {
   runtime: PublicRuntimeSnapshot;
 };
 
-type ApiErrorBody = { message?: string };
 
 export class ProjectorApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -22,28 +22,17 @@ export class ProjectorApiError extends Error {
   }
 }
 
-export async function fetchProjectorSnapshot(code: string): Promise<ProjectorSnapshot> {
+export function fetchProjectorSnapshot(code: string): Promise<ProjectorSnapshot> {
   const normalized = normalizeJoinCode(code);
-  const response = await apiFetch(
+  return apiRequest<ProjectorSnapshot>(
     `/api/projector/${encodeURIComponent(normalized)}`,
     undefined,
-    "omit",
+    {
+      credentials: "omit",
+      errorMessage: "Código de sessão inválido, expirado ou encerrado.",
+      errorFactory: (message, status) => new ProjectorApiError(message, status),
+    },
   );
-
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try {
-      body = (await response.json()) as ApiErrorBody;
-    } catch {
-      body = undefined;
-    }
-    throw new ProjectorApiError(
-      body?.message || "Código de sessão inválido, expirado ou encerrado.",
-      response.status,
-    );
-  }
-
-  return (await response.json()) as ProjectorSnapshot;
 }
 
 export function projectorSocketUrl(sessionId: string) {

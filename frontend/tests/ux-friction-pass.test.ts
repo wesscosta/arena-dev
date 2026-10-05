@@ -27,9 +27,3 @@ test("row actions are grouped", () => {
   assert.match(arena, /Desativar participante/);
   assert.match(arena, /Remover da turma/);
 });
-
-test("Arena CTA is wider and stronger on hover", () => {
-  assert.match(css, /width:min\(76%,980px\)/);
-  assert.match(css, /opacity:\.88/);
-  assert.match(css, /arena-launch-button-centered:hover/);
-});

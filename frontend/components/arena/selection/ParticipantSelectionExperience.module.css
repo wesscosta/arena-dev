@@ -1,0 +1,426 @@
+.experience {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--radius-lg);
+  background: var(--ds-surface);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+.heading {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: .8rem;
+}
+
+.headingIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--ds-accent) 55%, var(--ds-border));
+  border-radius: 999px;
+  color: var(--ds-accent);
+  background: color-mix(in srgb, var(--ds-accent) 6%, transparent);
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: .2rem;
+  color: var(--ds-accent);
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .11em;
+}
+
+.heading h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.1vw, 2rem);
+  line-height: 1.05;
+}
+
+.heading p {
+  margin: .35rem 0 0;
+  color: var(--ds-text-secondary);
+  font-size: .82rem;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .65rem;
+}
+
+.progress {
+  min-width: 8.5rem;
+  display: grid;
+  gap: .12rem;
+}
+
+.progress strong {
+  font-size: .82rem;
+}
+
+.progress > span {
+  color: var(--ds-text-secondary);
+  font-size: .7rem;
+}
+
+.progressTrack {
+  height: .25rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--ds-surface-raised);
+}
+
+.progressTrack > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ds-accent);
+  transition: width .2s ease;
+}
+
+.settings,
+.drawButton,
+.confirmButton {
+  min-height: 2.65rem;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.settings {
+  padding: 0 .8rem;
+  border: 1px solid var(--ds-border);
+  background: transparent;
+  color: var(--ds-text-primary);
+}
+
+.drawButton {
+  padding: 0 1rem;
+  border: 1px solid color-mix(in srgb, var(--ds-accent) 58%, var(--ds-border));
+  background: var(--ds-accent);
+  color: var(--ds-accent-contrast);
+}
+
+.drawButton:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+.gridViewport {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: .2rem;
+  scrollbar-width: thin;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 13.5rem));
+  justify-content: start;
+  gap: .7rem;
+  align-content: start;
+}
+
+.card {
+  width: 100%;
+  max-width: 13.5rem;
+  min-width: 0;
+  min-height: 4.4rem;
+  display: grid;
+  grid-template-columns: 2.35rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .7rem;
+  padding: .7rem .8rem;
+  border: 1px solid var(--ds-border);
+  border-radius: 12px;
+  background: var(--ds-surface-raised);
+  transition: border-color .16s ease, background .16s ease, opacity .16s ease, transform .16s ease;
+}
+
+.card[data-status="drawn"] {
+  border-color: color-mix(in srgb, var(--ds-accent) 24%, var(--ds-border));
+  background: color-mix(in srgb, var(--ds-accent) 4%, var(--ds-surface-raised));
+}
+
+.card[data-status="selected"] {
+  border-color: color-mix(in srgb, var(--ds-accent) 72%, var(--ds-border));
+  background: color-mix(in srgb, var(--ds-accent) 11%, var(--ds-surface-raised));
+  box-shadow: inset 3px 0 0 var(--ds-accent);
+}
+
+.card[data-status="absent"] {
+  opacity: .5;
+}
+
+.avatar,
+.spotlightAvatar {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ds-accent) 20%, var(--ds-border));
+  background: color-mix(in srgb, var(--ds-accent) 7%, var(--ds-surface-raised));
+  color: var(--ds-text-primary);
+  font-weight: 800;
+}
+
+.avatar {
+  width: 2.35rem;
+  height: 2.35rem;
+  font-size: .72rem;
+}
+
+.cardCopy {
+  min-width: 0;
+  display: grid;
+  gap: .2rem;
+}
+
+.cardCopy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .8rem;
+}
+
+.cardCopy span {
+  color: var(--ds-text-secondary);
+  font-size: .7rem;
+}
+
+.card[data-status="selected"] .cardCopy span,
+.card[data-status="drawn"] .cardCopy span {
+  color: var(--ds-accent);
+}
+
+.presenceDot {
+  width: .45rem;
+  height: .45rem;
+  border-radius: 999px;
+  background: var(--ds-accent);
+  opacity: .68;
+}
+
+.emptyState {
+  min-height: 14rem;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: .35rem;
+  text-align: center;
+  color: var(--ds-text-secondary);
+}
+
+.emptyState strong {
+  color: var(--ds-text-primary);
+}
+
+.selectingLayer,
+.spotlightLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--ds-surface) 88%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.selectingLayer {
+  align-content: center;
+  gap: .35rem;
+}
+
+.selectingLayer strong {
+  font-size: 1.15rem;
+}
+
+.selectingLayer small {
+  color: var(--ds-text-secondary);
+}
+
+.selectingPulse {
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: .35rem;
+  border: 2px solid color-mix(in srgb, var(--ds-accent) 18%, var(--ds-border));
+  border-top-color: var(--ds-accent);
+  border-radius: 999px;
+  animation: selection-spin .75s linear infinite;
+}
+
+.spotlightLayer {
+  padding: 1.25rem;
+}
+
+.spotlightCard {
+  width: min(34rem, 92%);
+  display: grid;
+  justify-items: center;
+  gap: .65rem;
+  padding: 1.6rem;
+  border: 1px solid color-mix(in srgb, var(--ds-accent) 42%, var(--ds-border));
+  border-radius: 18px;
+  background: var(--ds-surface);
+  box-shadow: var(--shadow-popover);
+  text-align: center;
+  animation: spotlight-enter .18s ease-out both;
+}
+
+.spotlightEyebrow {
+  color: var(--ds-accent);
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.spotlightAvatar {
+  width: 5rem;
+  height: 5rem;
+  margin-top: .2rem;
+  font-size: 1.25rem;
+  border-color: color-mix(in srgb, var(--ds-accent) 48%, var(--ds-border));
+}
+
+.spotlightCard h3 {
+  margin: .15rem 0 0;
+  font-size: clamp(1.45rem, 2.6vw, 2.15rem);
+  line-height: 1.1;
+}
+
+.spotlightCard p,
+.spotlightMeta {
+  margin: 0;
+  color: var(--ds-text-secondary);
+  font-size: .8rem;
+}
+
+.spotlightActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .6rem;
+  margin-top: .35rem;
+}
+
+.confirmButton {
+  padding: 0 1rem;
+  border: 1px solid var(--ds-accent);
+  background: var(--ds-accent);
+  color: var(--ds-accent-contrast);
+}
+
+.scoringHint {
+  color: var(--ds-text-secondary);
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+.liveAnnouncement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@keyframes selection-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spotlight-enter {
+  from {
+    opacity: 0;
+    transform: scale(.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 74rem) {
+  .experience {
+    min-height: 32rem;
+  }
+
+  .header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .headerActions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .progress {
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 48rem) {
+  .experience {
+    min-height: 36rem;
+    padding: .8rem;
+  }
+
+  .headerActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .progress {
+    grid-column: 1 / -1;
+  }
+
+  .drawButton {
+    min-width: 0;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr));
+  }
+
+  .card {
+    max-width: none;
+  }
+
+  .spotlightActions {
+    width: 100%;
+    display: grid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selectingPulse,
+  .spotlightCard {
+    animation: none;
+  }
+
+  .card,
+  .progressTrack > span {
+    transition: none;
+  }
+}
