@@ -5,7 +5,7 @@ import { Badge, Button, Menu, MenuItem } from "@/components/ui";
 import styles from "./ArenaLiveChrome.module.css";
 
 export type ArenaDynamic = "runbook" | "draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss";
-export type ArenaTool = "timer" | "groups" | "attendance" | "score" | null;
+export type ArenaTool = "timer" | "groups" | "attendance" | "ranking" | "score" | null;
 
 type ArenaGlyphName =
   | "arena"
@@ -19,6 +19,7 @@ type ArenaGlyphName =
   | "timer"
   | "groups"
   | "attendance"
+  | "ranking"
   | "score";
 
 export function ArenaGlyph({ name }: { name: ArenaGlyphName }) {
@@ -42,6 +43,7 @@ export function ArenaGlyph({ name }: { name: ArenaGlyphName }) {
       {name === "timer" && <><circle {...common} cx="12" cy="13" r="7" /><path {...common} d="M12 13V9M9 2h6M12 6V4" /></>}
       {name === "groups" && <><circle {...common} cx="9" cy="9" r="3" /><circle {...common} cx="17" cy="10" r="2.3" /><path {...common} d="M3.5 19a5.5 5.5 0 0 1 11 0M14 18a4 4 0 0 1 6.5-3.1" /></>}
       {name === "attendance" && <><rect {...common} x="5" y="3" width="14" height="18" rx="2" /><path {...common} d="m8.5 12 2.2 2.2 4.8-5" /></>}
+      {name === "ranking" && <><path {...common} d="M5 19V11M12 19V5M19 19v-6" /><path {...common} d="M3 19h18" /></>}
       {name === "score" && <><circle {...common} cx="12" cy="12" r="8" /><path {...common} d="M12 8v8M8 12h8" /></>}
       {name === "arena" && <><path {...common} d="M7 9h10a4 4 0 0 1 3.7 5.5l-1 2.5a2 2 0 0 1-3.2.8L14.8 16H9.2l-1.7 1.8a2 2 0 0 1-3.2-.8l-1-2.5A4 4 0 0 1 7 9Z" /><path {...common} d="M8 12v3M6.5 13.5h3M16 12h.01M18 14h.01" /></>}
     </svg>
@@ -84,6 +86,7 @@ export function ArenaSidebar({
         type="button"
         className="arena-nav-brand"
         onClick={onGoDashboard}
+        aria-label="Voltar para a Visão geral"
         title="Voltar para a Visão geral"
       >
         <span className="topbar-brand-mark">A</span>
@@ -102,6 +105,8 @@ export function ArenaSidebar({
               type="button"
               className={activeDynamic === id ? "active" : ""}
               aria-current={activeDynamic === id ? "page" : undefined}
+              aria-label={label}
+              title={label}
               onClick={() => onSelectDynamic(id)}
             >
               <span aria-hidden="true"><ArenaGlyph name={icon} /></span>
@@ -112,19 +117,22 @@ export function ArenaSidebar({
 
         <div className="arena-cockpit-nav-group">
           <span className="arena-cockpit-nav-label">FERRAMENTAS</span>
-          <button type="button" className={activeDynamic === "runbook" ? "active" : ""} onClick={() => onSelectDynamic("runbook")}>
+          <button type="button" className={activeDynamic === "runbook" ? "active" : ""} aria-label="Roteiro da aula" title="Roteiro da aula" onClick={() => onSelectDynamic("runbook")}>
             <span aria-hidden="true"><ArenaGlyph name="runbook" /></span><strong>Roteiro da aula</strong>
           </button>
-          <button type="button" className={activeTool === "timer" ? "active" : ""} onClick={() => onSelectTool("timer")}>
+          <button type="button" className={activeTool === "timer" ? "active" : ""} aria-label="Timer" title="Timer" onClick={() => onSelectTool("timer")}>
             <span aria-hidden="true"><ArenaGlyph name="timer" /></span><strong>Timer</strong>
           </button>
-          <button type="button" className={activeTool === "groups" ? "active" : ""} onClick={() => onSelectTool("groups")}>
+          <button type="button" className={activeTool === "groups" ? "active" : ""} aria-label="Organizar turma" title="Organizar turma" onClick={() => onSelectTool("groups")}>
             <span aria-hidden="true"><ArenaGlyph name="groups" /></span><strong>Organizar turma</strong>
           </button>
-          <button type="button" className={activeTool === "attendance" ? "active" : ""} onClick={() => onSelectTool("attendance")}>
+          <button type="button" className={activeTool === "attendance" ? "active" : ""} aria-label="Presença" title="Presença" onClick={() => onSelectTool("attendance")}>
             <span aria-hidden="true"><ArenaGlyph name="attendance" /></span><strong>Presença</strong>
           </button>
-          <button type="button" className={activeTool === "score" ? "active" : ""} onClick={() => onSelectTool("score")}>
+          <button type="button" className={activeTool === "ranking" ? "active" : ""} aria-label="Ranking" title="Ranking" onClick={() => onSelectTool("ranking")}>
+            <span aria-hidden="true"><ArenaGlyph name="ranking" /></span><strong>Ranking</strong>
+          </button>
+          <button type="button" className={activeTool === "score" ? "active" : ""} aria-label="Pontuação rápida" title="Pontuação rápida" onClick={() => onSelectTool("score")}>
             <span aria-hidden="true"><ArenaGlyph name="score" /></span><strong>Pontuação rápida</strong>
           </button>
         </div>

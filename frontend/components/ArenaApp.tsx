@@ -11,6 +11,7 @@ import TimerPanel from "@/components/TimerPanel";
 import ArenaToolDrawer from "@/components/ArenaToolDrawer";
 import ParticipantSelectionExperience from "@/components/arena/selection/ParticipantSelectionExperience";
 import DrawSettingsDrawer from "@/components/arena/selection/DrawSettingsDrawer";
+import RankingPanel from "@/components/arena/ranking/RankingPanel";
 import ArenaContextRail from "@/components/arena/live/ArenaContextRail";
 import { useArenaRealtime } from "@/components/arena/live/useArenaRealtime";
 import { useArenaScoring } from "@/components/arena/live/useArenaScoring";
@@ -77,6 +78,7 @@ import {
 import { createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
 import { closeBuzzer as closeBuzzerApi, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode } from "@/lib/realtime-api";
 import { fetchSessionEventsBySession, type SessionEvent } from "@/lib/session-event-api";
+import { updateRankingPresentation, type RankingPresentationInput } from "@/lib/ranking-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
 import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
 import { activeSessionId, selectPreferredClassroomId } from "@/lib/app-state";
@@ -2270,6 +2272,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const [mechanicsBusy, setMechanicsBusy] = useState(false);
   const [publicBaseUrl, setPublicBaseUrl] = useState("");
   const [realtimeBusy, setRealtimeBusy] = useState(false);
+  const [rankingBusy, setRankingBusy] = useState(false);
   const [liveFlowState, setLiveFlowState] = useState<LiveFlowState | null>(null);
   const [liveFlowBusy, setLiveFlowBusy] = useState(false);
   const [sessionEvents, setSessionEvents] = useState<SessionEvent[]>([]);
@@ -2350,6 +2353,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     setPollState,
     quizState,
     setQuizState,
+    rankingState,
+    setRankingState,
     realtimeStatus,
   } = useArenaRealtime({
     sessionId: currentSession?.id,
@@ -2836,6 +2841,19 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       notify("Código da sessão copiado.");
     } catch {
       notify("Não foi possível copiar o código automaticamente.");
+    }
+  }
+
+  async function changeRankingPresentation(input: RankingPresentationInput) {
+    if (!currentSession || rankingBusy) return;
+    setRankingBusy(true);
+    try {
+      const next = await updateRankingPresentation(currentSession.id, input);
+      setRankingState(next);
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setRankingBusy(false);
     }
   }
 
@@ -3737,6 +3755,21 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             })}
           </div>
         </div>
+      </ArenaToolDrawer>
+
+      <ArenaToolDrawer
+        open={activeTool === "ranking"}
+        title="Ranking da sessão"
+        subtitle="Classificação baseada nos pontos acumulados nas dinâmicas desta aula."
+        size="wide"
+        onClose={closeTool}
+      >
+        <RankingPanel
+          key={currentSession?.id ?? "no-session"}
+          state={rankingState}
+          busy={rankingBusy}
+          onPresentationChange={changeRankingPresentation}
+        />
       </ArenaToolDrawer>
 
       <ArenaToolDrawer

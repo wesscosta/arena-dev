@@ -4750,3 +4750,58 @@ html[data-theme="dark"] [role="dialog"] select:focus {
   font-size: var(--font-size-xs);
   line-height: 1.45;
 }
+
+/* v0.8 · Arena session ranking — contain the compact mobile tool rail */
+@media (max-width: 48rem) {
+  .arena-cockpit-nav {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .arena-nav-brand {
+    flex: 0 0 3rem;
+    width: 3rem;
+  }
+
+  .arena-nav-scroll {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+
+  .arena-nav-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .arena-nav-professor {
+    flex: 0 0 3rem;
+    width: 3rem;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+
+/* Compact Arena navigation has explicit accessible names; hidden copy must not affect layout. */
+@media (max-width: 72rem) {
+  .arena-nav-brand-copy,
+  .arena-cockpit-nav-label,
+  .arena-cockpit-nav-group > button strong,
+  .arena-nav-professor .topbar-profile-copy,
+  .arena-nav-professor .topbar-profile-chevron {
+    display: none;
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+}

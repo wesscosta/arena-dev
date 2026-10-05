@@ -10,6 +10,7 @@ import br.com.arenadev.classroom.Enrollment;
 import br.com.arenadev.classroom.EnrollmentRepository;
 import br.com.arenadev.classroom.Student;
 import br.com.arenadev.classroom.StudentRepository;
+import br.com.arenadev.ranking.SessionRankingService;
 import br.com.arenadev.session.ClassSession;
 import br.com.arenadev.session.ClassSessionRepository;
 import br.com.arenadev.session.SessionParticipantRepository;
@@ -33,6 +34,7 @@ public class ScoreEventService {
     private final SessionParticipantRepository participantRepository;
     private final ActivityRepository activityRepository;
     private final ActivityQuestionRepository activityQuestionRepository;
+    private final SessionRankingService rankingService;
 
     public ScoreEventService(
             ScoreEventRepository scoreEventRepository,
@@ -42,7 +44,8 @@ public class ScoreEventService {
             ClassSessionRepository sessionRepository,
             SessionParticipantRepository participantRepository,
             ActivityRepository activityRepository,
-            ActivityQuestionRepository activityQuestionRepository
+            ActivityQuestionRepository activityQuestionRepository,
+            SessionRankingService rankingService
     ) {
         this.scoreEventRepository = scoreEventRepository;
         this.classroomRepository = classroomRepository;
@@ -52,6 +55,7 @@ public class ScoreEventService {
         this.participantRepository = participantRepository;
         this.activityRepository = activityRepository;
         this.activityQuestionRepository = activityQuestionRepository;
+        this.rankingService = rankingService;
     }
 
     @Transactional(readOnly = true)
@@ -69,7 +73,9 @@ public class ScoreEventService {
 
     @Transactional
     public ScoreEventView create(CreateScoreEvent command) {
-        return ScoreEventView.from(scoreEventRepository.save(build(command)), false);
+        ScoreEvent saved = scoreEventRepository.save(build(command));
+        rankingService.publishScoreChange(saved.getSession() == null ? null : saved.getSession().getId());
+        return ScoreEventView.from(saved, false);
     }
 
     @Transactional
@@ -80,9 +86,17 @@ public class ScoreEventService {
         if (commands.size() > 500) {
             throw new IllegalArgumentException("O lote excede o limite de 500 lançamentos.");
         }
-        return commands.stream()
+        List<ScoreEvent> saved = commands.stream()
                 .map(this::build)
                 .map(scoreEventRepository::save)
+                .toList();
+        saved.stream()
+                .map(ScoreEvent::getSession)
+                .filter(java.util.Objects::nonNull)
+                .map(ClassSession::getId)
+                .distinct()
+                .forEach(rankingService::publishScoreChange);
+        return saved.stream()
                 .map(event -> ScoreEventView.from(event, false))
                 .toList();
     }
@@ -111,6 +125,7 @@ public class ScoreEventService {
                 original
         );
         ScoreEvent saved = scoreEventRepository.save(reversal);
+        rankingService.publishScoreChange(saved.getSession() == null ? null : saved.getSession().getId());
         return ScoreEventView.from(saved, false);
     }
 

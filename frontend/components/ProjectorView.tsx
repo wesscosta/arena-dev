@@ -13,6 +13,7 @@ import type { TimerState } from "@/lib/timer-api";
 import type { WordCloudState } from "@/lib/word-cloud-api";
 import type { PollState } from "@/lib/poll-api";
 import { quizOptionMatchesAnswer, type QuizState } from "@/lib/quiz-api";
+import { emptyPublicRankingState, type PublicRankingState } from "@/lib/ranking-api";
 import { reconnectDelayMs, type PublicBossState, type PublicBuzzerState, type PublicRuntimeSnapshot } from "@/lib/runtime-snapshot";
 import { wordCloudFontSize } from "@/lib/word-cloud-visual";
 import {
@@ -77,6 +78,7 @@ export default function ProjectorView() {
   const [liveStage, setLiveStage] = useState<LiveStageState>(() => emptyLiveStageState());
   const [buzzerState, setBuzzerState] = useState<PublicBuzzerState>({ status: "IDLE", presses: [] });
   const [bossState, setBossState] = useState<PublicBossState | null>(null);
+  const [rankingState, setRankingState] = useState<PublicRankingState>(() => emptyPublicRankingState());
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [connection, setConnection] = useState<"offline" | "connecting" | "reconnecting" | "online">("offline");
   const [realtimeVersion, setRealtimeVersion] = useState(0);
@@ -103,6 +105,7 @@ export default function ProjectorView() {
       setLiveStage(emptyLiveStageState());
       setBuzzerState({ status: "IDLE", presses: [] });
       setBossState(null);
+      setRankingState(emptyPublicRankingState());
       setConnection("offline");
       return;
     }
@@ -127,6 +130,7 @@ export default function ProjectorView() {
         setPollState(next.runtime.poll ?? { round: null });
         setQuizState(next.runtime.quiz ?? { round: null });
         setBossState(next.runtime.boss ?? null);
+        setRankingState(next.runtime.ranking ?? emptyPublicRankingState(next.sessionId));
       })
       .catch((failure) => {
         if (!active) return;
@@ -174,6 +178,7 @@ export default function ProjectorView() {
           setPollState(runtime.poll);
           setQuizState(runtime.quiz);
           setBossState(runtime.boss ?? null);
+          setRankingState(runtime.ranking ?? emptyPublicRankingState(snapshot.sessionId));
           return;
         }
 
@@ -213,6 +218,11 @@ export default function ProjectorView() {
 
         if (event.type === "BOSS_STATE") {
           setBossState(event.payload as PublicBossState);
+          return;
+        }
+
+        if (event.type === "PUBLIC_RANKING_STATE") {
+          setRankingState(event.payload as PublicRankingState);
           return;
         }
 
@@ -287,6 +297,7 @@ export default function ProjectorView() {
       && status
       && !["FINISHED", "CANCELLED"].includes(status),
   );
+  const showRanking = rankingState.visible;
   const showWordCloud = primaryType === "WORD_CLOUD" && Boolean(wordCloudRound);
   const pollRound = pollState.round;
   const showPoll = primaryType === "POLL" && Boolean(pollRound);
@@ -412,12 +423,46 @@ export default function ProjectorView() {
         </div>
       )}
 
-      <section className={`${styles.stage} ${showWordCloud ? styles.wordCloudFocus : ""} ${showPoll ? styles.pollFocus : ""} ${showQuiz ? styles.quizFocus : ""}`}>
+      <section className={`${styles.stage} ${showRanking ? styles.rankingFocus : ""} ${showWordCloud ? styles.wordCloudFocus : ""} ${showPoll ? styles.pollFocus : ""} ${showQuiz ? styles.quizFocus : ""}`}>
         {sessionFinished ? (
           <div className={styles.waiting}>
             <span className={styles.eyebrow}>SESSÃO ENCERRADA</span>
             <h1>A aula foi finalizada</h1>
             <p>O modo projetor pode ser fechado com segurança.</p>
+          </div>
+        ) : showRanking ? (
+          <div className={styles.rankingStage} data-testid="projector-session-ranking">
+            <div className={styles.rankingHeading}>
+              <div>
+                <span className={styles.eyebrow}>RANKING DA SESSÃO</span>
+                <h1>{rankingState.limit === "TOP_5" ? "Top 5 da aula" : "Classificação da aula"}</h1>
+                <p>
+                  {rankingState.anonymized
+                    ? "Identidades reduzidas no modo projetor."
+                    : "Pontuação acumulada nas dinâmicas desta sessão."}
+                </p>
+              </div>
+              <span className={styles.rankingMeta}>
+                {rankingState.scoredParticipantCount} participante(s) pontuado(s)
+              </span>
+            </div>
+
+            {rankingState.entries.length > 0 ? (
+              <ol className={styles.rankingList}>
+                {rankingState.entries.map((entry) => (
+                  <li key={`${entry.position}-${entry.displayName}-${entry.score}`} className={styles.rankingRow}>
+                    <strong className={styles.rankingPosition}>#{entry.position}</strong>
+                    <span className={styles.rankingName}>{entry.displayName}</span>
+                    <strong className={styles.rankingScore}>{entry.score} pts</strong>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <div className={styles.rankingEmpty}>
+                <strong>Ainda não há pontuação nesta sessão.</strong>
+                <p>O ranking será atualizado quando a Arena registrar pontos.</p>
+              </div>
+            )}
           </div>
         ) : showDraw ? (
           <div className={styles.drawStage}>

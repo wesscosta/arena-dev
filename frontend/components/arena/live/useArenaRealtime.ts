@@ -13,6 +13,7 @@ import type { TimerState } from "@/lib/timer-api";
 import { fetchWordCloudState, type WordCloudState } from "@/lib/word-cloud-api";
 import { fetchPollState, type PollState } from "@/lib/poll-api";
 import { fetchQuizState, type QuizState } from "@/lib/quiz-api";
+import { fetchSessionRanking, type SessionRankingState } from "@/lib/ranking-api";
 
 type ArenaRealtimeStatus = "offline" | "connecting" | "online";
 
@@ -39,6 +40,7 @@ export function useArenaRealtime({
   const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
   const [pollState, setPollState] = useState<PollState>({ round: null });
   const [quizState, setQuizState] = useState<QuizState>({ round: null });
+  const [rankingState, setRankingState] = useState<SessionRankingState | null>(null);
   const [status, setStatus] = useState<ArenaRealtimeStatus>("offline");
   const [reconnectVersion, setReconnectVersion] = useState(0);
   const notifyRef = useRef(notify);
@@ -59,6 +61,7 @@ export function useArenaRealtime({
       setWordCloudState({ round: null });
       setPollState({ round: null });
       setQuizState({ round: null });
+      setRankingState(null);
       setStatus("offline");
       return;
     }
@@ -87,6 +90,14 @@ export function useArenaRealtime({
         if (active) notifyRef.current(messageOf(error));
       });
 
+    void fetchSessionRanking(sessionId)
+      .then((ranking) => {
+        if (active) setRankingState(ranking);
+      })
+      .catch((error) => {
+        if (active) notifyRef.current(messageOf(error));
+      });
+
     const socket = connectSessionSocket(sessionId, (event: SessionRealtimeEvent) => {
       if (!active) return;
 
@@ -105,6 +116,7 @@ export function useArenaRealtime({
       if (event.type === "WORD_CLOUD_STATE") setWordCloudState(event.payload as WordCloudState);
       if (event.type === "POLL_STATE") setPollState(event.payload as PollState);
       if (event.type === "QUIZ_STATE") setQuizState(event.payload as QuizState);
+      if (event.type === "SESSION_RANKING_STATE") setRankingState(event.payload as SessionRankingState);
       if (event.type === "PARTICIPANT_CONNECTED" || event.type === "PARTICIPANT_DISCONNECTED") {
         participantsChangedRef.current(sessionId);
       }
@@ -142,6 +154,8 @@ export function useArenaRealtime({
     setPollState,
     quizState,
     setQuizState,
+    rankingState,
+    setRankingState,
     realtimeStatus: status,
   };
 }

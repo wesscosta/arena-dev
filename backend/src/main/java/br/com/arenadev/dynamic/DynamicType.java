@@ -5,5 +5,6 @@ public enum DynamicType {
     GROUPS,
     BOSS_BATTLE,
     ARENA,
-    LIVE_STAGE
+    LIVE_STAGE,
+    RANKING
 }

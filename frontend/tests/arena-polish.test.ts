@@ -163,7 +163,7 @@ test("Arena separates primary dynamics from contextual tools", () => {
   const toolState = read("components/arena/live/useArenaToolState.ts");
 
   assert.match(chrome, /export type ArenaDynamic = "runbook" \| "draw"/);
-  assert.match(chrome, /export type ArenaTool = "timer" \| "groups" \| "attendance" \| "score" \| null/);
+  assert.match(chrome, /export type ArenaTool = "timer" \| "groups" \| "attendance" \| "ranking" \| "score" \| null/);
   assert.match(toolState, /const \[activeDynamic, setActiveDynamic\]/);
   assert.match(toolState, /const \[activeTool, setActiveTool\]/);
   assert.match(app, /useArenaToolState\(\)/);
@@ -177,9 +177,11 @@ test("Arena contextual tools open without replacing the primary dynamic", () => 
   assert.match(chrome, /onSelectTool\("timer"\)/);
   assert.match(chrome, /onSelectTool\("groups"\)/);
   assert.match(chrome, /onSelectTool\("attendance"\)/);
+  assert.match(chrome, /onSelectTool\("ranking"\)/);
   assert.match(chrome, /onSelectTool\("score"\)/);
   assert.match(app, /open=\{activeTool === "timer"\}/);
   assert.match(app, /open=\{activeTool === "attendance"\}/);
+  assert.match(app, /open=\{activeTool === "ranking"\}/);
 });
 
 test("Arena tool drawer is modal, keyboard dismissible, focus-contained and mobile aware", () => {

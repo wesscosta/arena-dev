@@ -3,6 +3,7 @@ package br.com.arenadev.realtime;
 import br.com.arenadev.dynamic.MechanicsService;
 import br.com.arenadev.poll.PollService;
 import br.com.arenadev.quiz.QuizService;
+import br.com.arenadev.ranking.SessionRankingService;
 import br.com.arenadev.stage.LiveStageService;
 import br.com.arenadev.timer.SessionTimerService;
 import br.com.arenadev.wordcloud.WordCloudService;
@@ -31,6 +32,7 @@ class SessionRuntimeSnapshotServiceTest {
         QuizService quizService = mock(QuizService.class);
         LiveStageService liveStageService = mock(LiveStageService.class);
         MechanicsService mechanicsService = mock(MechanicsService.class);
+        SessionRankingService rankingService = mock(SessionRankingService.class);
 
         var stage = mock(LiveStageService.StateView.class);
         var publicBuzzer = new BuzzerService.PublicBuzzerStateView(
@@ -74,7 +76,12 @@ class SessionRuntimeSnapshotServiceTest {
         when(pollService.participantState(sessionId, participantId)).thenReturn(pollParticipant);
         when(quizService.publicState(sessionId)).thenReturn(quiz);
         when(quizService.participantState(sessionId, participantId)).thenReturn(quizParticipant);
+        var hiddenRanking = new SessionRankingService.PublicRankingStateView(
+                sessionId, false, true, br.com.arenadev.ranking.RankingLimit.TOP_5,
+                false, 0, List.of(), java.time.Instant.now()
+        );
         when(mechanicsService.getRuntime(sessionId)).thenReturn(runtime);
+        when(rankingService.hiddenPublicState(sessionId)).thenReturn(hiddenRanking);
 
         SessionRuntimeSnapshotService service = new SessionRuntimeSnapshotService(
                 buzzerService,
@@ -83,7 +90,8 @@ class SessionRuntimeSnapshotServiceTest {
                 pollService,
                 quizService,
                 liveStageService,
-                mechanicsService
+                mechanicsService,
+                rankingService
         );
 
         var snapshot = service.participant(sessionId, participantId);
@@ -96,8 +104,11 @@ class SessionRuntimeSnapshotServiceTest {
         assertThat(snapshot.quiz()).isSameAs(quiz);
         assertThat(snapshot.quizParticipant()).isSameAs(quizParticipant);
         assertThat(snapshot.boss()).isEqualTo(boss);
+        assertThat(snapshot.ranking()).isSameAs(hiddenRanking);
 
         verify(buzzerService).projectorState(sessionId);
+        verify(rankingService).hiddenPublicState(sessionId);
+        verify(rankingService, never()).publicState(sessionId);
         verify(buzzerService, never()).state(sessionId);
     }
 }
