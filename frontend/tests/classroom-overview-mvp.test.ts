@@ -35,12 +35,16 @@ test("classroom overview stays focused on discovery and entry", () => {
   assert.doesNotMatch(overview, /Arquivada do fluxo ativo/);
 });
 
-test("overview cards are bounded and consume semantic theme tokens", () => {
+test("overview cards fill the content width with a stable selected-card cue", () => {
   const css = read("styles/classroom-overview.css");
   const layout = read("app/layout.tsx");
   const tokens = read("styles/tokens.css");
 
-  assert.match(css, /repeat\(auto-fill, minmax\(17rem, 19rem\)\)/);
+  assert.match(css, /grid-template-columns:\s*repeat\(6, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.overview-class-card\.selected::before/);
+  assert.match(css, /width:\s*0\.25rem/);
+  assert.match(css, /\.overview-class-card-open[\s\S]*flex-direction:\s*column/);
+  assert.match(css, /\.overview-class-meta[\s\S]*margin-top:\s*auto/);
   assert.match(css, /background:\s*var\(--ds-surface\)/);
   assert.match(css, /border:\s*1px solid var\(--ds-border\)/);
   assert.match(tokens, /--ds-shadow-panel:\s*var\(--theme-shadow-panel\)/);

@@ -186,6 +186,26 @@ test.describe("Classroom overview MVP contract", () => {
 
     await navigation.getByRole("button", { name: "Visão geral" }).click();
     await expect(page.getByRole("heading", { name: "Suas turmas" })).toBeVisible();
+
+    const selectedCard = page.getByTestId("classroom-overview-card").filter({ hasText: activeClassroom.name });
+    await expect(selectedCard).toHaveClass(/selected/);
+    const selectedCue = await selectedCard.evaluate((element) => {
+      const cue = window.getComputedStyle(element, "::before");
+      return { content: cue.content, width: Number.parseFloat(cue.width) };
+    });
+    expect(selectedCue.content).not.toBe("none");
+    expect(selectedCue.width).toBeGreaterThanOrEqual(3);
+
+    const [metricsBox, gridBox] = await Promise.all([
+      page.locator(".overview-metrics").boundingBox(),
+      page.locator(".classroom-card-grid").boundingBox(),
+    ]);
+    expect(metricsBox).not.toBeNull();
+    expect(gridBox).not.toBeNull();
+    if (metricsBox && gridBox) {
+      expect(Math.abs(metricsBox.x - gridBox.x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(metricsBox.width - gridBox.width)).toBeLessThanOrEqual(1);
+    }
   });
 
   test("survives every target breakpoint and both themes without overflow", async ({ page }) => {
