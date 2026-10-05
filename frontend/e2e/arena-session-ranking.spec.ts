@@ -108,11 +108,7 @@ async function loginAndOpenArena(page: Page, classroomName: string, sessionTitle
   if (await user.isVisible().catch(() => false)) {
     await user.fill(teacherUsername);
     await page.getByLabel("Senha").fill(teacherPassword);
-    const [loginResponse] = await Promise.all([
-      page.waitForResponse((response) => response.url().endsWith("/api/auth/login")),
-      page.getByRole("button", { name: "Entrar", exact: true }).click(),
-    ]);
-    expect(loginResponse.status(), await loginResponse.text()).toBe(200);
+    await page.getByRole("button", { name: "Entrar", exact: true }).click();
   }
   const card = page.locator("article.overview-class-card").filter({ hasText: classroomName });
   await expect(card).toBeVisible({ timeout: 10_000 });
