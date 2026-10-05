@@ -7,18 +7,24 @@ function read(relativePath: string): string {
   return readFileSync(join(process.cwd(), relativePath), "utf8");
 }
 
-test("Timer drawer uses the wide tool surface and block-based configuration", () => {
+test("Timer drawer uses one configuration card with explicit internal sections", () => {
   const app = read("components/ArenaApp.tsx");
   const panel = read("components/TimerPanel.tsx");
   const css = read("styles/timer-panel.css");
   const layout = read("app/layout.tsx");
 
   assert.match(app, /open=\{activeTool === "timer"\}[\s\S]*size="wide"/);
-  assert.match(panel, /timer-config-block/);
-  assert.match(panel, /timer-field-block/);
-  assert.match(panel, /timer-display-block/);
+  assert.match(panel, /timer-config-card/);
+  assert.match(panel, /Configuração do timer/);
+  assert.match(panel, /Tempo da atividade/);
+  assert.match(panel, /Conteúdo/);
+  assert.match(panel, /Exibição/);
+  assert.match(panel, /Alertas locais/);
   assert.match(panel, /timer-actions-block/);
-  assert.match(css, /\.timer-setup-grid[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.doesNotMatch(panel, /<details className="timer-settings-panel">/);
+  assert.doesNotMatch(panel, />Configurar</);
+  assert.match(css, /\.timer-config-card[\s\S]*border:\s*1px solid var\(--ds-border\)/);
+  assert.match(css, /\.timer-config-section[\s\S]*border-top:\s*1px solid var\(--ds-border-subtle\)/);
   assert.match(css, /\.timer-duration-editor[\s\S]*repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /\.timer-preset-chips[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/);
   assert.match(layout, /import "\.\.\/styles\/timer-panel\.css"/);

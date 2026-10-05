@@ -269,10 +269,14 @@ test.describe.serial("Classroom Home responsive contract", () => {
       await page.getByRole("button", { name: "Timer", exact: true }).click();
       const timerDialog = page.getByRole("dialog", { name: "Timer" });
       await expect(timerDialog).toBeVisible();
-      await expect(timerDialog.getByText("Duração do timer", { exact: true })).toBeVisible();
-      await expect(timerDialog.getByText("Título", { exact: true })).toBeVisible();
-      await expect(timerDialog.getByText("Instruções", { exact: false })).toBeVisible();
+      await expect(timerDialog.getByText("Configuração do timer", { exact: true })).toBeVisible();
+      await expect(timerDialog.getByText("Tempo da atividade", { exact: true })).toBeVisible();
+      await expect(timerDialog.getByText("Conteúdo", { exact: true })).toBeVisible();
+      await expect(timerDialog.getByText("Exibição", { exact: true })).toBeVisible();
+      await expect(timerDialog.getByText("Alertas locais", { exact: true })).toBeVisible();
       await expect(timerDialog.getByText("Ações", { exact: true })).toBeVisible();
+      await expect(timerDialog.getByText("Configurar", { exact: true })).toHaveCount(0);
+      await expect(timerDialog.locator(".timer-config-card")).toHaveCount(1);
 
       for (const viewport of [
         { width: 1366, height: 768 },

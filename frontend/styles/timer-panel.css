@@ -1,4 +1,4 @@
-/* Timer tool — drawer-first layout with block-based configuration ownership. */
+/* Timer tool — one configuration surface, explicit sections, actions outside. */
 .timer-workspace {
   gap: var(--space-3);
 }
@@ -43,54 +43,34 @@
   font-size: var(--font-size-2xl);
 }
 
-.timer-setup-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
-  padding-top: var(--space-3);
-}
-
-.timer-config-block,
-.timer-field-block,
-.timer-display-block,
-.timer-actions-block,
-.timer-settings-panel {
+.timer-config-card {
+  width: 100%;
+  margin-top: var(--space-3);
+  overflow: hidden;
   border: 1px solid var(--ds-border);
   border-radius: var(--radius-lg);
   background: var(--ds-surface-raised);
   box-shadow: var(--ds-shadow-panel);
 }
 
-.timer-duration-box {
-  width: 100%;
+.timer-config-card-header {
   padding: var(--space-4);
-  border-color: var(--ds-border);
-  background: var(--ds-surface-raised);
+  background: color-mix(in srgb, var(--ds-accent) 3%, var(--ds-surface-raised));
 }
 
-.timer-config-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.timer-config-heading > div {
+.timer-config-card-header > div {
   display: grid;
   gap: var(--space-1);
 }
 
-.timer-config-heading .field-label,
-.timer-details-box .timer-field-block > span,
-.timer-display-block strong,
-.timer-actions-copy strong {
+.timer-config-card-header strong {
   color: var(--ds-text-primary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-bold);
+  font-size: var(--font-size-md);
 }
 
-.timer-config-heading small,
-.timer-details-box .timer-field-block > small,
+.timer-config-card-header small,
+.timer-config-section-heading small,
+.timer-field-block > small,
 .timer-display-block small,
 .timer-actions-copy small {
   color: var(--ds-text-secondary);
@@ -98,11 +78,30 @@
   line-height: var(--line-normal);
 }
 
-.timer-details-box .timer-field-block > span em {
-  color: var(--ds-text-tertiary);
-  font-size: var(--font-size-xs);
-  font-style: normal;
-  font-weight: var(--font-medium);
+.timer-config-section {
+  padding: var(--space-4);
+  border-top: 1px solid var(--ds-border-subtle);
+}
+
+.timer-config-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.timer-config-section-heading > div {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.timer-config-section-heading h4 {
+  margin: 0;
+  color: var(--ds-text-primary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-snug);
 }
 
 .timer-duration-editor {
@@ -111,7 +110,6 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: stretch;
   gap: var(--space-3);
-  margin-top: var(--space-4);
 }
 
 .timer-duration-colon {
@@ -209,22 +207,34 @@
   color: var(--ds-accent-strong);
 }
 
-.timer-details-box {
-  width: 100%;
+.timer-config-fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
-  padding: 0;
-  border: 0;
-  background: transparent;
+  gap: var(--space-4);
 }
 
-.timer-details-box .timer-field-block {
+.timer-config-fields .timer-field-block {
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
-  padding: var(--space-4);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.timer-field-block > span {
+  color: var(--ds-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-bold);
+}
+
+.timer-field-block > span em {
+  color: var(--ds-text-tertiary);
+  font-size: var(--font-size-xs);
+  font-style: normal;
+  font-weight: var(--font-medium);
 }
 
 .timer-field-block .input,
@@ -246,17 +256,37 @@
   font-variant-numeric: tabular-nums;
 }
 
-.timer-display-block {
-  min-height: 0;
+.timer-config-preferences {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.timer-config-preference-group + .timer-config-preference-group {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--ds-border-subtle);
+}
+
+.timer-config-preference-group .timer-config-section-heading {
+  margin-bottom: var(--space-2);
+}
+
+.timer-display-block,
+.timer-alert-options .timer-option-row {
+  min-height: var(--target-comfortable);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
   gap: var(--space-3);
-  padding: var(--space-4);
+  padding: var(--space-2) 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--ds-text-primary);
 }
 
-.timer-display-block input {
+.timer-display-block input,
+.timer-alert-options .timer-option-row input {
   width: 1.15rem;
   height: 1.15rem;
   margin-top: 0.1rem;
@@ -268,19 +298,50 @@
   gap: var(--space-1);
 }
 
+.timer-display-block strong {
+  color: var(--ds-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-bold);
+}
+
+.timer-alert-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.timer-alert-options .timer-option-row + .timer-option-row {
+  border-top: 1px solid var(--ds-border-subtle);
+}
+
+.timer-alert-options .timer-option-row span {
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-normal);
+}
+
 .timer-setup-actions.timer-actions-block {
   width: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   margin-top: var(--space-3);
-  padding: var(--space-4);
-  border-top: 1px solid var(--ds-border);
+  padding: var(--space-3) 0 0;
+  border: 0;
+  border-top: 1px solid var(--ds-border-subtle);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .timer-actions-copy {
   display: grid;
   gap: var(--space-1);
+}
+
+.timer-actions-copy strong {
+  color: var(--ds-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-bold);
 }
 
 .timer-action-buttons {
@@ -292,29 +353,6 @@
 .timer-action-buttons .button {
   width: 100%;
   min-height: var(--control-lg);
-}
-
-.timer-settings-panel {
-  overflow: hidden;
-  border-color: var(--ds-border);
-  background: var(--ds-surface-raised);
-}
-
-.timer-settings-panel > summary {
-  padding: var(--space-4);
-}
-
-.timer-settings-content {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-2);
-  padding: 0 var(--space-4) var(--space-4);
-}
-
-.timer-settings-content .timer-option-row {
-  min-height: var(--target-comfortable);
-  border-color: var(--ds-border-subtle);
-  background: var(--ds-surface-subtle);
 }
 
 @media (max-width: 42rem) {
