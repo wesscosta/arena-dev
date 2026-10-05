@@ -1,4 +1,5 @@
-import { apiFetch, browserApiBaseUrl } from "./auth-api";
+import { browserApiBaseUrl } from "./auth-api";
+import { apiRequest } from "./http/client";
 import { normalizeJoinCode } from "./app-state";
 
 export type JoinCode = {
@@ -68,7 +69,6 @@ export type SessionRealtimeEvent = {
   payload: unknown;
 };
 
-type ApiErrorBody = { message?: string };
 
 export class RealtimeApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -77,67 +77,68 @@ export class RealtimeApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit, credentials: RequestCredentials = "include"): Promise<T> {
-  const response = await apiFetch(path, init, credentials);
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new RealtimeApiError(body?.message || `Falha na API em tempo real (${response.status}).`, response.status);
-  }
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+function realtimeRequest<T>(
+  path: string,
+  init?: RequestInit,
+  credentials: RequestCredentials = "include",
+): Promise<T> {
+  return apiRequest<T>(path, init, {
+    credentials,
+    errorMessage: (status) => `Falha na API em tempo real (${status}).`,
+    errorFactory: (message, status) => new RealtimeApiError(message, status),
+  });
 }
 
 export function fetchJoinCode(sessionId: string) {
-  return request<JoinCode>(`/api/sessions/${sessionId}/join-code`);
+  return realtimeRequest<JoinCode>(`/api/sessions/${sessionId}/join-code`);
 }
 
 export function rotateJoinCode(sessionId: string) {
-  return request<JoinCode>(`/api/sessions/${sessionId}/join-code/rotate`, { method: "POST" });
+  return realtimeRequest<JoinCode>(`/api/sessions/${sessionId}/join-code/rotate`, { method: "POST" });
 }
 
 export function fetchPublicSession(code: string) {
-  return request<PublicSession>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}`, undefined, "omit");
+  return realtimeRequest<PublicSession>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}`, undefined, "omit");
 }
 
 export function joinSession(code: string, identity: string, rememberDevice = true) {
-  return request<StudentJoinResult>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}`, {
+  return realtimeRequest<StudentJoinResult>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}`, {
     method: "POST",
     body: JSON.stringify({ identity, rememberDevice }),
   }, "omit");
 }
 
 export function recognizeRememberedDevice(code: string, deviceToken: string) {
-  return request<DeviceRecognition>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}/device/recognize`, {
+  return realtimeRequest<DeviceRecognition>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}/device/recognize`, {
     method: "POST",
     body: JSON.stringify({ deviceToken }),
   }, "omit");
 }
 
 export function joinRememberedDevice(code: string, deviceToken: string) {
-  return request<StudentJoinAccess>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}/device`, {
+  return realtimeRequest<StudentJoinAccess>(`/api/join/${encodeURIComponent(normalizeJoinCode(code))}/device`, {
     method: "POST",
     body: JSON.stringify({ deviceToken }),
   }, "omit");
 }
 
 export function revokeRememberedDevice(deviceToken: string) {
-  return request<void>("/api/join/device/revoke", {
+  return realtimeRequest<void>("/api/join/device/revoke", {
     method: "POST",
     body: JSON.stringify({ deviceToken }),
   }, "omit");
 }
 
 export function fetchBuzzerState(sessionId: string) {
-  return request<BuzzerState>(`/api/sessions/${sessionId}/buzzer`);
+  return realtimeRequest<BuzzerState>(`/api/sessions/${sessionId}/buzzer`);
 }
 
 export function openBuzzer(sessionId: string) {
-  return request<BuzzerState>(`/api/sessions/${sessionId}/buzzer/open`, { method: "POST" });
+  return realtimeRequest<BuzzerState>(`/api/sessions/${sessionId}/buzzer/open`, { method: "POST" });
 }
 
 export function closeBuzzer(sessionId: string) {
-  return request<BuzzerState>(`/api/sessions/${sessionId}/buzzer/close`, { method: "POST" });
+  return realtimeRequest<BuzzerState>(`/api/sessions/${sessionId}/buzzer/close`, { method: "POST" });
 }
 
 export function joinQrImageUrl(sessionId: string, baseUrl: string, code: string, size = 280) {

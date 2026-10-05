@@ -5,7 +5,7 @@ import {
   fetchAssessmentFeedback,
   publishAssessmentFeedback,
   saveAssessmentFeedbackDraft,
-  useLatestAiFeedback,
+  useLatestAiFeedback as fetchLatestAiFeedback,
   type AssessmentFeedback,
 } from "@/lib/assessment-feedback-api";
 import styles from "./AssessmentFeedbackPanel.module.css";
@@ -40,7 +40,7 @@ export default function AssessmentFeedbackPanel({ activityId, submissionId }: { 
   async function fromAi() {
     setBusy(true); setError("");
     try {
-      const next = await useLatestAiFeedback(activityId, submissionId);
+      const next = await fetchLatestAiFeedback(activityId, submissionId);
       setFeedback(next); setDraft(next.feedbackDraft ?? "");
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Nenhuma sugestão textual de IA disponível."); }
     finally { setBusy(false); }

@@ -5,21 +5,23 @@ import { resolve } from "node:path";
 
 const arena = readFileSync(resolve(process.cwd(), "components/ArenaApp.tsx"), "utf8");
 const cta = readFileSync(resolve(process.cwd(), "lib/classroom-arena-cta.ts"), "utf8");
-const css = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
+const moduleCss = readFileSync(
+  resolve(process.cwd(), "components/ClassroomHome.module.css"),
+  "utf8",
+);
 
-test("classroom home differentiates start and resume Arena CTAs", () => {
-  assert.match(arena, /arena-launch-button-\$\{arenaCta\.tone\}/);
+test("classroom Home maps Arena lifecycle to locally owned CTA states", () => {
+  assert.match(arena, /classroomHomeStyles\.sessionActionStart/);
+  assert.match(arena, /classroomHomeStyles\.sessionActionResume/);
+  assert.match(arena, /classroomHomeStyles\.sessionActionDisabled/);
   assert.match(cta, /tone:\s*"resume"/);
   assert.match(cta, /tone:\s*"start"/);
-  assert.match(css, /width:\s*min\(90%,1120px\)/);
+  assert.match(cta, /tone:\s*"disabled"/);
+  assert.match(moduleCss, /\.sessionActionStart\s*\{/);
+  assert.match(moduleCss, /\.sessionActionResume\s*\{/);
 });
 
-test("home CTA keeps session lifecycle inside Arena", () => {
-  assert.doesNotMatch(arena, /arena-launch-overflow/);
-  assert.doesNotMatch(arena, /quickFinishSession/);
-});
-
-test("Home CTA keeps session ending inside the Arena", () => {
+test("Home keeps session ending inside Arena", () => {
   assert.doesNotMatch(arena, /arena-launch-overflow/);
   assert.doesNotMatch(arena, /quickFinishSession/);
   assert.doesNotMatch(arena, /Encerrar aula em andamento/);

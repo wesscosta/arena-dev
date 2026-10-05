@@ -48,3 +48,13 @@ test("Menu and Breadcrumb expose semantic navigation", () => {
   assert.match(breadcrumb, /aria-label=\{label\}/);
   assert.match(breadcrumb, /aria-current/);
 });
+
+
+test("RadioCard keeps native radio semantics inside a reusable choice surface", () => {
+  const source = read("components/ui/RadioCard.tsx");
+  assert.match(source, /type="radio"/);
+  assert.match(source, /name=\{name\}/);
+  assert.match(source, /checked=\{checked\}/);
+  assert.match(source, /disabled=\{disabled\}/);
+  assert.match(source, /onChange=\{onChange\}/);
+});

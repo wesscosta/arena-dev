@@ -148,6 +148,8 @@ printf 'Executando gate frontend...\n'
   cd frontend
   npm ci
   npm audit --omit=dev --audit-level=high
+  npm run lint
+  npm run format:check
   npm test
   npm run typecheck
   npm run build

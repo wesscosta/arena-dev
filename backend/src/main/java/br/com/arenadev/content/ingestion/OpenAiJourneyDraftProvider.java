@@ -22,18 +22,20 @@ public class OpenAiJourneyDraftProvider implements JourneyDraftAiProvider {
     private final String baseUrl;
     private final String model;
     private final HttpClient httpClient;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
 
     public OpenAiJourneyDraftProvider(
             @Value("${ARENA_AI_API_KEY:}") String apiKey,
             @Value("${ARENA_AI_BASE_URL:https://api.openai.com/v1}") String baseUrl,
-            @Value("${ARENA_AI_MODEL:gpt-5.6-luna}") String model
+            @Value("${ARENA_AI_MODEL:gpt-5.6-luna}") String model,
+            JsonMapper json
     ) {
         this.apiKey = apiKey == null ? "" : apiKey.trim();
         this.baseUrl = (baseUrl == null ? "https://api.openai.com/v1" : baseUrl.trim()).replaceAll("/+$", "");
         this.model = model == null || model.isBlank() ? "gpt-5.6-luna" : model.trim();
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build();
-    }
+            this.json = json;
+}
     @Override
     public boolean isConfigured() {
         return !apiKey.isBlank();

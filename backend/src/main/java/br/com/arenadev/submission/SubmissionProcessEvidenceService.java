@@ -17,17 +17,19 @@ public class SubmissionProcessEvidenceService {
     private final ActivitySubmissionRepository submissionRepository;
     private final SubmissionItemRepository itemRepository;
     private final SubmissionProcessEventRepository eventRepository;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
 
     public SubmissionProcessEvidenceService(
             ActivitySubmissionRepository submissionRepository,
             SubmissionItemRepository itemRepository,
-            SubmissionProcessEventRepository eventRepository
+            SubmissionProcessEventRepository eventRepository,
+            JsonMapper json
     ) {
         this.submissionRepository = submissionRepository;
         this.itemRepository = itemRepository;
         this.eventRepository = eventRepository;
-    }
+            this.json = json;
+}
 
     @Transactional
     public void recordItemSaved(ActivitySubmission submission, SubmissionItem item) {

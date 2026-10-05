@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
 export type ParticipantSubmissionKind = "QUESTION_RESPONSE" | "TEXT" | "LINK" | "CODE" | "FILE" | "ARTIFACT";
 
@@ -38,31 +38,35 @@ export type ParticipantActivity = {
   feedbackPublishedAt: string | null;
 };
 
-type ApiErrorBody = { message?: string };
 
-async function request<T>(code: string, token: string, path = "", init?: RequestInit): Promise<T> {
-  const response = await apiFetch(`/api/join/${encodeURIComponent(code)}/activities${path}`, {
-    ...init,
-    headers: {
-      "X-Participant-Token": token,
-      "Content-Type": "application/json",
-      ...init?.headers,
+function participantActivityRequest<T>(
+  code: string,
+  token: string,
+  path = "",
+  init?: RequestInit,
+): Promise<T> {
+  return apiRequest<T>(
+    `/api/join/${encodeURIComponent(code)}/activities${path}`,
+    {
+      ...init,
+      headers: {
+        "X-Participant-Token": token,
+        ...init?.headers,
+      },
     },
-  }, "omit");
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new Error(body?.message || `Falha ao acessar atividades (${response.status}).`);
-  }
-  return (await response.json()) as T;
+    {
+      credentials: "omit",
+      errorMessage: (status) => `Falha ao acessar atividades (${status}).`,
+    },
+  );
 }
 
 export function fetchParticipantActivities(code: string, token: string) {
-  return request<ParticipantActivity[]>(code, token);
+  return participantActivityRequest<ParticipantActivity[]>(code, token);
 }
 
 export function startParticipantActivity(code: string, token: string, activityId: string) {
-  return request<ParticipantActivity>(code, token, `/${activityId}/start`, { method: "POST" });
+  return participantActivityRequest<ParticipantActivity>(code, token, `/${activityId}/start`, { method: "POST" });
 }
 
 export function saveParticipantSubmissionItem(
@@ -73,7 +77,7 @@ export function saveParticipantSubmissionItem(
   itemId: string,
   input: { kind: ParticipantSubmissionKind; questionId?: string | null; position: number; content: unknown },
 ) {
-  return request<ParticipantActivity>(
+  return participantActivityRequest<ParticipantActivity>(
     code,
     token,
     `/${activityId}/submissions/${submissionId}/items/${itemId}`,
@@ -82,7 +86,7 @@ export function saveParticipantSubmissionItem(
 }
 
 
-export async function recordParticipantPaste(
+export function recordParticipantPaste(
   code: string,
   token: string,
   activityId: string,
@@ -90,23 +94,22 @@ export async function recordParticipantPaste(
   itemId: string | null,
   characterCount: number,
 ) {
-  const response = await apiFetch(
+  return apiRequest<void>(
     `/api/join/${encodeURIComponent(code)}/activities/${activityId}/submissions/${submissionId}/evidence/paste`,
     {
       method: "POST",
-      headers: {
-        "X-Participant-Token": token,
-        "Content-Type": "application/json",
-      },
+      headers: { "X-Participant-Token": token },
       body: JSON.stringify({ itemId, characterCount }),
     },
-    "omit",
+    {
+      credentials: "omit",
+      errorMessage: (status) => `Falha ao registrar evento de processo (${status}).`,
+    },
   );
-  if (!response.ok) throw new Error(`Falha ao registrar evento de processo (${response.status}).`);
 }
 
 export function submitParticipantActivity(code: string, token: string, activityId: string, submissionId: string) {
-  return request<ParticipantActivity>(
+  return participantActivityRequest<ParticipantActivity>(
     code,
     token,
     `/${activityId}/submissions/${submissionId}/submit`,

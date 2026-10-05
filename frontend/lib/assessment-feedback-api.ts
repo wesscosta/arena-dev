@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
 export type AssessmentFeedback = {
   assessmentId: string;
@@ -9,16 +9,11 @@ export type AssessmentFeedback = {
   publishedAt: string | null;
 };
 
-type ApiErrorBody = { message?: string };
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, init);
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new Error(body?.message || `Falha ao trabalhar com feedback (${response.status}).`);
-  }
-  return (await response.json()) as T;
+function feedbackRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha ao trabalhar com feedback (${status}).`,
+  });
 }
 
 function base(activityId: string, submissionId: string) {
@@ -26,20 +21,20 @@ function base(activityId: string, submissionId: string) {
 }
 
 export function fetchAssessmentFeedback(activityId: string, submissionId: string) {
-  return request<AssessmentFeedback>(base(activityId, submissionId));
+  return feedbackRequest<AssessmentFeedback>(base(activityId, submissionId));
 }
 
 export function saveAssessmentFeedbackDraft(activityId: string, submissionId: string, feedback: string) {
-  return request<AssessmentFeedback>(`${base(activityId, submissionId)}/draft`, {
+  return feedbackRequest<AssessmentFeedback>(`${base(activityId, submissionId)}/draft`, {
     method: "PUT",
     body: JSON.stringify({ feedback }),
   });
 }
 
 export function useLatestAiFeedback(activityId: string, submissionId: string) {
-  return request<AssessmentFeedback>(`${base(activityId, submissionId)}/from-ai`, { method: "POST" });
+  return feedbackRequest<AssessmentFeedback>(`${base(activityId, submissionId)}/from-ai`, { method: "POST" });
 }
 
 export function publishAssessmentFeedback(activityId: string, submissionId: string) {
-  return request<AssessmentFeedback>(`${base(activityId, submissionId)}/publish`, { method: "POST" });
+  return feedbackRequest<AssessmentFeedback>(`${base(activityId, submissionId)}/publish`, { method: "POST" });
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { JourneyContentDetailView } from "@/lib/study-api";
-import styles from "@/app/learn/study.module.css";
+import styles from "./study.module.css";
 
 function safeExternalUrl(value: string | null) {
   if (!value) return null;

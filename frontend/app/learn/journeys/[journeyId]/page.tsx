@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { fetchStudyJourney, fetchTeacherStudyPreview, studyDeviceClaims, type JourneyContentView, type JourneyStudyView } from "@/lib/study-api";
-import styles from "../../study.module.css";
+import styles from "@/components/study/study.module.css";
 import { studyExcerpt } from "@/lib/study-excerpt";
 
 function moduleProgress(contents: JourneyContentView[]) {
@@ -44,9 +44,9 @@ function learnerJourneyDescription(description: string | null | undefined) {
 }
 
 function currentContent(journey: JourneyStudyView) {
-  for (const module of journey.modules) {
-    const content = module.contents.find((item) => item.state === "CURRENT");
-    if (content) return { moduleTitle: module.title, content };
+  for (const journeyModule of journey.modules) {
+    const content = journeyModule.contents.find((item) => item.state === "CURRENT");
+    if (content) return { moduleTitle: journeyModule.title, content };
   }
   return null;
 }
@@ -71,8 +71,8 @@ export default function JourneyStudyPage() {
   useEffect(() => {
     if (!journey || collapseInitialized || teacherPreview) return;
     const completed = journey.modules
-      .filter((module) => module.contents.length > 0 && module.contents.every((content) => content.state === "COMPLETED"))
-      .map((module, index) => module.id || `module-${index}`);
+      .filter((journeyModule) => journeyModule.contents.length > 0 && journeyModule.contents.every((content) => content.state === "COMPLETED"))
+      .map((journeyModule, index) => journeyModule.id || `module-${index}`);
     setCollapsedModules(new Set(completed));
     setCollapseInitialized(true);
   }, [journey, collapseInitialized, teacherPreview]);
@@ -109,24 +109,24 @@ export default function JourneyStudyPage() {
 
     <div className={styles.studyModulesToolbar}>
       <span>{journey.modules.length} capítulos</span>
-      <div><button type="button" onClick={() => collapseAllModules(journey.modules.map((module, index) => module.id || `module-${index}`))}>Recolher tudo</button><button type="button" onClick={expandAllModules}>Expandir tudo</button></div>
+      <div><button type="button" onClick={() => collapseAllModules(journey.modules.map((journeyModule, index) => journeyModule.id || `module-${index}`))}>Recolher tudo</button><button type="button" onClick={expandAllModules}>Expandir tudo</button></div>
     </div>
-    <div className={styles.studyModules}>{journey.modules.map((module, moduleIndex) => {
-      const progress = moduleProgress(module.contents);
+    <div className={styles.studyModules}>{journey.modules.map((journeyModule, moduleIndex) => {
+      const progress = moduleProgress(journeyModule.contents);
       const done = !teacherPreview && progress.total > 0 && progress.completed === progress.total;
-      const moduleKey = module.id || `module-${moduleIndex}`;
+      const moduleKey = journeyModule.id || `module-${moduleIndex}`;
       const collapsed = collapsedModules.has(moduleKey);
-      const hasCurrent = !teacherPreview && module.contents.some((content) => content.state === "CURRENT");
+      const hasCurrent = !teacherPreview && journeyModule.contents.some((content) => content.state === "CURRENT");
       return <section className={`${styles.studyModule} ${collapsed ? styles.studyModuleCollapsed : ""} ${hasCurrent ? styles.studyModuleActive : ""}`} key={moduleKey} aria-labelledby={`module-${moduleIndex}`}>
         <div className={`${styles.studyModuleIndex} ${done ? styles.studyModuleIndexDone : ""} ${hasCurrent ? styles.studyModuleIndexCurrent : ""}`}>{done ? <CheckIcon /> : hasCurrent ? <CurrentIcon /> : <span>{String(moduleIndex + 1).padStart(2, "0")}</span>}</div>
         <div className={styles.studyModuleBody}>
           <header className={styles.studyModuleHeader}>
             <button type="button" className={styles.studyModuleToggle} onClick={() => toggleModule(moduleKey)} aria-expanded={!collapsed} aria-controls={`module-contents-${moduleIndex}`}>
-              <span className={styles.studyModuleHeading}><h2 id={`module-${moduleIndex}`}>{module.title}</h2>{module.description && <p>{module.description}</p>}</span>
+              <span className={styles.studyModuleHeading}><h2 id={`module-${moduleIndex}`}>{journeyModule.title}</h2>{journeyModule.description && <p>{journeyModule.description}</p>}</span>
               <span className={styles.studyModuleMeta}><span className={styles.studyModuleCount}>{teacherPreview ? `${progress.total} conteúdos` : `${progress.completed}/${progress.total}`}</span><span className={styles.studyModuleChevron} aria-hidden="true"><ChevronIcon collapsed={collapsed} /></span></span>
             </button>
           </header>
-          {!collapsed && <div className={styles.studyContents} id={`module-contents-${moduleIndex}`}>{module.contents.map((content) => <ContentRow key={content.id} journeyId={journey.id} content={content} preview={teacherPreview} />)}</div>}
+          {!collapsed && <div className={styles.studyContents} id={`module-contents-${moduleIndex}`}>{journeyModule.contents.map((content) => <ContentRow key={content.id} journeyId={journey.id} content={content} preview={teacherPreview} />)}</div>}
         </div>
       </section>;
     })}</div>

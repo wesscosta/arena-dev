@@ -1,9 +1,7 @@
 import type { ScoreEvent, Student } from "./types";
 import type { ExternalResultPlatform, ParsedExternalResultRow } from "./external-results";
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
-
-type ApiErrorBody = { message?: string; fields?: Record<string, string> };
 
 export class ExternalResultsApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -12,17 +10,11 @@ export class ExternalResultsApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+function externalResultsRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha ao processar relatório externo (${status}).`,
+    errorFactory: (message, status) => new ExternalResultsApiError(message, status),
   });
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new ExternalResultsApiError(body?.message || `Falha ao processar relatório externo (${response.status}).`, response.status);
-  }
-  return (await response.json()) as T;
 }
 
 export type ExternalResultRowInput = ParsedExternalResultRow & { studentId?: string };
@@ -104,21 +96,21 @@ export type ExternalResultImportSummary = {
 };
 
 export async function previewExternalResults(activityId: string, input: ExternalResultRequest) {
-  return request<ExternalResultPreview>(`/api/activities/${activityId}/external-results/preview`, {
+  return externalResultsRequest<ExternalResultPreview>(`/api/activities/${activityId}/external-results/preview`, {
     method: "POST",
     body: JSON.stringify(input),
   });
 }
 
 export async function importExternalResults(activityId: string, input: ExternalResultRequest) {
-  return request<ExternalResultImportResult>(`/api/activities/${activityId}/external-results/import`, {
+  return externalResultsRequest<ExternalResultImportResult>(`/api/activities/${activityId}/external-results/import`, {
     method: "POST",
     body: JSON.stringify(input),
   });
 }
 
 export async function fetchExternalResultImports(activityId: string) {
-  return request<ExternalResultImportSummary[]>(`/api/activities/${activityId}/external-results/imports`);
+  return externalResultsRequest<ExternalResultImportSummary[]>(`/api/activities/${activityId}/external-results/imports`);
 }
 
 export function mapImportedScoreEvents(rows: ExternalResultImportResult["scoreEvents"]): ScoreEvent[] {

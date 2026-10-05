@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 import { normalizeJoinCode } from "./app-state";
 
 export type QuizStatus = "READY" | "OPEN" | "LOCKED" | "REVEALED" | "CLOSED";
@@ -59,7 +59,6 @@ export type QuizParticipantState = {
   updatedAt?: string | null;
 };
 
-type ApiErrorBody = { message?: string };
 
 export class QuizApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -68,15 +67,11 @@ export class QuizApiError extends Error {
   }
 }
 
-async function teacherRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, init);
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new QuizApiError(body?.message || `Falha na API de Quiz (${response.status}).`, response.status);
-  }
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+function teacherRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na API de Quiz (${status}).`,
+    errorFactory: (message, status) => new QuizApiError(message, status),
+  });
 }
 
 function quizPath(sessionId: string, roundId?: string) {
@@ -130,26 +125,22 @@ export function emptyQuizParticipantState(): QuizParticipantState {
   };
 }
 
-export async function sendQuizAnswer(
+export function sendQuizAnswer(
   code: string,
   roundId: string,
   token: string,
   answer: string | boolean,
 ): Promise<QuizParticipantState> {
-  const response = await apiFetch(
+  return apiRequest<QuizParticipantState>(
     `/api/join/${encodeURIComponent(normalizeJoinCode(code))}/quiz/${encodeURIComponent(roundId)}/answer`,
     {
       method: "POST",
       body: JSON.stringify({ token, answer }),
     },
-    "omit",
+    {
+      credentials: "omit",
+      errorMessage: (status) => `Falha ao enviar resposta do Quiz (${status}).`,
+      errorFactory: (message, status) => new QuizApiError(message, status),
+    },
   );
-
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new QuizApiError(body?.message || `Falha ao enviar resposta do Quiz (${response.status}).`, response.status);
-  }
-
-  return (await response.json()) as QuizParticipantState;
 }

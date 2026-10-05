@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
 export type LiveStageType =
   | "IDLE"
@@ -51,7 +51,6 @@ export type ActivateLiveStageInput = {
   timerOverlay?: boolean;
 };
 
-type ApiErrorBody = { message?: string };
 
 export class LiveStageApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -76,39 +75,26 @@ export function emptyLiveStageState(sessionId = ""): LiveStageState {
   };
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+function liveStageRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na API do palco ao vivo (${status}).`,
+    errorFactory: (message, status) => new LiveStageApiError(message, status),
   });
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try {
-      body = (await response.json()) as ApiErrorBody;
-    } catch {
-      body = undefined;
-    }
-    throw new LiveStageApiError(
-      body?.message || `Falha na API do palco ao vivo (${response.status}).`,
-      response.status,
-    );
-  }
-  return (await response.json()) as T;
 }
 
 export function fetchLiveStageState(sessionId: string) {
-  return request<LiveStageState>(`/api/sessions/${sessionId}/stage`);
+  return liveStageRequest<LiveStageState>(`/api/sessions/${sessionId}/stage`);
 }
 
 export function activateLiveStage(sessionId: string, input: ActivateLiveStageInput) {
-  return request<LiveStageState>(`/api/sessions/${sessionId}/stage`, {
+  return liveStageRequest<LiveStageState>(`/api/sessions/${sessionId}/stage`, {
     method: "PUT",
     body: JSON.stringify(input),
   });
 }
 
 export function clearLiveStage(sessionId: string) {
-  return request<LiveStageState>(`/api/sessions/${sessionId}/stage/idle`, {
+  return liveStageRequest<LiveStageState>(`/api/sessions/${sessionId}/stage/idle`, {
     method: "POST",
   });
 }

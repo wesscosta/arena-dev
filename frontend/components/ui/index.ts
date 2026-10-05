@@ -8,5 +8,6 @@ export { default as Field } from "./Field";
 export { default as IconButton } from "./IconButton";
 export { default as LiveRegion } from "./LiveRegion";
 export { Menu, MenuItem } from "./Menu";
+export { default as RadioCard } from "./RadioCard";
 export { default as Tabs } from "./Tabs";
 export type { TabItem } from "./Tabs";

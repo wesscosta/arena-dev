@@ -62,7 +62,8 @@ class ProjectorSocketHandlerTest {
                 wordCloudService,
                 pollService,
                 liveStageService,
-                runtimeSnapshotService
+                runtimeSnapshotService,
+                tools.jackson.databind.json.JsonMapper.builder().build()
         );
 
         handler.afterConnectionEstablished(socket);

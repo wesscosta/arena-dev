@@ -25,16 +25,18 @@ public class SessionEventService {
     private final SessionEventRepository eventRepository;
     private final ClassroomRepository classroomRepository;
     private final ClassSessionRepository sessionRepository;
-    private final JsonMapper objectMapper = JsonMapper.builder().build();
+    private final JsonMapper objectMapper;
 
     public SessionEventService(
             SessionEventRepository eventRepository,
             ClassroomRepository classroomRepository,
-            ClassSessionRepository sessionRepository
+            ClassSessionRepository sessionRepository,
+            JsonMapper objectMapper
     ) {
         this.eventRepository = eventRepository;
         this.classroomRepository = classroomRepository;
         this.sessionRepository = sessionRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional(readOnly = true)

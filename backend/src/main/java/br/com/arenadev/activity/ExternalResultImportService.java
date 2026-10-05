@@ -25,19 +25,21 @@ public class ExternalResultImportService {
     private final EnrollmentRepository enrollmentRepository;
     private final ExternalResultImportRepository importRepository;
     private final ScoreEventService scoreEventService;
-    private final JsonMapper objectMapper = JsonMapper.builder().build();
+    private final JsonMapper objectMapper;
 
     public ExternalResultImportService(
             ActivityRepository activityRepository,
             EnrollmentRepository enrollmentRepository,
             ExternalResultImportRepository importRepository,
-            ScoreEventService scoreEventService
+            ScoreEventService scoreEventService,
+            JsonMapper objectMapper
     ) {
         this.activityRepository = activityRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.importRepository = importRepository;
         this.scoreEventService = scoreEventService;
-    }
+            this.objectMapper = objectMapper;
+}
 
     @Transactional(readOnly = true)
     public Preview preview(UUID activityId, ImportRequest request) {

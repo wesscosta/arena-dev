@@ -6,13 +6,14 @@
 >
 > **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Execução atual:** 16.4 Student Experience está concluído tecnicamente até 16.4D — Achievements Foundation. A linha 16.5 — Content Library & Reuse já possui 16.5.0, 16.5A, 16.5B, 16.5B.1 e 16.5B.2 implementados; o próximo incremento planejado é 16.5C — Semantic Content Foundation & Ingestion → Library.
+> **Execução atual:** 16.4 Student Experience está concluído tecnicamente até 16.4D e 16.5 — Content Library & Reuse até 16.5B.2. Em 30/09/2026 foi aberto um **Gate de Estabilização Arquitetural v0.8**; 16.5C e novos incrementos funcionais ficam pausados até o fechamento dos gates de segurança, arquitetura, design system e qualidade.
 
 ## Modelo do produto
 
 ```text
-Visão geral = nível do sistema
+Visão geral = nível do sistema e descoberta de turmas
 Turma       = contexto pedagógico
+Biblioteca  = acervo global reutilizável do professor
 Arena       = operação da aula ao vivo
 Entregas    = fluxo assíncrono de submissão, correção e feedback
 Integrações = ponte provider-independent com plataformas educacionais
@@ -26,7 +27,7 @@ Arena Dev não pretende ser um LMS completo. O produto concentra a condução da
 - turmas, estudantes, matrículas e presença;
 - sessão de aula com estado autoritativo no backend;
 - Sorteio, Nuvem de Palavras, Votação, Quiz, Buzzer e Boss Battle;
-- Timer sincronizado;
+- Timer sincronizado em drawer contextual compacto e responsivo;
 - grupos, duplas e trios;
 - Projetor público;
 - entrada do aluno por `/join`;
@@ -117,7 +118,7 @@ flowchart LR
     P["Projetor"] --> F
     F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
     F <-->|"WebSocket"| B
-    B --> D["PostgreSQL 17 + Flyway V1–V35"]
+    B --> D["PostgreSQL 17 + Flyway V1–V37"]
 ```
 
 Princípios:
@@ -179,15 +180,19 @@ O `16.3.8 — Content Ingestion & Structured Import` evoluiu para um pipeline co
 
 O `16.4 — Student Experience Shell & Workspace Visibility` já introduz Início, Jornadas, Entrar ao vivo e Conquistas no mesmo shell. `/join` continua público para QR/código e compartilha o mesmo runtime de `/learn/live`. O `16.4A` separa **matrícula** de **exposição permanente de conteúdo**: o professor decide se uma turma fica disponível no espaço de estudo, sem afetar a Arena ao vivo. A autorização está centralizada na Study API e preserva o progresso ao ocultar/reativar a turma.
 
-`16.5 — Content Library & Reuse` está marcado no roadmap como evolução futura de `LearningResource`: um acervo reutilizável de materiais vindos de Markdown/Notion/arquivo/IA, consumível por Journey, Activity e Arena sem criar automaticamente cards para os alunos.
+`16.5 — Content Library & Reuse` já está implementado até `16.5B.2`: `LearningResource` sustenta a Biblioteca global do professor, autoria/reuso e snapshots estáveis Biblioteca → Journey. `16.5C–F` permanecem na sequência de fechamento da v0.8 após o Gate de Estabilização Arquitetural. A evolução pedagógica posterior foi separada em um eixo `17.x`: taxonomia de conhecimento, roadmaps/editais, banco de questões com proveniência, validação por evidências, Mastery, revisão e progressão visual. Nesse eixo, **ler/concluir não equivale a dominar**, e questões de concurso podem validar aprendizagem somente por conjuntos com cobertura e critérios auditáveis.
 
 Estado final do `16.0 — Professor Arena Experience`:
 
 - Arena orientada por ações, sem as tabs antigas de Condução/Dinâmicas/Tempo/Organização;
 - sidebar persistente para Dinâmicas e Ferramentas;
 - workspace full-width e rail contextual de participantes/sessão;
-- Timer, Organização e Presença em ferramentas contextuais;
+- Timer, Organização, Presença e **Ranking da sessão** em ferramentas contextuais;
+- Timer consolidado em uma única superfície de configuração, com presets em linha única sem scroll horizontal e baseline 1366×768 sem scroll vertical obrigatório;
 - Pontuação Rápida transversal;
+- Ranking deriva exclusivamente de `ScoreEvent` da sessão, suporta empates, Top 5/Todos, atualização realtime e projeção explícita com opção de ocultar nomes;
+- a projeção do Ranking é paralela ao `LiveStage`, preservando a dinâmica em andamento quando o professor a exibe/oculta;
+- Ranking da sessão não é Mastery nem leaderboard permanente: não existem ranking global, ligas, temporadas ou recompensa automática por posição;
 - Sorteio Inteligente 2.0 com seleção autoritativa no backend, marcador fixo e animação com aceleração/desaceleração;
 - roleta SVG circular com slots adaptativos, quantidade ímpar de casas visíveis e slot neutro para preservar percepção de justiça em turmas pares;
 - rail de participantes com filtro Presentes/Todos e ferramentas contextuais estáveis para Timer, Organização, Presença e Pontuação Rápida;
@@ -214,6 +219,8 @@ Backend: `http://localhost:8080`
 Readiness: `http://localhost:8080/api/health/ready`
 
 Liveness: `http://localhost:8080/api/health/live`
+
+Em acesso pela rede local, compartilhe apenas o frontend, por exemplo `http://<IP-DA-MAQUINA>:3000`. No perfil Docker de desenvolvimento, o browser usa essa mesma origem para `/api/*` e `/ws/*`, e o Next.js encaminha as requisições para o backend pela rede interna do Compose. Assim, Join, Learn e tempo real não dependem de a porta `:8080` estar acessível no dispositivo do aluno.
 
 ## Gates de desenvolvimento
 
@@ -245,13 +252,17 @@ O histórico detalhado de release permanece em `docs/RELEASE_0_6.md`. A document
 
 - [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
 - [`docs/ROADMAP_0_8.md`](docs/ROADMAP_0_8.md)
+- [`docs/ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](docs/ARCHITECTURE_STABILIZATION_GATE_V0_8.md)
 - [`docs/INCREMENT_16_3.md`](docs/INCREMENT_16_3.md)
 - [`docs/INCREMENT_16_2.md`](docs/INCREMENT_16_2.md)
 - [`docs/INCREMENT_16_0.md`](docs/INCREMENT_16_0.md)
+- [`docs/INCREMENT_16_0R_SESSION_RANKING.md`](docs/INCREMENT_16_0R_SESSION_RANKING.md)
 - [`docs/ROADMAP_0_7.md`](docs/ROADMAP_0_7.md)
 - [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md)
 - [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)
 - [`docs/ACCESSIBILITY.md`](docs/ACCESSIBILITY.md)
+- [`docs/LEARNING_VALIDATION_ROADMAP.md`](docs/LEARNING_VALIDATION_ROADMAP.md)
+- [`docs/CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](docs/CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md)
 - [`docs/adr/README.md`](docs/adr/README.md)
 
 Histórico da v0.6:
@@ -268,7 +279,7 @@ Histórico da v0.6:
 - `v0.5.0` — histórica;
 - `v0.6.0` — baseline técnica encerrada e congelada;
 - `v0.7.0` — Educational Integrations; publicada e encerrada;
-- `v0.8` — Professor Experience & Journey MVP; linha ativa com Student Experience concluída tecnicamente até 16.4D e Content Library implementada até 16.5B.2; próximo incremento planejado: 16.5C.
+- `v0.8` — Professor Experience & Journey MVP; linha ativa com Student Experience concluída até 16.4D e Content Library até 16.5B.2; Gate de Estabilização Arquitetural em execução antes de 16.5C.
 
 ## Licença
 
@@ -325,9 +336,11 @@ A Biblioteca agora possui workspace global do professor, autoria manual, busca, 
 
 ### Sequência de fechamento da v0.8
 
-Após o refinamento `16.5B.1`, a linha ativa segue por `16.5C` (fundação semântica e ingestão), `16.5D` (organização/discovery), `16.5E` (revision awareness e hardening de snapshots) e `16.5F` (reuso avançado/fechamento da Biblioteca). Em seguida, a v0.8 entra em **Release Hardening** transversal antes do release candidate.
+Após `16.5B.2`, a linha ativa passa primeiro pelo **Gate de Estabilização Arquitetural v0.8**. Com o gate fechado, a sequência funcional retoma em `16.5C` (fundação semântica e ingestão), `16.5D` (organização/discovery), `16.5E` (revision awareness e hardening de snapshots) e `16.5F` (reuso avançado/fechamento da Biblioteca), seguida do Release Hardening final.
 
 A futura `16.6 — Knowledge & Retrieval Foundation` fica fora do gate da v0.8: chunks, índices lexical/vetorial, embeddings, avaliação de retrieval e RAG/LLM só serão iniciados depois da estabilização do corpus e da Biblioteca.
+
+O eixo pedagógico seguinte é `17.x` e também não bloqueia a v0.8. A ordem começa por auditoria do modelo de evidência, depois taxonomia e roadmaps/editais, banco de questões com proveniência, Assessment Blueprint + Mastery, revisão/retenção e somente então progressão visual/avatar. Detalhes em [`docs/LEARNING_VALIDATION_ROADMAP.md`](docs/LEARNING_VALIDATION_ROADMAP.md).
 
 ### 16.5B.2 — Journey Snapshot Integrity Hardening — implementado
 

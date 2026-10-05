@@ -1,5 +1,5 @@
 
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 import type { SubmissionDashboardStatus } from "./submission-dashboard-api";
 
 export type SubmissionReviewItem = {
@@ -39,21 +39,18 @@ export type SubmissionReview = {
   assessmentUpdatedAt: string;
 };
 
-async function request(path: string, init?: RequestInit): Promise<SubmissionReview> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+function submissionReviewRequest(path: string, init?: RequestInit): Promise<SubmissionReview> {
+  return apiRequest<SubmissionReview>(path, init, {
+    errorMessage: (status) => `Falha ao carregar correção (${status}).`,
   });
-  if (!response.ok) throw new Error(`Falha ao carregar correção (${response.status}).`);
-  return (await response.json()) as SubmissionReview;
 }
 
 export function openSubmissionReview(activityId: string, submissionId: string) {
-  return request(`/api/activities/${activityId}/submissions/${submissionId}/review/open`, { method: "POST", body: "{}" });
+  return submissionReviewRequest(`/api/activities/${activityId}/submissions/${submissionId}/review/open`, { method: "POST", body: "{}" });
 }
 
 export function saveSubmissionReviewNotes(activityId: string, submissionId: string, teacherNotes: string) {
-  return request(`/api/activities/${activityId}/submissions/${submissionId}/review/notes`, {
+  return submissionReviewRequest(`/api/activities/${activityId}/submissions/${submissionId}/review/notes`, {
     method: "PUT",
     body: JSON.stringify({ teacherNotes }),
   });

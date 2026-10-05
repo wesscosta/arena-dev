@@ -529,90 +529,6 @@
   }
 }
 
-/* ---------------------------------------------------------
- * v0.4.0 final polish — Classroom home hierarchy
- * --------------------------------------------------------- */
-
-.classroom-home-hero-v2 {
-  gap: var(--space-4);
-  padding: var(--space-6) var(--space-8);
-}
-
-.classroom-home-hero-main {
-  gap: var(--space-6);
-}
-
-.classroom-manage-button {
-  flex: 0 0 auto;
-  opacity: .72;
-  border-color: var(--ds-border-subtle);
-  color: var(--ds-text-secondary);
-  transition:
-    opacity var(--motion-fast) var(--ease-standard),
-    color var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard),
-    background var(--motion-fast) var(--ease-standard),
-    transform var(--motion-fast) var(--ease-standard);
-}
-
-.classroom-manage-button:hover:not(:disabled),
-.classroom-manage-button:focus-visible {
-  opacity: 1;
-  color: var(--ds-text-primary);
-  border-color: rgba(88, 243, 167, .18);
-  background: rgba(88, 243, 167, .04);
-}
-
-.classroom-home-hero-cta {
-  width: 100%;
-  padding-top: var(--space-1);
-}
-
-.arena-launch-button-centered {
-  width: clamp(32rem, 62%, 58rem);
-  min-width: 0;
-  border-color: rgba(88, 243, 167, .46);
-  background: rgba(88, 243, 167, .66);
-  box-shadow:
-    0 10px 28px rgba(49, 225, 137, .08),
-    0 0 0 1px rgba(88, 243, 167, .025);
-  transition:
-    background var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard),
-    box-shadow var(--motion-fast) var(--ease-standard),
-    transform var(--motion-fast) var(--ease-standard);
-}
-
-.arena-launch-button-centered.live {
-  border-color: rgba(88, 243, 167, .5);
-  background: rgba(88, 243, 167, .70);
-  box-shadow:
-    0 11px 30px rgba(49, 225, 137, .09),
-    0 0 0 1px rgba(88, 243, 167, .03);
-}
-
-.arena-launch-button-centered:hover:not(:disabled),
-.arena-launch-button-centered:focus-visible,
-.arena-launch-button-centered.live:hover:not(:disabled),
-.arena-launch-button-centered.live:focus-visible {
-  border-color: var(--accent);
-  background: var(--accent);
-  box-shadow:
-    0 18px 42px rgba(49, 225, 137, .18),
-    0 0 0 1px rgba(88, 243, 167, .08);
-  transform: translateY(-2px);
-}
-
-@media (max-width: 900px) {
-  .classroom-home-hero-v2 {
-    padding: var(--space-5);
-  }
-
-  .arena-launch-button-centered {
-    width: 100%;
-  }
-}
-
 /* 14.11B — typography normalization for the live workspace */
 .arena-session-workspace {
   font-size: var(--font-size-md);
@@ -647,25 +563,132 @@
 }
 
 /* v0.8 · 16.0 — Professor Arena Experience */
-.arena-cockpit {
+.arena-live-shell {
+  width: 100%;
+  min-height: 100dvh;
   display: grid;
-  grid-template-columns: 13rem minmax(0, 1fr);
+  grid-template-columns: 14.5rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0;
+  box-sizing: border-box;
+}
+.arena-live-shell > .arena-session-workspace {
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+.arena-cockpit {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 15.5rem;
   gap: var(--space-4);
   align-items: start;
 }
 .arena-cockpit-nav {
   position: sticky;
-  top: var(--space-4);
+  top: 0;
+  height: 100dvh;
   display: grid;
-  gap: var(--space-4);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  min-height: 0;
   padding: var(--space-4);
+  overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, transparent), transparent 36%), var(--surface);
+}
+.arena-cockpit-main {
+  min-width: 0;
+}
+.arena-nav-scroll {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 .arena-cockpit-nav-group {
   display: grid;
   gap: .4rem;
+}
+.arena-nav-brand {
+  appearance: none;
+  width: 100%;
+  min-height: 3rem !important;
+  display: grid;
+  grid-template-columns: 2.35rem minmax(0, 1fr) !important;
+  align-items: center;
+  gap: .65rem;
+  padding: 0 0 .7rem !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--text) !important;
+  text-align: left;
+  cursor: pointer;
+}
+.arena-nav-brand .topbar-brand-mark {
+  width: 2.35rem;
+  height: 2.35rem;
+}
+.arena-nav-brand-copy {
+  display: grid;
+  gap: .12rem;
+}
+.arena-nav-brand-copy strong {
+  font-size: .9rem !important;
+  letter-spacing: .04em;
+}
+.arena-nav-brand-copy small {
+  color: var(--muted);
+  font-size: .68rem;
+}
+.arena-nav-professor {
+  width: 100%;
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.arena-nav-professor > div {
+  width: 100%;
+  display: block;
+}
+.arena-nav-professor .arena-live-profile {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: 2.15rem minmax(0, 1fr) .75rem;
+  gap: .55rem;
+  padding: .4rem .45rem;
+  color: var(--text);
+}
+
+.arena-nav-professor .topbar-profile-copy {
+  min-width: 0;
+}
+
+.arena-nav-professor .topbar-profile-copy strong {
+  font-size: .78rem;
+  line-height: 1.2;
+}
+
+.arena-nav-professor .topbar-profile-copy small {
+  margin-top: .15rem;
+  font-size: .68rem;
+  line-height: 1.2;
+}
+
+.arena-nav-professor .topbar-profile-chevron {
+  justify-self: end;
 }
 .arena-cockpit-nav-group + .arena-cockpit-nav-group {
   padding-top: var(--space-4);
@@ -678,7 +701,7 @@
   font-weight: 800;
   letter-spacing: .12em;
 }
-.arena-cockpit-nav button {
+.arena-cockpit-nav-group > button {
   min-height: 2.85rem;
   display: grid;
   grid-template-columns: 1.7rem minmax(0, 1fr);
@@ -693,7 +716,7 @@
   cursor: pointer;
   transition: background .16s ease, border-color .16s ease, color .16s ease;
 }
-.arena-cockpit-nav button > span {
+.arena-cockpit-nav-group > button > span {
   width: 1.7rem;
   height: 1.7rem;
   display: grid;
@@ -701,18 +724,18 @@
   border-radius: 8px;
   background: var(--surface-2);
 }
-.arena-cockpit-nav button strong {
+.arena-cockpit-nav-group > button strong {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: .78rem;
   white-space: nowrap;
 }
-.arena-cockpit-nav button:hover,
-.arena-cockpit-nav button:focus-visible {
+.arena-cockpit-nav-group > button:hover,
+.arena-cockpit-nav-group > button:focus-visible {
   color: var(--text);
   background: color-mix(in srgb, var(--accent) 5%, var(--surface));
 }
-.arena-cockpit-nav button.active {
+.arena-cockpit-nav-group > button.active {
   border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
   background: color-mix(in srgb, var(--accent) 11%, var(--surface));
   color: var(--accent);
@@ -721,14 +744,21 @@
   min-width: 0;
 }
 @media (max-width: 72rem) {
-  .arena-cockpit {
+  .arena-live-shell {
     grid-template-columns: 4.75rem minmax(0, 1fr);
   }
   .arena-cockpit-nav {
     padding: .55rem;
   }
+  .arena-nav-brand {
+    grid-template-columns: 1fr !important;
+    justify-items: center;
+  }
+  .arena-nav-brand-copy,
   .arena-cockpit-nav-label,
-  .arena-cockpit-nav button strong {
+  .arena-cockpit-nav-group > button strong,
+  .arena-nav-professor .topbar-profile-copy,
+  .arena-nav-professor .topbar-profile-chevron {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -736,18 +766,27 @@
     clip: rect(0 0 0 0);
     white-space: nowrap;
   }
-  .arena-cockpit-nav button {
+  .arena-cockpit-nav-group > button {
     grid-template-columns: 1fr;
     justify-items: center;
     padding-inline: .35rem;
   }
+  .arena-cockpit {
+    grid-template-columns: minmax(0, 1fr) 14rem;
+  }
 }
 @media (max-width: 48rem) {
+  .arena-live-shell {
+    display: block;
+    padding: .5rem;
+  }
   .arena-cockpit {
     display: block;
   }
   .arena-cockpit-nav {
     position: static;
+    width: 100%;
+    height: auto;
     display: flex;
     overflow-x: auto;
     gap: .4rem;
@@ -763,7 +802,7 @@
     border-top: 0;
     border-left: 1px solid var(--border);
   }
-  .arena-cockpit-nav button {
+  .arena-cockpit-nav-group > button {
     width: 2.8rem;
     min-height: 2.8rem;
   }
@@ -837,10 +876,13 @@
   }
 }
 
-/* v0.8 · Arena fidelity pass — shell + smart draw workspace */
-.arena-cockpit {
-  grid-template-columns: 12.5rem minmax(0, 1fr) 17rem;
-  gap: .85rem;
+/* v0.8 · Arena fidelity pass — shell + smart draw workspace
+ * The global Arena sidebar now lives outside .arena-cockpit.
+ * Keep this grid restricted to workspace content + context rail.
+ */
+.arena-live-shell .arena-cockpit {
+  grid-template-columns: minmax(0, 1fr) 15.5rem;
+  gap: var(--space-4);
 }
 .arena-cockpit-main {
   min-width: 0;
@@ -2506,63 +2548,6 @@
   width: 3rem;
 }
 
-.draw-settings-panel {
-  display: grid;
-  gap: .85rem;
-}
-
-.draw-settings-mode,
-.draw-settings-rules,
-.draw-settings-explainer {
-  display: grid;
-  gap: .55rem;
-  padding: .8rem;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  background: color-mix(in srgb, var(--surface-2) 84%, transparent);
-}
-
-.draw-settings-label {
-  color: var(--muted);
-  font-size: .6rem;
-  font-weight: 800;
-  letter-spacing: .1em;
-}
-
-.draw-settings-mode-card,
-.draw-settings-rule {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: .65rem;
-  align-items: start;
-}
-
-.draw-settings-mode-card strong,
-.draw-settings-rule strong,
-.draw-settings-explainer strong {
-  font-size: .72rem;
-}
-
-.draw-settings-mode-card p,
-.draw-settings-rule p,
-.draw-settings-explainer p {
-  margin: .15rem 0 0;
-  color: var(--muted);
-  font-size: .61rem;
-  line-height: 1.5;
-}
-
-.draw-settings-rule > span {
-  width: 1.15rem;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
-  border-radius: 50%;
-  color: var(--accent);
-  font-size: .6rem;
-}
-
 @media (max-width: 90rem) {
   .arena-content-full .arena-cockpit {
     grid-template-columns: 4.65rem minmax(0, 1fr) 15rem;
@@ -2626,18 +2611,18 @@
     grid-template-columns: 13.25rem minmax(0, 1fr) 17rem;
   }
 
-  .arena-cockpit-nav button strong {
+  .arena-cockpit-nav-group > button strong {
     overflow: visible;
     text-overflow: clip;
   }
 }
 
-.arena-cockpit-nav button > span {
+.arena-cockpit-nav-group > button > span {
   color: currentColor;
   font-size: .82rem;
 }
 
-.arena-cockpit-nav button.active > span {
+.arena-cockpit-nav-group > button.active > span {
   background: color-mix(in srgb, var(--accent) 12%, var(--surface-2));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
 }
@@ -2735,18 +2720,18 @@
     padding: .6rem;
   }
 
-  .arena-cockpit-nav button {
+  .arena-cockpit-nav-group > button {
     grid-template-columns: 1.55rem minmax(0, 1fr);
     gap: .45rem;
     padding-inline: .5rem;
   }
 
-  .arena-cockpit-nav button > span {
+  .arena-cockpit-nav-group > button > span {
     width: 1.55rem;
     height: 1.55rem;
   }
 
-  .arena-cockpit-nav button strong {
+  .arena-cockpit-nav-group > button strong {
     font-size: .72rem;
   }
 
@@ -2785,7 +2770,7 @@
   }
 
   .arena-cockpit-nav-label,
-  .arena-cockpit-nav button strong {
+  .arena-cockpit-nav-group > button strong {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -2798,7 +2783,7 @@
     padding: .55rem;
   }
 
-  .arena-cockpit-nav button {
+  .arena-cockpit-nav-group > button {
     grid-template-columns: 1fr;
     justify-items: center;
     padding-inline: .35rem;
@@ -2906,10 +2891,12 @@
 }
 
 .arena-live-topbar {
+  width: 100%;
   min-height: 4.75rem;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-5);
-  padding: .65rem var(--content-gutter);
+  padding: .65rem 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -3076,24 +3063,24 @@
   font-size: var(--font-size-xs);
 }
 
-.arena-content-full .arena-cockpit-nav button {
+.arena-content-full .arena-cockpit-nav-group > button {
   min-height: var(--target-comfortable);
 }
 
-.arena-content-full .arena-cockpit-nav button strong {
+.arena-content-full .arena-cockpit-nav-group > button strong {
   font-size: var(--font-size-xs);
 }
 
 @media (min-width: 90.01rem) {
   .arena-content-full .arena-cockpit {
-    grid-template-columns: 15rem minmax(0, 1fr) 18rem;
+    grid-template-columns: minmax(0, 1fr) 18rem;
     gap: .8rem;
   }
 }
 
 @media (max-width: 90rem) {
   .arena-content-full .arena-cockpit {
-    grid-template-columns: 12.5rem minmax(0, 1fr) 16rem;
+    grid-template-columns: minmax(0, 1fr) 16rem;
     gap: .7rem;
   }
 
@@ -3109,6 +3096,15 @@
 }
 
 @media (max-width: 74rem) {
+  .arena-content-full .arena-cockpit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .arena-content-full .arena-context-rail {
+    grid-column: 1;
+    grid-template-columns: minmax(0, 1fr) 15rem;
+  }
+
   .arena-live-topbar {
     grid-template-columns: auto minmax(0, 1fr) auto;
     padding-inline: var(--space-3);
@@ -3137,7 +3133,7 @@
   .arena-nav-back strong,
   .arena-nav-arena-card > div,
   .arena-cockpit-nav-label,
-  .arena-cockpit-nav button strong {
+  .arena-cockpit-nav-group > button strong {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -3156,8 +3152,6 @@
 
 /* v0.8 · 16.0F.6 — composition and density pass */
 .arena-live-topbar {
-  width: calc(100% + 1.75rem);
-  margin: -.75rem -.875rem 0;
   position: sticky;
   top: 0;
   z-index: 30;
@@ -3376,10 +3370,6 @@
 }
 
 @media (max-width: 74rem) {
-  .arena-live-topbar {
-    width: calc(100% + 1.75rem);
-  }
-
   .arena-content-full .draw-wheel-hero-stage {
     width: 100%;
     margin-inline: 0;
@@ -3388,11 +3378,6 @@
 }
 
 @media (max-width: 48rem) {
-  .arena-live-topbar {
-    width: calc(100% + 1.25rem);
-    margin: -.625rem -.625rem 0;
-  }
-
   .arena-live-context {
     display: none;
   }
@@ -4519,7 +4504,7 @@
   box-shadow: none;
 }
 
-.arena-cockpit-nav button.active {
+.arena-cockpit-nav-group > button.active {
   border-color: color-mix(in srgb, var(--accent) 62%, var(--border));
   background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
   box-shadow: inset 3px 0 0 var(--accent);
@@ -4764,4 +4749,59 @@ html[data-theme="dark"] [role="dialog"] select:focus {
   max-width: 18rem;
   font-size: var(--font-size-xs);
   line-height: 1.45;
+}
+
+/* v0.8 · Arena session ranking — contain the compact mobile tool rail */
+@media (max-width: 48rem) {
+  .arena-cockpit-nav {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .arena-nav-brand {
+    flex: 0 0 3rem;
+    width: 3rem;
+  }
+
+  .arena-nav-scroll {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+
+  .arena-nav-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .arena-nav-professor {
+    flex: 0 0 3rem;
+    width: 3rem;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+
+/* Compact Arena navigation has explicit accessible names; hidden copy must not affect layout. */
+@media (max-width: 72rem) {
+  .arena-nav-brand-copy,
+  .arena-cockpit-nav-label,
+  .arena-cockpit-nav-group > button strong,
+  .arena-nav-professor .topbar-profile-copy,
+  .arena-nav-professor .topbar-profile-chevron {
+    display: none;
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
 }

@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public interface ScoreEventRepository extends JpaRepository<ScoreEvent, UUID> {
     List<ScoreEvent> findByClassroomIdOrderByCreatedAtAsc(UUID classroomId);
+    List<ScoreEvent> findBySessionIdOrderByCreatedAtAsc(UUID sessionId);
     boolean existsByReversalOfId(UUID eventId);
     boolean existsByClassroomId(UUID classroomId);
 }

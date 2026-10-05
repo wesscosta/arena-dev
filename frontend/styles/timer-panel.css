@@ -1,0 +1,403 @@
+/* Timer tool — one configuration surface, explicit sections, actions outside. */
+.timer-workspace {
+  gap: var(--space-2);
+}
+
+.timer-setup-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.timer-selected-duration {
+  flex: 0 0 auto;
+  min-width: 6.5rem;
+  text-align: right;
+}
+
+.timer-selected-duration small,
+.timer-selected-duration strong {
+  display: block;
+}
+
+.timer-selected-duration small {
+  color: var(--ds-text-tertiary);
+  font-size: var(--font-size-2xs);
+  letter-spacing: .1em;
+}
+
+.timer-selected-duration strong {
+  margin-top: var(--space-1);
+  color: var(--ds-accent-strong);
+  font-size: var(--font-size-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-config-card {
+  width: 100%;
+  margin-top: 0;
+  overflow: hidden;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--radius-lg);
+  background: var(--ds-surface-raised);
+  box-shadow: var(--ds-shadow-panel);
+}
+
+.timer-config-section {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--ds-border-subtle);
+}
+
+.timer-config-section:first-child {
+  border-top: 0;
+}
+
+.timer-config-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.timer-config-section-heading > div {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.timer-config-section-heading h4 {
+  margin: 0;
+  color: var(--ds-text-primary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-snug);
+}
+
+.timer-duration-editor {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.timer-duration-colon {
+  display: none;
+}
+
+.timer-duration-segment {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.timer-duration-segment > span {
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-semibold);
+}
+
+.timer-duration-segment > div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) 2.25rem;
+  overflow: hidden;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--radius-md);
+  background: var(--ds-surface-control);
+}
+
+.timer-duration-segment button,
+.timer-duration-segment input {
+  min-height: var(--control-md);
+}
+
+.timer-duration-segment button {
+  border: 0;
+  background: var(--ds-surface-subtle);
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+}
+
+.timer-duration-segment button:hover,
+.timer-duration-segment button:focus-visible {
+  background: var(--ds-surface-hover);
+  color: var(--ds-accent-strong);
+}
+
+.timer-duration-segment input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  border-inline: 1px solid var(--ds-border);
+  outline: 0;
+  background: transparent;
+  color: var(--ds-text-primary);
+  padding: var(--space-2);
+  text-align: center;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-bold);
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+
+.timer-duration-segment input::-webkit-outer-spin-button,
+.timer-duration-segment input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.timer-preset-chips {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.375rem;
+  margin-top: var(--space-2);
+  overflow: visible;
+}
+
+.timer-preset-chips button {
+  min-width: 0;
+  min-height: 1.9rem;
+  padding: 0.35rem 0.2rem;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--radius-pill);
+  background: var(--ds-surface-control);
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+}
+
+.timer-preset-chips button:hover,
+.timer-preset-chips button.active {
+  border-color: color-mix(in srgb, var(--ds-accent) 34%, var(--ds-border));
+  background: color-mix(in srgb, var(--ds-accent) 8%, var(--ds-surface-control));
+  color: var(--ds-accent-strong);
+}
+
+.timer-config-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.timer-config-fields .timer-field-block {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.timer-field-block > span {
+  color: var(--ds-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-bold);
+}
+
+.timer-field-block > span em {
+  color: var(--ds-text-tertiary);
+  font-size: var(--font-size-xs);
+  font-style: normal;
+  font-weight: var(--font-medium);
+}
+
+.timer-field-block .input,
+.timer-field-block .textarea {
+  width: 100%;
+  border-color: var(--ds-border);
+  background: var(--ds-surface-control);
+  color: var(--ds-text-primary);
+}
+
+.timer-field-block .textarea {
+  min-height: 4rem;
+  max-height: 5.5rem;
+  resize: vertical;
+}
+
+.timer-field-count {
+  justify-self: end;
+  color: var(--ds-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-config-preferences {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.timer-config-preference-group {
+  min-width: 0;
+}
+
+.timer-config-preference-group + .timer-config-preference-group {
+  padding-top: 0;
+  padding-left: var(--space-4);
+  border-top: 0;
+  border-left: 1px solid var(--ds-border-subtle);
+}
+
+.timer-config-preference-group .timer-config-section-heading {
+  margin-bottom: var(--space-1);
+}
+
+.timer-display-block,
+.timer-alert-options .timer-option-row {
+  min-height: 2.1rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+  padding: 0.3rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ds-text-primary);
+}
+
+.timer-display-block input,
+.timer-alert-options .timer-option-row input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.1rem;
+  accent-color: var(--ds-accent);
+}
+
+.timer-display-block > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.timer-display-block strong {
+  color: var(--ds-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-bold);
+}
+
+.timer-alert-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.timer-alert-options .timer-option-row + .timer-option-row {
+  border-top: 1px solid var(--ds-border-subtle);
+}
+
+.timer-alert-options .timer-option-row span {
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-normal);
+}
+
+.timer-setup-actions.timer-actions-block {
+  width: 100%;
+  display: block;
+  margin-top: var(--space-2);
+  padding: var(--space-2) 0 0;
+  border: 0;
+  border-top: 1px solid var(--ds-border-subtle);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.timer-action-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.timer-action-buttons .button {
+  width: 100%;
+  min-height: var(--control-lg);
+}
+
+@media (min-width: 48.01rem) and (max-height: 52rem) {
+  .timer-config-section {
+    padding-block: 0.65rem;
+  }
+
+  .timer-config-section-heading {
+    margin-bottom: 0.4rem;
+  }
+
+  .timer-duration-segment > div {
+    grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+  }
+
+  .timer-duration-segment button,
+  .timer-duration-segment input {
+    min-height: 2.5rem;
+  }
+
+  .timer-field-block .textarea {
+    min-height: 3.5rem;
+    max-height: 4.5rem;
+  }
+}
+
+@media (max-width: 42rem) {
+  .timer-config-preferences {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timer-config-preference-group + .timer-config-preference-group {
+    padding-top: var(--space-3);
+    padding-left: 0;
+    border-top: 1px solid var(--ds-border-subtle);
+    border-left: 0;
+  }
+
+  .timer-preset-chips {
+    min-width: 0;
+    gap: 0.125rem;
+  }
+
+  .timer-preset-chips button {
+    min-width: 0;
+    min-height: 1.8rem;
+    padding-inline: 0;
+    font-size: 0.58rem;
+  }
+
+  .timer-duration-editor {
+    gap: var(--space-2);
+  }
+
+  .timer-duration-segment > div {
+    grid-template-columns: 1.75rem minmax(0, 1fr) 1.75rem;
+  }
+
+  .timer-duration-segment button,
+  .timer-duration-segment input {
+    min-height: var(--control-md);
+  }
+
+  .timer-duration-segment input {
+    padding-inline: var(--space-1);
+    font-size: var(--font-size-lg);
+  }
+
+}
+
+@media (max-width: 30rem) {
+  .timer-selected-duration {
+    text-align: left;
+  }
+
+  .timer-duration-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timer-action-buttons {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

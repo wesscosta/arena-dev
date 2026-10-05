@@ -1,8 +1,8 @@
 # Roadmap v0.8 — Professor Experience & Journey MVP
 
 **Linha ativa:** v0.8
-**Branch de execução:** `feat/v0.8-content-ingestion`
-**Estado atual:** `16.4 — Student Experience Shell & Workspace Visibility` implementado tecnicamente em A–C; gate visual integrado pendente. O próximo domínio funcional é `16.5 — Content Library & Reuse`, iniciado por auditoria de `LearningResource`.
+**Branch de execução:** `chore/v0.8-architecture-stabilization`
+**Estado atual:** `16.4` está implementado até Achievements Foundation e `16.5` até Library Snapshot Hardening, mas a auditoria transversal de 30/09/2026 abriu um **Gate de Estabilização Arquitetural** antes de novos incrementos funcionais. O próximo trabalho obrigatório é segurança, baseline, Arena Live Shell, CSS/design ownership, boundaries backend e quality gates. `16.5C` permanece planejado, porém pausado até o fechamento desse gate.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
@@ -19,18 +19,25 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | 16.1 | Journey Core | **Concluído · PR #22 mergeado** |
 | 16.2 | Learning Resources & Content Ingestion | **Concluído na branch ativa** |
 | 16.3 | Journey Study Experience | **Fechamento técnico concluído na branch ativa** |
-| 16.4 | Student Experience Shell & Workspace Visibility | **16.4A–C implementados tecnicamente · gate visual integrado pendente** |
-| 16.5 | Content Library & Reuse | **Próximo domínio · iniciar por auditoria de LearningResource após gate visual do 16.4** |
-| 16.6 | Question Attempts & Skills | **Candidato pós-validação do 16.3** |
-| 16.7 | Mastery básico | **Candidato pós-validação do 16.3** |
-| 16.8 | Review | **Candidato pós-validação do 16.3** |
-| 16.9 | Teacher Journey Dashboard | **Candidato pós-validação do 16.3** |
-| 16.10 | Minimal Gamification | **Candidato pós-validação do 16.3** |
-| 16.11 | Pilot, Metrics & Hardening | Planejado |
+| 16.4 | Student Experience Shell & Workspace Visibility | **16.4A–D implementados tecnicamente** |
+| 16.5 | Content Library & Reuse | **Implementado até 16.5B.2 · 16.5C pausado** |
+| Gate transversal | Estabilização arquitetural v0.8 | **Obrigatório antes de novos incrementos funcionais** |
+| 16.6 | Knowledge & Retrieval Foundation | **Pós-v0.8 / opcional; não bloqueia release** |
+| 17.0 | Learning Architecture Audit & Evidence Model | **Planejado pós-v0.8** |
+| 17.1 | Knowledge Taxonomy | **Planejado pós-v0.8** |
+| 17.2 | Roadmaps & Edital Mapping | **Planejado pós-v0.8** |
+| 17.3 | Question Bank & Provenance | **Planejado pós-v0.8** |
+| 17.4 | Assessment Blueprint & Mastery | **Planejado pós-v0.8** |
+| 17.5 | Review & Retention | **Planejado pós-v0.8** |
+| 17.6 | Teacher Learning Dashboard | **Planejado pós-v0.8** |
+| 17.7 | Meaningful Progression & Avatar | **Planejado pós-v0.8** |
+| 17.8 | Adaptive Recommendations | **Opcional; após evidência real** |
+
+Plano do gate transversal: [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md).
 
 ### Product Gate após 16.3
 
-Os incrementos de mastery/gamificação posteriores à biblioteca não são uma fila automática. Só avançam após validação real da Journey como experiência de estudo: estrutura compreensível, retomada correta, leitura/conclusão com baixa fricção e progresso útil. Mastery, Skills, Review e gamificação persistente permanecem hipóteses de evolução até esse gate.
+Os incrementos de aprendizagem posteriores à Biblioteca não são uma fila automática. A v0.8 fecha a experiência atual e a Biblioteca antes de abrir o eixo 17.x. O plano pós-v0.8 passa por auditoria de domínio e evidência, taxonomia, roadmaps/editais, banco de questões com proveniência, Assessment Blueprint e somente então Mastery, revisão e progressão visual. Ler 100%, clicar em Próximo ou acertar uma única questão não constitui domínio. O plano completo está em [`LEARNING_VALIDATION_ROADMAP.md`](LEARNING_VALIDATION_ROADMAP.md).
 ## 16.0 — Professor Arena Experience
 
 ### Objetivo
@@ -50,10 +57,11 @@ Transformar a Arena em um cockpit desktop de aula ao vivo orientado por ações,
 - status diferenciado entre online, presente offline e ausente.
 
 #### Ferramentas transversais
-- Timer em drawer contextual;
+- Timer em drawer contextual, consolidado em uma superfície compacta sem títulos redundantes, com oito presets em linha única e baseline 1366×768 sem scroll obrigatório;
 - Organização da turma em drawer contextual;
 - Presença e acesso em drawer contextual;
 - Pontuação rápida transversal;
+- Ranking da sessão como ferramenta contextual derivada exclusivamente de `ScoreEvent`, com Top 5/Todos, empates, atualização realtime e projeção explícita/anonimizada;
 - QR e fluxo de acesso ajustados para o contexto do drawer.
 #### Sorteio Inteligente 2.0
 - backend continua sendo a única autoridade da seleção;
@@ -102,10 +110,11 @@ Não há implementação funcional pendente para o `16.0`; o incremento foi inte
 
 ```text
 frontend
-npm test       248 passed
+npm test       284 passed
 npm typecheck  OK
 npm build      OK
 Docker frontend OK
+E2E focal      10/10 · Ranking, Home responsiva, Visão geral e fluxos críticos
 ```
 
 ## Critério de fechamento do 16.0
@@ -131,6 +140,40 @@ Não entram nesta etapa:
 - Student Experience.
 
 Esses itens permanecem nos incrementos posteriores da v0.8.
+
+### Evolução transversal pós-16.0 — Participant Selection Experience
+
+Durante o Gate de Estabilização Arquitetural, o Sorteio recebeu uma implementação candidata de **Participant Grid + Spotlight transitório**, sem reabrir o incremento histórico 16.0 nem mover a autoridade do sorteio para o frontend.
+
+- Grid passa a ser a representação permanente da turma no modo padrão;
+- Spotlight aparece apenas no momento do reveal;
+- rail do Sorteio passa a exibir resumo + histórico persistido;
+- `ParticipantSelectionService` continua sendo a autoridade da seleção balanceada;
+- `WheelParticipantSelector` preserva a roleta SVG como apresentação alternativa;
+- Grid + Spotlight e Roleta usam exatamente o mesmo resultado server-authoritative;
+- a apresentação escolhida é persistida por sessão no estado `QUICK_DRAW` como `GRID_SPOTLIGHT` ou `WHEEL`;
+- o drawer separa Critério de Seleção, Apresentação e Regras da Seleção;
+- cards do Grid possuem largura máxima no desktop para não se expandirem em turmas pequenas;
+- `NEXT_PUBLIC_ARENA_SELECTOR_MODE` permanece apenas como fallback de compatibilidade frontend, não como controle principal do professor;
+- a permanência das duas apresentações será validada em aula antes de qualquer depreciação.
+
+O acompanhamento técnico desta evolução pertence ao **P5 do Gate de Estabilização Arquitetural**, evitando conflito com o já existente `16.4B — Live dentro do Student Shell`.
+
+### Evolução transversal pós-16.0 — Session Ranking
+
+O Ranking foi incorporado como ferramenta contextual da sessão, sem reabrir a economia de gamificação nem criar um novo domínio de pontuação.
+
+- `ScoreEvent` associado à sessão permanece a única fonte de verdade;
+- classificação usa competition ranking (`1, 1, 3`) e respeita reversões;
+- professor dispõe de `Top 5` e `Todos`;
+- Ranking é privado por padrão e só chega ao Projetor após comando explícito;
+- anonimização ocorre no backend; o payload público não carrega o nome completo quando habilitada;
+- a projeção é paralela ao `LiveStage`, portanto não destrói Quiz/Sorteio/Buzzer em andamento;
+- mudanças de score atualizam professor e, quando visível, Projetor via realtime;
+- participantes não recebem a projeção pública pelo runtime;
+- ranking global, histórico, ligas, temporadas, badges por posição e associação com Mastery permanecem fora do escopo.
+
+Contrato e evidências: [`INCREMENT_16_0R_SESSION_RANKING.md`](INCREMENT_16_0R_SESSION_RANKING.md).
 
 ## 16.1 — Journey Core
 
@@ -379,7 +422,7 @@ Markdown / Notion / Arquivo / IA
 
 `16.4A`, `16.4B` e `16.4C` estão implementados e o refinamento transversal do Student Shell foi consolidado. O ciclo é considerado fechado como **checkpoint**, não como release final da v0.8.
 
-Pendências de hardening daquele corte: auditoria manual de acessibilidade, validação visual mobile/ultrawide, consolidação do CSS histórico, E2E e gates de release. Posteriormente, 16.4D — Achievements Foundation e 16.5 até 16.5B.2 foram implementados; a sequência corrente segue em 16.5C.
+Pendências de hardening daquele corte: auditoria manual de acessibilidade, validação visual mobile/ultrawide, consolidação do CSS histórico, E2E e gates de release. Posteriormente, 16.4D — Achievements Foundation e 16.5 até 16.5B.2 foram implementados. A auditoria de 30/09/2026 interrompeu a sequência funcional para o Gate de Estabilização Arquitetural; 16.5C retoma somente após seu fechamento.
 
 Ver [`CLOSURE_16_4_STUDENT_EXPERIENCE.md`](CLOSURE_16_4_STUDENT_EXPERIENCE.md).
 
@@ -399,7 +442,7 @@ V37 evolui LearningResource para recurso reutilizável, com visibilidade de Bibl
 
 ### 16.5B — Library Workspace & Reuse — implementado
 
-Biblioteca global do professor com lista editorial, busca, criação/edição, archive/restore e reuso nos dois contextos: Biblioteca → Journey e Journey → Biblioteca. O incremento prova o produto sem acoplar Notion/ingestão. Próximo: **16.5C — Ingestion → Library**.
+Biblioteca global do professor com lista editorial, busca, criação/edição, archive/restore e reuso nos dois contextos: Biblioteca → Journey e Journey → Biblioteca. O incremento prova o produto sem acoplar Notion/ingestão. Próximo funcional após o gate transversal: **16.5C — Ingestion → Library**.
 
 ### 16.5B.1 — Library Editorial Refinement — implementado
 
@@ -411,7 +454,7 @@ Próximo incremento documentado em INCREMENT_16_5C_PLAN.md: metadata semântica,
 
 ### Sequência final planejada do 16.5 e fechamento da v0.8
 
-- `16.5C — Semantic Content Foundation & Ingestion → Library`: próximo incremento; canonicalização, metadata, estrutura semântica, ingestão revisável e contrato de RAG.
+- `16.5C — Semantic Content Foundation & Ingestion → Library`: próximo incremento funcional após o Gate de Estabilização Arquitetural; canonicalização, metadata, estrutura semântica, ingestão revisável e contrato de RAG.
 - `16.5D — Organization & Discovery`: filtros, áreas/tags, paginação/ordenação e descoberta do acervo, sem taxonomia rígida prematura.
 - `16.5E — Revision Awareness & Snapshot Hardening`: atualização de snapshot somente por operação explícita, aviso de revisão disponível e preservação de snapshots existentes.
 - `16.5F — Advanced Reuse & Library Closure`: fechamento do domínio de Biblioteca e reuso avançado somente onde houver necessidade comprovada.

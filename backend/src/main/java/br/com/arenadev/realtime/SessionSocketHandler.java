@@ -37,7 +37,7 @@ public class SessionSocketHandler extends TextWebSocketHandler {
     private final PollService pollService;
     private final LiveStageService liveStageService;
     private final SessionRuntimeSnapshotService runtimeSnapshotService;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
 
     public SessionSocketHandler(
             SessionRealtimeGateway gateway,
@@ -47,7 +47,8 @@ public class SessionSocketHandler extends TextWebSocketHandler {
             WordCloudService wordCloudService,
             PollService pollService,
             LiveStageService liveStageService,
-            SessionRuntimeSnapshotService runtimeSnapshotService
+            SessionRuntimeSnapshotService runtimeSnapshotService,
+            JsonMapper json
     ) {
         this.gateway = gateway;
         this.joinService = joinService;
@@ -57,6 +58,7 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         this.pollService = pollService;
         this.liveStageService = liveStageService;
         this.runtimeSnapshotService = runtimeSnapshotService;
+        this.json = json;
     }
 
     @Override

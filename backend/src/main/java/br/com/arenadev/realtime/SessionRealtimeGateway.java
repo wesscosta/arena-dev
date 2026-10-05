@@ -19,7 +19,11 @@ public class SessionRealtimeGateway {
     private final Map<UUID, Map<UUID, Set<WebSocketSession>>> participantSockets = new ConcurrentHashMap<>();
     private final Map<UUID, Set<WebSocketSession>> projectorSockets = new ConcurrentHashMap<>();
     private final Map<UUID, Set<WebSocketSession>> teacherSockets = new ConcurrentHashMap<>();
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
+
+    public SessionRealtimeGateway(JsonMapper json) {
+        this.json = json;
+    }
 
     public void register(UUID sessionId, WebSocketSession socket) {
         sessions.computeIfAbsent(sessionId, ignored -> ConcurrentHashMap.newKeySet()).add(socket);

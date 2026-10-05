@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class MechanicsService {
@@ -34,7 +33,8 @@ public class MechanicsService {
     private final PollService pollService;
     private final SessionRealtimeGateway realtimeGateway;
     private final SessionEventService sessionEventService;
-    private final JsonMapper objectMapper = JsonMapper.builder().build();
+    private final ParticipantSelectionService participantSelectionService;
+    private final JsonMapper objectMapper;
 
     public MechanicsService(
             ClassSessionRepository sessionRepository,
@@ -46,7 +46,9 @@ public class MechanicsService {
             WordCloudService wordCloudService,
             PollService pollService,
             SessionRealtimeGateway realtimeGateway,
-            SessionEventService sessionEventService
+            SessionEventService sessionEventService,
+            ParticipantSelectionService participantSelectionService,
+            JsonMapper objectMapper
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -58,6 +60,8 @@ public class MechanicsService {
         this.pollService = pollService;
         this.realtimeGateway = realtimeGateway;
         this.sessionEventService = sessionEventService;
+        this.participantSelectionService = participantSelectionService;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional(readOnly = true)
@@ -72,29 +76,27 @@ public class MechanicsService {
         List<UUID> present = presentStudentIds(sessionId);
         if (present.isEmpty()) throw new IllegalArgumentException("Não há alunos presentes para o sorteio.");
 
-        DrawState state = readState(sessionId, DynamicType.QUICK_DRAW, DrawState.class, new DrawState(new HashMap<>(), null));
-        Map<String, Integer> counts = new HashMap<>(state.drawCounts() == null ? Map.of() : state.drawCounts());
-        String last = state.lastDrawnStudentId();
-        List<UUID> eligible = present.size() > 1 && last != null
-                ? present.stream().filter(id -> !id.toString().equals(last)).toList()
-                : present;
-        if (eligible.isEmpty()) eligible = present;
-
-        List<WeightedCandidate> weighted = eligible.stream().map(id -> {
-            int count = counts.getOrDefault(id.toString(), 0);
-            return new WeightedCandidate(id, 1.0 / Math.pow(count + 1.0, 1.35));
-        }).toList();
-        double total = weighted.stream().mapToDouble(WeightedCandidate::weight).sum();
-        double cursor = ThreadLocalRandom.current().nextDouble(total);
-        UUID winner = weighted.get(weighted.size() - 1).studentId();
-        for (WeightedCandidate candidate : weighted) {
-            cursor -= candidate.weight();
-            if (cursor <= 0) { winner = candidate.studentId(); break; }
-        }
-
-        UUID drawnWinner = winner;
-        counts.put(drawnWinner.toString(), counts.getOrDefault(drawnWinner.toString(), 0) + 1);
-        saveState(session, DynamicType.QUICK_DRAW, new DrawState(counts, drawnWinner.toString()));
+        DrawState state = readState(
+                sessionId,
+                DynamicType.QUICK_DRAW,
+                DrawState.class,
+                new DrawState(new HashMap<>(), null, ParticipantSelectorPresentation.GRID_SPOTLIGHT)
+        );
+        ParticipantSelectionService.Selection selection = participantSelectionService.select(
+                present,
+                state.drawCounts(),
+                state.lastDrawnStudentId()
+        );
+        UUID drawnWinner = selection.studentId();
+        saveState(
+                session,
+                DynamicType.QUICK_DRAW,
+                new DrawState(
+                        selection.drawCounts(),
+                        drawnWinner.toString(),
+                        resolveSelectorPresentation(state)
+                )
+        );
         liveStageService.showDraw(sessionId, drawnWinner);
         String winnerName = participantRepository.findBySessionIdOrderByStudentNameAsc(sessionId).stream()
                 .filter(participant -> participant.getStudent().getId().equals(drawnWinner))
@@ -106,9 +108,46 @@ public class MechanicsService {
                 SessionEventType.DRAW_COMPLETED,
                 SessionEventActor.TEACHER,
                 "Sorteio concluído: " + winnerName,
-                Map.of("studentId", drawnWinner.toString(), "studentName", winnerName)
+                Map.of(
+                        "studentId", drawnWinner.toString(),
+                        "studentName", winnerName,
+                        "method", "BALANCED",
+                        "drawCount", selection.drawCounts().getOrDefault(drawnWinner.toString(), 1)
+                )
         );
         return new DrawResult(drawnWinner, runtime(sessionId));
+    }
+
+    @Transactional
+    public RuntimeView setDrawPresentation(
+            UUID sessionId,
+            ParticipantSelectorPresentation presentation
+    ) {
+        if (presentation == null) {
+            throw new IllegalArgumentException("Apresentação do sorteio é obrigatória.");
+        }
+
+        ClassSession session = requireActiveSession(sessionId);
+        DrawState state = readState(
+                sessionId,
+                DynamicType.QUICK_DRAW,
+                DrawState.class,
+                new DrawState(
+                        new HashMap<>(),
+                        null,
+                        ParticipantSelectorPresentation.GRID_SPOTLIGHT
+                )
+        );
+        saveState(
+                session,
+                DynamicType.QUICK_DRAW,
+                new DrawState(
+                        state.drawCounts() == null ? Map.of() : state.drawCounts(),
+                        state.lastDrawnStudentId(),
+                        presentation
+                )
+        );
+        return runtime(sessionId);
     }
 
     @Transactional
@@ -408,7 +447,7 @@ public class MechanicsService {
                 sessionId,
                 DynamicType.QUICK_DRAW,
                 DrawState.class,
-                new DrawState(Map.of(), null)
+                new DrawState(Map.of(), null, ParticipantSelectorPresentation.GRID_SPOTLIGHT)
         );
         BossState boss = readState(
                 sessionId,
@@ -428,6 +467,7 @@ public class MechanicsService {
                 sessionId,
                 draw.drawCounts() == null ? Map.of() : draw.drawCounts(),
                 draw.lastDrawnStudentId(),
+                resolveSelectorPresentation(draw),
                 boss,
                 arena.activityId(),
                 arena.currentQuestionId(),
@@ -831,10 +871,16 @@ public class MechanicsService {
 
     private static String pairKey(String a, String b) { return a.compareTo(b) <= 0 ? a + "|" + b : b + "|" + a; }
 
-    private record WeightedCandidate(UUID studentId, double weight) {}
+    private static ParticipantSelectorPresentation resolveSelectorPresentation(DrawState state) {
+        return state != null && state.selectorPresentation() != null
+                ? state.selectorPresentation()
+                : ParticipantSelectorPresentation.GRID_SPOTLIGHT;
+    }
+
     private record DrawState(
             Map<String, Integer> drawCounts,
-            String lastDrawnStudentId
+            String lastDrawnStudentId,
+            ParticipantSelectorPresentation selectorPresentation
     ) {}
     private enum FlowMovement {
         START,
@@ -857,6 +903,7 @@ public class MechanicsService {
             UUID sessionId,
             Map<String, Integer> drawCounts,
             String lastDrawnStudentId,
+            ParticipantSelectorPresentation selectorPresentation,
             BossState boss,
             String activityId,
             String currentQuestionId,

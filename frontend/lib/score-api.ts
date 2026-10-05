@@ -1,8 +1,6 @@
 import type { Classroom, ScoreCategory, ScoreEvent, ScoreSource } from "./types";
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
-
-type ApiErrorBody = { message?: string; fields?: Record<string, string> };
 
 export class ScoreApiError extends Error {
   constructor(message: string, public readonly status: number, public readonly fields?: Record<string, string>) {
@@ -11,17 +9,11 @@ export class ScoreApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+function scoreRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na API de XP (${status}).`,
+    errorFactory: (message, status, fields) => new ScoreApiError(message, status, fields),
   });
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new ScoreApiError(body?.message || `Falha na API de XP (${response.status}).`, response.status, body?.fields);
-  }
-  return (await response.json()) as T;
 }
 
 type ScoreEventView = {
@@ -71,7 +63,7 @@ function mapEvent(row: ScoreEventView): ScoreEvent {
 }
 
 export async function fetchScoreEvents(classroomId: string): Promise<ScoreEvent[]> {
-  const rows = await request<ScoreEventView[]>(`/api/score-events?classroomId=${encodeURIComponent(classroomId)}`);
+  const rows = await scoreRequest<ScoreEventView[]>(`/api/score-events?classroomId=${encodeURIComponent(classroomId)}`);
   return rows.map(mapEvent);
 }
 
@@ -82,7 +74,7 @@ export async function fetchScoreDomain(classrooms: Classroom[]): Promise<ScoreEv
 }
 
 export async function createScoreEvent(input: CreateScoreEventInput): Promise<ScoreEvent> {
-  const row = await request<ScoreEventView>("/api/score-events", {
+  const row = await scoreRequest<ScoreEventView>("/api/score-events", {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -91,7 +83,7 @@ export async function createScoreEvent(input: CreateScoreEventInput): Promise<Sc
 
 export async function createScoreEvents(inputs: CreateScoreEventInput[]): Promise<ScoreEvent[]> {
   if (!inputs.length) return [];
-  const rows = await request<ScoreEventView[]>("/api/score-events/batch", {
+  const rows = await scoreRequest<ScoreEventView[]>("/api/score-events/batch", {
     method: "POST",
     body: JSON.stringify(inputs),
   });
@@ -99,6 +91,6 @@ export async function createScoreEvents(inputs: CreateScoreEventInput[]): Promis
 }
 
 export async function reverseScoreEvent(eventId: string): Promise<ScoreEvent> {
-  const row = await request<ScoreEventView>(`/api/score-events/${eventId}/reverse`, { method: "POST" });
+  const row = await scoreRequest<ScoreEventView>(`/api/score-events/${eventId}/reverse`, { method: "POST" });
   return mapEvent(row);
 }

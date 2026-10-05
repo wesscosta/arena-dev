@@ -14,15 +14,17 @@ public class ActivitySubmissionController {
 
     private final ActivitySubmissionService service;
     private final SubmissionItemService itemService;
-    private final JsonMapper json = JsonMapper.builder().build();
+    private final JsonMapper json;
 
     public ActivitySubmissionController(
             ActivitySubmissionService service,
-            SubmissionItemService itemService
+            SubmissionItemService itemService,
+            JsonMapper json
     ) {
         this.service = service;
         this.itemService = itemService;
-    }
+            this.json = json;
+}
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

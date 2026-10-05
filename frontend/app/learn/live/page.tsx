@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import StudentJoinFlow from "@/components/StudentJoinFlow";
 import { fetchAllStudyLiveSessions, type LiveSessionSummary } from "@/lib/study-api";
-import styles from "../study.module.css";
+import styles from "@/components/study/study.module.css";
 
 export default function LivePage() {
   const [sessions, setSessions] = useState<LiveSessionSummary[]>([]);

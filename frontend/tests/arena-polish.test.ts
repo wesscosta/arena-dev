@@ -57,16 +57,17 @@ test("globals imports Arena polish after accessibility foundation", () => {
 
 test("Professor Arena cockpit replaces the old session tabs", () => {
   const app = read("components/ArenaApp.tsx");
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
   const css = read("styles/arena-polish.css");
 
   assert.match(app, /className="arena-cockpit"/);
-  assert.match(app, /className="arena-cockpit-nav"/);
+  assert.match(chrome, /className="arena-cockpit-nav"/);
   assert.doesNotMatch(app, /className="arena-tabs-six"/);
   assert.match(css, /\.arena-cockpit\s*\{/);
 });
 
 test("Professor Arena cockpit exposes dynamics and transversal tools together", () => {
-  const app = read("components/ArenaApp.tsx");
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
 
   for (const label of [
     "Sorteio",
@@ -80,54 +81,70 @@ test("Professor Arena cockpit exposes dynamics and transversal tools together", 
     "Presença",
     "Pontuação rápida",
   ]) {
-    assert.ok(app.includes(label), `missing Arena action: ${label}`);
+    assert.ok(chrome.includes(label), `missing Arena action: ${label}`);
   }
 });
 
 
-test("Sorteio Inteligente 2.0 delegates roulette geometry to the SVG DrawWheel", () => {
+test("Participant selection defaults to Grid + Spotlight and keeps Wheel as a presentation option", () => {
   const app = read("components/ArenaApp.tsx");
-  const wheel = read("components/arena/draw/DrawWheel.tsx");
-  const css = read("components/arena/draw/DrawWheel.module.css");
+  const selection = read("components/arena/selection/ParticipantSelectionExperience.tsx");
+  const selectorMode = read("components/arena/selection/selector-mode.ts");
+  const wheel = read("components/arena/selection/WheelParticipantSelector.tsx");
 
-  assert.match(app, /<DrawWheel/);
-  assert.match(app, /currentSession\.presentStudentIds\.includes\(student\.id\)/);
-  assert.match(wheel, /segmentPath\(start, end\)/);
-  assert.match(wheel, /viewBox=/);
-  assert.match(css, /\.commandHub\s*\{/);
+  assert.match(app, /presentationToSelectorMode\(currentSession\?\.selectorPresentation\)/);
+  assert.match(selectorMode, /GRID_SPOTLIGHT/);
+  assert.match(selectorMode, /WHEEL/);
+  assert.match(app, /<ParticipantSelectionExperience/);
+  assert.match(app, /<WheelParticipantSelector/);
+  assert.match(selection, /Selecionando participante/);
+  assert.match(selection, /PARTICIPANTE SELECIONADO/);
+  assert.match(wheel, /<DrawWheel/);
 });
 
-test("Sorteio Inteligente 2.0 keeps scoring evidence visible after the draw", () => {
+test("Grid + Spotlight keeps scoring and draw evidence visible without duplicating the selection algorithm", () => {
   const app = read("components/ArenaApp.tsx");
+  const selection = read("components/arena/selection/ParticipantSelectionExperience.tsx");
+  const orchestration = read("components/arena/selection/useParticipantSelection.ts");
 
-  assert.match(app, /Sorteado agora/i);
-  assert.match(app, /currentSession\.drawCounts\[selected\.id\]/);
-  assert.match(app, /selectedXp/);
+  assert.match(selection, /drawCounts/);
+  assert.match(selection, /Continuar para pontuação/);
+  assert.match(selection, /Já sorteado/);
   assert.match(app, /Pontuação rápida/);
+  assert.match(orchestration, /drawStudent\(sessionId\)/);
 });
 
 
 test("Professor Arena fidelity pass exposes persistent context rail and QR entry", () => {
   const app = read("components/ArenaApp.tsx");
+  const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /className="arena-context-rail"/);
-  assert.match(app, /placeholder="Buscar aluno\.\.\."/);
-  assert.match(app, /joinQrImageUrl\(currentSession\.id/);
+  assert.match(app, /<ArenaContextRail/);
+  assert.match(rail, /className="arena-context-rail"/);
+  assert.match(rail, /placeholder="Buscar aluno\.\.\."/);
+  assert.match(rail, /joinQrImageUrl\(sessionId/);
   assert.match(css, /\.arena-context-rail\s*\{/);
   assert.match(css, /\.arena-session-code-card\s*\{/);
 });
 
-test("Smart Draw workspace prioritizes the roulette and moves policies to settings", () => {
+test("Smart Draw workspace uses a participant Grid, transient Spotlight and contextual history", () => {
   const app = read("components/ArenaApp.tsx");
+  const selection = read("components/arena/selection/ParticipantSelectionExperience.tsx");
+  const settings = read("components/arena/selection/DrawSettingsDrawer.tsx");
+  const rail = read("components/arena/selection/DrawSessionRail.tsx");
+
+  const toolState = read("components/arena/live/useArenaToolState.ts");
 
   assert.match(app, /className="smart-draw-workspace"/);
-  assert.match(app, /setDrawSettingsOpen\(true\)/);
-  assert.match(app, /title="Configurações do Sorteio"/);
-  assert.match(app, /POLÍTICAS DO BACKEND/);
-  assert.match(app, /className="draw-history-popover draw-history-inline"/);
-  assert.match(app, /drawCoverage/);
-  assert.match(app, /Confirmar e pontuar/);
+  assert.match(app, /onOpenSettings=\{openDrawSettings\}/);
+  assert.match(toolState, /openDrawSettings:\s*\(\) => setDrawSettingsOpen\(true\)/);
+  assert.match(app, /<DrawSettingsDrawer/);
+  assert.match(settings, /title="Configurações do Sorteio"/);
+  assert.match(settings, /REGRAS DA SELEÇÃO/);
+  assert.match(selection, /className=\{styles\.grid\}/);
+  assert.match(selection, /className=\{styles\.spotlightLayer\}/);
+  assert.match(rail, /Últimos sorteados/);
   assert.match(app, /className="quick-score-dock"/);
 });
 
@@ -142,23 +159,29 @@ test("Draw history comes from persisted session events instead of a frontend-onl
 
 test("Arena separates primary dynamics from contextual tools", () => {
   const app = read("components/ArenaApp.tsx");
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
+  const toolState = read("components/arena/live/useArenaToolState.ts");
 
-  assert.match(app, /type ArenaDynamic = "runbook" \| "draw"/);
-  assert.match(app, /type ArenaTool = "timer" \| "groups" \| "attendance" \| "score" \| null/);
-  assert.match(app, /const \[activeDynamic, setActiveDynamic\]/);
-  assert.match(app, /const \[activeTool, setActiveTool\]/);
+  assert.match(chrome, /export type ArenaDynamic = "runbook" \| "draw"/);
+  assert.match(chrome, /export type ArenaTool = "timer" \| "groups" \| "attendance" \| "ranking" \| "score" \| null/);
+  assert.match(toolState, /const \[activeDynamic, setActiveDynamic\]/);
+  assert.match(toolState, /const \[activeTool, setActiveTool\]/);
+  assert.match(app, /useArenaToolState\(\)/);
   assert.doesNotMatch(app, /const \[arenaTab, setArenaTab\]/);
 });
 
 test("Arena contextual tools open without replacing the primary dynamic", () => {
   const app = read("components/ArenaApp.tsx");
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
 
-  assert.match(app, /setActiveTool\("timer"\)/);
-  assert.match(app, /setActiveTool\("groups"\)/);
-  assert.match(app, /setActiveTool\("attendance"\)/);
-  assert.match(app, /setActiveTool\("score"\)/);
+  assert.match(chrome, /onSelectTool\("timer"\)/);
+  assert.match(chrome, /onSelectTool\("groups"\)/);
+  assert.match(chrome, /onSelectTool\("attendance"\)/);
+  assert.match(chrome, /onSelectTool\("ranking"\)/);
+  assert.match(chrome, /onSelectTool\("score"\)/);
   assert.match(app, /open=\{activeTool === "timer"\}/);
   assert.match(app, /open=\{activeTool === "attendance"\}/);
+  assert.match(app, /open=\{activeTool === "ranking"\}/);
 });
 
 test("Arena tool drawer is modal, keyboard dismissible, focus-contained and mobile aware", () => {
@@ -306,24 +329,41 @@ test("Arena desktop fidelity pass removes the global content max width only insi
   assert.match(globals, /max-width:\s*none/);
 });
 
-test("Semicircle roulette keeps backend authority and only animates presentation", () => {
-  const app = read("components/ArenaApp.tsx");
+test("Wheel presentation keeps backend authority and only animates presentation", () => {
+  const orchestration = read("components/arena/selection/useParticipantSelection.ts");
+  const selector = read("components/arena/selection/WheelParticipantSelector.tsx");
   const wheel = read("components/arena/draw/DrawWheel.tsx");
 
-  assert.match(app, /const result = await drawStudentApi\(currentSession\.id\)/);
-  assert.match(app, /setSelectedId\(result\.studentId\)/);
+  assert.match(orchestration, /const result = await drawStudent\(sessionId\)/);
+  assert.match(orchestration, /setSelectedStudentId\(result\.studentId\)/);
+  assert.match(selector, /<DrawWheel/);
   assert.match(wheel, /drawing \? styles\.drawing/);
-  assert.doesNotMatch(app, /Math\.random\(\).*student|student.*Math\.random\(\)/);
+  assert.doesNotMatch(orchestration, /Math\.random\(\).*student|student.*Math\.random\(\)/);
 });
 
-test("Draw settings expose backend policies as information instead of fake controls", () => {
+test("Draw settings separate selection criterion, presentation and selection rules", () => {
   const app = read("components/ArenaApp.tsx");
+  const settings = read("components/arena/selection/DrawSettingsDrawer.tsx");
+  const mechanics = read("lib/mechanics-api.ts");
 
-  assert.match(app, /MODO ATIVO/);
-  assert.match(app, /Balanceado/);
-  assert.match(app, /Apenas presentes/);
-  assert.match(app, /Evita repetição imediata/);
-  assert.doesNotMatch(app, /draw-settings-rule[\s\S]{0,120}<input/);
+  assert.match(settings, /CRITÉRIO DE SELEÇÃO/);
+  assert.match(settings, /APRESENTAÇÃO/);
+  assert.match(settings, /REGRAS DA SELEÇÃO/);
+  assert.match(settings, /Grid \+ Spotlight/);
+  assert.match(settings, /Roleta/);
+  assert.match(settings, /Balanceado/);
+  assert.match(settings, /Apenas presentes/);
+  assert.match(settings, /Evita repetição imediata/);
+  assert.match(app, /setDrawPresentationApi/);
+  assert.match(mechanics, /mechanics\/draw\/presentation/);
+});
+
+test("Participant grid caps card width when the class has few students", () => {
+  const css = read("components/arena/selection/ParticipantSelectionExperience.module.css");
+
+  assert.match(css, /repeat\(auto-fill, minmax\(min\(100%, 10\.5rem\), 13\.5rem\)\)/);
+  assert.match(css, /max-width:\s*13\.5rem/);
+  assert.match(css, /justify-content:\s*start/);
 });
 
 
@@ -363,21 +403,25 @@ test("Presence drawer uses the dedicated compact SessionAccessCard variant", () 
 
 test("Arena right rail exposes truthful participant status and copyable session code", () => {
   const app = read("components/ArenaApp.tsx");
+  const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /Presente · offline/);
-  assert.match(app, /copySessionCode/);
-  assert.match(app, /aria-label="Copiar código da sessão"/);
+  assert.match(rail, /Presente · offline/);
+  assert.match(app, /onCopySessionCode=\{\(\) => \{ void copySessionCode\(\); \}\}/);
+  assert.match(rail, /aria-label="Copiar código da sessão"/);
   assert.match(css, /\.arena-session-code-row\s*\{/);
   assert.match(css, /\.arena-status-dot\.present/);
 });
 
 test("Arena QR preview expands into a projector-friendly modal", () => {
   const app = read("components/ArenaApp.tsx");
+  const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /setSessionQrOpen\(true\)/);
-  assert.match(app, /aria-label="Ampliar QR Code da sessão"/);
+  const toolState = read("components/arena/live/useArenaToolState.ts");
+  assert.match(app, /onOpenQr=\{openSessionQr\}/);
+  assert.match(toolState, /openSessionQr:\s*\(\) => setSessionQrOpen\(true\)/);
+  assert.match(rail, /aria-label="Ampliar QR Code da sessão"/);
   assert.match(app, /className="arena-session-qr-modal"/);
   assert.match(app, /joinQrImageUrl\(currentSession\.id, publicBaseUrl, joinCode\.code, 720\)/);
   assert.match(css, /\.arena-session-qr-modal\s*\{/);
@@ -500,9 +544,9 @@ test("DrawWheel rotates participant labels toward the radial center with a bound
   assert.match(wheel, /rotate\(\$\{rotation\.toFixed\(2\)\}\)/);
 });
 
-test("DrawWheel settles the winner in the fixed focus slot for adaptive and fully visible modes", () => {
+test("Legacy DrawWheel settles the winner in the fixed focus slot after server selection", () => {
   const wheel = read("components/arena/draw/DrawWheel.tsx");
-  const app = read("components/ArenaApp.tsx");
+  const orchestration = read("components/arena/selection/useParticipantSelection.ts");
 
   assert.match(wheel, /const baseSlotCount = carouselMode \? visibleSlots : Math\.max\(participants\.length, 1\)/);
   assert.match(wheel, /baseSlotCount > 1 && baseSlotCount % 2 === 0/);
@@ -510,9 +554,9 @@ test("DrawWheel settles the winner in the fixed focus slot for adaptive and full
   assert.match(wheel, /const centerSlotIndex = Math\.floor\(renderedSlotCount \/ 2\)/);
   assert.match(wheel, /winnerIndex - centerSlotIndex/);
   assert.match(wheel, /const segmentCount = renderedSlotCount/);
-  assert.match(app, /setTimeout\(resolve, 850\)/);
-  assert.match(app, /setSelectedId\(result\.studentId\)/);
-  assert.match(app, /setTimeout\(resolve, 950\)/);
+  assert.match(orchestration, /setTimeout\(resolve, 850\)/);
+  assert.match(orchestration, /setSelectedStudentId\(result\.studentId\)/);
+  assert.match(orchestration, /setTimeout\(resolve, 950\)/);
 });
 
 test("DrawWheel uses neutral placeholders after settling instead of duplicating students in even classes", () => {
@@ -529,13 +573,13 @@ test("DrawWheel uses neutral placeholders after settling instead of duplicating 
 });
 
 test("Arena participant rail defaults to present students and exposes an explicit all-students filter", () => {
-  const app = read("components/ArenaApp.tsx");
+  const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /useState<"present" \| "all">\("present"\)/);
-  assert.match(app, /participantFilter === "present"/);
-  assert.match(app, /Presentes <span>\{currentSession\.presentStudentIds\.length\}<\/span>/);
-  assert.match(app, /Todos <span>\{sessionParticipants\.length\}<\/span>/);
+  assert.match(rail, /useState<"present" \| "all">\("present"\)/);
+  assert.match(rail, /participantFilter === "present"/);
+  assert.match(rail, /Presentes <span>\{presentStudentIds\.length\}<\/span>/);
+  assert.match(rail, /Todos <span>\{sessionParticipants\.length\}<\/span>/);
   assert.match(css, /\.arena-participant-filter\s*\{/);
 });
 
@@ -554,7 +598,9 @@ test("Attendance drawer QR reuses the enlarged Arena QR experience", () => {
 
   assert.match(access, /onExpandQr\?: \(\) => void/);
   assert.match(access, /className=\{styles\.qrTrigger\}/);
-  assert.match(app, /onExpandQr=\{\(\) => setSessionQrOpen\(true\)\}/);
+  const toolState = read("components/arena/live/useArenaToolState.ts");
+  assert.match(app, /onExpandQr=\{openSessionQr\}/);
+  assert.match(toolState, /openSessionQr:\s*\(\) => setSessionQrOpen\(true\)/);
   assert.match(css, /\.qrTrigger\s*\{/);
 });
 
@@ -612,12 +658,13 @@ test("Arena polish no longer carries the legacy CSS wheel implementation", () =>
 
 test("Arena exposes explicit empty states for the roster and draw when nobody is present", () => {
   const app = read("components/ArenaApp.tsx");
+  const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
-  assert.match(app, /Nenhum aluno presente/);
+  assert.match(rail, /Nenhum aluno presente/);
   assert.match(app, /Marque a presença dos alunos para habilitar o sorteio\./);
-  assert.match(app, /className="arena-participant-empty" role="status"/);
-  assert.match(app, /Use Presença para incluir alunos na dinâmica\./);
+  assert.match(rail, /className="arena-participant-empty" role="status"/);
+  assert.match(rail, /Use Presença para incluir alunos na dinâmica\./);
   assert.match(css, /\.arena-participant-empty\s*\{/);
 });
 
@@ -716,22 +763,28 @@ test("Live Arena stretches the cockpit to the full dynamic viewport height", () 
 
 test("Live Arena replaces the duplicated root header with one operational topbar", () => {
   const app = read("components/ArenaApp.tsx");
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
   const css = read("styles/arena-polish.css");
 
   assert.match(app, /arena-root-topbar-hidden/);
-  assert.match(app, /className="topbar app-topbar arena-live-topbar"/);
-  assert.match(app, /Modo Projetor ↗/);
-  assert.match(app, /Encerrar sessão/);
+  assert.match(chrome, /className="topbar app-topbar arena-live-topbar"/);
+  assert.match(chrome, /Modo Projetor ↗/);
+  assert.match(chrome, /Encerrar sessão/);
   assert.doesNotMatch(app, /arena-desktop-session-header/);
   assert.match(css, /\.topbar\.arena-root-topbar-hidden\s*\{\s*display:\s*none/);
 });
 
-test("Arena navigation exposes classroom context before dynamics and uses internal SVG glyphs", () => {
+test("Arena sidebar owns product identity while the session context stays in the workspace header", () => {
   const app = read("components/ArenaApp.tsx");
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
 
-  assert.match(app, /className="arena-nav-context"/);
-  assert.doesNotMatch(app, /className="arena-nav-back"/);
-  assert.match(app, /Condução ao vivo/);
-  assert.match(app, /function ArenaGlyph/);
-  assert.match(app, /<ArenaGlyph name="draw" \/>/);
+  assert.match(app, /<ArenaLiveShell/);
+  assert.match(chrome, /arena-live-shell/);
+  assert.match(chrome, /<aside className="arena-cockpit-nav" aria-label="Ferramentas da Arena">/);
+  assert.match(chrome, /className="arena-nav-brand"/);
+  assert.match(chrome, /className="arena-live-context"/);
+  assert.doesNotMatch(chrome, /className="arena-nav-context"/);
+  assert.doesNotMatch(chrome, /Condução ao vivo/);
+  assert.match(chrome, /function ArenaGlyph/);
+  assert.match(chrome, /\["draw", "draw", "Sorteio"\]/);
 });

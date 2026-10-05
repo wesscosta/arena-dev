@@ -172,14 +172,15 @@ Quando uma rodada abre, o botão é liberado automaticamente. Depois do clique o
 
 ## Rede local
 
-Para testar com celular na mesma rede:
+Para testar com celular ou notebook na mesma rede:
 
-1. frontend deve estar acessível pelo IP da máquina, por exemplo `http://192.168.1.20:3000`;
-2. backend deve estar publicado em `:8080`;
-3. CORS/WebSocket aceitam, por padrão de desenvolvimento, origens HTTP na porta 3000;
-4. em produção, definir `APP_ALLOWED_ORIGIN_PATTERNS` com origens restritas.
+1. o frontend deve estar acessível pelo IP da máquina, por exemplo `http://192.168.1.20:3000`;
+2. no perfil Docker de desenvolvimento, o navegador usa **a mesma origem do frontend** para `/api/*` e `/ws/*`;
+3. o Next.js encaminha esses caminhos internamente para o backend em `http://backend:8080`, então o dispositivo do aluno não precisa alcançar a porta `:8080` diretamente;
+4. CORS continua configurado para compatibilidade e acesso direto de desenvolvimento, mas deixa de ser dependência do fluxo aluno em LAN;
+5. em produção com API pública separada, `NEXT_PUBLIC_API_URL` pode apontar para a origem HTTPS dedicada e `APP_ALLOWED_ORIGIN_PATTERNS` deve permanecer restrito às origens reais.
 
-O helper da visão do aluno substitui `localhost` pelo hostname usado no navegador quando necessário, evitando que o celular tente acessar `localhost:8080` nele próprio.
+Essa topologia evita o caso em que `:3000` é alcançável na rede escolar, mas `:8080` é filtrada ou inacessível: Join, Learn e WebSocket passam pelo mesmo host/porta que já entregou a interface ao aluno.
 
 ## Fora deste incremento
 

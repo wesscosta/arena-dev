@@ -1,5 +1,5 @@
 
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
 export type SubmissionDashboardStatus = "NOT_STARTED" | "IN_PROGRESS" | "SUBMITTED" | "UNDER_REVIEW" | "GRADED" | "RETURNED";
 export type SubmissionSource = "ARENA" | "TEAMS" | "GOOGLE_CLASSROOM" | "IMPORT";
@@ -38,14 +38,11 @@ export type SubmissionDashboard = {
   students: SubmissionDashboardStudent[];
 };
 
-type ApiErrorBody = { message?: string };
 
-export async function fetchSubmissionDashboard(activityId: string): Promise<SubmissionDashboard> {
-  const response = await apiFetch(`/api/activities/${encodeURIComponent(activityId)}/submissions/dashboard`);
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new Error(body?.message || `Falha ao carregar entregas (${response.status}).`);
-  }
-  return (await response.json()) as SubmissionDashboard;
+export function fetchSubmissionDashboard(activityId: string): Promise<SubmissionDashboard> {
+  return apiRequest<SubmissionDashboard>(
+    `/api/activities/${encodeURIComponent(activityId)}/submissions/dashboard`,
+    undefined,
+    { errorMessage: (status) => `Falha ao carregar entregas (${status}).` },
+  );
 }

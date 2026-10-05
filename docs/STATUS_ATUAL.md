@@ -1,18 +1,20 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 28 de setembro de 2026
+**Última sincronização documental:** 5 de outubro de 2026
 
 **Baseline publicada:** `v0.7.0 — Educational Integrations`.
 
 **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 
-**Incremento atual:** `16.4 — Student Experience Shell & Workspace Visibility`, com 16.4A–C implementados tecnicamente e gate visual integrado pendente.
+**Incremento atual:** **Gate de Estabilização Arquitetural v0.8**. `16.4` está implementado até Achievements Foundation e `16.5` até `16.5B.2`; `16.5C` e novos incrementos funcionais ficam pausados até segurança, baseline, shell da Arena, CSS/design ownership, boundaries backend e quality gates serem estabilizados.
 
-**Branch ativa:** `feat/v0.8-content-ingestion`.
+**Branch ativa:** `chore/v0.8-architecture-stabilization`.
+
+**Plano transversal:** [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md).
 
 ## Estado resumido
 
-A v0.7.0 está encerrada e publicada. `16.0` e `16.1` foram integrados à `main`; a branch ativa acumula 16.2, o fechamento técnico do 16.3 e a implementação de 16.4A–C.
+A v0.7.0 está encerrada e publicada. A branch ativa já contém a evolução de `16.2`, `16.3`, `16.4A–D` e `16.5` até `16.5B.2`. A auditoria de 30/09/2026 identificou dívida arquitetural suficiente para abrir um gate transversal antes de ampliar o escopo funcional.
 
 A Journey já possui Study API própria, `/learn`, Reader, progresso e retomada, prévia do professor na mesma experiência, Builder reduzido a módulos + conteúdos e Progression UX com estados `COMPLETED`, `CURRENT` e `LOCKED`.
 
@@ -24,10 +26,10 @@ A frente de ingestão `16.3.8` cobre contrato normalizado, adapters Markdown/Tex
 baseline publicada        v0.7.0
 linha ativa               v0.8
 último integrado à main   16.1 · PR #22
-incremento atual           16.4 · Student Experience Shell & Workspace Visibility
-fatia atual                16.4A–C · implementadas tecnicamente; gate visual integrado pendente
-branch                     feat/v0.8-content-ingestion
-schema                     Flyway V1–V35
+incremento atual           Gate de Estabilização Arquitetural v0.8
+fatia atual                P2 iniciado · RadioCard + CSS Modules; P1 concluído
+branch                     chore/v0.8-architecture-stabilization
+schema                     Flyway V1–V37
 providers                  Microsoft Teams + Notion OAuth
 Google Classroom           standby
 ```
@@ -66,19 +68,19 @@ Google Classroom           standby
 - `/learn/journeys` é a biblioteca pessoal de percursos, com busca, filtro por turma/estado e agrupamento multi-turma;
 - `/learn/live` integra a entrada ao vivo ao shell autenticado reutilizando o mesmo `StudentJoinFlow` de `/join`;
 - `/join` permanece porta pública para QR/código e não depende do espaço persistente de estudo;
-- `/learn/achievements` está reservado para conquistas baseadas em critérios acadêmicos reais;
+- `/learn/achievements` possui Achievements Foundation persistente baseada em marcos reais de progresso, sem XP automático, moedas ou streaks;
 - `16.4A — Student Workspace Visibility`: `studentStudyAccessEnabled` controla exposição persistente sem afetar Live e sem apagar progresso;
 - `16.4B — Live dentro do Student Shell`: Live Hub descobre sessões ativas em todas as matrículas do aluno, oferece CTA contextual na Home e reutiliza `StudentJoinFlow`;
 - `16.4C — Journey Discovery & Redemption`: professor gera/regenera/desativa código de Journey; aluno reconhecido resgata uma vez e mantém material/progresso no perfil, sem matrícula artificial;
 - `16.4D — Achievements Foundation`: implementado tecnicamente; conquistas persistentes, avaliação idempotente e integração ao Student Experience.
 - `Student Shell Style Guide v1`: referência visual/acessível criada; alvo AAA onde aplicável, com auditoria formal ainda pendente.
 
-## Marcador de roadmap — 16.5 Content Library & Reuse
+## 16.5 Content Library & Reuse — estado atual
 
-- biblioteca futura será construída sobre auditoria/evolução de `LearningResource`, evitando um segundo modelo paralelo de conteúdo;
-- materiais poderão nascer de Markdown, Notion, arquivo ou IA e ser reutilizados em Journey/Activity/Arena;
-- o acervo do professor não será automaticamente visível ao aluno;
-- primeiro gate: fechar a validação visual integrada do `16.4A–C`; depois auditar ownership, metadados, dependências, ciclo de vida e semântica de reuso/snapshot.
+- `LearningResource` foi evoluído como unidade reutilizável, sem criar um modelo paralelo de biblioteca;
+- Library Core, workspace/reuse, refinamento editorial e snapshot hardening estão implementados até `16.5B.2`;
+- materiais continuam preparados para nascer de Markdown, Notion, arquivo ou IA sem exposição automática ao aluno;
+- `16.5C — Semantic Content Foundation & Ingestion → Library` permanece planejado, porém pausado até o fechamento do Gate de Estabilização Arquitetural v0.8.
 
 ## UX transversal — shell e participantes
 
@@ -86,26 +88,56 @@ Google Classroom           standby
 - confinamento `100dvh`/`overflow: hidden` ficou restrito à Arena ao vivo via `arena-fullscreen-shell`;
 - scroll lock de overlays centralizado e seguro para locks simultâneos;
 - tela de participantes simplificada com busca, nome de exibição sob demanda e ações por ícones;
-- regressão transversal atual validada com 268 testes de frontend, typecheck e build de produção;
+- baseline atual: Next.js 16.3.8; `npm audit --omit=dev --audit-level=high` com 0 vulnerabilidades; frontend 284/284, typecheck e build verdes; backend `mvn verify` verde com 106 testes unitários + 87 ITs;
+- transporte HTTP frontend consolidado em `lib/http/client.ts`; módulos de domínio não implementam mais parsing/CSRF/credentials de forma independente;
+- direção de dependência CSS corrigida: componentes não importam mais módulos de estilo privados de `app/`; Projector, Student Join e Study possuem ownership de feature em `components/`;
+
+## Visão geral de turmas — consolidação MVP
+
+- o shell do professor continua sem sidebar; `Visão geral` permanece o nível global do sistema;
+- `Biblioteca` passou a destino explícito da navegação global no topbar, em vez de CTA isolado da página;
+- a página `Suas turmas` mantém busca por nome/código, filtros Ativas/Inativas e ordenação por MRU/nome/código;
+- grid de turmas consolidado em até cinco colunas fluidas no desktop/ultrawide, preenchendo a largura útil sem criar uma sexta coluna; cards mantêm hierarquia interna à esquerda e seleção com barra vertical estável; sem carrossel, categorias, tags ou progresso inventado;
+- XP saiu do card de descoberta; o card mostra somente código, alunos, atividades e estado operacional;
+- light/dark usam os tokens semânticos existentes e a matriz E2E cobre reload em 390, 768, 1024, 1440, 1920 e 2560 px;
+- categorias, shelves estilo Netflix, favoritos e taxonomias adicionais continuam fora do MVP até existir necessidade observada.
+
+Documento: [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md).
 
 ## Professor Arena Experience — implementado
 
+- shell estrutural extraído em `ArenaLiveShell`, `ArenaSidebar` e `ArenaSessionHeader`;
+- `ArenaContextRail`, configurações do sorteio e realtime da Arena possuem boundaries próprios; `useArenaRealtime` concentra Join Code + WebSocket + estados Buzzer/Timer/Word Cloud/Poll/Quiz/Ranking;
+- header restrito ao workspace, sem compensações negativas de largura/margem;
+- E2E do shell verde em 1366×768, 1440×900, 1536×864 e 1920×1080, mais cenário com 22 participantes em 1821×831; sem overflow horizontal/vertical estrutural, com Ações rápidas e código/QR dentro da viewport;
+- seleção balanceada extraída para `ParticipantSelectionService`, mantendo o backend como autoridade;
+- Grid + Spotlight transitório implementado como experiência padrão do Sorteio;
+- `useParticipantSelection` concentra a orquestração da seleção no frontend sem escolher vencedor;
+- Grid representa disponível, ausente, já sorteado e selecionado agora;
+- Spotlight aparece apenas no reveal, sem simulação de nomes, roleta falsa ou slot-machine;
+- rail do Sorteio mostra resumo da sessão e histórico persistido em vez de duplicar o roster;
+- `DRAW_COMPLETED` registra `method=BALANCED` e `drawCount`;
+- Grid + Spotlight continua como apresentação padrão, mas a Roleta agora é uma apresentação alternativa real em `WheelParticipantSelector`;
+- a apresentação (`GRID_SPOTLIGHT` ou `WHEEL`) é persistida por sessão no estado `QUICK_DRAW`, sem nova migration e sem alterar o algoritmo balanceado;
+- drawer separa explicitamente Critério de Seleção, Apresentação e Regras da Seleção;
+- Grid limita os cards a 13.5rem no desktop, evitando expansão excessiva em turmas pequenas;
+- `NEXT_PUBLIC_ARENA_SELECTOR_MODE` permanece somente como fallback de compatibilidade/default frontend;
+- E2E do selector: 8/8, incluindo reveal → retorno ao Grid, alternância Grid ↔ Roleta, persistência da apresentação, cards compactos, 22 participantes e quatro viewports do shell;
 - tabs antigas removidas da Arena;
 - sidebar persistente por ação;
 - Dinâmicas e Ferramentas separadas;
 - header operacional de sessão;
 - Arena full-width em desktop;
-- rail de participantes e código de sessão;
+- QR/código de sessão preservado no rail;
 - Timer, Organização e Presença como ferramentas contextuais;
+- Timer refinado para uma única superfície de configuração: títulos auxiliares redundantes removidos, oito presets em uma linha sem scroll horizontal, Exibição/Alertas compactados e baseline 1366×768 validada sem scroll vertical obrigatório;
 - Pontuação Rápida transversal;
-- Sorteio Inteligente com backend autoritativo;
-- Configurações exibem apenas políticas reais;
-- histórico e cobertura de sorteios;
-- roleta SVG com segmentos reais e geometria circular preservada;
-- marcador fixo sobre o slot vencedor, sem autoridade de domínio;
-- carrossel adaptativo com slots ímpares e slot neutro para turmas pares pequenas;
-- animação em aceleração, giro sustentado e desaceleração;
-- rail com filtro Presentes/Todos;
+- Ranking da sessão implementado como ferramenta contextual, derivado exclusivamente de `ScoreEvent` com `sessionId`, com competition ranking para empates e sem score paralelo;
+- Ranking permanece privado por padrão; `Top 5`/`Todos`, projeção explícita, anonimização no backend e atualização realtime estão disponíveis;
+- estado público do Ranking é separado do estado privado do professor e não é exposto ao participante; ocultar a projeção restaura o `LiveStage` que já estava ativo;
+- o Ranking é feedback operacional da aula e não representa Mastery, desempenho acadêmico global ou leaderboard persistente;
+- navegação compacta mobile da Arena recebeu contenção horizontal e nomes acessíveis explícitos durante a matriz responsiva do Ranking;
+- Configurações exibem apenas regras reais e permitem trocar a apresentação sem alterar o critério de seleção;
 - QR ampliável em Presença e acesso;
 - indicadores de online e presença consolidados no roster;
 - selects nativos com contraste dark consistente;
@@ -119,17 +151,19 @@ Google Classroom           standby
 ## Validação corrente
 
 ```text
-backend tests        OK (suíte Maven completa)
-frontend tests       268 passed
+backend tests        OK · 111/111
+frontend tests       OK · baseline corrente: 284/284
 frontend typecheck   OK
 frontend build       OK
 git diff --check     OK
-Flyway               V1–V35
+Ranking E2E          OK · 2/2 (fluxo + 12 combinações viewport/tema)
+E2E transversal      OK · 10/10 (Ranking + Home responsiva + Visão geral + fluxos críticos)
+Flyway               V1–V37
 ```
 
 ## Próximo gate
 
-Validar visualmente o conjunto `16.4A–C` em desktop/mobile, incluindo Workspace Visibility, Live Hub, regressão de `/join`/Arena e resgate de Journey por código. Com esse gate fechado, iniciar a auditoria de `LearningResource` que abre o `16.5 — Content Library & Reuse`.
+Concluir o **Gate de Estabilização Arquitetural v0.8** antes de retomar novos incrementos funcionais. Depois do gate, a sequência permanece `16.5C → 16.5D → 16.5E → 16.5F → Release Hardening`. O eixo pedagógico de roadmaps, questões, Mastery e progressão foi separado em `17.x` e não deve ser iniciado por pressão de escopo durante o fechamento da v0.8.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)
@@ -173,11 +207,13 @@ Decisão: nenhuma V37 será criada antes de definir o desacoplamento Library Res
 
 **28/09/2026:** autoria Markdown passou a aproveitar a largura útil e ganhou preview renderizado; desktop usa edição + preview lado a lado e telas menores alternam as superfícies. O plano semântico/RAG permanece documentado para 16.5C e não foi implementado.
 
-## Sequência corrente após 16.5B.1
+## Sequência corrente após 16.5B.2
 
-O próximo incremento funcional é `16.5C — Semantic Content Foundation & Ingestion → Library`. O fechamento da Biblioteca seguirá, em ordem, por `16.5D — Organization & Discovery`, `16.5E — Revision Awareness & Snapshot Hardening` e `16.5F — Advanced Reuse & Library Closure`. Depois disso, a v0.8 entra em Release Hardening transversal; não deve abrir outro domínio funcional automaticamente.
+O próximo trabalho é o **Gate de Estabilização Arquitetural v0.8**. Depois de fechado, o próximo incremento funcional será `16.5C — Semantic Content Foundation & Ingestion → Library`, seguido por `16.5D — Organization & Discovery`, `16.5E — Revision Awareness & Snapshot Hardening` e `16.5F — Advanced Reuse & Library Closure`. Depois disso, a v0.8 entra em Release Hardening final.
 
 `16.6 — Knowledge & Retrieval Foundation` é evolução pós-v0.8/opcional para chunks derivados, lexical/vector retrieval, embeddings, avaliação e futuro RAG/LLM. Não faz parte do gate de release v0.8.
+
+O plano pedagógico seguinte foi renumerado para evitar colisão com 16.6: `17.0` audita o modelo de evidência; `17.1` cria Knowledge Taxonomy; `17.2` roadmaps/editais; `17.3` Question Bank & Provenance; `17.4` Assessment Blueprint & Mastery; `17.5` Review & Retention; `17.6` dashboard docente; `17.7` progressão/avatar; `17.8` recomendações adaptativas. A regra é explícita: progresso de leitura, clique em Próximo e uma questão isolada não validam domínio. Documento: [`LEARNING_VALIDATION_ROADMAP.md`](LEARNING_VALIDATION_ROADMAP.md).
 
 ### 16.5B.2 — Journey Snapshot Integrity Hardening — implementado
 

@@ -22,10 +22,10 @@ import {
   type WordCloudParticipantState,
   type WordCloudState,
 } from "@/lib/word-cloud-api";
-import wordStyles from "@/app/join/word-cloud.module.css";
-import pollStyles from "@/app/join/poll.module.css";
-import quizStyles from "@/app/join/quiz.module.css";
-import stepStyles from "@/app/join/prepared-step.module.css";
+import wordStyles from "./student-join/word-cloud.module.css";
+import pollStyles from "./student-join/poll.module.css";
+import quizStyles from "./student-join/quiz.module.css";
+import stepStyles from "./student-join/prepared-step.module.css";
 import { emptyPollParticipantState, sendPollVote, type PollParticipantState, type PollState } from "@/lib/poll-api";
 import { emptyQuizParticipantState, quizOptionMatchesAnswer, sendQuizAnswer, type QuizParticipantState, type QuizState } from "@/lib/quiz-api";
 import { reconnectDelayMs, type BuzzerParticipantState, type ParticipantRuntimeSnapshot, type PublicBossState, type PublicBuzzerState } from "@/lib/runtime-snapshot";
@@ -67,6 +67,10 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
   async function resolveCode(nextCode: string) {
     const normalized = normalizeJoinCode(nextCode);
     if (!normalized) return;
+    if (normalized.startsWith("J-")) {
+      window.location.assign(`/learn/journeys?redeem=${encodeURIComponent(normalized)}`);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -400,7 +404,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
 
         {!session && (
           <form className="student-join-form" onSubmit={submitCode}>
-            <div className="student-join-heading"><span>ENTRAR NA AULA</span><h1>Código da sessão</h1><p>Digite o código exibido pelo professor.</p></div>
+            <div className="student-join-heading"><span>ENTRAR</span><h1>Código de acesso</h1><p>Use o código da aula ao vivo ou o código J-... de uma Jornada compartilhada pelo professor.</p></div>
             <input className="student-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} maxLength={8} placeholder="ABC123" autoFocus />
             <button className="student-primary-button" disabled={loading || !code.trim()}>{loading ? "Validando..." : "Continuar"}</button>
           </form>

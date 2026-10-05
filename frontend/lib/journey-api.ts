@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
 export type JourneyStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type JourneyUnlockRule = "IMMEDIATE" | "PREVIOUS_STAGE_COMPLETED";
@@ -49,7 +49,6 @@ export type JourneyInput = {
   stages: JourneyStageInput[];
 };
 
-type ApiErrorBody = { message?: string };
 
 export class JourneyApiError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -58,43 +57,37 @@ export class JourneyApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+function journeyRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, init, {
+    errorMessage: (status) => `Falha na API de jornadas (${status}).`,
+    errorFactory: (message, status) => new JourneyApiError(message, status),
   });
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try { body = (await response.json()) as ApiErrorBody; } catch { body = undefined; }
-    throw new JourneyApiError(body?.message || `Falha na API de jornadas (${response.status}).`, response.status);
-  }
-  return (await response.json()) as T;
 }
 
 export function fetchJourneys(classroomId: string) {
-  return request<Journey[]>(`/api/journeys?classroomId=${encodeURIComponent(classroomId)}`);
+  return journeyRequest<Journey[]>(`/api/journeys?classroomId=${encodeURIComponent(classroomId)}`);
 }
 
 export function createJourney(input: JourneyInput) {
-  return request<Journey>("/api/journeys", { method: "POST", body: JSON.stringify(input) });
+  return journeyRequest<Journey>("/api/journeys", { method: "POST", body: JSON.stringify(input) });
 }
 
 export function updateJourney(id: string, input: JourneyInput) {
-  return request<Journey>(`/api/journeys/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(input) });
+  return journeyRequest<Journey>(`/api/journeys/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(input) });
 }
 
 export function publishJourney(id: string) {
-  return request<Journey>(`/api/journeys/${encodeURIComponent(id)}/publish`, { method: "POST", body: "{}" });
+  return journeyRequest<Journey>(`/api/journeys/${encodeURIComponent(id)}/publish`, { method: "POST", body: "{}" });
 }
 
 export function archiveJourney(id: string) {
-  return request<Journey>(`/api/journeys/${encodeURIComponent(id)}/archive`, { method: "POST", body: "{}" });
+  return journeyRequest<Journey>(`/api/journeys/${encodeURIComponent(id)}/archive`, { method: "POST", body: "{}" });
 }
 
 export type JourneyRedemptionCode = { code: string | null; active: boolean; redeemedCount: number };
-export function fetchJourneyRedemption(id: string) { return request<JourneyRedemptionCode>(`/api/journeys/${encodeURIComponent(id)}/redemption`); }
-export function enableJourneyRedemption(id: string) { return request<JourneyRedemptionCode>(`/api/journeys/${encodeURIComponent(id)}/redemption/enable`, { method: "POST", body: "{}" }); }
-export function regenerateJourneyRedemption(id: string) { return request<JourneyRedemptionCode>(`/api/journeys/${encodeURIComponent(id)}/redemption/regenerate`, { method: "POST", body: "{}" }); }
-export async function disableJourneyRedemption(id: string) {
-  await apiFetch(`/api/journeys/${encodeURIComponent(id)}/redemption`, { method: "DELETE" });
+export function fetchJourneyRedemption(id: string) { return journeyRequest<JourneyRedemptionCode>(`/api/journeys/${encodeURIComponent(id)}/redemption`); }
+export function enableJourneyRedemption(id: string) { return journeyRequest<JourneyRedemptionCode>(`/api/journeys/${encodeURIComponent(id)}/redemption/enable`, { method: "POST", body: "{}" }); }
+export function regenerateJourneyRedemption(id: string) { return journeyRequest<JourneyRedemptionCode>(`/api/journeys/${encodeURIComponent(id)}/redemption/regenerate`, { method: "POST", body: "{}" }); }
+export function disableJourneyRedemption(id: string) {
+  return journeyRequest<void>(`/api/journeys/${encodeURIComponent(id)}/redemption`, { method: "DELETE" });
 }

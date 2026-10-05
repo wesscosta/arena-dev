@@ -15,13 +15,3 @@ test("classroom header switcher removes the trigger monogram and reads as breadc
   assert.match(css, /\.triggerCopy small::before/);
   assert.match(css, /\.open \.chevron\s*\{[\s\S]*transform:\s*rotate\(180deg\)/);
 });
-
-test("classroom home final polish widens and softens Arena CTA until hover", () => {
-  const css = read("styles/arena-polish.css");
-
-  assert.match(css, /width:\s*clamp\(32rem,\s*62%,\s*58rem\)/);
-  assert.match(css, /background:\s*rgba\(88,\s*243,\s*167,\s*\.66\)/);
-  assert.match(css, /\.arena-launch-button-centered:hover:not\(:disabled\)/);
-  assert.match(css, /background:\s*var\(--accent\)/);
-  assert.match(css, /\.classroom-manage-button\s*\{[\s\S]*opacity:\s*\.72/);
-});

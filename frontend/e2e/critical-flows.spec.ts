@@ -175,8 +175,9 @@ test("professor entra na Arena e participante reconecta à sessão", async ({
       fixture.classroomName,
     );
     await page.getByRole("button", { name: "Continuar Arena" }).click();
+    await expect(page.locator("aside.arena-cockpit-nav")).toBeVisible();
     await expect(
-      page.locator(".arena-nav-arena-card").getByText("Arena", { exact: true }),
+      page.locator("aside.arena-cockpit-nav").getByText("ARENA DEV", { exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("navigation", { name: "Contexto da sessão" })

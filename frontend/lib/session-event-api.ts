@@ -1,4 +1,4 @@
-import { apiFetch } from "./auth-api";
+import { apiRequest } from "./http/client";
 
 export type SessionEventType =
   | "SESSION_STARTED"
@@ -48,27 +48,18 @@ export type SessionEvent = {
   occurredAt: string;
 };
 
-type ApiErrorBody = { message?: string };
 
-async function request<T>(path: string): Promise<T> {
-  const response = await apiFetch(path);
-  if (!response.ok) {
-    let body: ApiErrorBody | undefined;
-    try {
-      body = (await response.json()) as ApiErrorBody;
-    } catch {
-      body = undefined;
-    }
-    throw new Error(body?.message || `Falha ao carregar a linha do tempo (${response.status}).`);
-  }
-  return (await response.json()) as T;
+function sessionEventRequest<T>(path: string): Promise<T> {
+  return apiRequest<T>(path, undefined, {
+    errorMessage: (status) => `Falha ao carregar a linha do tempo (${status}).`,
+  });
 }
 
 export async function fetchSessionEvents(
   classroomId: string,
   limit = 200,
 ): Promise<SessionEvent[]> {
-  return request<SessionEvent[]>(
+  return sessionEventRequest<SessionEvent[]>(
     `/api/session-events?classroomId=${encodeURIComponent(classroomId)}&limit=${Math.max(1, Math.min(limit, 500))}`,
   );
 }
@@ -76,5 +67,5 @@ export async function fetchSessionEvents(
 export async function fetchSessionEventsBySession(
   sessionId: string,
 ): Promise<SessionEvent[]> {
-  return request<SessionEvent[]>(`/api/sessions/${encodeURIComponent(sessionId)}/events`);
+  return sessionEventRequest<SessionEvent[]>(`/api/sessions/${encodeURIComponent(sessionId)}/events`);
 }

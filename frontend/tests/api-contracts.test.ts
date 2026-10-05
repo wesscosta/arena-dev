@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test, { afterEach } from "node:test";
-import { fetchTeacherSession, loginTeacher } from "../lib/auth-api";
+import { fetchTeacherSession, loginTeacher, resolveBrowserApiBaseUrl } from "../lib/auth-api";
 import { fetchClassroomDomain } from "../lib/classroom-api";
 import {
   fetchPublicSession,
@@ -22,6 +22,21 @@ function jsonResponse(body: unknown, status = 200) {
     headers: { "Content-Type": "application/json" },
   });
 }
+
+test("browser usa proxy same-origin quando a API configurada é loopback", () => {
+  assert.equal(
+    resolveBrowserApiBaseUrl("http://localhost:8080", "http://10.200.21.133:3000"),
+    "http://10.200.21.133:3000",
+  );
+  assert.equal(
+    resolveBrowserApiBaseUrl("http://127.0.0.1:8080", "http://localhost:3000"),
+    "http://localhost:3000",
+  );
+  assert.equal(
+    resolveBrowserApiBaseUrl("https://api.arena.example", "https://arena.example"),
+    "https://api.arena.example",
+  );
+});
 
 test("sessão expirada do professor resulta em estado não autenticado", async () => {
   globalThis.fetch = async () => jsonResponse({ message: "Não autenticado" }, 401);
