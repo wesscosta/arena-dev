@@ -1,6 +1,6 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 3 de outubro de 2026
+**Última sincronização documental:** 5 de outubro de 2026
 
 **Baseline publicada:** `v0.7.0 — Educational Integrations`.
 
@@ -107,7 +107,7 @@ Documento: [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CO
 ## Professor Arena Experience — implementado
 
 - shell estrutural extraído em `ArenaLiveShell`, `ArenaSidebar` e `ArenaSessionHeader`;
-- `ArenaContextRail`, configurações do sorteio e realtime da Arena possuem boundaries próprios; `useArenaRealtime` concentra Join Code + WebSocket + estados Buzzer/Timer/Word Cloud/Poll/Quiz;
+- `ArenaContextRail`, configurações do sorteio e realtime da Arena possuem boundaries próprios; `useArenaRealtime` concentra Join Code + WebSocket + estados Buzzer/Timer/Word Cloud/Poll/Quiz/Ranking;
 - header restrito ao workspace, sem compensações negativas de largura/margem;
 - E2E do shell verde em 1366×768, 1440×900, 1536×864 e 1920×1080, mais cenário com 22 participantes em 1821×831; sem overflow horizontal/vertical estrutural, com Ações rápidas e código/QR dentro da viewport;
 - seleção balanceada extraída para `ParticipantSelectionService`, mantendo o backend como autoridade;
@@ -131,6 +131,11 @@ Documento: [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CO
 - QR/código de sessão preservado no rail;
 - Timer, Organização e Presença como ferramentas contextuais;
 - Pontuação Rápida transversal;
+- Ranking da sessão implementado como ferramenta contextual, derivado exclusivamente de `ScoreEvent` com `sessionId`, com competition ranking para empates e sem score paralelo;
+- Ranking permanece privado por padrão; `Top 5`/`Todos`, projeção explícita, anonimização no backend e atualização realtime estão disponíveis;
+- estado público do Ranking é separado do estado privado do professor e não é exposto ao participante; ocultar a projeção restaura o `LiveStage` que já estava ativo;
+- o Ranking é feedback operacional da aula e não representa Mastery, desempenho acadêmico global ou leaderboard persistente;
+- navegação compacta mobile da Arena recebeu contenção horizontal e nomes acessíveis explícitos durante a matriz responsiva do Ranking;
 - Configurações exibem apenas regras reais e permitem trocar a apresentação sem alterar o critério de seleção;
 - QR ampliável em Presença e acesso;
 - indicadores de online e presença consolidados no roster;
@@ -145,11 +150,12 @@ Documento: [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CO
 ## Validação corrente
 
 ```text
-backend tests        OK (suíte Maven completa)
-frontend tests       OK · baseline corrente: 278/278
+backend tests        OK · 111/111
+frontend tests       OK · baseline corrente: 282/282
 frontend typecheck   OK
 frontend build       OK
 git diff --check     OK
+Ranking E2E          OK · 2/2 (fluxo + 12 combinações viewport/tema)
 Flyway               V1–V37
 ```
 

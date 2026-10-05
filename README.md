@@ -187,8 +187,11 @@ Estado final do `16.0 — Professor Arena Experience`:
 - Arena orientada por ações, sem as tabs antigas de Condução/Dinâmicas/Tempo/Organização;
 - sidebar persistente para Dinâmicas e Ferramentas;
 - workspace full-width e rail contextual de participantes/sessão;
-- Timer, Organização e Presença em ferramentas contextuais;
+- Timer, Organização, Presença e **Ranking da sessão** em ferramentas contextuais;
 - Pontuação Rápida transversal;
+- Ranking deriva exclusivamente de `ScoreEvent` da sessão, suporta empates, Top 5/Todos, atualização realtime e projeção explícita com opção de ocultar nomes;
+- a projeção do Ranking é paralela ao `LiveStage`, preservando a dinâmica em andamento quando o professor a exibe/oculta;
+- Ranking da sessão não é Mastery nem leaderboard permanente: não existem ranking global, ligas, temporadas ou recompensa automática por posição;
 - Sorteio Inteligente 2.0 com seleção autoritativa no backend, marcador fixo e animação com aceleração/desaceleração;
 - roleta SVG circular com slots adaptativos, quantidade ímpar de casas visíveis e slot neutro para preservar percepção de justiça em turmas pares;
 - rail de participantes com filtro Presentes/Todos e ferramentas contextuais estáveis para Timer, Organização, Presença e Pontuação Rápida;
@@ -250,6 +253,7 @@ O histórico detalhado de release permanece em `docs/RELEASE_0_6.md`. A document
 - [`docs/INCREMENT_16_3.md`](docs/INCREMENT_16_3.md)
 - [`docs/INCREMENT_16_2.md`](docs/INCREMENT_16_2.md)
 - [`docs/INCREMENT_16_0.md`](docs/INCREMENT_16_0.md)
+- [`docs/INCREMENT_16_0R_SESSION_RANKING.md`](docs/INCREMENT_16_0R_SESSION_RANKING.md)
 - [`docs/ROADMAP_0_7.md`](docs/ROADMAP_0_7.md)
 - [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md)
 - [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)

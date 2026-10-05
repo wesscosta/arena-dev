@@ -9,14 +9,15 @@
 5. [`INCREMENT_16_2.md`](INCREMENT_16_2.md) — fechamento de Learning Resources & Content Ingestion.
 6. [`INCREMENT_16_1.md`](INCREMENT_16_1.md) — fechamento do Journey Core.
 7. [`INCREMENT_16_0.md`](INCREMENT_16_0.md) — fechamento do Professor Arena Experience.
-8. [`ROADMAP_0_7.md`](ROADMAP_0_7.md) — fechamento histórico da linha de integrações.
-9. [`RELEASE_0_7.md`](RELEASE_0_7.md) — release publicada da v0.7.0.
-10. [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md) — gate transversal de segurança, arquitetura, design system e quality gates antes de novos incrementos funcionais.
-11. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
-12. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
-13. [`LEARNING_VALIDATION_ROADMAP.md`](LEARNING_VALIDATION_ROADMAP.md) — plano pós-v0.8 para taxonomia, roadmaps/editais, questões de concurso, evidências, Mastery, revisão e progressão visual.
-14. [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md) — decisões e gates da Visão geral de turmas, Biblioteca global, cards, temas e responsividade.
-15. [`adr/README.md`](adr/README.md).
+8. [`INCREMENT_16_0R_SESSION_RANKING.md`](INCREMENT_16_0R_SESSION_RANKING.md) — evolução transversal: ranking autoritativo da sessão, projeção opcional, privacidade e realtime.
+9. [`ROADMAP_0_7.md`](ROADMAP_0_7.md) — fechamento histórico da linha de integrações.
+10. [`RELEASE_0_7.md`](RELEASE_0_7.md) — release publicada da v0.7.0.
+11. [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md) — gate transversal de segurança, arquitetura, design system e quality gates antes de novos incrementos funcionais.
+12. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+13. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
+14. [`LEARNING_VALIDATION_ROADMAP.md`](LEARNING_VALIDATION_ROADMAP.md) — plano pós-v0.8 para taxonomia, roadmaps/editais, questões de concurso, evidências, Mastery, revisão e progressão visual.
+15. [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md) — decisões e gates da Visão geral de turmas, Biblioteca global, cards, temas e responsividade.
+16. [`adr/README.md`](adr/README.md).
 
 ## Baseline encerrada — v0.6
 

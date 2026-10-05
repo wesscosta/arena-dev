@@ -157,6 +157,22 @@ Durante o Gate de Estabilização Arquitetural, o Sorteio recebeu uma implementa
 
 O acompanhamento técnico desta evolução pertence ao **P5 do Gate de Estabilização Arquitetural**, evitando conflito com o já existente `16.4B — Live dentro do Student Shell`.
 
+### Evolução transversal pós-16.0 — Session Ranking
+
+O Ranking foi incorporado como ferramenta contextual da sessão, sem reabrir a economia de gamificação nem criar um novo domínio de pontuação.
+
+- `ScoreEvent` associado à sessão permanece a única fonte de verdade;
+- classificação usa competition ranking (`1, 1, 3`) e respeita reversões;
+- professor dispõe de `Top 5` e `Todos`;
+- Ranking é privado por padrão e só chega ao Projetor após comando explícito;
+- anonimização ocorre no backend; o payload público não carrega o nome completo quando habilitada;
+- a projeção é paralela ao `LiveStage`, portanto não destrói Quiz/Sorteio/Buzzer em andamento;
+- mudanças de score atualizam professor e, quando visível, Projetor via realtime;
+- participantes não recebem a projeção pública pelo runtime;
+- ranking global, histórico, ligas, temporadas, badges por posição e associação com Mastery permanecem fora do escopo.
+
+Contrato e evidências: [`INCREMENT_16_0R_SESSION_RANKING.md`](INCREMENT_16_0R_SESSION_RANKING.md).
+
 ## 16.1 — Journey Core
 
 ### Objetivo
