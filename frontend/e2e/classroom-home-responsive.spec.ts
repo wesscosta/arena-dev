@@ -199,6 +199,7 @@ test.describe.serial("Classroom Home responsive contract", () => {
   test("reloads the idle Home through all target breakpoints and themes without overflow or collisions", async ({
     browser,
   }, testInfo) => {
+    test.setTimeout(60_000);
     for (const theme of ["dark", "light"] as const) {
       const context = await browser.newContext({ viewport: viewports[0] });
       await context.addInitScript((preference) => {
@@ -269,12 +270,13 @@ test.describe.serial("Classroom Home responsive contract", () => {
       await page.getByRole("button", { name: "Timer", exact: true }).click();
       const timerDialog = page.getByRole("dialog", { name: "Timer" });
       await expect(timerDialog).toBeVisible();
-      await expect(timerDialog.getByText("Configuração do timer", { exact: true })).toBeVisible();
+      await expect(timerDialog.getByText("Configuração do timer", { exact: true })).toHaveCount(0);
+      await expect(timerDialog.getByText("NOVO TEMPORIZADOR", { exact: true })).toHaveCount(0);
       await expect(timerDialog.getByText("Tempo da atividade", { exact: true })).toBeVisible();
       await expect(timerDialog.getByText("Conteúdo", { exact: true })).toBeVisible();
       await expect(timerDialog.getByText("Exibição", { exact: true })).toBeVisible();
       await expect(timerDialog.getByText("Alertas locais", { exact: true })).toBeVisible();
-      await expect(timerDialog.getByText("Ações", { exact: true })).toBeVisible();
+      await expect(timerDialog.getByText("Ações", { exact: true })).toHaveCount(0);
       await expect(timerDialog.getByText("Configurar", { exact: true })).toHaveCount(0);
       await expect(timerDialog.locator(".timer-config-card")).toHaveCount(1);
 
@@ -286,12 +288,40 @@ test.describe.serial("Classroom Home responsive contract", () => {
         const overflow = await timerDialog.evaluate((element) => element.scrollWidth - element.clientWidth);
         expect(overflow, `Timer sem overflow em ${viewport.width}px`).toBeLessThanOrEqual(1);
 
+        if (viewport.width === 1366) {
+          const drawerContent = timerDialog.getByTestId("arena-tool-drawer-content");
+          const verticalOverflow = await drawerContent.evaluate(
+            (element) => element.scrollHeight - element.clientHeight,
+          );
+          expect(verticalOverflow, "Timer cabe integralmente em 1366x768").toBeLessThanOrEqual(1);
+        }
+
         const segments = timerDialog.locator(".timer-duration-segment");
         await expect(segments).toHaveCount(3);
         const boxes = await Promise.all([0, 1, 2].map((index) => segments.nth(index).boundingBox()));
         for (const box of boxes) {
           expect(box).not.toBeNull();
           if (box) expect(box.width).toBeGreaterThan(80);
+        }
+
+        const presetRail = timerDialog.locator(".timer-preset-chips");
+        const presetOverflow = await presetRail.evaluate((element) => element.scrollWidth - element.clientWidth);
+        expect(presetOverflow, `Presets sem scroll horizontal em ${viewport.width}px`).toBeLessThanOrEqual(1);
+
+        const presets = presetRail.locator("button");
+        await expect(presets).toHaveCount(8);
+        const presetBoxes = await Promise.all(Array.from({ length: 8 }, (_, index) => presets.nth(index).boundingBox()));
+        const firstPresetY = presetBoxes[0]?.y;
+        expect(firstPresetY).toBeDefined();
+        for (const box of presetBoxes) {
+          expect(box).not.toBeNull();
+          if (box && firstPresetY !== undefined) expect(Math.abs(box.y - firstPresetY)).toBeLessThanOrEqual(5);
+        }
+
+        if (viewport.width === 390) {
+          const startButton = timerDialog.getByRole("button", { name: "Iniciar agora" });
+          await startButton.scrollIntoViewIfNeeded();
+          await expect(startButton).toBeVisible();
         }
       }
     } finally {

@@ -97,7 +97,7 @@ export default function ArenaToolDrawer({ open, title, subtitle, size = "default
             ×
           </button>
         </header>
-        <div className={styles.content}>{children}</div>
+        <div className={styles.content} data-testid="arena-tool-drawer-content">{children}</div>
       </aside>
     </div>
   );

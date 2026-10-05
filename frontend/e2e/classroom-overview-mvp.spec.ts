@@ -191,10 +191,17 @@ test.describe("Classroom overview MVP contract", () => {
     await expect(selectedCard).toHaveClass(/selected/);
     const selectedCue = await selectedCard.evaluate((element) => {
       const cue = window.getComputedStyle(element, "::before");
-      return { content: cue.content, width: Number.parseFloat(cue.width) };
+      return {
+        content: cue.content,
+        width: Number.parseFloat(cue.width),
+        height: Number.parseFloat(cue.height),
+        transform: cue.transform,
+      };
     });
     expect(selectedCue.content).not.toBe("none");
     expect(selectedCue.width).toBeGreaterThanOrEqual(3);
+    expect(selectedCue.height).toBeGreaterThan(selectedCue.width * 4);
+    expect(selectedCue.transform).toBe("none");
 
     const [metricsBox, gridBox] = await Promise.all([
       page.locator(".overview-metrics").boundingBox(),
@@ -241,7 +248,21 @@ test.describe("Classroom overview MVP contract", () => {
             expect(
               box.width,
               `card excessivamente largo em ${viewport.width}px / ${theme}`,
-            ).toBeLessThanOrEqual(310);
+            ).toBeLessThanOrEqual(380);
+          }
+        }
+
+        if (viewport.width === 2560) {
+          const cards = page.getByTestId("classroom-overview-card");
+          if (await cards.count() >= 6) {
+            const rowBoxes = await Promise.all(Array.from({ length: 6 }, (_, index) => cards.nth(index).boundingBox()));
+            const firstRowY = rowBoxes[0]?.y;
+            expect(firstRowY).toBeDefined();
+            for (const box of rowBoxes.slice(0, 5)) {
+              expect(box).not.toBeNull();
+              if (box && firstRowY !== undefined) expect(Math.abs(box.y - firstRowY)).toBeLessThanOrEqual(1);
+            }
+            if (rowBoxes[5] && firstRowY !== undefined) expect(rowBoxes[5].y).toBeGreaterThan(firstRowY + 1);
           }
         }
 

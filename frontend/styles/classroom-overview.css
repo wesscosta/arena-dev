@@ -174,7 +174,7 @@
 .classroom-card-grid {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: stretch;
   gap: var(--space-3);
 }
@@ -226,6 +226,7 @@
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: var(--ds-accent);
   box-shadow: 0 0 1rem color-mix(in srgb, var(--ds-accent) 44%, transparent);
+  transform: none;
   pointer-events: none;
 }
 .overview-class-card.inactive {
@@ -399,11 +400,6 @@
 .classroom-card-menu > button.danger,
 .classroom-card-menu > button.danger > span {
   color: var(--ds-danger-text);
-}
-@media (max-width: 100rem) {
-  .classroom-card-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
 }
 @media (max-width: 80rem) {
   .classroom-card-grid {

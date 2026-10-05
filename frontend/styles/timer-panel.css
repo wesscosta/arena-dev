@@ -1,6 +1,6 @@
 /* Timer tool — one configuration surface, explicit sections, actions outside. */
 .timer-workspace {
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .timer-setup-card {
@@ -10,42 +10,33 @@
   box-shadow: none;
 }
 
-.timer-setup-heading {
-  align-items: flex-end;
-  gap: var(--space-4);
-  padding: 0 0 var(--space-4);
-  border-bottom: 1px solid var(--ds-border-subtle);
-}
-
-.timer-setup-heading > div:first-child {
-  min-width: 0;
-  display: grid;
-  gap: var(--space-1);
-}
-
-.timer-setup-heading h3 {
-  margin: 0;
-  font-size: var(--font-size-xl);
-  line-height: var(--line-snug);
-}
-
 .timer-selected-duration {
+  flex: 0 0 auto;
   min-width: 6.5rem;
   text-align: right;
 }
 
+.timer-selected-duration small,
+.timer-selected-duration strong {
+  display: block;
+}
+
 .timer-selected-duration small {
   color: var(--ds-text-tertiary);
+  font-size: var(--font-size-2xs);
+  letter-spacing: .1em;
 }
 
 .timer-selected-duration strong {
+  margin-top: var(--space-1);
   color: var(--ds-accent-strong);
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-xl);
+  font-variant-numeric: tabular-nums;
 }
 
 .timer-config-card {
   width: 100%;
-  margin-top: var(--space-3);
+  margin-top: 0;
   overflow: hidden;
   border: 1px solid var(--ds-border);
   border-radius: var(--radius-lg);
@@ -53,42 +44,21 @@
   box-shadow: var(--ds-shadow-panel);
 }
 
-.timer-config-card-header {
-  padding: var(--space-4);
-  background: color-mix(in srgb, var(--ds-accent) 3%, var(--ds-surface-raised));
-}
-
-.timer-config-card-header > div {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.timer-config-card-header strong {
-  color: var(--ds-text-primary);
-  font-size: var(--font-size-md);
-}
-
-.timer-config-card-header small,
-.timer-config-section-heading small,
-.timer-field-block > small,
-.timer-display-block small,
-.timer-actions-copy small {
-  color: var(--ds-text-secondary);
-  font-size: var(--font-size-xs);
-  line-height: var(--line-normal);
-}
-
 .timer-config-section {
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--ds-border-subtle);
+}
+
+.timer-config-section:first-child {
+  border-top: 0;
 }
 
 .timer-config-section-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .timer-config-section-heading > div {
@@ -109,7 +79,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: stretch;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .timer-duration-colon {
@@ -119,7 +89,7 @@
 .timer-duration-segment {
   min-width: 0;
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .timer-duration-segment > span {
@@ -140,7 +110,7 @@
 
 .timer-duration-segment button,
 .timer-duration-segment input {
-  min-height: var(--control-lg);
+  min-height: var(--control-md);
 }
 
 .timer-duration-segment button {
@@ -182,15 +152,16 @@
 .timer-preset-chips {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-2);
-  margin-top: var(--space-3);
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.375rem;
+  margin-top: var(--space-2);
+  overflow: visible;
 }
 
 .timer-preset-chips button {
   min-width: 0;
-  min-height: var(--control-sm);
-  padding: var(--space-2);
+  min-height: 1.9rem;
+  padding: 0.35rem 0.2rem;
   border: 1px solid var(--ds-border);
   border-radius: var(--radius-pill);
   background: var(--ds-surface-control);
@@ -210,14 +181,14 @@
 .timer-config-fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .timer-config-fields .timer-field-block {
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-2);
+  gap: var(--space-1);
   padding: 0;
   border: 0;
   background: transparent;
@@ -246,7 +217,8 @@
 }
 
 .timer-field-block .textarea {
-  min-height: 6.75rem;
+  min-height: 4rem;
+  max-height: 5.5rem;
   resize: vertical;
 }
 
@@ -258,27 +230,33 @@
 
 .timer-config-preferences {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
+.timer-config-preference-group {
+  min-width: 0;
+}
+
 .timer-config-preference-group + .timer-config-preference-group {
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--ds-border-subtle);
+  padding-top: 0;
+  padding-left: var(--space-4);
+  border-top: 0;
+  border-left: 1px solid var(--ds-border-subtle);
 }
 
 .timer-config-preference-group .timer-config-section-heading {
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .timer-display-block,
 .timer-alert-options .timer-option-row {
-  min-height: var(--target-comfortable);
+  min-height: 2.1rem;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  gap: var(--space-3);
-  padding: var(--space-2) 0;
+  gap: var(--space-2);
+  padding: 0.3rem 0;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -321,27 +299,14 @@
 
 .timer-setup-actions.timer-actions-block {
   width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
-  margin-top: var(--space-3);
-  padding: var(--space-3) 0 0;
+  display: block;
+  margin-top: var(--space-2);
+  padding: var(--space-2) 0 0;
   border: 0;
   border-top: 1px solid var(--ds-border-subtle);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-}
-
-.timer-actions-copy {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.timer-actions-copy strong {
-  color: var(--ds-text-primary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-bold);
 }
 
 .timer-action-buttons {
@@ -355,13 +320,50 @@
   min-height: var(--control-lg);
 }
 
-@media (max-width: 42rem) {
-  .timer-setup-heading {
-    align-items: flex-start;
+@media (min-width: 48.01rem) and (max-height: 52rem) {
+  .timer-config-section {
+    padding-block: 0.65rem;
   }
 
-  .timer-selected-duration {
-    min-width: auto;
+  .timer-config-section-heading {
+    margin-bottom: 0.4rem;
+  }
+
+  .timer-duration-segment > div {
+    grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+  }
+
+  .timer-duration-segment button,
+  .timer-duration-segment input {
+    min-height: 2.5rem;
+  }
+
+  .timer-field-block .textarea {
+    min-height: 3.5rem;
+    max-height: 4.5rem;
+  }
+}
+
+@media (max-width: 42rem) {
+  .timer-config-preferences {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timer-config-preference-group + .timer-config-preference-group {
+    padding-top: var(--space-3);
+    padding-left: 0;
+    border-top: 1px solid var(--ds-border-subtle);
+    border-left: 0;
+  }
+
+  .timer-preset-chips {
+    gap: 0.25rem;
+  }
+
+  .timer-preset-chips button {
+    min-height: 1.8rem;
+    padding-inline: 0.1rem;
+    font-size: 0.58rem;
   }
 
   .timer-duration-editor {
@@ -382,16 +384,9 @@
     font-size: var(--font-size-lg);
   }
 
-  .timer-preset-chips {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 30rem) {
-  .timer-setup-heading {
-    flex-direction: column;
-  }
-
   .timer-selected-duration {
     text-align: left;
   }

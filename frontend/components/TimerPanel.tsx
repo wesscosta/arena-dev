@@ -354,31 +354,15 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
 
       {showCreate && (
         <section className="timer-setup-card">
-          <div className="timer-setup-heading">
-            <div>
-              <span className="eyebrow accent">NOVO TEMPORIZADOR</span>
-              <h3>{timer ? "Preparar o próximo tempo" : "Defina o tempo da atividade"}</h3>
-            </div>
-            <div className="timer-selected-duration">
-              <small>DURAÇÃO</small>
-              <strong>{formatTimer(durationSeconds)}</strong>
-            </div>
-          </div>
-
           <div className="timer-config-card">
-            <header className="timer-config-card-header">
-              <div>
-                <span className="eyebrow accent">CONFIGURAÇÃO</span>
-                <strong>Configuração do timer</strong>
-                <small>Ajuste duração, conteúdo, exibição e alertas antes de iniciar.</small>
-              </div>
-            </header>
-
             <section className="timer-config-section timer-config-time" aria-labelledby="timer-config-time-title">
               <div className="timer-config-section-heading">
                 <div>
                   <h4 id="timer-config-time-title">Tempo da atividade</h4>
-                  <small>Defina quanto tempo a atividade deve durar.</small>
+                </div>
+                <div className="timer-selected-duration" aria-label={`Duração selecionada ${formatTimer(durationSeconds)}`}>
+                  <small>DURAÇÃO</small>
+                  <strong>{formatTimer(durationSeconds)}</strong>
                 </div>
               </div>
 
@@ -429,14 +413,12 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
               <div className="timer-config-section-heading">
                 <div>
                   <h4 id="timer-config-content-title">Conteúdo</h4>
-                  <small>Defina como o timer será identificado e contextualizado.</small>
                 </div>
               </div>
 
               <div className="timer-config-fields">
                 <label className="field timer-field-block">
                   <span>Título</span>
-                  <small>Identifique o objetivo do timer.</small>
                   <input
                     className="input"
                     value={title}
@@ -448,12 +430,11 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
 
                 <label className="field timer-field-block">
                   <span>Instruções <em>(opcional)</em></span>
-                  <small>Adicione orientações que ficarão visíveis durante a execução.</small>
                   <textarea
                     className="textarea"
                     value={instructions}
                     maxLength={500}
-                    rows={4}
+                    rows={2}
                     onChange={(event) => setInstructions(event.target.value)}
                     placeholder="Ex.: Pesquisem e preparem uma síntese para apresentação."
                   />
@@ -467,7 +448,6 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
                 <div className="timer-config-section-heading">
                   <div>
                     <h4 id="timer-config-display-title">Exibição</h4>
-                    <small>Escolha como o timer será apresentado durante a execução.</small>
                   </div>
                 </div>
                 <label className="timer-option-row timer-display-block">
@@ -478,7 +458,6 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
                   />
                   <div>
                     <strong>Abrir em tela cheia ao iniciar</strong>
-                    <small>Exibe o timer em destaque para a turma ao iniciar a contagem.</small>
                   </div>
                 </label>
               </div>
@@ -487,7 +466,6 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
                 <div className="timer-config-section-heading">
                   <div>
                     <h4>Alertas locais</h4>
-                    <small>Defina os avisos que serão emitidos durante a contagem.</small>
                   </div>
                 </div>
                 <div className="timer-alert-options">
@@ -499,7 +477,7 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
                         setAlerts((current) => ({ ...current, five: event.target.checked }))
                       }
                     />
-                    <span>Avisar quando faltarem 5 minutos</span>
+                    <span>5 minutos</span>
                   </label>
                   <label className="timer-option-row">
                     <input
@@ -509,7 +487,7 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
                         setAlerts((current) => ({ ...current, one: event.target.checked }))
                       }
                     />
-                    <span>Avisar quando faltar 1 minuto</span>
+                    <span>1 minuto</span>
                   </label>
                   <label className="timer-option-row">
                     <input
@@ -519,7 +497,7 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
                         setAlerts((current) => ({ ...current, end: event.target.checked }))
                       }
                     />
-                    <span>Avisar ao encerrar</span>
+                    <span>Ao encerrar</span>
                   </label>
                 </div>
               </div>
@@ -527,10 +505,6 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
           </div>
 
           <div className="timer-setup-actions timer-actions-block">
-            <div className="timer-actions-copy">
-              <strong>Ações</strong>
-              <small>Escolha se deseja apenas preparar ou iniciar imediatamente.</small>
-            </div>
             <div className="timer-action-buttons">
               <button
                 className="button ghost"
