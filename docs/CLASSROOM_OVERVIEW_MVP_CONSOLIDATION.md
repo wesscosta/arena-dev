@@ -44,7 +44,7 @@ Nenhuma migration ou nova entidade de domínio foi necessária.
 - empty state específico para busca/filtro sem resultado;
 - card compacto com nome, código, alunos, atividades e estado;
 - ação principal do card separada do menu contextual;
-- grid responsivo com largura máxima de card no desktop;
+- grid responsivo com até cinco colunas fluidas no desktop/ultrawide, ocupando a mesma largura útil das métricas e filtros;
 - tokens semânticos de sombra conectados ao tema;
 - estilos novos baseados em `--ds-*`, sem nova paleta paralela.
 
@@ -69,7 +69,7 @@ A consolidação só é considerada válida quando:
 - Biblioteca funciona como navegação global e não CTA contextual;
 - light e dark preservam contraste e hierarquia;
 - não existe overflow horizontal nos viewports-alvo;
-- cards não crescem indefinidamente em desktop/ultrawide;
+- desktop/ultrawide preserva no máximo cinco cards por linha e distribui a largura disponível entre eles;
 - busca, filtro e abertura de turma permanecem funcionais;
 - mobile mantém nomes acessíveis mesmo quando rótulos visuais são ocultos;
 - estados vazio, busca vazia e filtro vazio são distinguíveis;
@@ -92,3 +92,12 @@ Em 03/10/2026, sobre o estado final deste épico:
 - inspeção visual 1440 px realizada em light e dark.
 
 O E2E detectou durante o desenvolvimento um overflow real em 1024 px na Home de turma. A causa era o contexto longo do breadcrumb concorrendo com a nova navegação global. A correção reduz o breadcrumb em larguras compactas e aplica truncamento sem esconder overflow da página.
+
+## Atualização de polish — 05/10/2026
+
+A validação visual posterior ao MVP identificou dois ajustes na grade de turmas e ambos foram consolidados sem ampliar o domínio:
+
+- o desktop/ultrawide passa a preservar **no máximo cinco cards por linha**, fazendo os cinco cards preencherem a largura do bloco em vez de introduzir uma sexta coluna estreita;
+- o indicador da turma selecionada voltou a ser uma barra vertical reta; foi removida a herança legada de `transform: rotate(-7deg)` que ainda existia no `globals.css`;
+- estilos específicos da Visão geral permanecem sob ownership de `styles/classroom-overview.css`, reduzindo competição com CSS legado;
+- a matriz E2E continua cobrindo 390, 768, 1024, 1440, 1920 e 2560 px em light/dark, com validação explícita de largura compartilhada entre métricas e grid.

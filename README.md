@@ -27,7 +27,7 @@ Arena Dev não pretende ser um LMS completo. O produto concentra a condução da
 - turmas, estudantes, matrículas e presença;
 - sessão de aula com estado autoritativo no backend;
 - Sorteio, Nuvem de Palavras, Votação, Quiz, Buzzer e Boss Battle;
-- Timer sincronizado;
+- Timer sincronizado em drawer contextual compacto e responsivo;
 - grupos, duplas e trios;
 - Projetor público;
 - entrada do aluno por `/join`;
@@ -188,6 +188,7 @@ Estado final do `16.0 — Professor Arena Experience`:
 - sidebar persistente para Dinâmicas e Ferramentas;
 - workspace full-width e rail contextual de participantes/sessão;
 - Timer, Organização, Presença e **Ranking da sessão** em ferramentas contextuais;
+- Timer consolidado em uma única superfície de configuração, com presets em linha única sem scroll horizontal e baseline 1366×768 sem scroll vertical obrigatório;
 - Pontuação Rápida transversal;
 - Ranking deriva exclusivamente de `ScoreEvent` da sessão, suporta empates, Top 5/Todos, atualização realtime e projeção explícita com opção de ocultar nomes;
 - a projeção do Ranking é paralela ao `LiveStage`, preservando a dinâmica em andamento quando o professor a exibe/oculta;

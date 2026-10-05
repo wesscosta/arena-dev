@@ -88,7 +88,7 @@ Google Classroom           standby
 - confinamento `100dvh`/`overflow: hidden` ficou restrito à Arena ao vivo via `arena-fullscreen-shell`;
 - scroll lock de overlays centralizado e seguro para locks simultâneos;
 - tela de participantes simplificada com busca, nome de exibição sob demanda e ações por ícones;
-- baseline atual: Next.js 16.3.8; `npm audit --omit=dev --audit-level=high` com 0 vulnerabilidades; frontend 278/278, typecheck e build verdes; backend `mvn verify` verde com 106 testes unitários + 87 ITs;
+- baseline atual: Next.js 16.3.8; `npm audit --omit=dev --audit-level=high` com 0 vulnerabilidades; frontend 284/284, typecheck e build verdes; backend `mvn verify` verde com 106 testes unitários + 87 ITs;
 - transporte HTTP frontend consolidado em `lib/http/client.ts`; módulos de domínio não implementam mais parsing/CSRF/credentials de forma independente;
 - direção de dependência CSS corrigida: componentes não importam mais módulos de estilo privados de `app/`; Projector, Student Join e Study possuem ownership de feature em `components/`;
 
@@ -97,7 +97,7 @@ Google Classroom           standby
 - o shell do professor continua sem sidebar; `Visão geral` permanece o nível global do sistema;
 - `Biblioteca` passou a destino explícito da navegação global no topbar, em vez de CTA isolado da página;
 - a página `Suas turmas` mantém busca por nome/código, filtros Ativas/Inativas e ordenação por MRU/nome/código;
-- cards foram compactados e limitados em largura, sem carrossel, categorias, tags ou progresso inventado;
+- grid de turmas consolidado em até cinco colunas fluidas no desktop/ultrawide, preenchendo a largura útil sem criar uma sexta coluna; cards mantêm hierarquia interna à esquerda e seleção com barra vertical estável; sem carrossel, categorias, tags ou progresso inventado;
 - XP saiu do card de descoberta; o card mostra somente código, alunos, atividades e estado operacional;
 - light/dark usam os tokens semânticos existentes e a matriz E2E cobre reload em 390, 768, 1024, 1440, 1920 e 2560 px;
 - categorias, shelves estilo Netflix, favoritos e taxonomias adicionais continuam fora do MVP até existir necessidade observada.
@@ -130,6 +130,7 @@ Documento: [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CO
 - Arena full-width em desktop;
 - QR/código de sessão preservado no rail;
 - Timer, Organização e Presença como ferramentas contextuais;
+- Timer refinado para uma única superfície de configuração: títulos auxiliares redundantes removidos, oito presets em uma linha sem scroll horizontal, Exibição/Alertas compactados e baseline 1366×768 validada sem scroll vertical obrigatório;
 - Pontuação Rápida transversal;
 - Ranking da sessão implementado como ferramenta contextual, derivado exclusivamente de `ScoreEvent` com `sessionId`, com competition ranking para empates e sem score paralelo;
 - Ranking permanece privado por padrão; `Top 5`/`Todos`, projeção explícita, anonimização no backend e atualização realtime estão disponíveis;
@@ -151,11 +152,12 @@ Documento: [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CO
 
 ```text
 backend tests        OK · 111/111
-frontend tests       OK · baseline corrente: 282/282
+frontend tests       OK · baseline corrente: 284/284
 frontend typecheck   OK
 frontend build       OK
 git diff --check     OK
 Ranking E2E          OK · 2/2 (fluxo + 12 combinações viewport/tema)
+E2E transversal      OK · 10/10 (Ranking + Home responsiva + Visão geral + fluxos críticos)
 Flyway               V1–V37
 ```
 

@@ -57,10 +57,11 @@ Transformar a Arena em um cockpit desktop de aula ao vivo orientado por ações,
 - status diferenciado entre online, presente offline e ausente.
 
 #### Ferramentas transversais
-- Timer em drawer contextual;
+- Timer em drawer contextual, consolidado em uma superfície compacta sem títulos redundantes, com oito presets em linha única e baseline 1366×768 sem scroll obrigatório;
 - Organização da turma em drawer contextual;
 - Presença e acesso em drawer contextual;
 - Pontuação rápida transversal;
+- Ranking da sessão como ferramenta contextual derivada exclusivamente de `ScoreEvent`, com Top 5/Todos, empates, atualização realtime e projeção explícita/anonimizada;
 - QR e fluxo de acesso ajustados para o contexto do drawer.
 #### Sorteio Inteligente 2.0
 - backend continua sendo a única autoridade da seleção;
@@ -109,10 +110,11 @@ Não há implementação funcional pendente para o `16.0`; o incremento foi inte
 
 ```text
 frontend
-npm test       248 passed
+npm test       284 passed
 npm typecheck  OK
 npm build      OK
 Docker frontend OK
+E2E focal      10/10 · Ranking, Home responsiva, Visão geral e fluxos críticos
 ```
 
 ## Critério de fechamento do 16.0

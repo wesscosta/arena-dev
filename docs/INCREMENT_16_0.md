@@ -2,7 +2,7 @@
 
 ## Status
 
-**Concluído na branch** `feat/v0.8-professor-arena-cockpit`; aguardando integração por PR.
+**Concluído e integrado à `main` pelo PR #21.** Ajustes transversais posteriores continuam entrando pelo Gate de Estabilização Arquitetural v0.8 sem reabrir a autoridade de domínio do 16.0.
 
 ## Problema
 
@@ -33,7 +33,7 @@ A Arena passa a funcionar como um **cockpit operacional** com quatro camadas:
 - Presença;
 - Pontuação rápida.
 
-Timer, Organização e Presença são ferramentas contextuais e não devem substituir a dinâmica aberta.
+Timer, Organização e Presença são ferramentas contextuais e não devem substituir a dinâmica aberta. O Timer foi posteriormente consolidado em uma única superfície de configuração, com presets em linha única sem scroll horizontal, Exibição/Alertas compactados e operação integral validada em 1366×768.
 
 ## Sorteio Inteligente
 
