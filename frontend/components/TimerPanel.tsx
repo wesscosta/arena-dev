@@ -366,8 +366,13 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
           </div>
 
           <div className="timer-setup-grid">
-            <div className="timer-duration-box">
-              <span className="field-label">Contagem regressiva</span>
+            <div className="timer-duration-box timer-config-block">
+              <div className="timer-config-heading">
+                <div>
+                  <span className="field-label">Duração do timer</span>
+                  <small>Defina quanto tempo a atividade deve durar.</small>
+                </div>
+              </div>
               <div className="timer-duration-editor" aria-label="Duração do temporizador">
                 <DurationSegment
                   label="Horas"
@@ -412,8 +417,9 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
             </div>
 
             <div className="timer-details-box">
-              <label className="field">
+              <label className="field timer-field-block">
                 <span>Título</span>
+                <small>Identifique o objetivo do timer.</small>
                 <input
                   className="input"
                   value={title}
@@ -423,8 +429,9 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
                 />
               </label>
 
-              <label className="field">
-                <span>Instruções opcionais</span>
+              <label className="field timer-field-block">
+                <span>Instruções <em>(opcional)</em></span>
+                <small>Adicione orientações que ficarão visíveis durante a execução.</small>
                 <textarea
                   className="textarea"
                   value={instructions}
@@ -433,9 +440,10 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
                   onChange={(event) => setInstructions(event.target.value)}
                   placeholder="Ex.: Pesquisem e preparem uma síntese para apresentação."
                 />
+                <small className="timer-field-count">{instructions.length}/500</small>
               </label>
 
-              <label className="timer-option-row">
+              <label className="timer-option-row timer-display-block">
                 <input
                   type="checkbox"
                   checked={openFocusOnStart}
@@ -443,26 +451,33 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
                 />
                 <div>
                   <strong>Abrir em tela cheia ao iniciar</strong>
+                  <small>Exibe o timer em destaque para a turma ao iniciar a contagem.</small>
                 </div>
               </label>
             </div>
           </div>
 
-          <div className="timer-setup-actions">
-            <button
-              className="button ghost"
-              disabled={busy || durationSeconds < 1}
-              onClick={() => void prepareTimer()}
-            >
-              Apenas preparar
-            </button>
-            <button
-              className="button primary large"
-              disabled={busy || durationSeconds < 1}
-              onClick={() => void createAndStartTimer()}
-            >
-              {busy ? "Iniciando..." : "Iniciar agora"}
-            </button>
+          <div className="timer-setup-actions timer-actions-block">
+            <div className="timer-actions-copy">
+              <strong>Ações</strong>
+              <small>Escolha se deseja apenas preparar ou iniciar imediatamente.</small>
+            </div>
+            <div className="timer-action-buttons">
+              <button
+                className="button ghost"
+                disabled={busy || durationSeconds < 1}
+                onClick={() => void prepareTimer()}
+              >
+                Apenas preparar
+              </button>
+              <button
+                className="button primary large"
+                disabled={busy || durationSeconds < 1}
+                onClick={() => void createAndStartTimer()}
+              >
+                {busy ? "Iniciando..." : "Iniciar agora"}
+              </button>
+            </div>
           </div>
         </section>
       )}

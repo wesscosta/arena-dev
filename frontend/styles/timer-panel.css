@@ -1,0 +1,368 @@
+/* Timer tool — drawer-first layout with block-based configuration ownership. */
+.timer-workspace {
+  gap: var(--space-3);
+}
+
+.timer-setup-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.timer-setup-heading {
+  align-items: flex-end;
+  gap: var(--space-4);
+  padding: 0 0 var(--space-4);
+  border-bottom: 1px solid var(--ds-border-subtle);
+}
+
+.timer-setup-heading > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.timer-setup-heading h3 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  line-height: var(--line-snug);
+}
+
+.timer-selected-duration {
+  min-width: 6.5rem;
+  text-align: right;
+}
+
+.timer-selected-duration small {
+  color: var(--ds-text-tertiary);
+}
+
+.timer-selected-duration strong {
+  color: var(--ds-accent-strong);
+  font-size: var(--font-size-2xl);
+}
+
+.timer-setup-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+}
+
+.timer-config-block,
+.timer-field-block,
+.timer-display-block,
+.timer-actions-block,
+.timer-settings-panel {
+  border: 1px solid var(--ds-border);
+  border-radius: var(--radius-lg);
+  background: var(--ds-surface-raised);
+  box-shadow: var(--ds-shadow-panel);
+}
+
+.timer-duration-box {
+  width: 100%;
+  padding: var(--space-4);
+  border-color: var(--ds-border);
+  background: var(--ds-surface-raised);
+}
+
+.timer-config-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.timer-config-heading > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.timer-config-heading .field-label,
+.timer-details-box .timer-field-block > span,
+.timer-display-block strong,
+.timer-actions-copy strong {
+  color: var(--ds-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-bold);
+}
+
+.timer-config-heading small,
+.timer-details-box .timer-field-block > small,
+.timer-display-block small,
+.timer-actions-copy small {
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-normal);
+}
+
+.timer-details-box .timer-field-block > span em {
+  color: var(--ds-text-tertiary);
+  font-size: var(--font-size-xs);
+  font-style: normal;
+  font-weight: var(--font-medium);
+}
+
+.timer-duration-editor {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.timer-duration-colon {
+  display: none;
+}
+
+.timer-duration-segment {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.timer-duration-segment > span {
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-semibold);
+}
+
+.timer-duration-segment > div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) 2.25rem;
+  overflow: hidden;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--radius-md);
+  background: var(--ds-surface-control);
+}
+
+.timer-duration-segment button,
+.timer-duration-segment input {
+  min-height: var(--control-lg);
+}
+
+.timer-duration-segment button {
+  border: 0;
+  background: var(--ds-surface-subtle);
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+}
+
+.timer-duration-segment button:hover,
+.timer-duration-segment button:focus-visible {
+  background: var(--ds-surface-hover);
+  color: var(--ds-accent-strong);
+}
+
+.timer-duration-segment input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  border-inline: 1px solid var(--ds-border);
+  outline: 0;
+  background: transparent;
+  color: var(--ds-text-primary);
+  padding: var(--space-2);
+  text-align: center;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-bold);
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+
+.timer-duration-segment input::-webkit-outer-spin-button,
+.timer-duration-segment input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.timer-preset-chips {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.timer-preset-chips button {
+  min-width: 0;
+  min-height: var(--control-sm);
+  padding: var(--space-2);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--radius-pill);
+  background: var(--ds-surface-control);
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+}
+
+.timer-preset-chips button:hover,
+.timer-preset-chips button.active {
+  border-color: color-mix(in srgb, var(--ds-accent) 34%, var(--ds-border));
+  background: color-mix(in srgb, var(--ds-accent) 8%, var(--ds-surface-control));
+  color: var(--ds-accent-strong);
+}
+
+.timer-details-box {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.timer-details-box .timer-field-block {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.timer-field-block .input,
+.timer-field-block .textarea {
+  width: 100%;
+  border-color: var(--ds-border);
+  background: var(--ds-surface-control);
+  color: var(--ds-text-primary);
+}
+
+.timer-field-block .textarea {
+  min-height: 6.75rem;
+  resize: vertical;
+}
+
+.timer-field-count {
+  justify-self: end;
+  color: var(--ds-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-display-block {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  color: var(--ds-text-primary);
+}
+
+.timer-display-block input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.1rem;
+  accent-color: var(--ds-accent);
+}
+
+.timer-display-block > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.timer-setup-actions.timer-actions-block {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  border-top: 1px solid var(--ds-border);
+}
+
+.timer-actions-copy {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.timer-action-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.timer-action-buttons .button {
+  width: 100%;
+  min-height: var(--control-lg);
+}
+
+.timer-settings-panel {
+  overflow: hidden;
+  border-color: var(--ds-border);
+  background: var(--ds-surface-raised);
+}
+
+.timer-settings-panel > summary {
+  padding: var(--space-4);
+}
+
+.timer-settings-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.timer-settings-content .timer-option-row {
+  min-height: var(--target-comfortable);
+  border-color: var(--ds-border-subtle);
+  background: var(--ds-surface-subtle);
+}
+
+@media (max-width: 42rem) {
+  .timer-setup-heading {
+    align-items: flex-start;
+  }
+
+  .timer-selected-duration {
+    min-width: auto;
+  }
+
+  .timer-duration-editor {
+    gap: var(--space-2);
+  }
+
+  .timer-duration-segment > div {
+    grid-template-columns: 1.75rem minmax(0, 1fr) 1.75rem;
+  }
+
+  .timer-duration-segment button,
+  .timer-duration-segment input {
+    min-height: var(--control-md);
+  }
+
+  .timer-duration-segment input {
+    padding-inline: var(--space-1);
+    font-size: var(--font-size-lg);
+  }
+
+  .timer-preset-chips {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 30rem) {
+  .timer-setup-heading {
+    flex-direction: column;
+  }
+
+  .timer-selected-duration {
+    text-align: left;
+  }
+
+  .timer-duration-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timer-action-buttons {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

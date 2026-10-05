@@ -261,6 +261,35 @@ test.describe.serial("Classroom Home responsive contract", () => {
         await expect(page.getByRole("button", { name: /Continuar Arena/ })).toBeVisible();
         await assertHomeLayout(page, viewport);
       }
+
+      await page.setViewportSize({ width: 1366, height: 768 });
+      await reopenClassroomAfterReload(page, fixture.classroom.name);
+      await page.getByRole("button", { name: /Continuar Arena/ }).click();
+      await expect(page.locator("aside.arena-cockpit-nav")).toBeVisible();
+      await page.getByRole("button", { name: "Timer", exact: true }).click();
+      const timerDialog = page.getByRole("dialog", { name: "Timer" });
+      await expect(timerDialog).toBeVisible();
+      await expect(timerDialog.getByText("Duração do timer", { exact: true })).toBeVisible();
+      await expect(timerDialog.getByText("Título", { exact: true })).toBeVisible();
+      await expect(timerDialog.getByText("Instruções", { exact: false })).toBeVisible();
+      await expect(timerDialog.getByText("Ações", { exact: true })).toBeVisible();
+
+      for (const viewport of [
+        { width: 1366, height: 768 },
+        { width: 390, height: 844 },
+      ]) {
+        await page.setViewportSize(viewport);
+        const overflow = await timerDialog.evaluate((element) => element.scrollWidth - element.clientWidth);
+        expect(overflow, `Timer sem overflow em ${viewport.width}px`).toBeLessThanOrEqual(1);
+
+        const segments = timerDialog.locator(".timer-duration-segment");
+        await expect(segments).toHaveCount(3);
+        const boxes = await Promise.all([0, 1, 2].map((index) => segments.nth(index).boundingBox()));
+        for (const box of boxes) {
+          expect(box).not.toBeNull();
+          if (box) expect(box.width).toBeGreaterThan(80);
+        }
+      }
     } finally {
       await context.close();
     }
