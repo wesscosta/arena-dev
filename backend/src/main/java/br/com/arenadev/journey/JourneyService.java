@@ -95,6 +95,24 @@ public class JourneyService {
         return toView(journey);
     }
 
+    @Transactional
+    public JourneyView refreshStageResource(UUID journeyId, UUID stageId) {
+        Journey journey = requireJourney(journeyId);
+        if (journey.getStatus() != JourneyStatus.DRAFT) {
+            throw new IllegalStateException("Somente Jornadas em rascunho podem atualizar snapshots de conteúdo.");
+        }
+        JourneyStage stage = requireStage(journey, stageId);
+        LearningResource resource = stage.getLearningResource();
+        if (resource == null) {
+            throw new IllegalStateException("Esta etapa não está vinculada a um material da Biblioteca.");
+        }
+        if (!resource.isLibraryVisible() && resource.getArchivedAt() != null) {
+            throw new IllegalStateException("Restaure o material na Biblioteca antes de atualizar o snapshot.");
+        }
+        stage.materializeResource(resource);
+        return toView(journey);
+    }
+
     @Transactional(readOnly = true)
     public JourneyProgressView progress(UUID journeyId, UUID enrollmentId) {
         Journey journey = requireJourney(journeyId);
@@ -426,7 +444,12 @@ public class JourneyService {
                         stage.getSection() == null ? null : stage.getSection().getId(),
                         stage.getSection() == null ? null : stage.getSection().getTitle(),
                         stage.getItemType(),
-                        stage.getLearningResource() == null ? null : stage.getLearningResource().getId()
+                        stage.getLearningResource() == null ? null : stage.getLearningResource().getId(),
+                        stage.getResourceSnapshotRevision(),
+                        stage.getLearningResource() == null ? null : stage.getLearningResource().getRevision(),
+                        stage.getLearningResource() != null
+                                && stage.getResourceSnapshotRevision() != null
+                                && stage.getLearningResource().getRevision() > stage.getResourceSnapshotRevision()
                 )).toList(),
                 journey.getCreatedAt(), journey.getUpdatedAt()
         );
@@ -464,7 +487,10 @@ public class JourneyService {
             UUID sectionId,
             String sectionTitle,
             JourneyItemType itemType,
-            UUID learningResourceId
+            UUID learningResourceId,
+            Integer resourceSnapshotRevision,
+            Integer resourceCurrentRevision,
+            boolean resourceUpdateAvailable
     ) {}
     public record JourneyProgressView(UUID journeyId, UUID enrollmentId, int completedStages, int totalStages, int percent, List<StageProgressView> stages) {}
     public record ParticipantJourneyView(UUID journeyId, String title, String description, int percent, int completedStages, int totalStages, StageProgressView currentStage, List<StageProgressView> stages) {}

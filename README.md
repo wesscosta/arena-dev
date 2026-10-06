@@ -6,12 +6,12 @@
 >
 > **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 >
-> **Execução atual:** 16.4 Student Experience está concluído tecnicamente até 16.4D e 16.5 — Content Library & Reuse até 16.5B.2. Em 30/09/2026 foi aberto um **Gate de Estabilização Arquitetural v0.8**; 16.5C e novos incrementos funcionais ficam pausados até o fechamento dos gates de segurança, arquitetura, design system e qualidade.
+> **Execução atual:** a v0.8 está em **Release Hardening / feature freeze**. 16.5C–F estão tecnicamente fechados na branch de release candidate; não entram novas funcionalidades antes da publicação.
 
 ## Modelo do produto
 
 ```text
-Visão geral = nível do sistema e descoberta de turmas
+Turmas = nível do sistema e descoberta de turmas
 Turma       = contexto pedagógico
 Biblioteca  = acervo global reutilizável do professor
 Arena       = operação da aula ao vivo
@@ -118,7 +118,7 @@ flowchart LR
     P["Projetor"] --> F
     F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
     F <-->|"WebSocket"| B
-    B --> D["PostgreSQL 17 + Flyway V1–V37"]
+    B --> D["PostgreSQL 17 + Flyway V1–V38"]
 ```
 
 Princípios:
@@ -180,7 +180,7 @@ O `16.3.8 — Content Ingestion & Structured Import` evoluiu para um pipeline co
 
 O `16.4 — Student Experience Shell & Workspace Visibility` já introduz Início, Jornadas, Entrar ao vivo e Conquistas no mesmo shell. `/join` continua público para QR/código e compartilha o mesmo runtime de `/learn/live`. O `16.4A` separa **matrícula** de **exposição permanente de conteúdo**: o professor decide se uma turma fica disponível no espaço de estudo, sem afetar a Arena ao vivo. A autorização está centralizada na Study API e preserva o progresso ao ocultar/reativar a turma.
 
-`16.5 — Content Library & Reuse` já está implementado até `16.5B.2`: `LearningResource` sustenta a Biblioteca global do professor, autoria/reuso e snapshots estáveis Biblioteca → Journey. `16.5C–F` permanecem na sequência de fechamento da v0.8 após o Gate de Estabilização Arquitetural. A evolução pedagógica posterior foi separada em um eixo `17.x`: taxonomia de conhecimento, roadmaps/editais, banco de questões com proveniência, validação por evidências, Mastery, revisão e progressão visual. Nesse eixo, **ler/concluir não equivale a dominar**, e questões de concurso podem validar aprendizagem somente por conjuntos com cobertura e critérios auditáveis.
+`16.5 — Content Library & Reuse` avançou além do `16.5B.2`: `LearningResource` continua canônico, V38 adiciona metadata semântica editorial e estrutura derivada, a ingestão global passa por `CanonicalDocument` revisável, e a Biblioteca oferece Leitura/Estrutura/Mapa, filtros e atualização explícita de snapshots. `16.5C–F` estão na linha de fechamento da v0.8. A evolução pedagógica posterior foi separada em um eixo `17.x`: taxonomia de conhecimento, roadmaps/editais, banco de questões com proveniência, validação por evidências, Mastery, revisão e progressão visual. Nesse eixo, **ler/concluir não equivale a dominar**, e questões de concurso podem validar aprendizagem somente por conjuntos com cobertura e critérios auditáveis.
 
 Estado final do `16.0 — Professor Arena Experience`:
 
@@ -252,6 +252,7 @@ O histórico detalhado de release permanece em `docs/RELEASE_0_6.md`. A document
 
 - [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
 - [`docs/ROADMAP_0_8.md`](docs/ROADMAP_0_8.md)
+- [`docs/CONTENT_CANONICAL_MARKDOWN.md`](docs/CONTENT_CANONICAL_MARKDOWN.md)
 - [`docs/ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](docs/ARCHITECTURE_STABILIZATION_GATE_V0_8.md)
 - [`docs/INCREMENT_16_3.md`](docs/INCREMENT_16_3.md)
 - [`docs/INCREMENT_16_2.md`](docs/INCREMENT_16_2.md)
@@ -279,7 +280,7 @@ Histórico da v0.6:
 - `v0.5.0` — histórica;
 - `v0.6.0` — baseline técnica encerrada e congelada;
 - `v0.7.0` — Educational Integrations; publicada e encerrada;
-- `v0.8` — Professor Experience & Journey MVP; linha ativa com Student Experience concluída até 16.4D e Content Library até 16.5B.2; Gate de Estabilização Arquitetural em execução antes de 16.5C.
+- `v0.8` — Professor Experience & Journey MVP; **release candidate em feature freeze**, com Semantic Content Library V38 tecnicamente fechada.
 
 ## Licença
 
@@ -336,7 +337,7 @@ A Biblioteca agora possui workspace global do professor, autoria manual, busca, 
 
 ### Sequência de fechamento da v0.8
 
-Após `16.5B.2`, a linha ativa passa primeiro pelo **Gate de Estabilização Arquitetural v0.8**. Com o gate fechado, a sequência funcional retoma em `16.5C` (fundação semântica e ingestão), `16.5D` (organização/discovery), `16.5E` (revision awareness e hardening de snapshots) e `16.5F` (reuso avançado/fechamento da Biblioteca), seguida do Release Hardening final.
+O **Gate de Estabilização Arquitetural v0.8** está concluído e os cortes `16.5C–F` foram fechados no escopo MVP. A linha corrente é **Release Hardening**: testes/E2E, restore V38, documentação, manifests e CI do release candidate.
 
 A futura `16.6 — Knowledge & Retrieval Foundation` fica fora do gate da v0.8: chunks, índices lexical/vetorial, embeddings, avaliação de retrieval e RAG/LLM só serão iniciados depois da estabilização do corpus e da Biblioteca.
 
@@ -344,4 +345,4 @@ O eixo pedagógico seguinte é `17.x` e também não bloqueia a v0.8. A ordem co
 
 ### 16.5B.2 — Journey Snapshot Integrity Hardening — implementado
 
-A materialização Biblioteca → Journey agora é explícita: updates comuns preservam a revisão já copiada, inclusive quando a origem foi posteriormente editada ou arquivada. `JourneyStage.updateConfiguration()` não toca no snapshot; `materializeResource()` é a fronteira de escrita. O 16.5E continua responsável pela futura atualização explícita entre revisões.
+A materialização Biblioteca → Journey agora é explícita: updates comuns preservam a revisão já copiada, inclusive quando a origem foi posteriormente editada ou arquivada. `JourneyStage.updateConfiguration()` não toca no snapshot; `materializeResource()` é a fronteira de escrita. O 16.5E concluiu a atualização explícita entre revisões apenas em Journey `DRAFT`.

@@ -101,7 +101,7 @@ type View = "dashboard" | "library" | "classroom" | "classroom-settings" | "aren
 type ClassroomTab = "home" | "students" | "activities" | "journeys" | "ranking" | "history";
 
 const VIEW_LABEL: Record<View, string> = {
-  dashboard: "Visão geral",
+  dashboard: "Turmas",
   library: "Biblioteca",
   classroom: "Turma",
   "classroom-settings": "Gerenciar turma",
@@ -355,7 +355,7 @@ export default function ArenaApp() {
             onClick={() => {
               setView("dashboard");
             }}
-            title="Voltar para a Visão geral"
+            title="Voltar para Turmas"
           >
             <span className="topbar-brand-mark">A</span>
             <span>
@@ -368,12 +368,12 @@ export default function ArenaApp() {
             <button
               type="button"
               className={view === "dashboard" ? "topbar-global-nav-item active" : "topbar-global-nav-item"}
-              aria-label="Visão geral"
+              aria-label="Turmas"
               aria-current={view === "dashboard" ? "page" : undefined}
               onClick={() => setView("dashboard")}
             >
               <span aria-hidden="true">▦</span>
-              <strong>Visão geral</strong>
+              <strong>Turmas</strong>
             </button>
             <button
               type="button"
@@ -592,8 +592,8 @@ export default function ArenaApp() {
             ) : (
               <EmptyState
                 title="Nenhuma turma selecionada"
-                text="Selecione uma turma na Visão geral ou crie uma nova turma para abrir o workspace pedagógico."
-                actionLabel="Ir para Visão geral"
+                text="Selecione uma turma em Turmas ou crie uma nova turma para abrir o workspace pedagógico."
+                actionLabel="Ir para Turmas"
                 onAction={() => setView("dashboard")}
               />
             )
@@ -615,7 +615,7 @@ export default function ArenaApp() {
               <EmptyState
                 title="Nenhuma turma selecionada"
                 text="Selecione uma turma para abrir suas configurações."
-                actionLabel="Ir para Visão geral"
+                actionLabel="Ir para Turmas"
                 onAction={() => setView("dashboard")}
               />
             )
@@ -652,7 +652,7 @@ export default function ArenaApp() {
               <EmptyState
                 title="Selecione uma turma"
                 text="A Arena sempre acontece dentro de uma turma. Escolha o contexto antes de iniciar a sessão."
-                actionLabel="Ir para Visão geral"
+                actionLabel="Ir para Turmas"
                 onAction={() => setView("dashboard")}
               />
             )
@@ -675,7 +675,7 @@ export default function ArenaApp() {
                   <p>Preferências administrativas do Arena Dev, informações do ambiente e rotinas de segurança.</p>
                 </div>
                 <button className="button ghost" onClick={() => setView("dashboard")}>
-                  ← Visão geral
+                  ← Turmas
                 </button>
               </div>
 
@@ -947,7 +947,7 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
       {!data.classrooms.length ? (
         <EmptyState
           title="Crie sua primeira turma"
-          text="A Visão geral é o ponto de entrada do Arena Dev. Crie a turma e, na etapa seguinte, inclua os alunos."
+          text="Turmas é o ponto de entrada do Arena Dev. Crie a turma e, na etapa seguinte, inclua os alunos."
           actionLabel="+ Nova turma"
           onAction={() => setCreateOpen(true)}
         />
@@ -1606,15 +1606,16 @@ function StudentManager({
                             type="button"
                             onClick={() => setEditingStudentId(student.id)}
                             aria-label={`Editar nome de exibição de ${student.name}`}
+                            title="Editar o nome exibido somente nesta turma"
                           >
-                            <span>Nome de exibição: {displayName}</span>
+                            <span>Nome na turma: {displayName}</span>
                             <span
                               className="student-edit-icon"
                               aria-hidden="true"
-                      >
-                              ✎
+                            >
+                              ✎ Editar
                             </span>
-                      </button>
+                          </button>
                         )}
                     </div>
                     </div>

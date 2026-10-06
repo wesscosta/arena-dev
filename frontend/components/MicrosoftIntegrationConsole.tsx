@@ -610,7 +610,7 @@ export default function MicrosoftIntegrationConsole({
           <h2>Operação Microsoft Teams</h2>
           <p>Acompanhe a conexão, organize os vínculos da turma e trate somente o que precisa da sua atenção.</p>
         </div>
-        <Button variant="ghost" onClick={onBack}>← Visão geral</Button>
+        <Button variant="ghost" onClick={onBack}>← Turmas</Button>
       </div>
 
       {error && <div className={styles.error} role="alert">{error}</div>}

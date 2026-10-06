@@ -10,22 +10,41 @@ import java.util.UUID;
 @RequestMapping("/api/library/resources")
 public class ContentLibraryController {
     private final LearningResourceService service;
+    private final LearningResourceUsageService usageService;
 
-    public ContentLibraryController(LearningResourceService service) {
+    public ContentLibraryController(
+            LearningResourceService service,
+            LearningResourceUsageService usageService
+    ) {
         this.service = service;
+        this.usageService = usageService;
     }
 
     @GetMapping
     public List<LearningResourceService.ResourceView> list(
             @RequestParam(required = false) String q,
-            @RequestParam(defaultValue = "false") boolean archived
+            @RequestParam(defaultValue = "false") boolean archived,
+            @RequestParam(required = false) String subject,
+            @RequestParam(required = false) String tag,
+            @RequestParam(required = false) String language,
+            @RequestParam(defaultValue = "RECENT") LearningResourceService.LibrarySort sort
     ) {
-        return service.listLibrary(q, archived);
+        return service.listLibrary(q, archived, subject, tag, language, sort);
+    }
+
+    @GetMapping("/facets")
+    public LearningResourceService.LibraryFacets facets() {
+        return service.facets();
     }
 
     @GetMapping("/{id}")
     public LearningResourceService.ResourceView get(@PathVariable UUID id) {
         return service.getLibrary(id);
+    }
+
+    @GetMapping("/{id}/usage")
+    public LearningResourceUsageService.ResourceUsageView usage(@PathVariable UUID id) {
+        return usageService.usage(id);
     }
 
     @PostMapping

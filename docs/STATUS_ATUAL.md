@@ -1,20 +1,20 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 5 de outubro de 2026
+**Última sincronização documental:** 6 de outubro de 2026
 
 **Baseline publicada:** `v0.7.0 — Educational Integrations`.
 
 **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
 
-**Incremento atual:** **Gate de Estabilização Arquitetural v0.8**. `16.4` está implementado até Achievements Foundation e `16.5` até `16.5B.2`; `16.5C` e novos incrementos funcionais ficam pausados até segurança, baseline, shell da Arena, CSS/design ownership, boundaries backend e quality gates serem estabilizados.
+**Incremento atual:** **Release Hardening v0.8**. Os escopos 16.5C–F foram tecnicamente fechados na branch `feat/v0.8-semantic-library`; novas funcionalidades estão congeladas até a publicação.
 
-**Branch ativa:** `chore/v0.8-architecture-stabilization`.
+**Branch ativa:** `feat/v0.8-semantic-library`.
 
 **Plano transversal:** [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md).
 
 ## Estado resumido
 
-A v0.7.0 está encerrada e publicada. A branch ativa já contém a evolução de `16.2`, `16.3`, `16.4A–D` e `16.5` até `16.5B.2`. A auditoria de 30/09/2026 identificou dívida arquitetural suficiente para abrir um gate transversal antes de ampliar o escopo funcional.
+A v0.7.0 continua sendo a última baseline publicada. A branch de release candidate da v0.8 contém 16.0–16.5 completos no escopo definido, incluindo Semantic Content Library V38. O trabalho corrente é exclusivamente hardening, evidência de release e alinhamento documental.
 
 A Journey já possui Study API própria, `/learn`, Reader, progresso e retomada, prévia do professor na mesma experiência, Builder reduzido a módulos + conteúdos e Progression UX com estados `COMPLETED`, `CURRENT` e `LOCKED`.
 
@@ -26,10 +26,10 @@ A frente de ingestão `16.3.8` cobre contrato normalizado, adapters Markdown/Tex
 baseline publicada        v0.7.0
 linha ativa               v0.8
 último integrado à main   16.1 · PR #22
-incremento atual           Gate de Estabilização Arquitetural v0.8
-fatia atual                P2 iniciado · RadioCard + CSS Modules; P1 concluído
-branch                     chore/v0.8-architecture-stabilization
-schema                     Flyway V1–V37
+incremento atual           Release Hardening v0.8
+fatia atual                gates técnicos + E2E + restore + documentação + release candidate
+branch                     feat/v0.8-semantic-library
+schema                     Flyway V1–V38
 providers                  Microsoft Teams + Notion OAuth
 Google Classroom           standby
 ```
@@ -80,7 +80,26 @@ Google Classroom           standby
 - `LearningResource` foi evoluído como unidade reutilizável, sem criar um modelo paralelo de biblioteca;
 - Library Core, workspace/reuse, refinamento editorial e snapshot hardening estão implementados até `16.5B.2`;
 - materiais continuam preparados para nascer de Markdown, Notion, arquivo ou IA sem exposição automática ao aluno;
-- `16.5C — Semantic Content Foundation & Ingestion → Library` permanece planejado, porém pausado até o fechamento do Gate de Estabilização Arquitetural v0.8.
+- `16.5C — Semantic Content Foundation & Ingestion → Library`: **concluído tecnicamente** com metadata editorial, V38, CanonicalDocument transitório, canonicalizer determinístico, outline H1–H6, ingestão revisável e Leitura/Estrutura/Mapa;
+- `16.5D — Organization & Discovery`: **fechado no escopo v0.8** com busca, filtros combináveis, facets e ordenação; paginação só entra com necessidade real;
+- `16.5E — Revision Awareness`: **concluído** com revisão corrente x snapshot e refresh explícito somente para Journey em rascunho;
+- `16.5F — Library Closure`: **fechado no escopo v0.8** com exportação Markdown, archive/restore e reuso sem duplicar a fonte canônica.
+
+## Semantic Library — implementação corrente
+
+- V38 adiciona `subject`, `language`, `content_sha256`, outline derivado/versionado e tags em relação própria;
+- metadata editorial não é Knowledge Taxonomy e mudanças apenas em assunto/tags/idioma não avançam a revisão de conteúdo;
+- `CanonicalDocument` é transitório; `LearningResource` continua fonte durável depois da materialização;
+- `ContentCanonicalizer` normaliza entrada, calcula hash SHA-256 e produz árvore H1–H6 determinística ignorando headings em code fences;
+- ingestão global da Biblioteca suporta Markdown, texto, arquivo, Notion e URL com preview/review antes da persistência;
+- fontes sem estrutura confiável são sinalizadas para revisão; IA permanece fallback opcional, não requisito;
+- cada recurso oferece **Leitura | Estrutura | Mapa** sobre a mesma revisão, sem entidade `MindMap` paralela;
+- busca/filtros incluem assunto, tags e idioma;
+- uso em Journey mostra snapshot x revisão corrente e só permite refresh explícito em Journey `DRAFT`;
+- exportação `.md` inicia a garantia de portabilidade;
+- edição do nome do aluno reutiliza `Enrollment.preferredName`: a UI agora explicita **Nome na turma · Editar**, sem alterar `Student.fullName`.
+
+Contrato: [`CONTENT_CANONICAL_MARKDOWN.md`](CONTENT_CANONICAL_MARKDOWN.md). Plano/registro: [`INCREMENT_16_5C_PLAN.md`](INCREMENT_16_5C_PLAN.md).
 
 ## UX transversal — shell e participantes
 
@@ -92,9 +111,9 @@ Google Classroom           standby
 - transporte HTTP frontend consolidado em `lib/http/client.ts`; módulos de domínio não implementam mais parsing/CSRF/credentials de forma independente;
 - direção de dependência CSS corrigida: componentes não importam mais módulos de estilo privados de `app/`; Projector, Student Join e Study possuem ownership de feature em `components/`;
 
-## Visão geral de turmas — consolidação MVP
+## Turmas — consolidação MVP
 
-- o shell do professor continua sem sidebar; `Visão geral` permanece o nível global do sistema;
+- o shell do professor continua sem sidebar; `Turmas` é o nível global do sistema e substitui o rótulo ambíguo `Visão geral`;
 - `Biblioteca` passou a destino explícito da navegação global no topbar, em vez de CTA isolado da página;
 - a página `Suas turmas` mantém busca por nome/código, filtros Ativas/Inativas e ordenação por MRU/nome/código;
 - grid de turmas consolidado em até cinco colunas fluidas no desktop/ultrawide, preenchendo a largura útil sem criar uma sexta coluna; cards mantêm hierarquia interna à esquerda e seleção com barra vertical estável; sem carrossel, categorias, tags ou progresso inventado;
@@ -158,12 +177,14 @@ frontend build       OK
 git diff --check     OK
 Ranking E2E          OK · 2/2 (fluxo + 12 combinações viewport/tema)
 E2E transversal      OK · 10/10 (Ranking + Home responsiva + Visão geral + fluxos críticos)
-Flyway               V1–V37
+Flyway               V1–V38
 ```
 
-## Próximo gate
+## Gate atual — Release Hardening
 
-Concluir o **Gate de Estabilização Arquitetural v0.8** antes de retomar novos incrementos funcionais. Depois do gate, a sequência permanece `16.5C → 16.5D → 16.5E → 16.5F → Release Hardening`. O eixo pedagógico de roadmaps, questões, Mastery e progressão foi separado em `17.x` e não deve ser iniciado por pressão de escopo durante o fechamento da v0.8.
+**Validação local de 06/10/2026:** gate oficial verde com backend unitário/integração, frontend, build e **21/21 E2E**; backup com checksum restaurado em PostgreSQL 17 e validado até **Flyway V38**. Resta somente commit/push/PR e CI verde no mesmo SHA para liberar a tag.
+
+A v0.8 está em **feature freeze**. O gate restante é operacional: concluir E2E, reflow/acessibilidade, validação de restore até V38, alinhamento dos manifests em 0.8.0, documentação e CI do mesmo SHA. O eixo pedagógico de roadmaps, questões, Mastery e progressão permanece separado em `17.x`.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)
@@ -207,9 +228,9 @@ Decisão: nenhuma V37 será criada antes de definir o desacoplamento Library Res
 
 **28/09/2026:** autoria Markdown passou a aproveitar a largura útil e ganhou preview renderizado; desktop usa edição + preview lado a lado e telas menores alternam as superfícies. O plano semântico/RAG permanece documentado para 16.5C e não foi implementado.
 
-## Sequência corrente após 16.5B.2
+## Fechamento corrente da v0.8
 
-O próximo trabalho é o **Gate de Estabilização Arquitetural v0.8**. Depois de fechado, o próximo incremento funcional será `16.5C — Semantic Content Foundation & Ingestion → Library`, seguido por `16.5D — Organization & Discovery`, `16.5E — Revision Awareness & Snapshot Hardening` e `16.5F — Advanced Reuse & Library Closure`. Depois disso, a v0.8 entra em Release Hardening final.
+O Gate de Estabilização Arquitetural foi integrado e `16.5C–F` estão tecnicamente fechados. A linha corrente é **Release Hardening**; qualquer capacidade funcional nova deve ser movida para a próxima versão.
 
 `16.6 — Knowledge & Retrieval Foundation` é evolução pós-v0.8/opcional para chunks derivados, lexical/vector retrieval, embeddings, avaliação e futuro RAG/LLM. Não faz parte do gate de release v0.8.
 
@@ -217,4 +238,4 @@ O plano pedagógico seguinte foi renumerado para evitar colisão com 16.6: `17.0
 
 ### 16.5B.2 — Journey Snapshot Integrity Hardening — implementado
 
-A materialização Biblioteca → Journey agora é explícita: updates comuns preservam a revisão já copiada, inclusive quando a origem foi posteriormente editada ou arquivada. `JourneyStage.updateConfiguration()` não toca no snapshot; `materializeResource()` é a fronteira de escrita. O 16.5E continua responsável pela futura atualização explícita entre revisões.
+A materialização Biblioteca → Journey agora é explícita: updates comuns preservam a revisão já copiada, inclusive quando a origem foi posteriormente editada ou arquivada. `JourneyStage.updateConfiguration()` não toca no snapshot; `materializeResource()` é a fronteira de escrita. O 16.5E concluiu a atualização explícita entre revisões apenas em Journey `DRAFT`.

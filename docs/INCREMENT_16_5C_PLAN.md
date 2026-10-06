@@ -1,8 +1,8 @@
 # 16.5C — Semantic Content Foundation & Ingestion → Library
 
-**Status:** planejado / não implementado
-**Definido em:** 28/09/2026
-**Pré-requisito:** 16.5B.1 — refinamento editorial da Biblioteca.
+**Status:** tecnicamente concluído na branch `feat/v0.8-semantic-library`; Release Hardening em execução
+**Definido em:** 28/09/2026 · **execução iniciada:** 05/10/2026
+**Pré-requisitos concluídos:** 16.5B.1, 16.5B.2 e Gate de Estabilização Arquitetural v0.8.
 
 ## Diretriz
 
@@ -41,6 +41,48 @@ Documentar, sem implementar: LearningResource → SemanticSection → SemanticCh
 
 KnowledgeChunk futuro considera resourceId, resourceRevision, sectionPath, subject, tags, language, content, contentHash e tokenCount.
 
+
+## Implementação de 05/10/2026
+
+### C1–C4 — fundação semântica
+
+- V38: `subject`, `language`, `content_sha256`, `outline_json`, `outline_parser_version` e `learning_resource_tags`;
+- `CanonicalDocument` é DTO/value object transitório, não tabela;
+- `ContentCanonicalizer` normaliza line endings/whitespace, calcula SHA-256 e produz outline H1–H6 determinístico;
+- headings em code fences são ignorados; anchors repetidos recebem sufixo estável;
+- `outline_json` é projeção derivada e reconstruível;
+- metadata editorial não avança a revisão de conteúdo por si só.
+
+### C5–C6 — ingestão → Biblioteca
+
+- API global `/api/library/ingestion/*`;
+- preview para Markdown, texto, arquivo, Notion e URL;
+- Notion usa snapshot autorizado quando o provider está configurado; caso contrário, preserva referência externa sem scraping;
+- arquivos usam a extração já existente e convergem para o contrato canônico;
+- preview/review permite corrigir título, assunto, tags, idioma e Markdown antes da materialização;
+- baixa confiança estrutural é sinalizada para revisão; IA continua apenas recomendação/fallback futuro.
+
+### Projeções do recurso
+
+- **Leitura**: body renderizado com anchors determinísticos;
+- **Estrutura**: outline textual navegável;
+- **Mapa**: projeção visual navegável da mesma árvore;
+- nenhum `MindMap`, `KnowledgeNode` ou estado pedagógico paralelo é persistido.
+
+### Primeiras fatias 16.5D–F absorvidas
+
+- discovery por título, resumo, assunto e tags; filtros por assunto/tag/idioma e ordenação;
+- endpoint de facets;
+- usage da Biblioteca mostra snapshot x revisão corrente por Journey;
+- refresh explícito do snapshot apenas em Journey `DRAFT`;
+- Journey publicada continua preservada;
+- exportação Markdown para portabilidade;
+- `Enrollment.preferredName` foi mantido como modelo do nome contextual e a UI passou a tornar **Nome na turma · Editar** explícito.
+
+### Contrato documental
+
+Ver [`CONTENT_CANONICAL_MARKDOWN.md`](CONTENT_CANONICAL_MARKDOWN.md).
+
 ## Princípios herdados do Orelhão IA
 
 - Markdown estruturado como representação textual para recuperação;
@@ -73,26 +115,26 @@ Um material real deve ser importado por adapter existente, virar Markdown canôn
 
 ## Sequência consolidada de fechamento da v0.8
 
-O 16.5C não encerra sozinho a linha v0.8. Ele encerra a fundação semântica da Biblioteca. Depois dele, a sequência planejada é curta e orientada a produto.
+O 16.5C foi fechado junto às fatias mínimas necessárias de 16.5D–F para evitar quatro ciclos artificiais de entrega. O escopo funcional da Biblioteca v0.8 está congelado; o trabalho restante pertence ao Release Hardening.
 
 ### 16.5C — Semantic Content Foundation & Ingestion → Library
-Planejado. Metadata semântica, Markdown canônico, canonicalização, parser estrutural, ingestão revisável, discovery e contrato futuro de RAG. Sem embeddings/LLM em runtime.
+**Concluído tecnicamente.** V38, metadata editorial, Markdown canônico, `CanonicalDocument`, canonicalização determinística, parser H1–H6, ingestão revisável e Leitura/Estrutura/Mapa estão materializados. Sem embeddings/LLM em runtime.
 
 ### 16.5D — Organization & Discovery
-Planejado após C. Refinar organização real do acervo quando houver volume suficiente: filtros combináveis, vocabulário de áreas/tags, paginação/ordenação e estados de descoberta. Não criar pastas/taxonomia complexa sem evidência de uso.
+**Fechado no escopo v0.8.** Busca, filtros combináveis, facets e ordenação estão implementados. Paginação, vocabulário controlado e pastas ficam adiados até volume real justificar.
 
 ### 16.5E — Revision Awareness & Snapshot Hardening
-Planejado após D. Fechar a principal dívida de integridade do reuso: atualização genérica de Journey não pode refrescar silenciosamente snapshots existentes. Introduzir operação explícita para materializar/atualizar revisão, indicar revisão disponível e preservar provenance/snapshot no Reader. Arquivamento não deve invalidar snapshots existentes.
+**Concluído.** Updates genéricos não refrescam snapshots; revisão disponível é indicada e a atualização é operação explícita somente em Journey `DRAFT`. Arquivamento não invalida snapshots existentes.
 
 ### 16.5F — Advanced Reuse & Library Closure
-Planejado após E e condicionado a necessidade real. Operações de reuso em lote/duplicação controlada, refinamentos de provenance e gate final da Biblioteca. Compartilhamento institucional, marketplace e colaboração continuam fora da v0.8.
+**Fechado no escopo v0.8.** Reuso bidirecional, archive/restore e exportação Markdown atendem o gate de fechamento. Reuso em lote, duplicação avançada, compartilhamento institucional, marketplace e colaboração ficam fora.
 
 ### 16.6 — Knowledge & Retrieval Foundation — pós-v0.8 / opcional
 Não é requisito para fechar a v0.8. Só abrir após corpus real e 16.5C–F estabilizados. É a linha candidata para SemanticChunker, KnowledgeChunk derivado, índice lexical, embeddings, busca híbrida, avaliação de retrieval e, apenas depois, RAG/LLM. Deve reutilizar a experiência de avaliação do Orelhão IA e provar ganho mensurável antes de integrar geração.
 
 ### Fechamento da v0.8
-Após 16.5F, não abrir novo domínio funcional automaticamente. Executar um Release Hardening Gate transversal: E2E dos fluxos professor/aluno, acessibilidade manual, mobile/ultrawide, segurança/autorização, migrations/restore, performance, limpeza de CSS/dívida conhecida, documentação e release candidate.
+Com 16.5C–F fechados, não abrir novo domínio funcional. Executar o Release Hardening Gate transversal: E2E dos fluxos professor/aluno, acessibilidade manual, mobile/ultrawide, segurança/autorização, migrations/restore, performance, limpeza de CSS/dívida conhecida, documentação e release candidate.
 
-Ordem: 16.5C → 16.5D → 16.5E → 16.5F → Release Hardening → v0.8.
+Estado: 16.5C–F ✅ → Release Hardening ⏳ → v0.8.0.
 
 16.6 Knowledge/RAG fica posterior e não bloqueia a v0.8.
