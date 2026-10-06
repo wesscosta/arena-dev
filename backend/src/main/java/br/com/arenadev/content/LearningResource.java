@@ -1,9 +1,26 @@
 package br.com.arenadev.content;
 
 import br.com.arenadev.classroom.Classroom;
-import jakarta.persistence.*;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -25,6 +42,7 @@ public class LearningResource {
 
     @Column(columnDefinition = "text")
     private String body;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private LearningResourceFormat format = LearningResourceFormat.MARKDOWN;
@@ -48,6 +66,26 @@ public class LearningResource {
     @Column(name = "source_content_sha256", length = 64)
     private String sourceContentSha256;
 
+    @Column(length = 160)
+    private String subject;
+
+    @Column(length = 20)
+    private String language;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "learning_resource_tags", joinColumns = @JoinColumn(name = "resource_id"))
+    @Column(name = "tag", nullable = false, length = 80)
+    private Set<String> tags = new LinkedHashSet<>();
+
+    @Column(name = "content_sha256", length = 64)
+    private String contentSha256;
+
+    @Column(name = "outline_json", columnDefinition = "text")
+    private String outlineJson;
+
+    @Column(name = "outline_parser_version", length = 40)
+    private String outlineParserVersion;
+
     @Column(name = "library_visible", nullable = false)
     private boolean libraryVisible = false;
 
@@ -69,12 +107,18 @@ public class LearningResource {
         this.classroom = classroom;
         this.title = title;
     }
+
     @PreUpdate
     void preUpdate() {
         updatedAt = Instant.now();
     }
 
-    public void update(
+    /**
+     * Updates resource content and editorial fields that are directly tied to the content representation.
+     * The monotonic revision advances only when the materialized content changes; metadata-only changes
+     * such as subject/tags/language are deliberately revision-neutral.
+     */
+    public boolean update(
             String title,
             String summary,
             String body,
@@ -83,14 +127,41 @@ public class LearningResource {
             String sourceUrl,
             String sourceLabel
     ) {
+        LearningResourceFormat nextFormat = format == null ? LearningResourceFormat.MARKDOWN : format;
+        LearningResourceSourceType nextSourceType = sourceType == null ? LearningResourceSourceType.MANUAL : sourceType;
+        // Revision tracks exactly the fields that JourneyStage materializes into its snapshot.
+        // Editorial discovery metadata (subject/tags/language) remains revision-neutral.
+        boolean contentChanged = this.id != null && (
+                !Objects.equals(this.body, body)
+                        || this.format != nextFormat
+                        || !Objects.equals(this.sourceUrl, sourceUrl)
+                        || !Objects.equals(this.sourceLabel, sourceLabel)
+        );
+
         this.title = title;
         this.summary = summary;
         this.body = body;
-        this.format = format;
-        this.sourceType = sourceType;
+        this.format = nextFormat;
+        this.sourceType = nextSourceType;
         this.sourceUrl = sourceUrl;
         this.sourceLabel = sourceLabel;
-        if (this.id != null) this.revision++;
+        if (contentChanged) this.revision++;
+        this.updatedAt = Instant.now();
+        return contentChanged;
+    }
+
+    public void updateSemanticMetadata(String subject, List<String> tags, String language) {
+        this.subject = normalizeOptional(subject);
+        this.language = normalizeOptional(language);
+        this.tags.clear();
+        if (tags != null) this.tags.addAll(tags);
+        this.updatedAt = Instant.now();
+    }
+
+    public void recordDerivedStructure(String contentSha256, String outlineJson, String parserVersion) {
+        this.contentSha256 = normalizeOptional(contentSha256);
+        this.outlineJson = normalizeOptional(outlineJson);
+        this.outlineParserVersion = normalizeOptional(parserVersion);
         this.updatedAt = Instant.now();
     }
 
@@ -107,10 +178,14 @@ public class LearningResource {
     }
 
     public void recordProvenance(String sourceReference, Instant sourceSnapshotAt, String sourceContentSha256) {
-        this.sourceReference = sourceReference;
+        this.sourceReference = normalizeOptional(sourceReference);
         this.sourceSnapshotAt = sourceSnapshotAt;
-        this.sourceContentSha256 = sourceContentSha256;
+        this.sourceContentSha256 = normalizeOptional(sourceContentSha256);
         this.updatedAt = Instant.now();
+    }
+
+    private static String normalizeOptional(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     public UUID getId() { return id; }
@@ -125,6 +200,12 @@ public class LearningResource {
     public String getSourceReference() { return sourceReference; }
     public Instant getSourceSnapshotAt() { return sourceSnapshotAt; }
     public String getSourceContentSha256() { return sourceContentSha256; }
+    public String getSubject() { return subject; }
+    public String getLanguage() { return language; }
+    public List<String> getTags() { return List.copyOf(tags); }
+    public String getContentSha256() { return contentSha256; }
+    public String getOutlineJson() { return outlineJson; }
+    public String getOutlineParserVersion() { return outlineParserVersion; }
     public boolean isLibraryVisible() { return libraryVisible; }
     public int getRevision() { return revision; }
     public Instant getArchivedAt() { return archivedAt; }

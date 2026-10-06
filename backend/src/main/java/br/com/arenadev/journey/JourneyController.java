@@ -38,6 +38,14 @@ public class JourneyController {
     @PostMapping("/{id}/archive")
     public JourneyService.JourneyView archive(@PathVariable UUID id) { return service.archive(id); }
 
+    @PostMapping("/{id}/stages/{stageId}/refresh-resource")
+    public JourneyService.JourneyView refreshStageResource(
+            @PathVariable UUID id,
+            @PathVariable UUID stageId
+    ) {
+        return service.refreshStageResource(id, stageId);
+    }
+
     @GetMapping("/{id}/progress/{enrollmentId}")
     public JourneyService.JourneyProgressView progress(@PathVariable UUID id, @PathVariable UUID enrollmentId) {
         return service.progress(id, enrollmentId);

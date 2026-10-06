@@ -3,6 +3,7 @@
 set -Eeuo pipefail
 
 POSTGRES_IMAGE="${POSTGRES_IMAGE:-postgres:17-alpine}"
+EXPECTED_SCHEMA_VERSION="${ARENA_SCHEMA_VERSION:-38}"
 CONTAINER_NAME="arena-dev-restore-check-$(date -u +%Y%m%d%H%M%S)-$$"
 CHECK_USER="arena_restore_check"
 CHECK_DATABASE="arena_restore_check"
@@ -17,8 +18,8 @@ usage() {
   cat <<'EOF'
 Uso: scripts/release/verify-backup.sh CAMINHO_DO_DUMP
 
-Restaura o dump em um PostgreSQL 17 temporário e isolado, confirma o histórico
-Flyway V1-V25 e as tabelas centrais da v0.6, e remove o container ao terminar.
+Restaura o dump em um PostgreSQL 17 temporário e isolado, valida o histórico
+Flyway da v0.8 até V38 e confirma os contratos persistentes críticos.
 EOF
 }
 
@@ -51,55 +52,53 @@ cleanup() {
 }
 trap cleanup EXIT
 
-docker run \
-  --detach \
-  --rm \
-  --name "$CONTAINER_NAME" \
-  --env "POSTGRES_USER=$CHECK_USER" \
-  --env "POSTGRES_PASSWORD=$CHECK_PASSWORD" \
-  --env "POSTGRES_DB=$CHECK_DATABASE" \
-  "$POSTGRES_IMAGE" >/dev/null
+docker run   --detach   --rm   --name "$CONTAINER_NAME"   --env "POSTGRES_USER=$CHECK_USER"   --env "POSTGRES_PASSWORD=$CHECK_PASSWORD"   --env "POSTGRES_DB=$CHECK_DATABASE"   "$POSTGRES_IMAGE" >/dev/null
 
 ready=false
 for _ in {1..30}; do
-  if docker exec "$CONTAINER_NAME" pg_isready --username "$CHECK_USER" --dbname "$CHECK_DATABASE" >/dev/null 2>&1; then
+  if docker exec "$CONTAINER_NAME" sh -c     "pg_isready --username '$CHECK_USER' --dbname postgres >/dev/null 2>&1 && psql --tuples-only --no-align --username '$CHECK_USER' --dbname postgres --command "select 1 from pg_database where datname = '$CHECK_DATABASE'" | grep -qx 1"; then
     ready=true
     break
   fi
   sleep 1
 done
-$ready || fail "PostgreSQL temporário não ficou pronto em 30 segundos"
+$ready || fail "PostgreSQL temporário ou banco $CHECK_DATABASE não ficou pronto em 30 segundos"
 
 docker exec -i "$CONTAINER_NAME" pg_restore --list < "$backup_file" >/dev/null
-docker exec -i "$CONTAINER_NAME" \
-  pg_restore \
-    --username "$CHECK_USER" \
-    --dbname "$CHECK_DATABASE" \
-    --no-owner \
-    --no-privileges \
-    --exit-on-error < "$backup_file"
+docker exec -i "$CONTAINER_NAME"   pg_restore     --username "$CHECK_USER"     --dbname "$CHECK_DATABASE"     --no-owner     --no-privileges     --exit-on-error < "$backup_file"
 
-migration_count="$(docker exec "$CONTAINER_NAME" \
-  psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
-  --command "select count(*) from flyway_schema_history where success")"
-[[ "$migration_count" -eq 27 ]] || fail "histórico Flyway restaurado possui $migration_count migrations; esperado 27"
+migration_count="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select count(*) from flyway_schema_history where success and version ~ '^[0-9]+$'")"
+[[ "$migration_count" -eq "$EXPECTED_SCHEMA_VERSION" ]] ||   fail "histórico Flyway restaurado possui $migration_count migrations numéricas; esperado $EXPECTED_SCHEMA_VERSION"
 
-latest_version="$(docker exec "$CONTAINER_NAME" \
-  psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
-  --command "select max(version::integer) from flyway_schema_history where success and version ~ '^[0-9]+$'")"
-[[ "$latest_version" -eq 27 ]] || fail "maior migration restaurada é V$latest_version; esperado V27"
+latest_version="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select max(version::integer) from flyway_schema_history where success and version ~ '^[0-9]+$'")"
+[[ "$latest_version" -eq "$EXPECTED_SCHEMA_VERSION" ]] ||   fail "maior migration restaurada é V$latest_version; esperado V$EXPECTED_SCHEMA_VERSION"
 
-core_table_count="$(docker exec "$CONTAINER_NAME" \
-  psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
-  --command "select count(*) from (values ('classrooms'), ('students'), ('enrollments'), ('class_sessions'), ('score_events'), ('activities'), ('activity_steps'), ('session_events'), ('session_timers'), ('buzzer_rounds'), ('word_cloud_rounds'), ('poll_rounds'), ('enrollment_device_claims'), ('quiz_rounds'), ('quiz_participant_answers'), ('activity_submissions'), ('submission_items'), ('submission_assessments'), ('activity_rubric_criteria'), ('assessment_criteria'), ('ai_assessment_suggestions'), ('ai_assessment_criterion_suggestions'), ('submission_process_events'), ('activity_provider_links'), ('submission_provider_links'), ('integration_connections'), ('external_classroom_links'), ('external_student_links'), ('external_activity_links'), ('external_submission_links'), ('sync_executions'), ('sync_items'), ('sync_checkpoints')) as expected(name) where to_regclass('public.' || name) is not null")"
-[[ "$core_table_count" -eq 33 ]] || fail "nem todas as 33 tabelas centrais da v0.7 foram restauradas"
+expected_tables=(
+  classrooms students enrollments class_sessions score_events activities activity_steps
+  session_events session_timers buzzer_rounds word_cloud_rounds poll_rounds
+  enrollment_device_claims quiz_rounds quiz_participant_answers activity_submissions
+  submission_items submission_assessments activity_rubric_criteria assessment_criteria
+  ai_assessment_suggestions ai_assessment_criterion_suggestions submission_process_events
+  activity_provider_links submission_provider_links integration_connections
+  external_classroom_links external_student_links external_activity_links
+  external_submission_links sync_executions sync_items sync_checkpoints
+  journeys journey_stages journey_stage_progress learning_resources journey_sections
+  journey_redemption_codes student_journey_access student_journey_stage_progress
+  student_achievements learning_resource_tags
+)
 
-quiz_evaluation_columns="$(docker exec "$CONTAINER_NAME" \
-  psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
-  --command "select count(*) from information_schema.columns where table_schema='public' and table_name='quiz_participant_answers' and column_name in ('evaluated_at','is_correct','score_event_id')")"
-[[ "$quiz_evaluation_columns" -eq 3 ]] || fail "V16 não restaurou integralmente as colunas de avaliação do Quiz"
+for table in "${expected_tables[@]}"; do
+  exists="$(docker exec "$CONTAINER_NAME"     psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"     --command "select to_regclass('public.$table') is not null")"
+  [[ "$exists" == "t" ]] || fail "tabela obrigatória ausente após restore: $table"
+done
 
-classroom_theme_columns="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select count(*) from information_schema.columns where table_schema='public' and table_name='classrooms' and column_name in ('theme_color','theme_icon')")"
-[[ "$classroom_theme_columns" -eq 2 ]] || fail "V17 não restaurou integralmente a identidade visual das turmas"
+semantic_columns="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select count(*) from information_schema.columns where table_schema='public' and table_name='learning_resources' and column_name in ('library_visible','revision','archived_at','subject','language','content_sha256','outline_json','outline_parser_version')")"
+[[ "$semantic_columns" -eq 8 ]] || fail "LearningResource não contém o contrato completo da Biblioteca semântica"
 
-printf 'Backup v0.7 restaurado e validado em PostgreSQL 17: %s\n' "$backup_file"
+snapshot_columns="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select count(*) from information_schema.columns where table_schema='public' and table_name='journey_stages' and column_name in ('resource_snapshot_body','resource_snapshot_format','resource_snapshot_source_url','resource_snapshot_source_label','resource_snapshot_revision')")"
+[[ "$snapshot_columns" -eq 5 ]] || fail "JourneyStage não contém o contrato completo de snapshot"
+
+study_access="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select count(*) from information_schema.columns where table_schema='public' and table_name='classrooms' and column_name='student_study_access_enabled'")"
+[[ "$study_access" -eq 1 ]] || fail "controle de visibilidade do workspace estudantil ausente"
+
+printf 'Backup v0.8 restaurado e validado em PostgreSQL 17 até Flyway V%s: %s\n' "$EXPECTED_SCHEMA_VERSION" "$backup_file"

@@ -1,5 +1,7 @@
 # Arena Dev — Accessibility Baseline
 
+**Baseline formal:** WCAG 2.2 AA. Critérios AAA aplicáveis permanecem objetivo de excelência, mas não são usados como claim global de conformidade para toda a aplicação.
+
 ## Objetivo
 
 Acessibilidade é parte da definição de pronto da interface, não um ajuste
@@ -117,3 +119,7 @@ Uma UI nova só é considerada pronta quando:
 - alterações assíncronas importantes são anunciadas;
 - foi verificada em zoom/reflow;
 - respeita `prefers-reduced-motion`.
+
+## Evidência de reflow da v0.8 — 06/10/2026
+
+O gate E2E validou a Biblioteca sem overflow de página em **390×844** e **1920×1080**, além dos breakpoints já cobertos pelos specs da Arena e Classroom Home. Isso valida reflow/responsividade automatizada, mas **não equivale a certificação WCAG AAA** nem substitui auditoria manual com teclado/leitor de tela.

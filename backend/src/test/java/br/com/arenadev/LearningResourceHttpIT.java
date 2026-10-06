@@ -227,6 +227,86 @@ class LearningResourceHttpIT {
     }
 
     @Test
+    void semanticMetadataIsRevisionNeutralAndSnapshotRefreshIsExplicit() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        UUID classroomId = classrooms.create("Semântica " + suffix, "SEM" + suffix).id();
+
+        HttpResponse<String> create = send(
+                "POST",
+                "/api/library/resources",
+                """
+                {"title":"SQL Essencial","summary":"Consultas básicas","body":"# SQL\\n## Consultas\\n### SELECT\\nConteúdo.","format":"MARKDOWN","sourceType":"MANUAL","subject":"Banco de Dados","tags":["SQL","SELECT"],"language":"pt-BR"}
+                """,
+                true
+        );
+        assertThat(create.statusCode()).isEqualTo(201);
+        assertThat(create.body())
+                .contains("\"subject\":\"Banco de Dados\"", "\"language\":\"pt-BR\"", "\"revision\":1")
+                .contains("\"tags\":[\"SQL\",\"SELECT\"]")
+                .contains("\"outlineParserVersion\":\"arena-outline-v1\"");
+        String resourceId = create.body().replaceFirst(".*\\\"id\\\":\\\"([^\\\"]+)\\\".*", "$1");
+
+        HttpResponse<String> metadataOnly = send(
+                "PUT",
+                "/api/library/resources/" + resourceId,
+                """
+                {"title":"SQL Essencial","summary":"Consultas básicas","body":"# SQL\\n## Consultas\\n### SELECT\\nConteúdo.","format":"MARKDOWN","sourceType":"MANUAL","subject":"Banco de Dados Relacional","tags":["SQL","SELECT","WHERE"],"language":"pt-BR"}
+                """,
+                true
+        );
+        assertThat(metadataOnly.statusCode()).isEqualTo(200);
+        assertThat(metadataOnly.body())
+                .contains("\"revision\":1", "\"subject\":\"Banco de Dados Relacional\"", "WHERE");
+
+        var journey = journeys.create(new JourneyService.JourneyInput(
+                classroomId,
+                "Jornada SQL",
+                null,
+                java.util.List.of(new JourneyService.StageInput(
+                        null, "SQL", null, null,
+                        JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL,
+                        null, "Banco de Dados", JourneyItemType.CONTENT, UUID.fromString(resourceId)
+                ))
+        ));
+        String stageId = journey.stages().getFirst().id().toString();
+
+        HttpResponse<String> contentUpdate = send(
+                "PUT",
+                "/api/library/resources/" + resourceId,
+                """
+                {"title":"SQL Essencial","summary":"Consultas básicas","body":"# SQL\\n## Consultas\\n### SELECT\\nConteúdo revisado.","format":"MARKDOWN","sourceType":"MANUAL","subject":"Banco de Dados Relacional","tags":["SQL","SELECT","WHERE"],"language":"pt-BR"}
+                """,
+                true
+        );
+        assertThat(contentUpdate.body()).contains("\"revision\":2");
+
+        HttpResponse<String> usage = send(
+                "GET",
+                "/api/library/resources/" + resourceId + "/usage",
+                null,
+                false
+        );
+        assertThat(usage.statusCode()).isEqualTo(200);
+        assertThat(usage.body())
+                .contains("\"snapshotRevision\":1", "\"currentRevision\":2", "\"updateAvailable\":true", "\"refreshAllowed\":true");
+
+        HttpResponse<String> refresh = send(
+                "POST",
+                "/api/journeys/" + journey.id() + "/stages/" + stageId + "/refresh-resource",
+                "{}",
+                true
+        );
+        assertThat(refresh.statusCode()).isEqualTo(200);
+        assertThat(refresh.body())
+                .contains("\"resourceSnapshotRevision\":2", "\"resourceCurrentRevision\":2", "\"resourceUpdateAvailable\":false");
+
+        assertThat(send("GET", "/api/library/resources?subject=Banco%20de%20Dados%20Relacional&tag=WHERE&language=pt-BR", null, false).body())
+                .contains(resourceId);
+        assertThat(send("GET", "/api/library/resources/facets", null, false).body())
+                .contains("Banco de Dados Relacional", "WHERE", "pt-BR");
+    }
+
+    @Test
     void administrativeResourceApiRequiresTeacherAuthentication() throws Exception {
         HttpClient anonymous = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/learning-resources?classroomId=" + UUID.randomUUID()))

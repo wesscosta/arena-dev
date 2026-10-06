@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-RELEASE_VERSION="${ARENA_RELEASE_VERSION:-0.7.0}"
+RELEASE_VERSION="${ARENA_RELEASE_VERSION:-0.8.0}"
 MODE="${1:-}"
 CI_RUN_URL=""
 BACKUP_FILE=""
@@ -82,7 +82,8 @@ node_line="$(node --version)"
 [[ "$node_line" == v22.* ]] || fail "Node.js 22 é obrigatório; encontrado: $node_line"
 
 "$SCRIPT_DIR/check-metadata.sh"
-"$SCRIPT_DIR/verify-v0.7-contract.sh"
+"$SCRIPT_DIR/verify-v0.8-contract.sh"
+git diff --check || fail "git diff --check falhou"
 
 head_sha="$(git rev-parse HEAD)"
 branch="$(git branch --show-current)"
@@ -186,6 +187,7 @@ export APP_TEACHER_PASSWORD="release-gate-teacher-password"
 export NEXT_PUBLIC_API_URL="http://localhost:${BACKEND_PORT}"
 export E2E_FRONTEND_URL="http://localhost:${FRONTEND_PORT}"
 export E2E_API_URL="http://127.0.0.1:${BACKEND_PORT}"
+export E2E_BROWSER_API_URL="http://localhost:${BACKEND_PORT}"
 export E2E_TEACHER_USERNAME="$APP_TEACHER_USERNAME"
 export E2E_TEACHER_PASSWORD="$APP_TEACHER_PASSWORD"
 
