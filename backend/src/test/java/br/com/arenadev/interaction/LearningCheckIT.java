@@ -99,7 +99,10 @@ class LearningCheckIT {
                 prepared.run().id()
         );
         assertThat(closed.run().status()).isEqualTo(InteractionRunStatus.CLOSED);
-        assertThat(checkService.current(fixture.sessionId()).run()).isNull();
+        LearningCheckService.StateView current = checkService.current(fixture.sessionId());
+        assertThat(current.run().status()).isEqualTo(InteractionRunStatus.CLOSED);
+        assertThat(current.run().resultsVisiblePublicly()).isTrue();
+        assertThat(current.result().evaluation().accuracy()).isEqualTo(1.0);
     }
 
     @Test

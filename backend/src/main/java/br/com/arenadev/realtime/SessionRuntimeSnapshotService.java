@@ -1,6 +1,7 @@
 package br.com.arenadev.realtime;
 
 import br.com.arenadev.dynamic.MechanicsService;
+import br.com.arenadev.interaction.LearningCheckService;
 import br.com.arenadev.poll.PollService;
 import br.com.arenadev.ranking.SessionRankingService;
 import br.com.arenadev.quiz.QuizService;
@@ -19,6 +20,7 @@ public class SessionRuntimeSnapshotService {
     private final WordCloudService wordCloudService;
     private final PollService pollService;
     private final QuizService quizService;
+    private final LearningCheckService learningCheckService;
     private final LiveStageService liveStageService;
     private final MechanicsService mechanicsService;
     private final SessionRankingService rankingService;
@@ -29,6 +31,7 @@ public class SessionRuntimeSnapshotService {
             WordCloudService wordCloudService,
             PollService pollService,
             QuizService quizService,
+            LearningCheckService learningCheckService,
             LiveStageService liveStageService,
             MechanicsService mechanicsService,
             SessionRankingService rankingService
@@ -38,6 +41,7 @@ public class SessionRuntimeSnapshotService {
         this.wordCloudService = wordCloudService;
         this.pollService = pollService;
         this.quizService = quizService;
+        this.learningCheckService = learningCheckService;
         this.liveStageService = liveStageService;
         this.mechanicsService = mechanicsService;
         this.rankingService = rankingService;
@@ -81,7 +85,8 @@ public class SessionRuntimeSnapshotService {
                 buzzerService.participantState(sessionId, participantId),
                 wordCloudService.participantState(sessionId, participantId),
                 pollService.participantState(sessionId, participantId),
-                quizService.participantState(sessionId, participantId)
+                quizService.participantState(sessionId, participantId),
+                learningCheckService.participantState(sessionId, participantId)
         );
     }
 
@@ -109,7 +114,8 @@ public class SessionRuntimeSnapshotService {
             BuzzerService.ParticipantBuzzerStateView buzzerParticipant,
             WordCloudService.ParticipantStateView wordCloudParticipant,
             PollService.ParticipantStateView pollParticipant,
-            QuizService.ParticipantStateView quizParticipant
+            QuizService.ParticipantStateView quizParticipant,
+            LearningCheckService.ParticipantStateView learningCheckParticipant
     ) {
     }
 }

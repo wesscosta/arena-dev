@@ -7,12 +7,15 @@ import br.com.arenadev.learning.LearningTargetRepository;
 import br.com.arenadev.learning.LearningTargetStatus;
 import br.com.arenadev.learning.Provenance;
 import br.com.arenadev.learning.ProvenanceOrigin;
+import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.session.ClassSession;
 import br.com.arenadev.session.ClassSessionRepository;
 import br.com.arenadev.session.SessionStatus;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import br.com.arenadev.stage.LiveStageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
@@ -31,6 +34,9 @@ public class LearningCheckService {
     private final InteractionEvaluationService evaluationService;
     private final InteractionResultEngine resultEngine;
     private final LearningEvidenceService evidenceService;
+    private final InteractionResponseService responseService;
+    private final SessionRealtimeGateway realtimeGateway;
+    private final LiveStageService liveStageService;
     private final JsonMapper json;
 
     public LearningCheckService(
@@ -41,6 +47,9 @@ public class LearningCheckService {
             InteractionEvaluationService evaluationService,
             InteractionResultEngine resultEngine,
             LearningEvidenceService evidenceService,
+            InteractionResponseService responseService,
+            SessionRealtimeGateway realtimeGateway,
+            LiveStageService liveStageService,
             JsonMapper json
     ) {
         this.sessionRepository = sessionRepository;
@@ -50,6 +59,9 @@ public class LearningCheckService {
         this.evaluationService = evaluationService;
         this.resultEngine = resultEngine;
         this.evidenceService = evidenceService;
+        this.responseService = responseService;
+        this.realtimeGateway = realtimeGateway;
+        this.liveStageService = liveStageService;
         this.json = json;
     }
 
@@ -108,28 +120,37 @@ public class LearningCheckService {
         InteractionRun run = runRepository.saveAndFlush(
                 new InteractionRun(session, definition, sequence)
         );
-        return state(run);
+        StateView next = state(run);
+        publishAfterCommit(run, next);
+        return next;
     }
 
     @Transactional
     public StateView open(UUID sessionId, UUID runId) {
         InteractionRun run = runForSession(runId, sessionId);
         run.open(Instant.now());
-        return state(run);
+        liveStageService.showLearningCheck(sessionId, runId);
+        StateView next = state(run);
+        publishAfterCommit(run, next);
+        return next;
     }
 
     @Transactional
     public StateView lock(UUID sessionId, UUID runId) {
         InteractionRun run = runForSession(runId, sessionId);
         run.lockResponses(Instant.now());
-        return state(run);
+        StateView next = state(run);
+        publishAfterCommit(run, next);
+        return next;
     }
 
     @Transactional
     public StateView evaluate(UUID sessionId, UUID runId) {
         InteractionRun run = runForSession(runId, sessionId);
         evaluationService.evaluateRun(runId);
-        return state(run);
+        StateView next = state(run);
+        publishAfterCommit(run, next);
+        return next;
     }
 
     @Transactional
@@ -142,7 +163,9 @@ public class LearningCheckService {
         }
         evaluationService.evaluateRun(runId);
         run.revealResults(Instant.now());
-        return state(run);
+        StateView next = state(run);
+        publishAfterCommit(run, next);
+        return next;
     }
 
     @Transactional
@@ -154,24 +177,16 @@ public class LearningCheckService {
         }
         evaluationService.evaluateRun(runId);
         run.close(now);
-        return state(run);
+        StateView next = state(run);
+        publishAfterCommit(run, next);
+        return next;
     }
 
     @Transactional(readOnly = true)
     public StateView current(UUID sessionId) {
         sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
-        InteractionRun run = runRepository
-                .findFirstBySessionIdAndStatusAndDefinitionProducesEvidenceTrueOrderBySequenceDesc(
-                        sessionId,
-                        InteractionRunStatus.ACTIVE
-                )
-                .orElseGet(() -> runRepository
-                        .findFirstBySessionIdAndStatusAndDefinitionProducesEvidenceTrueOrderBySequenceDesc(
-                                sessionId,
-                                InteractionRunStatus.CREATED
-                        )
-                        .orElse(null));
+        InteractionRun run = currentRun(sessionId);
         return run == null ? StateView.empty() : state(run);
     }
 
@@ -180,12 +195,36 @@ public class LearningCheckService {
         return state(runForSessionReadOnly(runId, sessionId));
     }
 
+    @Transactional
+    public ParticipantStateView submit(
+            UUID sessionId,
+            UUID runId,
+            UUID participantId,
+            String optionKey
+    ) {
+        InteractionRun run = runForSession(runId, sessionId);
+        String normalizedKey = requireSubmittedOption(optionKey, run.getDefinition());
+        responseService.submit(
+                runId,
+                participantId,
+                writeJson(Map.of("selectedOptionKeys", List.of(normalizedKey)))
+        );
+        StateView teacherState = state(run);
+        publishAfterCommit(run, teacherState);
+        return participantState(run, participantId);
+    }
+
+    @Transactional(readOnly = true)
+    public ParticipantStateView participantState(UUID sessionId, UUID participantId) {
+        sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+        InteractionRun run = currentRun(sessionId);
+        return run == null ? ParticipantStateView.empty() : participantState(run, participantId);
+    }
+
     private StateView state(InteractionRun run) {
         InteractionDefinition definition = run.getDefinition();
-        InteractionResultEngine.ResultView result = null;
-        if (!run.acceptsResponses()) {
-            result = resultEngine.result(run.getId());
-        }
+        InteractionResultEngine.ResultView result = resultEngine.result(run.getId());
 
         List<LearningEvidence> evidence = evidenceService.evidenceForRun(run.getId());
         return new StateView(
@@ -216,6 +255,122 @@ public class LearningCheckService {
                 result,
                 evidence.size()
         );
+    }
+
+    private InteractionRun currentRun(UUID sessionId) {
+        return runRepository
+                .findFirstBySessionIdAndStatusAndDefinitionProducesEvidenceTrueOrderBySequenceDesc(
+                        sessionId,
+                        InteractionRunStatus.ACTIVE
+                )
+                .orElseGet(() -> runRepository
+                        .findFirstBySessionIdAndStatusAndDefinitionProducesEvidenceTrueOrderBySequenceDesc(
+                                sessionId,
+                                InteractionRunStatus.CREATED
+                        )
+                        .orElseGet(() -> runRepository
+                                .findFirstBySessionIdAndDefinitionProducesEvidenceTrueOrderBySequenceDesc(
+                                        sessionId
+                                )
+                                .orElse(null)));
+    }
+
+    private ParticipantStateView participantState(
+            InteractionRun run,
+            UUID participantId
+    ) {
+        InteractionDefinition definition = run.getDefinition();
+        InteractionResponse response = responseService
+                .findParticipantResponseOptional(run.getId(), participantId)
+                .orElse(null);
+        return new ParticipantStateView(
+                run.getId(),
+                run.getStatus(),
+                definition.getPrompt(),
+                definition.getLearningTarget().getId(),
+                definition.getLearningTarget().getTitle(),
+                definition.getOptions().stream()
+                        .map(option -> new OptionView(
+                                option.getOptionKey(),
+                                option.getLabel(),
+                                option.getPosition()
+                        ))
+                        .toList(),
+                run.acceptsResponses(),
+                response != null,
+                response == null ? null : selectedOptionKey(response.getResponseJson()),
+                run.resultsVisiblePublicly(),
+                run.resultsVisiblePublicly() ? correctOptionKey(definition) : null
+        );
+    }
+
+    private void publishAfterCommit(InteractionRun run, StateView teacherState) {
+        UUID sessionId = run.getSession().getId();
+        realtimeGateway.broadcastTeachersAfterCommit(
+                sessionId,
+                "LEARNING_CHECK_STATE",
+                teacherState
+        );
+        realtimeGateway.broadcastParticipantsAfterCommit(
+                sessionId,
+                "LEARNING_CHECK_STATE",
+                new ParticipantSignalView(
+                        run.getId(),
+                        run.getStatus(),
+                        run.acceptsResponses(),
+                        run.resultsVisiblePublicly()
+                )
+        );
+    }
+
+    private String selectedOptionKey(String responseJson) {
+        try {
+            Map<String, Object> payload = json.readValue(
+                    responseJson,
+                    new TypeReference<Map<String, Object>>() {}
+            );
+            Object raw = payload.get("selectedOptionKeys");
+            if (!(raw instanceof List<?> keys) || keys.size() != 1
+                    || !(keys.getFirst() instanceof String key) || key.isBlank()) {
+                return null;
+            }
+            return key;
+        } catch (RuntimeException error) {
+            return null;
+        }
+    }
+
+    private String correctOptionKey(InteractionDefinition definition) {
+        try {
+            Map<String, Object> payload = json.readValue(
+                    definition.getEvaluationConfigJson(),
+                    new TypeReference<Map<String, Object>>() {}
+            );
+            Object raw = payload.get("correctOptionKeys");
+            if (!(raw instanceof List<?> keys) || keys.size() != 1
+                    || !(keys.getFirst() instanceof String key) || key.isBlank()) {
+                return null;
+            }
+            return key;
+        } catch (RuntimeException error) {
+            return null;
+        }
+    }
+
+    private static String requireSubmittedOption(
+            String rawOptionKey,
+            InteractionDefinition definition
+    ) {
+        if (rawOptionKey == null || rawOptionKey.isBlank()) {
+            throw new IllegalArgumentException("Selecione uma alternativa.");
+        }
+        String key = rawOptionKey.trim();
+        boolean exists = definition.getOptions().stream()
+                .anyMatch(option -> option.getOptionKey().equals(key));
+        if (!exists) {
+            throw new IllegalArgumentException("A alternativa selecionada não existe.");
+        }
+        return key;
     }
 
     private ClassSession activeSessionForUpdate(UUID sessionId) {
@@ -365,6 +520,43 @@ public class LearningCheckService {
             UUID learningTargetId,
             String learningTargetTitle,
             List<OptionView> options
+    ) {}
+
+    public record ParticipantStateView(
+            UUID runId,
+            InteractionRunStatus status,
+            String prompt,
+            UUID learningTargetId,
+            String learningTargetTitle,
+            List<OptionView> options,
+            boolean acceptsResponses,
+            boolean answered,
+            String selectedOptionKey,
+            boolean resultsVisiblePublicly,
+            String correctOptionKey
+    ) {
+        static ParticipantStateView empty() {
+            return new ParticipantStateView(
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    List.of(),
+                    false,
+                    false,
+                    null,
+                    false,
+                    null
+            );
+        }
+    }
+
+    public record ParticipantSignalView(
+            UUID runId,
+            InteractionRunStatus status,
+            boolean acceptsResponses,
+            boolean resultsVisiblePublicly
     ) {}
 
     public record OptionView(String key, String label, int position) {}
