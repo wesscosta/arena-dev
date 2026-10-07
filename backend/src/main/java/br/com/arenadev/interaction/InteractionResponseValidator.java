@@ -23,7 +23,7 @@ public class InteractionResponseValidator {
             return;
         }
         if (definition.getResponseKind() == InteractionResponseKind.TEXT) {
-            validateText(responseJson);
+            validateText(definition, responseJson);
             return;
         }
         throw new IllegalArgumentException("Tipo de resposta não suportado.");
@@ -62,11 +62,69 @@ public class InteractionResponseValidator {
         }
     }
 
-    private void validateText(String responseJson) {
+    private void validateText(
+            InteractionDefinition definition,
+            String responseJson
+    ) {
+        Map<String, Object> config = object(
+                definition.getResponseConfigJson() == null
+                        || definition.getResponseConfigJson().isBlank()
+                        ? "{}"
+                        : definition.getResponseConfigJson()
+        );
+        String mode = config.get("mode") instanceof String value
+                ? value.trim().toUpperCase(java.util.Locale.ROOT)
+                : "SINGLE";
         Map<String, Object> payload = object(responseJson);
-        Object rawText = payload.get("text");
-        if (!(rawText instanceof String text) || text.isBlank()) {
-            throw new IllegalArgumentException("A resposta TEXT exige text não vazio.");
+
+        if ("SINGLE".equals(mode)) {
+            Object rawText = payload.get("text");
+            if (!(rawText instanceof String text) || text.isBlank()) {
+                throw new IllegalArgumentException(
+                        "A resposta TEXT exige text não vazio."
+                );
+            }
+            return;
+        }
+
+        if (!"LIST".equals(mode)) {
+            throw new IllegalArgumentException(
+                    "Configuração de modo TEXT inválida."
+            );
+        }
+
+        Object rawTexts = payload.get("texts");
+        if (!(rawTexts instanceof List<?> texts)) {
+            throw new IllegalArgumentException(
+                    "A resposta TEXT em modo LIST exige texts."
+            );
+        }
+
+        int minItems = integer(config.get("minItems"), 1);
+        int maxItems = integer(config.get("maxItems"), 5);
+        int maxItemLength = integer(config.get("maxItemLength"), 500);
+        if (minItems < 0 || maxItems < 1 || minItems > maxItems
+                || maxItemLength < 1) {
+            throw new IllegalArgumentException(
+                    "Configuração de lista TEXT inválida."
+            );
+        }
+        if (texts.size() < minItems || texts.size() > maxItems) {
+            throw new IllegalArgumentException(
+                    "A quantidade de textos não respeita a configuração da interação."
+            );
+        }
+        for (Object raw : texts) {
+            if (!(raw instanceof String text) || text.isBlank()) {
+                throw new IllegalArgumentException(
+                        "texts contém valor inválido."
+                );
+            }
+            if (text.trim().length() > maxItemLength) {
+                throw new IllegalArgumentException(
+                        "Um texto excede o limite configurado."
+                );
+            }
         }
     }
 
