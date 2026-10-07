@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -92,7 +93,15 @@ public class InteractionResponseService {
 
     @Transactional(readOnly = true)
     public InteractionResponse findParticipantResponse(UUID runId, UUID participantId) {
-        return responseRepository.findByRunIdAndParticipantId(runId, participantId)
+        return findParticipantResponseOptional(runId, participantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resposta não encontrada."));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<InteractionResponse> findParticipantResponseOptional(
+            UUID runId,
+            UUID participantId
+    ) {
+        return responseRepository.findByRunIdAndParticipantId(runId, participantId);
     }
 }

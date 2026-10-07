@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface LearningTargetRepository extends JpaRepository<LearningTarget, UUID> {
+    List<LearningTarget> findByStatusOrderByTitleAsc(LearningTargetStatus status);
+
     List<LearningTarget> findByParentIdAndStatusOrderByTitleAsc(
             UUID parentId,
             LearningTargetStatus status

@@ -16,6 +16,11 @@ public interface InteractionRunRepository extends JpaRepository<InteractionRun, 
             InteractionRunStatus status
     );
 
+    Optional<InteractionRun> findFirstBySessionIdAndStatusAndDefinitionProducesEvidenceTrueOrderBySequenceDesc(
+            UUID sessionId,
+            InteractionRunStatus status
+    );
+
     Optional<InteractionRun> findFirstBySessionIdOrderBySequenceDesc(UUID sessionId);
 
     List<InteractionRun> findBySessionIdOrderBySequenceAsc(UUID sessionId);
