@@ -91,10 +91,16 @@ O handoff original continha decisões que foram superadas pela consolidação do
 
 ## 6. Estado real relevante do código
 
-A auditoria do repositório confirmou:
+A auditoria inicial partiu da V38. O estado atual da branch v0.9 já avançou de forma aditiva até **Flyway V45**:
 
-- Flyway está em V38;
-- `learning_resources` já possui subject/tags/language, revision, hashes, outline e proveniência de snapshot;
+- V39: Learning Domain Foundation;
+- V40: Interaction Definition Foundation;
+- V41: Interaction Run Foundation;
+- V42: Interaction Responses;
+- V43: Interaction Evaluations;
+- V44: Quiz Interaction Shadow;
+- V45: Learning Evidence;
+- `learning_resources` mantém subject/tags/language, revision, hashes, outline e proveniência de snapshot;
 - V38 declara explicitamente que `subject` é metadata editorial flexível, não KnowledgeNode/taxonomia rígida;
 - Quiz usa `QuizRound.question_id → activity_questions`;
 - `ActivityQuestion` pertence ao domínio Atividade;
@@ -223,9 +229,11 @@ Configurações representam experiências específicas:
 
 `InteractionRun` representa sua execução em uma ArenaSession.
 
-Estados iniciais:
+Estados persistidos atuais:
 
-`CREATED`, `OPEN`, `CLOSED`, `RESULTS_REVEALED`.
+`CREATED`, `ACTIVE`, `CLOSED`.
+
+Bloqueio de respostas e revelação de resultados são estados derivados por timestamps (`responsesLockedAt` e `resultsRevealedAt`), evitando multiplicar estados mutuamente combináveis no enum.
 
 ## 11. Response, Evaluation e Result
 
@@ -440,12 +448,62 @@ Resultado inicial:
 - acertos/erros quando avaliável;
 - distribuição.
 
-Ações mínimas:
+Condução entregue no primeiro slice:
 
-- Perguntar novamente;
-- Formar grupos.
+- preparar uma verificação vinculada a `LearningTarget`;
+- abrir respostas;
+- bloquear respostas;
+- revelar correção;
+- encerrar com ou sem revelar;
+- preservar resultado encerrado para leitura/reconnect;
+- registrar `LearningEvidence` automaticamente durante a avaliação.
+
+`Perguntar novamente` e `Formar grupos` permanecem como próximas intervenções sobre Result; não fazem parte deste primeiro corte visível.
 
 Before & After, Error Clinic e Recovery continuam na v0.10.
+
+## 19.1 Estado implementado — primeiro slice vertical
+
+Em 07/10/2026, o caminho crítico já possui uma implementação vertical funcional:
+
+```text
+LearningTarget
+  → InteractionDefinition
+  → InteractionRun
+  → Response
+  → Evaluation
+  → Result
+  → LearningEvidence
+  → Verificar aprendizagem
+```
+
+Características confirmadas:
+
+- `LearningEvidence` é persistida automaticamente somente para Interaction com `producesEvidence=true` e `LearningTarget`;
+- o fluxo nativo **Verificar aprendizagem** é separado do Quiz e não gera XP;
+- professor: prepara, abre, bloqueia, revela e encerra;
+- aluno: responde no mesmo `/join`, pode alterar enquanto aberto e recebe correção apenas após reveal;
+- reconnect restaura a resposta individual por snapshot/endpoint autenticado;
+- `LiveStage=LEARNING_CHECK` é destinado a `PARTICIPANTS` neste primeiro corte;
+- o projetor não recebe Learning Check nesta etapa;
+- professor recebe estado completo; participantes recebem sinal realtime sanitizado e recuperam apenas o próprio estado;
+- a última verificação encerrada permanece consultável até uma nova execução.
+
+Gates confirmados após o endurecimento backend:
+
+- backend unit: **149/149**;
+- backend integration: **102/102**;
+- `mvn clean verify`: verde;
+- Flyway V45: validada em bancos de teste isolados.
+
+Gates confirmados no frontend do slice visível:
+
+- testes: **295/295**;
+- typecheck: verde;
+- production build: verde;
+- lint: 0 erros; warnings preexistentes permanecem como dívida técnica;
+- E2E crítico Chromium: **5/5**, incluindo Learning Check, reconnect, Evidence sem XP e regressões de Quiz/Buzzer/Boss/roteiro;
+- suíte Playwright Chromium completa: **22/22**, incluindo breakpoints desktop/mobile/ultrawide e light/dark.
 
 ## 20. AI-ready Gate
 

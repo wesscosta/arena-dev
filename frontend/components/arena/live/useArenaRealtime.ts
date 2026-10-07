@@ -13,6 +13,7 @@ import type { TimerState } from "@/lib/timer-api";
 import { fetchWordCloudState, type WordCloudState } from "@/lib/word-cloud-api";
 import { fetchPollState, type PollState } from "@/lib/poll-api";
 import { fetchQuizState, type QuizState } from "@/lib/quiz-api";
+import { emptyLearningCheckState, fetchLearningCheckState, type LearningCheckState } from "@/lib/learning-check-api";
 import { fetchSessionRanking, type SessionRankingState } from "@/lib/ranking-api";
 
 type ArenaRealtimeStatus = "offline" | "connecting" | "online";
@@ -40,6 +41,7 @@ export function useArenaRealtime({
   const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
   const [pollState, setPollState] = useState<PollState>({ round: null });
   const [quizState, setQuizState] = useState<QuizState>({ round: null });
+  const [learningCheckState, setLearningCheckState] = useState<LearningCheckState>(emptyLearningCheckState());
   const [rankingState, setRankingState] = useState<SessionRankingState | null>(null);
   const [status, setStatus] = useState<ArenaRealtimeStatus>("offline");
   const [reconnectVersion, setReconnectVersion] = useState(0);
@@ -61,6 +63,7 @@ export function useArenaRealtime({
       setWordCloudState({ round: null });
       setPollState({ round: null });
       setQuizState({ round: null });
+      setLearningCheckState(emptyLearningCheckState());
       setRankingState(null);
       setStatus("offline");
       return;
@@ -76,14 +79,16 @@ export function useArenaRealtime({
       fetchWordCloudState(sessionId),
       fetchPollState(sessionId),
       fetchQuizState(sessionId),
+      fetchLearningCheckState(sessionId),
     ])
-      .then(([code, buzzer, wordCloud, poll, quiz]) => {
+      .then(([code, buzzer, wordCloud, poll, quiz, learningCheck]) => {
         if (!active) return;
         setJoinCode(code);
         setBuzzerState(buzzer);
         setWordCloudState(wordCloud);
         setPollState(poll);
         setQuizState(quiz);
+        setLearningCheckState(learningCheck);
         if (buzzer.presses[0]) selectedStudentRef.current(buzzer.presses[0].studentId);
       })
       .catch((error) => {
@@ -116,6 +121,7 @@ export function useArenaRealtime({
       if (event.type === "WORD_CLOUD_STATE") setWordCloudState(event.payload as WordCloudState);
       if (event.type === "POLL_STATE") setPollState(event.payload as PollState);
       if (event.type === "QUIZ_STATE") setQuizState(event.payload as QuizState);
+      if (event.type === "LEARNING_CHECK_STATE") setLearningCheckState(event.payload as LearningCheckState);
       if (event.type === "SESSION_RANKING_STATE") setRankingState(event.payload as SessionRankingState);
       if (event.type === "PARTICIPANT_CONNECTED" || event.type === "PARTICIPANT_DISCONNECTED") {
         participantsChangedRef.current(sessionId);
@@ -154,6 +160,8 @@ export function useArenaRealtime({
     setPollState,
     quizState,
     setQuizState,
+    learningCheckState,
+    setLearningCheckState,
     rankingState,
     setRankingState,
     realtimeStatus: status,

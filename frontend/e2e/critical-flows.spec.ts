@@ -736,3 +736,180 @@ test("Quiz completo preserva resposta no reconnect, revela no Projetor e gera Sc
     await api.dispose();
   }
 });
+
+
+test("Verificar aprendizagem preserva reconnect, revela correção e gera Evidence sem XP", async ({
+  browser,
+  page,
+}) => {
+  test.setTimeout(75_000);
+
+  const { api, csrfHeaders } = await authenticatedApi();
+  const participantContext = await browser.newContext();
+  const participantPage = await participantContext.newPage();
+
+  try {
+    const fixture = await createSessionFixture(api, csrfHeaders, "LEARNING-CHECK");
+    const targetTitle = `Identificar LEFT JOIN ${fixture.suffix}`;
+    const questionText = `Qual JOIN preserva todas as linhas da esquerda? ${fixture.suffix}`;
+    const correctText = `LEFT JOIN ${fixture.suffix.slice(-5)}`;
+    const distractorA = `INNER JOIN ${fixture.suffix.slice(-5)}`;
+    const distractorC = `RIGHT JOIN ${fixture.suffix.slice(-5)}`;
+    const distractorD = `CROSS JOIN ${fixture.suffix.slice(-5)}`;
+
+    await page.goto("/");
+    await page.getByLabel("Usuário").fill(teacherUsername);
+    await page.getByLabel("Senha").fill(teacherPassword);
+    const [browserLogin] = await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().endsWith("/api/auth/login"),
+      ),
+      page.getByRole("button", { name: "Entrar", exact: true }).click(),
+    ]);
+    expect(browserLogin.status(), await browserLogin.text()).toBe(200);
+
+    const classroomCard = page
+      .locator("article.overview-class-card")
+      .filter({ hasText: fixture.classroomName });
+    await expect(classroomCard).toBeVisible();
+    await classroomCard.click();
+    await page.getByRole("button", { name: "Continuar Arena" }).click();
+    await expect(page.locator("aside.arena-cockpit-nav")).toBeVisible();
+
+    await joinParticipant(
+      participantPage,
+      fixture.joinCode.code,
+      fixture.classroomName,
+      fixture.registration,
+      fixture.studentNickname,
+    );
+
+    await page.getByRole("button", {
+      name: "Verificar aprendizagem",
+      exact: true,
+    }).click();
+    await expect(
+      page.getByRole("heading", { name: "Verificar aprendizagem" }),
+    ).toBeVisible();
+
+    await page.getByText("Criar um novo objetivo", { exact: true }).click();
+    await page
+      .getByPlaceholder("Ex.: Identificar quando usar LEFT JOIN")
+      .fill(targetTitle);
+    await page.getByRole("button", { name: "Criar", exact: true }).click();
+    await expect(page.getByLabel("Objetivo de aprendizagem")).toHaveValue(
+      /.+/,
+    );
+
+    await page
+      .getByPlaceholder(
+        "Ex.: Qual JOIN preserva todas as linhas da tabela da esquerda?",
+      )
+      .fill(questionText);
+    await page.getByPlaceholder("Alternativa A").fill(distractorA);
+    await page.getByPlaceholder("Alternativa B").fill(correctText);
+    await page.getByPlaceholder("Alternativa C").fill(distractorC);
+    await page.getByPlaceholder("Alternativa D").fill(distractorD);
+    await page.getByLabel("Marcar alternativa B como correta").check();
+
+    await page
+      .getByRole("button", { name: "Preparar verificação", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Abrir respostas", exact: true }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("button", { name: "Abrir respostas", exact: true })
+      .click();
+
+    await expect(
+      participantPage.getByRole("heading", { name: questionText }),
+    ).toBeVisible();
+    await expect(
+      participantPage.getByText(
+        "A correção permanece protegida até o professor revelar o resultado.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+
+    await participantPage
+      .getByRole("radio", { name: new RegExp(correctText) })
+      .click();
+    await expect(
+      participantPage.getByText(/^Resposta registrada/),
+    ).toBeVisible();
+
+    await participantPage.reload();
+    await expect(
+      participantPage.getByRole("heading", { name: questionText }),
+    ).toBeVisible();
+    await expect(
+      participantPage.getByText(/^Resposta registrada/),
+    ).toBeVisible();
+    await expect(
+      participantPage.getByRole("radio", { name: new RegExp(correctText) }),
+    ).toHaveAttribute("aria-checked", "true");
+
+    await expect(
+      page.getByText("respostas recebidas", { exact: true }).locator("..")
+        .getByText("1/1", { exact: true }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("button", { name: "Bloquear respostas", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Revelar correção", exact: true }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("button", { name: "Revelar correção", exact: true })
+      .click();
+
+    await expect(
+      participantPage.getByText(
+        "Resposta correta. Esta checagem foi registrada como evidência de aprendizagem.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(
+      participantPage.getByText("correta", { exact: true }),
+    ).toBeVisible();
+
+    await expect(
+      page.getByText("100%", { exact: true }).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/1 evidência\(s\) de aprendizagem persistida\(s\)/),
+    ).toBeVisible();
+
+    const scoreResponse = await api.get(
+      `/api/score-events?classroomId=${encodeURIComponent(fixture.classroom.id)}`,
+    );
+    await expectOk(scoreResponse, "Consulta de XP após Learning Check");
+    const scores = (await scoreResponse.json()) as Array<unknown>;
+    expect(scores).toHaveLength(0);
+
+    await page
+      .getByRole("button", { name: "Encerrar verificação", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Nova verificação", exact: true }),
+    ).toBeVisible();
+
+    await participantPage.reload();
+    await expect(
+      participantPage.getByRole("heading", { name: questionText }),
+    ).toBeVisible();
+    await expect(
+      participantPage.getByText(
+        "Resposta correta. Esta checagem foi registrada como evidência de aprendizagem.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+  } finally {
+    await participantContext.close().catch(() => {});
+    await api.dispose();
+  }
+});

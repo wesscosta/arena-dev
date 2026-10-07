@@ -18,7 +18,7 @@ Antes das alterações funcionais:
 ### Sessão e realtime
 
 - backend continua autoritativo;
-- `useArenaRealtime` agrega Join Code, Buzzer, Timer, Word Cloud, Poll, Quiz e Ranking;
+- `useArenaRealtime` agrega Join Code, Buzzer, Timer, Word Cloud, Poll, Quiz, **Learning Check** e Ranking;
 - respostas de Quiz usam REST e estado é projetado por realtime;
 - Projector consome runtime compartilhado;
 - reconnect já possui testes específicos.
@@ -100,15 +100,64 @@ ContentRef e Provenance da v0.9 devem aproveitar esses identificadores sem dupli
 8. não alterar scripts específicos de verificação da release v0.8, mesmo que a branch v0.9 avance além de V38;
 9. atualizar apenas testes genéricos que validam a versão Flyway corrente.
 
-## Próximo passo
+## Estado atual após o primeiro slice vertical
 
-Após validar V39 e os contratos LearningTarget/ContentRef/Provenance:
+A fundação prevista acima já avançou de V39 até **V45**:
 
 ```text
-InteractionDefinition
+V39 LearningTarget / ContentRef / Provenance
+→ V40 InteractionDefinition
+→ V41 InteractionRun
+→ V42 Response
+→ V43 Evaluation
+→ V44 Quiz shadow adapter/validation
+→ V45 LearningEvidence
+```
+
+O primeiro fluxo nativo **Verificar aprendizagem** está implementado ponta a ponta:
+
+```text
+LearningTarget
+→ InteractionDefinition
 → InteractionRun
 → Response
-→ Quiz Adapter
 → Evaluation
-→ Result Engine
+→ Result
+→ LearningEvidence
 ```
+
+Estado funcional confirmado:
+
+- professor cria/seleciona `LearningTarget`, prepara, abre, bloqueia, revela e encerra a verificação;
+- `LearningEvidence` é produzida automaticamente apenas quando a Interaction declara evidência e possui target;
+- aluno responde pelo `/join` com token temporário e pode alterar enquanto a execução aceita respostas;
+- correção permanece protegida até reveal;
+- reconnect restaura o estado individual, inclusive resposta já registrada;
+- `LiveStage=LEARNING_CHECK` é participant-only neste primeiro corte;
+- projetor permanece fora do slice;
+- Quiz continua separado: questão de Atividade + XP; Learning Check: target pedagógico + Evidence, sem XP.
+
+Gates validados em 07/10/2026:
+
+- backend: 149 unitários + 102 integrações, todos verdes via `mvn clean verify`;
+- frontend: 295 testes verdes;
+- typecheck verde;
+- `next build` verde;
+- lint sem erros; warnings históricos permanecem;
+- Chromium E2E crítico: **5/5** verde, cobrindo também reconnect e Evidence sem XP no Learning Check;
+- suíte Playwright completa: **22/22** verde, cobrindo também desktop/mobile/ultrawide e light/dark.
+
+## Próximo passo arquitetural
+
+Com o primeiro slice comprovado, a sequência de menor risco é:
+
+```text
+Result → intervenção mínima explícita
+→ validar UX real do Learning Check
+→ consolidar Quiz adapter como fonte oficial quando shadow equivaler
+→ Poll Adapter (CHOICE + NONE)
+→ TEXT / Word Cloud
+→ Session Core / Groups / Spotlight
+```
+
+Não iniciar Mastery, IA generativa ou novos game modes antes de fechar essas migrações.
