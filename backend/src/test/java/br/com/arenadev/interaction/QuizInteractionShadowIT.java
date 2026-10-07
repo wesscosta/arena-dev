@@ -27,7 +27,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
-@SpringBootTest
+@SpringBootTest(properties = "app.learning-core.quiz-shadow-enabled=true")
 class QuizInteractionShadowIT {
     @Container
     private static final PostgreSQLContainer POSTGRESQL =
@@ -52,48 +52,46 @@ class QuizInteractionShadowIT {
     @Autowired private QuizInteractionShadowService shadowService;
     @Autowired private QuizInteractionShadowLinkRepository linkRepository;
     @Autowired private InteractionResponseRepository responseRepository;
+    @Autowired private InteractionEvaluationRepository evaluationRepository;
 
     @Test
-    void shadowCoreMatchesLegacyQuizAcrossAnswerChangeLockRevealAndClose() {
+    void automaticShadowMatchesLegacyQuizAcrossAnswerChangeLockRevealAndClose() {
         Scenario scenario = scenario();
         UUID firstParticipant = scenario.participants().get(0).getId();
         UUID secondParticipant = scenario.participants().get(1).getId();
 
         QuizService.StateView prepared =
                 quizService.prepare(scenario.sessionId(), scenario.questionId());
-        QuizInteractionShadowService.ShadowState preparedShadow =
-                shadowService.sync(prepared.round().id());
 
-        assertThat(preparedShadow.status()).isEqualTo(InteractionRunStatus.CREATED);
-        assertThat(preparedShadow.acceptsResponses()).isFalse();
+        QuizInteractionShadowLink preparedLink = link(prepared.round().id());
+        assertThat(preparedLink.getRun().getStatus()).isEqualTo(InteractionRunStatus.CREATED);
+        assertThat(preparedLink.getRun().acceptsResponses()).isFalse();
 
         quizService.open(scenario.sessionId(), prepared.round().id());
-        QuizInteractionShadowService.ShadowState opened =
-                shadowService.sync(prepared.round().id());
-        assertThat(opened.status()).isEqualTo(InteractionRunStatus.ACTIVE);
-        assertThat(opened.acceptsResponses()).isTrue();
+        QuizInteractionShadowLink openedLink = link(prepared.round().id());
+        assertThat(openedLink.getRun().getStatus()).isEqualTo(InteractionRunStatus.ACTIVE);
+        assertThat(openedLink.getRun().acceptsResponses()).isTrue();
 
         quizService.answer(scenario.sessionId(), prepared.round().id(), firstParticipant, "b");
-        shadowService.sync(prepared.round().id());
-
         quizService.answer(scenario.sessionId(), prepared.round().id(), firstParticipant, "a");
-        shadowService.sync(prepared.round().id());
-
         quizService.answer(scenario.sessionId(), prepared.round().id(), secondParticipant, "b");
-        shadowService.sync(prepared.round().id());
 
-        QuizInteractionShadowLink link = linkRepository
-                .findByQuizRoundIdWithGraph(prepared.round().id())
-                .orElseThrow();
+        QuizInteractionShadowLink answeredLink = link(prepared.round().id());
         InteractionResponse changed = responseRepository
-                .findByRunIdAndParticipantId(link.getRun().getId(), firstParticipant)
+                .findByRunIdAndParticipantId(answeredLink.getRun().getId(), firstParticipant)
                 .orElseThrow();
         assertThat(changed.getRevision()).isEqualTo(2);
 
         quizService.lock(scenario.sessionId(), prepared.round().id());
+
+        QuizInteractionShadowLink lockedLink = link(prepared.round().id());
+        assertThat(lockedLink.getRun().acceptsResponses()).isFalse();
+        assertThat(evaluationRepository.findByResponseRunIdOrderByEvaluatedAtAsc(
+                lockedLink.getRun().getId()
+        )).hasSize(2);
+
         QuizInteractionShadowService.ShadowComparison comparison =
                 shadowService.compare(prepared.round().id());
-
         assertThat(comparison.equivalent()).isTrue();
         assertThat(comparison.mismatches()).isEmpty();
         assertThat(comparison.legacy().responseCount()).isEqualTo(2);
@@ -107,16 +105,17 @@ class QuizInteractionShadowIT {
         assertThat(comparison.shadow().evaluation().accuracy()).isEqualTo(0.5);
 
         quizService.reveal(scenario.sessionId(), prepared.round().id());
-        QuizInteractionShadowService.ShadowState revealed =
-                shadowService.sync(prepared.round().id());
-        assertThat(revealed.resultsVisiblePublicly()).isTrue();
+        assertThat(link(prepared.round().id()).getRun().resultsVisiblePublicly()).isTrue();
 
         quizService.close(scenario.sessionId(), prepared.round().id());
-        QuizInteractionShadowService.ShadowState closed =
-                shadowService.sync(prepared.round().id());
-        assertThat(closed.status()).isEqualTo(InteractionRunStatus.CLOSED);
+        assertThat(link(prepared.round().id()).getRun().getStatus())
+                .isEqualTo(InteractionRunStatus.CLOSED);
 
         assertThat(shadowService.compare(prepared.round().id()).equivalent()).isTrue();
+    }
+
+    private QuizInteractionShadowLink link(UUID quizRoundId) {
+        return linkRepository.findByQuizRoundIdWithGraph(quizRoundId).orElseThrow();
     }
 
     private Scenario scenario() {

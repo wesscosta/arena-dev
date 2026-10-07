@@ -3,6 +3,7 @@ package br.com.arenadev.quiz;
 import br.com.arenadev.activity.ActivityQuestion;
 import br.com.arenadev.activity.ActivityQuestionRepository;
 import br.com.arenadev.activity.QuestionType;
+import br.com.arenadev.interaction.QuizInteractionShadowBridge;
 import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.scoring.ScoreCategory;
 import br.com.arenadev.scoring.ScoreEventService;
@@ -39,6 +40,7 @@ public class QuizService {
     private final LiveStageService liveStageService;
     private final ScoreEventService scoreEventService;
     private final SessionEventService sessionEventService;
+    private final QuizInteractionShadowBridge shadowBridge;
     private final JsonMapper json;
 
     public QuizService(
@@ -51,6 +53,7 @@ public class QuizService {
             LiveStageService liveStageService,
             ScoreEventService scoreEventService,
             SessionEventService sessionEventService,
+            QuizInteractionShadowBridge shadowBridge,
             JsonMapper json
     ) {
         this.roundRepository = roundRepository;
@@ -62,6 +65,7 @@ public class QuizService {
         this.liveStageService = liveStageService;
         this.scoreEventService = scoreEventService;
         this.sessionEventService = sessionEventService;
+        this.shadowBridge = shadowBridge;
         this.json = json;
     }
 
@@ -407,6 +411,7 @@ public class QuizService {
         realtimeGateway.broadcastTeachersAfterCommit(sessionId, "QUIZ_STATE", teacher);
         realtimeGateway.broadcastParticipantsAfterCommit(sessionId, "QUIZ_STATE", publicView);
         realtimeGateway.broadcastProjectorsAfterCommit(sessionId, "QUIZ_STATE", publicView);
+        shadowBridge.afterLegacyMutation(round.getId());
     }
 
     private Optional<QuizRound> latestRound(UUID sessionId) {
