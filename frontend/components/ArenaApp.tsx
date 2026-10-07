@@ -32,6 +32,7 @@ import {
 import WordCloudPanel from "@/components/WordCloudPanel";
 import PollPanel from "@/components/PollPanel";
 import QuizPanel from "@/components/QuizPanel";
+import LearningCheckPanel from "@/components/LearningCheckPanel";
 import SessionAccessCard from "@/components/SessionAccessCard";
 import JourneyManager from "@/components/JourneyManager";
 import LibraryWorkspace from "@/components/LibraryWorkspace";
@@ -2354,6 +2355,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     setPollState,
     quizState,
     setQuizState,
+    learningCheckState,
+    setLearningCheckState,
     rankingState,
     setRankingState,
     realtimeStatus,
@@ -3302,6 +3305,16 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 notify={notify}
                 canAdvanceFlow={Boolean(liveFlowState?.started && liveFlowState.hasNext)}
                 onContinue={() => movePreparedFlow("next")}
+              />
+            </div>
+          ) : activeDynamic === "learning-check" ? (
+            <div className="arena-dynamic-workspace">
+              <LearningCheckPanel
+                sessionId={currentSession.id}
+                state={learningCheckState}
+                onStateChange={setLearningCheckState}
+                presentCount={sessionParticipants.filter((participant) => participant.present).length}
+                notify={notify}
               />
             </div>
           ) : activeDynamic === "buzzer" ? (

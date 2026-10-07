@@ -280,7 +280,8 @@ Histórico da v0.6:
 - `v0.5.0` — histórica;
 - `v0.6.0` — baseline técnica encerrada e congelada;
 - `v0.7.0` — Educational Integrations; publicada e encerrada;
-- `v0.8` — Professor Experience & Journey MVP; **release candidate em feature freeze**, com Semantic Content Library V38 tecnicamente fechada.
+- `v0.8.0` — Professor Experience & Journey MVP; publicada, encerrada e congelada em V38;
+- `v0.9` — **Arena Learning Core em desenvolvimento**; schema aditivo até V45 e primeiro slice nativo `Verificar aprendizagem` operando de LearningTarget até LearningEvidence.
 
 ## Licença
 
@@ -337,7 +338,7 @@ A Biblioteca agora possui workspace global do professor, autoria manual, busca, 
 
 ### Sequência de fechamento da v0.8
 
-O **Gate de Estabilização Arquitetural v0.8** está concluído e os cortes `16.5C–F` foram fechados no escopo MVP. A linha corrente é **Release Hardening**: testes/E2E, restore V38, documentação, manifests e CI do release candidate.
+O **Gate de Estabilização Arquitetural v0.8** foi concluído, os cortes `16.5C–F` foram fechados no escopo MVP e a v0.8.0 foi publicada/congelada. O desenvolvimento funcional corrente ocorre na **v0.9 — Arena Learning Core**; a linha `v0.8.x` fica restrita a regressão, segurança, acessibilidade crítica e documentação.
 
 A futura `16.6 — Knowledge & Retrieval Foundation` fica fora do gate da v0.8: chunks, índices lexical/vetorial, embeddings, avaliação de retrieval e RAG/LLM só serão iniciados depois da estabilização do corpus e da Biblioteca.
 
