@@ -1,5 +1,6 @@
 package br.com.arenadev.interaction;
 
+import br.com.arenadev.learning.LearningEvidenceService;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ public class InteractionEvaluationService {
     private final InteractionResponseRepository responseRepository;
     private final InteractionEvaluationRepository evaluationRepository;
     private final DeterministicInteractionEvaluator deterministicEvaluator;
+    private final LearningEvidenceService evidenceService;
     private final Clock clock;
 
     @Autowired
@@ -24,13 +26,15 @@ public class InteractionEvaluationService {
             InteractionRunRepository runRepository,
             InteractionResponseRepository responseRepository,
             InteractionEvaluationRepository evaluationRepository,
-            DeterministicInteractionEvaluator deterministicEvaluator
+            DeterministicInteractionEvaluator deterministicEvaluator,
+            LearningEvidenceService evidenceService
     ) {
         this(
                 runRepository,
                 responseRepository,
                 evaluationRepository,
                 deterministicEvaluator,
+                evidenceService,
                 Clock.systemUTC()
         );
     }
@@ -40,12 +44,14 @@ public class InteractionEvaluationService {
             InteractionResponseRepository responseRepository,
             InteractionEvaluationRepository evaluationRepository,
             DeterministicInteractionEvaluator deterministicEvaluator,
+            LearningEvidenceService evidenceService,
             Clock clock
     ) {
         this.runRepository = runRepository;
         this.responseRepository = responseRepository;
         this.evaluationRepository = evaluationRepository;
         this.deterministicEvaluator = deterministicEvaluator;
+        this.evidenceService = evidenceService;
         this.clock = clock;
     }
 
@@ -88,6 +94,10 @@ public class InteractionEvaluationService {
                     now
             );
             evaluated.add(evaluationRepository.save(evaluation));
+        }
+
+        if (definition.isProducesEvidence()) {
+            evidenceService.recordForRun(runId);
         }
 
         return List.copyOf(evaluated);
