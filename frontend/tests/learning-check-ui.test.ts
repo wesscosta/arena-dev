@@ -55,3 +55,11 @@ test("participant correction stays protected until the server reveals it", () =>
 test("participant reconnect restores the private Learning Check state", () => {
   assert.match(join, /setLearningCheckParticipant\(runtime\.learningCheckParticipant/);
 });
+
+
+test("teacher result actions preserve the learning check boundary", () => {
+  assert.match(panel, /repeatLearningCheck/);
+  assert.match(panel, /Perguntar novamente/);
+  assert.match(panel, /Formar grupos/);
+  assert.match(arena, /onOpenGroups=\{\(\) => selectTool\("groups"\)\}/);
+});

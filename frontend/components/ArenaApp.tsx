@@ -3315,6 +3315,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 onStateChange={setLearningCheckState}
                 presentCount={sessionParticipants.filter((participant) => participant.present).length}
                 notify={notify}
+                onOpenGroups={() => selectTool("groups")}
               />
             </div>
           ) : activeDynamic === "buzzer" ? (

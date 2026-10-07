@@ -91,6 +91,14 @@ public class LearningCheckController {
         return service.close(sessionId, runId);
     }
 
+    @PostMapping("/{runId}/repeat")
+    public LearningCheckService.StateView repeat(
+            @PathVariable UUID sessionId,
+            @PathVariable UUID runId
+    ) {
+        return service.repeat(sessionId, runId);
+    }
+
     public record PrepareRequest(
             @NotNull UUID learningTargetId,
             @NotBlank @Size(max = 1200) String prompt,

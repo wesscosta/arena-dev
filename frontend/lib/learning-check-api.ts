@@ -179,6 +179,10 @@ export function closeLearningCheck(sessionId: string, runId: string) {
   return transition(sessionId, runId, "close");
 }
 
+export function repeatLearningCheck(sessionId: string, runId: string) {
+  return transition(sessionId, runId, "repeat");
+}
+
 export function fetchParticipantLearningCheck(code: string, token: string) {
   const params = new URLSearchParams({ token });
   return apiRequest<LearningCheckParticipantState>(
