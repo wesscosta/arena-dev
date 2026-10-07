@@ -76,7 +76,7 @@ class IntegrationPersistenceMigrationIT {
         assertThat(jdbc.queryForObject(
                 "select version from flyway_schema_history where success order by installed_rank desc limit 1",
                 String.class
-         )).isEqualTo("42");
+         )).isEqualTo("43");
 
         assertThat(jdbc.queryForObject(
                 "select provider from integration_connections where id='00000000-0000-0000-0000-000000000701'",
