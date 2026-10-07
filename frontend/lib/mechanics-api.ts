@@ -198,6 +198,17 @@ export async function organizeGroups(sessionId: string, groupSize: number): Prom
   return { groups: result.groups, runtime: mapRuntime(result.runtime) };
 }
 
+export async function saveGroups(
+  sessionId: string,
+  groups: string[][],
+): Promise<{ groups: string[][]; runtime: SessionRuntimeState }> {
+  const result = await mechanicsRequest<GroupsResult>(`/api/sessions/${sessionId}/mechanics/groups`, {
+    method: "PUT",
+    body: JSON.stringify({ groups }),
+  });
+  return { groups: result.groups, runtime: mapRuntime(result.runtime) };
+}
+
 export async function startBoss(sessionId: string, name: string, maxHp: number): Promise<SessionRuntimeState> {
   return mapRuntime(await mechanicsRequest<RuntimeView>(`/api/sessions/${sessionId}/mechanics/boss`, {
     method: "POST",

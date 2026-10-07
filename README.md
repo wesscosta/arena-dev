@@ -4,9 +4,9 @@
 
 > **Baseline publicada:** `v0.7.0 — Educational Integrations`.
 >
-> **Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
+> **Linha ativa:** `v0.9 — Arena Learning Core`.
 >
-> **Execução atual:** a v0.8 está em **Release Hardening / feature freeze**. 16.5C–F estão tecnicamente fechados na branch de release candidate; não entram novas funcionalidades antes da publicação.
+> **Execução atual:** a v0.8.0 está publicada e congelada. O desenvolvimento funcional corrente ocorre na v0.9, com Learning Domain, Interaction Core, LearningEvidence e migração progressiva dos runtimes legados por adapters/shadow validation.
 
 ## Modelo do produto
 
@@ -118,7 +118,7 @@ flowchart LR
     P["Projetor"] --> F
     F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
     F <-->|"WebSocket"| B
-    B --> D["PostgreSQL 17 + Flyway V1–V38"]
+    B --> D["PostgreSQL 17 + Flyway V1–V47"]
 ```
 
 Princípios:
@@ -280,7 +280,8 @@ Histórico da v0.6:
 - `v0.5.0` — histórica;
 - `v0.6.0` — baseline técnica encerrada e congelada;
 - `v0.7.0` — Educational Integrations; publicada e encerrada;
-- `v0.8` — Professor Experience & Journey MVP; **release candidate em feature freeze**, com Semantic Content Library V38 tecnicamente fechada.
+- `v0.8.0` — Professor Experience & Journey MVP; publicada, encerrada e congelada em V38;
+- `v0.9` — **Arena Learning Core em desenvolvimento**; schema aditivo até V47, fluxo nativo `Verificar aprendizagem` operando de LearningTarget até LearningEvidence e shadows validados para Quiz, Poll e Nuvem de Palavras. Spotlight/Timer já atendem o desenho de sessão; Groups agora suporta geração balanceada e composição manual persistida.
 
 ## Licença
 
@@ -337,7 +338,7 @@ A Biblioteca agora possui workspace global do professor, autoria manual, busca, 
 
 ### Sequência de fechamento da v0.8
 
-O **Gate de Estabilização Arquitetural v0.8** está concluído e os cortes `16.5C–F` foram fechados no escopo MVP. A linha corrente é **Release Hardening**: testes/E2E, restore V38, documentação, manifests e CI do release candidate.
+O **Gate de Estabilização Arquitetural v0.8** foi concluído, os cortes `16.5C–F` foram fechados no escopo MVP e a v0.8.0 foi publicada/congelada. O desenvolvimento funcional corrente ocorre na **v0.9 — Arena Learning Core**; a linha `v0.8.x` fica restrita a regressão, segurança, acessibilidade crítica e documentação.
 
 A futura `16.6 — Knowledge & Retrieval Foundation` fica fora do gate da v0.8: chunks, índices lexical/vetorial, embeddings, avaliação de retrieval e RAG/LLM só serão iniciados depois da estabilização do corpus e da Biblioteca.
 

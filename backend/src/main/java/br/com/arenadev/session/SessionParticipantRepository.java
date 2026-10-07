@@ -25,6 +25,7 @@ public interface SessionParticipantRepository extends JpaRepository<SessionParti
     List<SessionParticipant> findBySessionIdForUpdate(@Param("sessionId") UUID sessionId);
 
     Optional<SessionParticipant> findByIdAndSessionId(UUID id, UUID sessionId);
+    long countBySessionId(UUID sessionId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""

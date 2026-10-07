@@ -4,13 +4,14 @@ import type { ReactNode } from "react";
 import { Badge, Button, Menu, MenuItem } from "@/components/ui";
 import styles from "./ArenaLiveChrome.module.css";
 
-export type ArenaDynamic = "runbook" | "draw" | "wordcloud" | "poll" | "quiz" | "buzzer" | "boss";
+export type ArenaDynamic = "runbook" | "draw" | "wordcloud" | "poll" | "quiz" | "learning-check" | "buzzer" | "boss";
 export type ArenaTool = "timer" | "groups" | "attendance" | "ranking" | "score" | null;
 
 type ArenaGlyphName =
   | "arena"
   | "draw"
   | "quiz"
+  | "learning-check"
   | "poll"
   | "wordcloud"
   | "buzzer"
@@ -35,6 +36,7 @@ export function ArenaGlyph({ name }: { name: ArenaGlyphName }) {
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
       {name === "draw" && <><circle {...common} cx="12" cy="12" r="7" /><circle {...common} cx="12" cy="12" r="2.5" /><path {...common} d="M12 2v3M19 5l-2 2M22 12h-3" /></>}
       {name === "quiz" && <><path {...common} d="M9.5 9a2.7 2.7 0 1 1 4.7 1.8c-1.2 1-2.2 1.4-2.2 3" /><path {...common} d="M12 18h.01" /><circle {...common} cx="12" cy="12" r="9" /></>}
+      {name === "learning-check" && <><circle {...common} cx="12" cy="12" r="8" /><path {...common} d="m8.5 12 2.2 2.2 4.8-5" /></>}
       {name === "poll" && <><circle {...common} cx="12" cy="12" r="8" /><path {...common} d="M12 4v8h8M12 12l-5.6 5.6" /></>}
       {name === "wordcloud" && <path {...common} d="M7.5 18h9.2a4.3 4.3 0 0 0 .8-8.5A5.8 5.8 0 0 0 6.6 8.2 4.8 4.8 0 0 0 7.5 18Z" />}
       {name === "buzzer" && <path {...common} d="m13.5 2-7 11h5l-1 9 7-12h-5l1-8Z" />}
@@ -64,6 +66,7 @@ type ArenaSidebarProps = {
 const DYNAMICS = [
   ["draw", "draw", "Sorteio"],
   ["quiz", "quiz", "Quiz"],
+  ["learning-check", "learning-check", "Verificar aprendizagem"],
   ["poll", "poll", "Votação"],
   ["wordcloud", "wordcloud", "Nuvem de Palavras"],
   ["buzzer", "buzzer", "Buzzer"],

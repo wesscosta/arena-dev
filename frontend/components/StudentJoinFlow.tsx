@@ -25,9 +25,11 @@ import {
 import wordStyles from "./student-join/word-cloud.module.css";
 import pollStyles from "./student-join/poll.module.css";
 import quizStyles from "./student-join/quiz.module.css";
+import learningCheckStyles from "./student-join/learning-check.module.css";
 import stepStyles from "./student-join/prepared-step.module.css";
 import { emptyPollParticipantState, sendPollVote, type PollParticipantState, type PollState } from "@/lib/poll-api";
 import { emptyQuizParticipantState, quizOptionMatchesAnswer, sendQuizAnswer, type QuizParticipantState, type QuizState } from "@/lib/quiz-api";
+import { emptyLearningCheckParticipantState, fetchParticipantLearningCheck, submitLearningCheckAnswer, type LearningCheckParticipantSignal, type LearningCheckParticipantState } from "@/lib/learning-check-api";
 import { reconnectDelayMs, type BuzzerParticipantState, type ParticipantRuntimeSnapshot, type PublicBossState, type PublicBuzzerState } from "@/lib/runtime-snapshot";
 
 function messageOf(error: unknown) {
@@ -52,6 +54,8 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
   const [wordCloudParticipant, setWordCloudParticipant] = useState<WordCloudParticipantState>(emptyWordCloudParticipantState());
   const [pollParticipant, setPollParticipant] = useState<PollParticipantState>(emptyPollParticipantState());
   const [quizParticipant, setQuizParticipant] = useState<QuizParticipantState>(emptyQuizParticipantState());
+  const [learningCheckParticipant, setLearningCheckParticipant] = useState<LearningCheckParticipantState>(emptyLearningCheckParticipantState());
+  const [learningCheckSubmitting, setLearningCheckSubmitting] = useState(false);
   const [quizDraftAnswer, setQuizDraftAnswer] = useState<string | boolean | null>(null);
   const [quizSubmitting, setQuizSubmitting] = useState(false);
   const [wordDraft, setWordDraft] = useState("");
@@ -176,6 +180,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
         setPollParticipant(runtime.pollParticipant);
         setQuiz(runtime.quiz);
         setQuizParticipant(runtime.quizParticipant);
+        setLearningCheckParticipant(runtime.learningCheckParticipant ?? emptyLearningCheckParticipantState());
         setBoss(runtime.boss ?? null);
       }
       if (event.type === "LIVE_STAGE_STATE") setLiveStage(event.payload as LiveStageState);
@@ -210,6 +215,14 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
       if (event.type === "POLL_PARTICIPANT_STATE") {
         setPollParticipant(event.payload as PollParticipantState);
       }
+      if (event.type === "LEARNING_CHECK_STATE") {
+        const signal = event.payload as LearningCheckParticipantSignal;
+        if (signal?.runId) {
+          void fetchParticipantLearningCheck(access.code, access.token)
+            .then(setLearningCheckParticipant)
+            .catch((caught) => setError(messageOf(caught)));
+        }
+      }
       if (event.type === "QUIZ_STATE") {
         const state = event.payload as QuizState;
         setQuiz(state);
@@ -241,6 +254,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
         setBuzzer({ status: "CLOSED", presses: [] });
         setPollParticipant(emptyPollParticipantState());
         setQuizParticipant(emptyQuizParticipantState());
+        setLearningCheckParticipant(emptyLearningCheckParticipantState());
       }
       if (event.type === "AUTH_FAILED") {
         authFailed = true;
@@ -380,6 +394,26 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
       setError(messageOf(caught));
     } finally {
       setQuizSubmitting(false);
+    }
+  }
+
+  async function answerLearningCheck(optionKey: string) {
+    if (!access || !learningCheckParticipant.runId
+        || !learningCheckParticipant.acceptsResponses || learningCheckSubmitting) return;
+    setLearningCheckSubmitting(true);
+    setError("");
+    try {
+      const next = await submitLearningCheckAnswer(
+        access.code,
+        learningCheckParticipant.runId,
+        access.token,
+        optionKey,
+      );
+      setLearningCheckParticipant(next);
+    } catch (caught) {
+      setError(messageOf(caught));
+    } finally {
+      setLearningCheckSubmitting(false);
     }
   }
 
@@ -564,6 +598,112 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
               </section>
             )}
 
+            {!sessionFinished
+              && liveStage.primary.type === "LEARNING_CHECK"
+              && learningCheckParticipant.runId === liveStage.primary.sourceId
+              && (
+                <section className={`${learningCheckStyles.card} ${learningCheckSubmitting ? learningCheckStyles.submitting : ""}`}>
+                  <div className={learningCheckStyles.heading}>
+                    <div>
+                      <span>VERIFICAR APRENDIZAGEM</span>
+                      <h2>{learningCheckParticipant.prompt || "Verificação em andamento"}</h2>
+                    </div>
+                    <strong>
+                      {learningCheckParticipant.resultsVisiblePublicly
+                        ? "CORREÇÃO"
+                        : learningCheckParticipant.acceptsResponses
+                          ? "RESPONDENDO"
+                          : learningCheckParticipant.status === "CLOSED"
+                            ? "ENCERRADA"
+                            : "BLOQUEADA"}
+                    </strong>
+                  </div>
+
+                  {learningCheckParticipant.learningTargetTitle && (
+                    <span className={learningCheckStyles.target}>
+                      {learningCheckParticipant.learningTargetTitle}
+                    </span>
+                  )}
+
+                  <p className={learningCheckStyles.hint}>
+                    {learningCheckParticipant.acceptsResponses
+                      ? "Escolha uma alternativa. Enquanto a verificação estiver aberta, você pode alterar sua resposta."
+                      : learningCheckParticipant.answered
+                        ? "Sua resposta está registrada. Aguarde a condução do professor."
+                        : "As respostas não estão mais abertas."}
+                  </p>
+
+                  {learningCheckParticipant.answered && !learningCheckParticipant.resultsVisiblePublicly && (
+                    <div className={learningCheckStyles.done}>
+                      Resposta registrada
+                      {learningCheckParticipant.acceptsResponses
+                        ? " · você ainda pode alterar sua escolha."
+                        : " · sua escolha está bloqueada."}
+                    </div>
+                  )}
+
+                  <div className={learningCheckStyles.options} role="radiogroup" aria-label="Alternativas da verificação">
+                    {learningCheckParticipant.options.map((option) => {
+                      const selected = learningCheckParticipant.selectedOptionKey === option.key;
+                      const correct = learningCheckParticipant.resultsVisiblePublicly
+                        && learningCheckParticipant.correctOptionKey === option.key;
+                      const incorrect = learningCheckParticipant.resultsVisiblePublicly
+                        && selected
+                        && !correct;
+                      return (
+                        <button
+                          type="button"
+                          key={option.key}
+                          className={[
+                            learningCheckStyles.option,
+                            selected ? learningCheckStyles.selected : "",
+                            correct ? learningCheckStyles.correct : "",
+                            incorrect ? learningCheckStyles.incorrect : "",
+                          ].filter(Boolean).join(" ")}
+                          disabled={!learningCheckParticipant.acceptsResponses || learningCheckSubmitting || !browserOnline}
+                          role="radio"
+                          aria-checked={selected}
+                          onClick={() => void answerLearningCheck(option.key)}
+                        >
+                          <span className={learningCheckStyles.letter}>{option.key.toUpperCase()}</span>
+                          <span>{option.label}</span>
+                          {correct && <span className={learningCheckStyles.marker}>correta</span>}
+                          {incorrect && <span className={learningCheckStyles.marker}>sua resposta</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {learningCheckParticipant.resultsVisiblePublicly ? (
+                    <div className={`${learningCheckStyles.feedback} ${learningCheckParticipant.answered
+                      && learningCheckParticipant.selectedOptionKey !== learningCheckParticipant.correctOptionKey
+                      ? learningCheckStyles.wrong
+                      : ""}`}>
+                      {!learningCheckParticipant.answered
+                        ? "A correção foi revelada. Você não registrou resposta nesta verificação."
+                        : learningCheckParticipant.selectedOptionKey === learningCheckParticipant.correctOptionKey
+                          ? "Resposta correta. Esta checagem foi registrada como evidência de aprendizagem."
+                          : "Sua resposta não corresponde à alternativa correta. Use o resultado para revisar o conceito."}
+                    </div>
+                  ) : (
+                    <div className={learningCheckStyles.protected}>
+                      A correção permanece protegida até o professor revelar o resultado.
+                    </div>
+                  )}
+                </section>
+              )}
+
+            {!sessionFinished
+              && liveStage.primary.type === "LEARNING_CHECK"
+              && learningCheckParticipant.runId !== liveStage.primary.sourceId
+              && (
+                <div className={wordStyles.waiting} role="status">
+                  <span>VERIFICAR APRENDIZAGEM</span>
+                  <strong>Sincronizando a verificação</strong>
+                  <p>Carregando seu estado individual de resposta.</p>
+                </div>
+              )}
+
             {!sessionFinished && liveStage.primary.type === "WORD_CLOUD" && wordCloud.round && (
               <section className={wordStyles.card}>
                 <div className={wordStyles.heading}>
@@ -686,7 +826,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
                   <p>O professor está conduzindo o progresso do Boss na Arena.</p>
                 )}
               </div>
-            ) : liveStage.primary.type !== "WORD_CLOUD" && liveStage.primary.type !== "POLL" && liveStage.primary.type !== "QUESTION" && liveStage.primary.type !== "QUIZ" ? (
+            ) : liveStage.primary.type !== "WORD_CLOUD" && liveStage.primary.type !== "POLL" && liveStage.primary.type !== "QUESTION" && liveStage.primary.type !== "QUIZ" && liveStage.primary.type !== "LEARNING_CHECK" ? (
               <div className={wordStyles.waiting}>
                 <span>{liveStage.primary.type === "IDLE" ? "ARENA DEV" : liveStage.primary.type.replaceAll("_", " ")}</span>
                 <strong>Aguardando próxima dinâmica</strong>

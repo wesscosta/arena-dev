@@ -1505,6 +1505,36 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.arena-tool-groups-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .55rem;
+  flex-wrap: wrap;
+}
+
+.arena-tool-group-member {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(7rem, .7fr);
+  align-items: center;
+  gap: .5rem;
+  padding: .2rem 0;
+}
+
+.arena-tool-group-member > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.arena-tool-group-member .select {
+  min-width: 0;
+  width: 100%;
+}
+
+.arena-tool-group-empty {
+  color: var(--muted) !important;
+  font-style: italic;
+}
+
 .arena-tool-roster {
   display: grid;
   border: 1px solid var(--border);
