@@ -68,6 +68,7 @@ import {
   nextArenaQuestion as nextArenaQuestionApi,
   nextLiveFlow,
   organizeGroups as organizeGroupsApi,
+  saveGroups as saveGroupsApi,
   previousLiveFlow,
   restartArenaQuestions as restartArenaQuestionsApi,
   setArenaActivity as setArenaActivityApi,
@@ -2267,6 +2268,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   } = useArenaToolState();
   const [groups, setGroups] = useState<string[][]>(currentSession?.groups ?? []);
   const [groupSize, setGroupSize] = useState(currentSession?.groupSize ?? 2);
+  const [groupsDirty, setGroupsDirty] = useState(false);
   const [bossName, setBossName] = useState("Spaghetti Code");
   const [bossHp, setBossHp] = useState(100);
   const [sessionBusy, setSessionBusy] = useState(false);
@@ -2470,6 +2472,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   useEffect(() => {
     setGroups(currentSession?.groups ?? []);
     setGroupSize(currentSession?.groupSize ?? 2);
+    setGroupsDirty(false);
   }, [currentSession?.id, currentSession?.groups, currentSession?.groupSize]);
 
   async function startSession() {
@@ -2525,6 +2528,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }));
       setSelectedId(undefined);
       setGroups([]);
+      setGroupsDirty(false);
       resetNavigation("draw");
       setLiveFlowState(null);
       onPreferredActivityChange(undefined);
@@ -2755,6 +2759,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     try {
       const result = await organizeGroupsApi(currentSession.id, groupSize);
       setGroups(result.groups);
+      setGroupsDirty(false);
       patch((current) => ({
         ...current,
         sessions: current.sessions.map((session) => session.id === currentSession.id
@@ -2762,6 +2767,54 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           : session),
       }));
       notify(groupSize === 1 ? "Organização individual ativada." : `${result.groups.length} grupo(s) organizado(s) com histórico persistido.`);
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setMechanicsBusy(false);
+    }
+  }
+
+  function moveGroupMember(studentId: string, sourceIndex: number, targetIndex: number) {
+    if (sourceIndex === targetIndex || targetIndex < 0 || targetIndex >= groups.length) return;
+    if ((groups[targetIndex]?.length ?? 0) >= 12) {
+      notify("Um grupo pode ter no máximo 12 participantes.");
+      return;
+    }
+
+    setGroups((current) => current.map((group, index) => {
+      if (index === sourceIndex) return group.filter((id) => id !== studentId);
+      if (index === targetIndex && !group.includes(studentId)) return [...group, studentId];
+      return group;
+    }));
+    setGroupsDirty(true);
+  }
+
+  function addManualGroup() {
+    setGroups((current) => [...current, []]);
+    setGroupsDirty(true);
+  }
+
+  async function saveManualGroups() {
+    if (!currentSession || mechanicsBusy || !groupsDirty) return;
+    const compactGroups = groups.filter((group) => group.length > 0);
+    if (!compactGroups.length) {
+      notify("Mantenha ao menos um grupo com participantes.");
+      return;
+    }
+
+    setMechanicsBusy(true);
+    try {
+      const result = await saveGroupsApi(currentSession.id, compactGroups);
+      setGroups(result.groups);
+      setGroupSize(result.runtime.groupSize ?? 2);
+      setGroupsDirty(false);
+      patch((current) => ({
+        ...current,
+        sessions: current.sessions.map((session) => session.id === currentSession.id
+          ? mergeSessionMechanics(session, result.runtime)
+          : session),
+      }));
+      notify("Composição dos grupos salva.");
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -3682,23 +3735,60 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 <option value={5}>Grupos de 5</option>
               </select>
             </label>
-            <button className="button primary" onClick={() => { void createGroups(); }}>
+            <button className="button primary" disabled={mechanicsBusy} onClick={() => { void createGroups(); }}>
               {groupSize === 1 ? "Ativar individual" : "Organizar turma"}
             </button>
           </div>
           {groups.length > 0 ? (
-            <div className="groups-grid arena-tool-groups-grid">
-              {groups.map((group, index) => (
-                <div className="group-card" key={index}>
-                  <b>{groupSize === 1 ? `INDIVIDUAL ${String(index + 1).padStart(2, "0")}` : `GRUPO ${String(index + 1).padStart(2, "0")}`}</b>
-                  {group.map((id) => (
-                    <span key={id}>
-                      {students.find((student) => student.id === id)?.nickname || students.find((student) => student.id === id)?.name}
-                    </span>
-                  ))}
-                </div>
-              ))}
-            </div>
+            <>
+              <div className="arena-tool-groups-actions">
+                <button type="button" className="button ghost" disabled={mechanicsBusy} onClick={addManualGroup}>
+                  + Novo grupo
+                </button>
+                <button
+                  type="button"
+                  className="button primary"
+                  disabled={!groupsDirty || mechanicsBusy}
+                  onClick={() => { void saveManualGroups(); }}
+                >
+                  Salvar composição
+                </button>
+              </div>
+              <div className="groups-grid arena-tool-groups-grid">
+                {groups.map((group, index) => (
+                  <div className="group-card" key={index}>
+                    <b>{groupSize === 1 ? `INDIVIDUAL ${String(index + 1).padStart(2, "0")}` : `GRUPO ${String(index + 1).padStart(2, "0")}`}</b>
+                    {group.length === 0 ? (
+                      <span className="arena-tool-group-empty">Mova um participante para este grupo.</span>
+                    ) : group.map((id) => {
+                      const student = students.find((item) => item.id === id);
+                      const name = student?.nickname || student?.name || "Participante";
+                      return (
+                        <label className="arena-tool-group-member" key={id}>
+                          <span>{name}</span>
+                          <select
+                            className="select"
+                            aria-label={`Mover ${name} para outro grupo`}
+                            value={index}
+                            onChange={(event) => moveGroupMember(id, index, Number(event.target.value))}
+                          >
+                            {groups.map((targetGroup, targetIndex) => (
+                              <option
+                                key={targetIndex}
+                                value={targetIndex}
+                                disabled={targetIndex !== index && targetGroup.length >= 12}
+                              >
+                                Grupo {targetIndex + 1}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </>
           ) : (
             <MiniEmpty text="Escolha um formato e organize a turma quando precisar." />
           )}
