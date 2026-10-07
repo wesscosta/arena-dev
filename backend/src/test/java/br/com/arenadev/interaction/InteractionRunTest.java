@@ -76,6 +76,19 @@ class InteractionRunTest {
     }
 
     @Test
+    void createdRunCanBeDiscardedWithoutFabricatingOpenOrLockTimestamps() {
+        InteractionRun run = run();
+        Instant now = Instant.parse("2026-10-07T02:00:00Z");
+
+        run.discard(now);
+
+        assertThat(run.getStatus()).isEqualTo(InteractionRunStatus.CLOSED);
+        assertThat(run.getOpenedAt()).isNull();
+        assertThat(run.getResponsesLockedAt()).isNull();
+        assertThat(run.getClosedAt()).isEqualTo(now);
+    }
+
+    @Test
     void sequenceMustBePositive() {
         assertThatThrownBy(() -> new InteractionRun(session(), definition(), 0))
                 .isInstanceOf(IllegalArgumentException.class)

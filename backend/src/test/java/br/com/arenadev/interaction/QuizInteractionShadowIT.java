@@ -1,0 +1,185 @@
+package br.com.arenadev.interaction;
+
+import br.com.arenadev.activity.ActivityResourceKind;
+import br.com.arenadev.activity.ActivityService;
+import br.com.arenadev.activity.QuestionDifficulty;
+import br.com.arenadev.activity.QuestionType;
+import br.com.arenadev.classroom.ClassroomService;
+import br.com.arenadev.classroom.StudentService;
+import br.com.arenadev.quiz.QuizService;
+import br.com.arenadev.session.SessionParticipant;
+import br.com.arenadev.session.SessionParticipantRepository;
+import br.com.arenadev.session.SessionService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@Testcontainers
+@SpringBootTest
+class QuizInteractionShadowIT {
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL =
+            new PostgreSQLContainer("postgres:17-alpine")
+                    .withDatabaseName("arena_quiz_interaction_shadow_test")
+                    .withUsername("arena_test")
+                    .withPassword("arena_test");
+
+    @DynamicPropertySource
+    static void databaseProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", POSTGRESQL::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRESQL::getUsername);
+        registry.add("spring.datasource.password", POSTGRESQL::getPassword);
+    }
+
+    @Autowired private ClassroomService classroomService;
+    @Autowired private StudentService studentService;
+    @Autowired private SessionService sessionService;
+    @Autowired private SessionParticipantRepository participantRepository;
+    @Autowired private ActivityService activityService;
+    @Autowired private QuizService quizService;
+    @Autowired private QuizInteractionShadowService shadowService;
+    @Autowired private QuizInteractionShadowLinkRepository linkRepository;
+    @Autowired private InteractionResponseRepository responseRepository;
+
+    @Test
+    void shadowCoreMatchesLegacyQuizAcrossAnswerChangeLockRevealAndClose() {
+        Scenario scenario = scenario();
+        UUID firstParticipant = scenario.participants().get(0).getId();
+        UUID secondParticipant = scenario.participants().get(1).getId();
+
+        QuizService.StateView prepared =
+                quizService.prepare(scenario.sessionId(), scenario.questionId());
+        QuizInteractionShadowService.ShadowState preparedShadow =
+                shadowService.sync(prepared.round().id());
+
+        assertThat(preparedShadow.status()).isEqualTo(InteractionRunStatus.CREATED);
+        assertThat(preparedShadow.acceptsResponses()).isFalse();
+
+        quizService.open(scenario.sessionId(), prepared.round().id());
+        QuizInteractionShadowService.ShadowState opened =
+                shadowService.sync(prepared.round().id());
+        assertThat(opened.status()).isEqualTo(InteractionRunStatus.ACTIVE);
+        assertThat(opened.acceptsResponses()).isTrue();
+
+        quizService.answer(scenario.sessionId(), prepared.round().id(), firstParticipant, "b");
+        shadowService.sync(prepared.round().id());
+
+        quizService.answer(scenario.sessionId(), prepared.round().id(), firstParticipant, "a");
+        shadowService.sync(prepared.round().id());
+
+        quizService.answer(scenario.sessionId(), prepared.round().id(), secondParticipant, "b");
+        shadowService.sync(prepared.round().id());
+
+        QuizInteractionShadowLink link = linkRepository
+                .findByQuizRoundIdWithGraph(prepared.round().id())
+                .orElseThrow();
+        InteractionResponse changed = responseRepository
+                .findByRunIdAndParticipantId(link.getRun().getId(), firstParticipant)
+                .orElseThrow();
+        assertThat(changed.getRevision()).isEqualTo(2);
+
+        quizService.lock(scenario.sessionId(), prepared.round().id());
+        QuizInteractionShadowService.ShadowComparison comparison =
+                shadowService.compare(prepared.round().id());
+
+        assertThat(comparison.equivalent()).isTrue();
+        assertThat(comparison.mismatches()).isEmpty();
+        assertThat(comparison.legacy().responseCount()).isEqualTo(2);
+        assertThat(comparison.legacy().distribution())
+                .containsEntry("a", 1L)
+                .containsEntry("b", 1L)
+                .containsEntry("c", 0L)
+                .containsEntry("d", 0L);
+        assertThat(comparison.legacy().evaluatedCount()).isEqualTo(2);
+        assertThat(comparison.legacy().correctCount()).isEqualTo(1);
+        assertThat(comparison.shadow().evaluation().accuracy()).isEqualTo(0.5);
+
+        quizService.reveal(scenario.sessionId(), prepared.round().id());
+        QuizInteractionShadowService.ShadowState revealed =
+                shadowService.sync(prepared.round().id());
+        assertThat(revealed.resultsVisiblePublicly()).isTrue();
+
+        quizService.close(scenario.sessionId(), prepared.round().id());
+        QuizInteractionShadowService.ShadowState closed =
+                shadowService.sync(prepared.round().id());
+        assertThat(closed.status()).isEqualTo(InteractionRunStatus.CLOSED);
+
+        assertThat(shadowService.compare(prepared.round().id()).equivalent()).isTrue();
+    }
+
+    private Scenario scenario() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        var classroom = classroomService.create("Turma Shadow " + suffix, "SH" + suffix);
+
+        ArrayList<UUID> studentIds = new ArrayList<>();
+        for (int index = 1; index <= 2; index++) {
+            var student = studentService.create(
+                    "SH-" + suffix + "-" + index,
+                    "Aluno Shadow " + index + " " + suffix,
+                    null
+            );
+            classroomService.enroll(classroom.id(), student.id());
+            studentIds.add(student.id());
+        }
+
+        var session = sessionService.start(classroom.id(), "Aula Shadow", Set.copyOf(studentIds));
+        UUID questionId = createQuestion(classroom.id(), suffix);
+        List<SessionParticipant> participants =
+                participantRepository.findBySessionIdOrderByStudentNameAsc(session.id());
+
+        return new Scenario(session.id(), questionId, participants);
+    }
+
+    private UUID createQuestion(UUID classroomId, String suffix) {
+        ActivityService.ActivityView activity = activityService.create(
+                new ActivityService.ActivityInput(
+                        classroomId,
+                        "Atividade Shadow " + suffix,
+                        "Validação strangler Quiz → Interaction",
+                        100,
+                        0,
+                        new ActivityService.ResourceInput(ActivityResourceKind.INTERNAL, null, null),
+                        List.of(new ActivityService.QuestionInput(
+                                null,
+                                QuestionType.MULTIPLE_CHOICE,
+                                "Questão Shadow " + suffix,
+                                QuestionDifficulty.EASY,
+                                10,
+                                List.of(
+                                        new ActivityService.QuestionOptionInput("a", "Alternativa A"),
+                                        new ActivityService.QuestionOptionInput("b", "Alternativa B"),
+                                        new ActivityService.QuestionOptionInput("c", "Alternativa C"),
+                                        new ActivityService.QuestionOptionInput("d", "Alternativa D")
+                                ),
+                                "a",
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null
+                        ))
+                )
+        );
+        return UUID.fromString(activity.questions().getFirst().id());
+    }
+
+    private record Scenario(
+            UUID sessionId,
+            UUID questionId,
+            List<SessionParticipant> participants
+    ) {
+    }
+}
