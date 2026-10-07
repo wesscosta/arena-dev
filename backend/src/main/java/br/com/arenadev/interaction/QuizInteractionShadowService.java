@@ -9,6 +9,7 @@ import br.com.arenadev.session.ClassSession;
 import br.com.arenadev.session.ClassSessionRepository;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -57,13 +58,13 @@ public class QuizInteractionShadowService {
         this.adapter = adapter;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ShadowState sync(UUID quizRoundId) {
         SyncContext context = syncInternal(quizRoundId);
         return state(context);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ShadowComparison compare(UUID quizRoundId) {
         SyncContext context = syncInternal(quizRoundId);
         InteractionResultEngine.ResultView shadow = resultEngine.result(context.link().getRun().getId());
