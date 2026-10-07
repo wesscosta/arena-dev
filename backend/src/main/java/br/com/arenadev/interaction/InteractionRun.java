@@ -109,6 +109,17 @@ public class InteractionRun {
         touch(now);
     }
 
+    public void discard(Instant now) {
+        requireTimestamp(now);
+        if (status == InteractionRunStatus.CLOSED) return;
+        if (status != InteractionRunStatus.CREATED) {
+            throw new IllegalArgumentException("Somente uma interação ainda não aberta pode ser descartada.");
+        }
+        status = InteractionRunStatus.CLOSED;
+        closedAt = now;
+        touch(now);
+    }
+
     public boolean acceptsResponses() {
         return status == InteractionRunStatus.ACTIVE && responsesLockedAt == null;
     }
