@@ -1,5 +1,6 @@
 package br.com.arenadev.poll;
 
+import br.com.arenadev.interaction.PollInteractionShadowBridge;
 import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.session.ClassSession;
 import br.com.arenadev.session.ClassSessionRepository;
@@ -43,6 +44,7 @@ public class PollService {
     private final SessionRealtimeGateway realtimeGateway;
     private final LiveStageService liveStageService;
     private final SessionEventService sessionEventService;
+    private final PollInteractionShadowBridge shadowBridge;
 
     public PollService(
             PollRoundRepository roundRepository,
@@ -51,7 +53,8 @@ public class PollService {
             SessionParticipantRepository participantRepository,
             SessionRealtimeGateway realtimeGateway,
             LiveStageService liveStageService,
-            SessionEventService sessionEventService
+            SessionEventService sessionEventService,
+            PollInteractionShadowBridge shadowBridge
     ) {
         this.roundRepository = roundRepository;
         this.voteRepository = voteRepository;
@@ -60,6 +63,7 @@ public class PollService {
         this.realtimeGateway = realtimeGateway;
         this.liveStageService = liveStageService;
         this.sessionEventService = sessionEventService;
+        this.shadowBridge = shadowBridge;
     }
 
     @Transactional
@@ -80,6 +84,7 @@ public class PollService {
             round.addOption(options.get(index), index);
         }
         roundRepository.save(round);
+        shadowBridge.afterLegacyMutation(round.getId());
 
         StateView teacher = stateOf(round, Projection.TEACHER);
         liveStageService.showPoll(sessionId, round.getId());
@@ -118,6 +123,7 @@ public class PollService {
         StateView teacher = stateOf(round, Projection.TEACHER);
         liveStageService.showPoll(sessionId, round.getId());
         broadcastStateAfterCommit(sessionId, round);
+        shadowBridge.afterLegacyMutation(round.getId());
         return teacher;
     }
 
@@ -146,6 +152,7 @@ public class PollService {
         round.reveal(Instant.now());
         StateView state = stateOf(round, Projection.TEACHER);
         broadcastStateAfterCommit(sessionId, round);
+        shadowBridge.afterLegacyMutation(round.getId());
         if (changed) {
             sessionEventService.record(
                     session,
@@ -171,6 +178,7 @@ public class PollService {
         round.close(Instant.now());
         StateView state = stateOf(round, Projection.TEACHER);
         broadcastStateAfterCommit(sessionId, round);
+        shadowBridge.afterLegacyMutation(round.getId());
         if (changed) {
             sessionEventService.record(
                     session,
@@ -212,6 +220,7 @@ public class PollService {
 
         voteRepository.save(new PollVote(round, participant, option));
         broadcastStateAfterCommit(sessionId, round);
+        shadowBridge.afterLegacyMutation(round.getId());
         return participantStateOf(round, participantId);
     }
 
@@ -230,7 +239,10 @@ public class PollService {
         List<PollRound> openRounds = roundRepository.findOpenBySessionIdForUpdate(sessionId, OPEN_STATUSES);
         if (openRounds.isEmpty()) return;
         Instant now = Instant.now();
-        openRounds.forEach(round -> round.close(now));
+        openRounds.forEach(round -> {
+            round.close(now);
+            shadowBridge.afterLegacyMutation(round.getId());
+        });
         broadcastStateAfterCommit(sessionId, openRounds.getFirst());
     }
 
