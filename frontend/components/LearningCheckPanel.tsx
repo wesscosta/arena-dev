@@ -8,6 +8,7 @@ import {
   lockLearningCheck,
   openLearningCheck,
   prepareLearningCheck,
+  repeatLearningCheck,
   revealLearningCheck,
   type LearningCheckState,
   type LearningTarget,
@@ -20,6 +21,7 @@ type Props = {
   onStateChange: (state: LearningCheckState) => void;
   presentCount: number;
   notify: (message: string) => void;
+  onOpenGroups: () => void;
 };
 
 type DraftOption = {
@@ -59,6 +61,7 @@ export default function LearningCheckPanel({
   onStateChange,
   presentCount,
   notify,
+  onOpenGroups,
 }: Props) {
   const [targets, setTargets] = useState<LearningTarget[]>([]);
   const [targetId, setTargetId] = useState("");
@@ -420,6 +423,17 @@ export default function LearningCheckPanel({
       )}
 
       <div className={styles.actions}>
+        {run.resultsVisiblePublicly && responseCount > 0 && (
+          <button
+            type="button"
+            className={styles.secondary}
+            disabled={busy}
+            onClick={onOpenGroups}
+          >
+            Formar grupos
+          </button>
+        )}
+
         {run.status === "CREATED" && (
           <button
             type="button"
@@ -495,9 +509,28 @@ export default function LearningCheckPanel({
         )}
 
         {run.status === "CLOSED" && (
-          <button type="button" className={styles.primary} onClick={resetBuilder}>
-            Nova verificação
-          </button>
+          <>
+            <button
+              type="button"
+              className={styles.primary}
+              disabled={busy}
+              onClick={() => void transition(
+                () => repeatLearningCheck(sessionId, run.id),
+                "Nova rodada aberta com a mesma verificação.",
+                "Não foi possível perguntar novamente.",
+              )}
+            >
+              Perguntar novamente
+            </button>
+            <button
+              type="button"
+              className={styles.secondary}
+              disabled={busy}
+              onClick={resetBuilder}
+            >
+              Nova verificação
+            </button>
+          </>
         )}
       </div>
     </section>

@@ -142,6 +142,63 @@ class LearningCheckIT {
                 .hasMessageContaining("Finalize");
     }
 
+    @Test
+    void repeatCreatesNewRunWithSameDefinitionAndIndependentEvidence() {
+        Fixture fixture = fixture();
+        LearningCheckService.StateView prepared = checkService.prepare(
+                fixture.sessionId(),
+                command(fixture.targetId())
+        );
+        checkService.open(fixture.sessionId(), prepared.run().id());
+        checkService.submit(
+                fixture.sessionId(),
+                prepared.run().id(),
+                fixture.participantId(),
+                "b"
+        );
+        LearningCheckService.StateView firstClosed = checkService.close(
+                fixture.sessionId(),
+                prepared.run().id()
+        );
+
+        assertThat(firstClosed.evidenceCount()).isEqualTo(1);
+        assertThat(firstClosed.result().evaluation().correctCount()).isEqualTo(1);
+
+        LearningCheckService.StateView repeated = checkService.repeat(
+                fixture.sessionId(),
+                prepared.run().id()
+        );
+
+        assertThat(repeated.run().id()).isNotEqualTo(prepared.run().id());
+        assertThat(repeated.run().sequence()).isEqualTo(prepared.run().sequence() + 1);
+        assertThat(repeated.run().status()).isEqualTo(InteractionRunStatus.ACTIVE);
+        assertThat(repeated.run().acceptsResponses()).isTrue();
+        assertThat(repeated.definition().id()).isEqualTo(prepared.definition().id());
+        assertThat(repeated.evidenceCount()).isZero();
+        assertThat(repeated.result().participation().responseCount()).isZero();
+
+        checkService.submit(
+                fixture.sessionId(),
+                repeated.run().id(),
+                fixture.participantId(),
+                "a"
+        );
+        LearningCheckService.StateView secondClosed = checkService.close(
+                fixture.sessionId(),
+                repeated.run().id()
+        );
+
+        assertThat(secondClosed.result().evaluation().incorrectCount()).isEqualTo(1);
+        assertThat(secondClosed.evidenceCount()).isEqualTo(1);
+
+        LearningCheckService.StateView original = checkService.state(
+                fixture.sessionId(),
+                prepared.run().id()
+        );
+        assertThat(original.result().evaluation().correctCount()).isEqualTo(1);
+        assertThat(original.evidenceCount()).isEqualTo(1);
+    }
+
     private Fixture fixture() {
         String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         var classroom = classroomService.create(

@@ -182,6 +182,34 @@ public class LearningCheckService {
         return next;
     }
 
+    @Transactional
+    public StateView repeat(UUID sessionId, UUID sourceRunId) {
+        ClassSession session = activeSessionForUpdate(sessionId);
+        InteractionRun source = runForSession(sourceRunId, sessionId);
+        if (source.getStatus() != InteractionRunStatus.CLOSED) {
+            throw new IllegalArgumentException(
+                    "Encerre a verificação atual antes de perguntar novamente."
+            );
+        }
+        ensureNoPendingRun(sessionId);
+
+        int sequence = runRepository.findFirstBySessionIdOrderBySequenceDesc(sessionId)
+                .map(last -> last.getSequence() + 1)
+                .orElse(1);
+        InteractionRun nextRun = new InteractionRun(
+                session,
+                source.getDefinition(),
+                sequence
+        );
+        nextRun.open(Instant.now());
+        nextRun = runRepository.saveAndFlush(nextRun);
+        liveStageService.showLearningCheck(sessionId, nextRun.getId());
+
+        StateView next = state(nextRun);
+        publishAfterCommit(nextRun, next);
+        return next;
+    }
+
     @Transactional(readOnly = true)
     public StateView current(UUID sessionId) {
         sessionRepository.findById(sessionId)
