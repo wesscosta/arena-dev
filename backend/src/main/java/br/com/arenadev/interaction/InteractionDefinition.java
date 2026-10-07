@@ -48,6 +48,10 @@ public class InteractionDefinition {
     @Column(name = "evaluation_mode", nullable = false, length = 30)
     private InteractionEvaluationMode evaluationMode;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "submission_policy", nullable = false, length = 30)
+    private InteractionSubmissionPolicy submissionPolicy = InteractionSubmissionPolicy.UPDATE_UNTIL_CLOSE;
+
     @Column(name = "evaluation_config_json", nullable = false, columnDefinition = "text")
     private String evaluationConfigJson = "{}";
 
@@ -138,6 +142,14 @@ public class InteractionDefinition {
 
     public void configureEvaluation(String evaluationConfigJson) {
         this.evaluationConfigJson = normalizeJson(evaluationConfigJson);
+        touch();
+    }
+
+    public void configureSubmissionPolicy(InteractionSubmissionPolicy submissionPolicy) {
+        this.submissionPolicy = Objects.requireNonNull(
+                submissionPolicy,
+                "A política de submissão é obrigatória."
+        );
         touch();
     }
 
@@ -243,6 +255,7 @@ public class InteractionDefinition {
     public InteractionResponseKind getResponseKind() { return responseKind; }
     public String getResponseConfigJson() { return responseConfigJson; }
     public InteractionEvaluationMode getEvaluationMode() { return evaluationMode; }
+    public InteractionSubmissionPolicy getSubmissionPolicy() { return submissionPolicy; }
     public String getEvaluationConfigJson() { return evaluationConfigJson; }
     public InteractionPresentationMode getPresentationMode() { return presentationMode; }
     public LearningTarget getLearningTarget() { return learningTarget; }
