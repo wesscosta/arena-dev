@@ -18,7 +18,7 @@ test("teacher topbar treats Biblioteca as a global destination instead of a CTA"
   const app = read("components/ArenaApp.tsx");
 
   assert.match(app, /topbar-global-nav/);
-  assert.match(app, /aria-label="Visão geral"/);
+  assert.match(app, /aria-label="Turmas"/);
   assert.match(app, /aria-label="Biblioteca"/);
   assert.doesNotMatch(app, /className="button ghost"[^>]*>Biblioteca/);
 });

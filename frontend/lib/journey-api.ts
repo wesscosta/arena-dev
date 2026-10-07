@@ -16,6 +16,9 @@ export type JourneyStage = {
   sectionTitle?: string | null;
   itemType?: "CONTENT" | "ACTIVITY" | "QUIZ" | "CHALLENGE" | "CHECKPOINT" | "EXTERNAL_RESOURCE";
   learningResourceId?: string | null;
+  resourceSnapshotRevision?: number | null;
+  resourceCurrentRevision?: number | null;
+  resourceUpdateAvailable?: boolean;
 };
 
 export type Journey = {
@@ -82,6 +85,13 @@ export function publishJourney(id: string) {
 
 export function archiveJourney(id: string) {
   return journeyRequest<Journey>(`/api/journeys/${encodeURIComponent(id)}/archive`, { method: "POST", body: "{}" });
+}
+
+export function refreshJourneyStageResource(journeyId: string, stageId: string) {
+  return journeyRequest<Journey>(
+    `/api/journeys/${encodeURIComponent(journeyId)}/stages/${encodeURIComponent(stageId)}/refresh-resource`,
+    { method: "POST", body: "{}" },
+  );
 }
 
 export type JourneyRedemptionCode = { code: string | null; active: boolean; redeemedCount: number };

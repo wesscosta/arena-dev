@@ -86,8 +86,8 @@ export function ArenaSidebar({
         type="button"
         className="arena-nav-brand"
         onClick={onGoDashboard}
-        aria-label="Voltar para a Visão geral"
-        title="Voltar para a Visão geral"
+        aria-label="Voltar para Turmas"
+        title="Voltar para Turmas"
       >
         <span className="topbar-brand-mark">A</span>
         <span className="arena-nav-brand-copy">

@@ -1,8 +1,8 @@
 # Roadmap v0.8 — Professor Experience & Journey MVP
 
 **Linha ativa:** v0.8
-**Branch de execução:** `chore/v0.8-architecture-stabilization`
-**Estado atual:** `16.4` está implementado até Achievements Foundation e `16.5` até Library Snapshot Hardening, mas a auditoria transversal de 30/09/2026 abriu um **Gate de Estabilização Arquitetural** antes de novos incrementos funcionais. O próximo trabalho obrigatório é segurança, baseline, Arena Live Shell, CSS/design ownership, boundaries backend e quality gates. `16.5C` permanece planejado, porém pausado até o fechamento desse gate.
+**Branch de execução:** `feat/v0.8-semantic-library`
+**Estado atual:** **16.5C–F tecnicamente fechados na branch de release candidate**. A linha v0.8 entrou em **Release Hardening / feature freeze**; nenhuma nova funcionalidade entra antes da publicação. Knowledge/RAG, Interaction Engine e o eixo pedagógico 17.x permanecem pós-v0.8.
 
 A v0.8 valida duas experiências distintas sobre o mesmo domínio:
 
@@ -20,7 +20,7 @@ A versão não busca ampliar escopo indiscriminadamente. O foco é validar valor
 | 16.2 | Learning Resources & Content Ingestion | **Concluído na branch ativa** |
 | 16.3 | Journey Study Experience | **Fechamento técnico concluído na branch ativa** |
 | 16.4 | Student Experience Shell & Workspace Visibility | **16.4A–D implementados tecnicamente** |
-| 16.5 | Content Library & Reuse | **Implementado até 16.5B.2 · 16.5C pausado** |
+| 16.5 | Content Library & Reuse | **16.5C–F tecnicamente concluídos · release hardening** |
 | Gate transversal | Estabilização arquitetural v0.8 | **Obrigatório antes de novos incrementos funcionais** |
 | 16.6 | Knowledge & Retrieval Foundation | **Pós-v0.8 / opcional; não bloqueia release** |
 | 17.0 | Learning Architecture Audit & Evidence Model | **Planejado pós-v0.8** |
@@ -361,11 +361,9 @@ Implementado:
 
 Detalhes: [INCREMENT_16_4C.md](INCREMENT_16_4C.md).
 
-### 16.4D — Achievements Foundation — RESERVADO / NÃO IMPLEMENTADO
+### 16.4D — Achievements Foundation — CONCLUÍDO
 
-A rota `/learn/achievements` pode permanecer reservada no shell, mas domínio persistente de conquistas só deve ser criado quando critérios acadêmicos reais estiverem definidos e validados. Não introduzir badges decorativos, moedas, streaks ou ranking apenas para preencher a interface.
-
-Este item **não é o próximo incremento automático**. O próximo domínio priorizado após estabilização visual do 16.4 é o `16.5 — Content Library & Reuse`.
+O marcador anterior de reserva foi superado pela implementação de 28/09/2026. A fundação persistente usa marcos reais de progresso, sem XP automático, moedas, streaks ou ranking. O registro detalhado está em `INCREMENT_16_4D.md`.
 
 ### Gate de fechamento do 16.4
 
@@ -378,9 +376,9 @@ O fechamento de release exige validação visual integrada em desktop/mobile dos
 
 Os gates automatizados correntes estão verdes: backend completo, frontend **268 testes**, typecheck, build e `git diff --check`; schema Flyway em **V35**.
 
-## 16.5 — Content Library & Reuse — MARCADOR DE ROADMAP
+## 16.5 — Content Library & Reuse — IMPLEMENTADO
 
-> **Marcado para implementação futura.** Não iniciar como galeria visual antes de estabilizar `16.4A` e validar o papel atual de `LearningResource`.
+> **Marcador histórico superado.** A auditoria confirmou `LearningResource` como entidade canônica e a Biblioteca foi implementada de 16.5.0 a 16.5F sem criar um domínio paralelo.
 
 A biblioteca deve transformar conteúdo em ativo reutilizável do professor, e não em uma coleção de Journeys clonadas. O candidato natural à unidade de biblioteca é o `LearningResource` já existente.
 
@@ -448,20 +446,24 @@ Biblioteca global do professor com lista editorial, busca, criação/edição, a
 
 Editor da Biblioteca em largura útil, preview Markdown simultâneo no desktop e alternável em telas menores. O reader continua editorialmente limitado. Mudanças semânticas de conteúdo não foram antecipadas.
 
-### 16.5C — Semantic Content Foundation & Ingestion → Library — PLANEJADO
+### 16.5C — Semantic Content Foundation & Ingestion → Library — CONCLUÍDO TECNICAMENTE
 
-Próximo incremento documentado em INCREMENT_16_5C_PLAN.md: metadata semântica, Arena Canonical Markdown, canonicalizer, parser estrutural H1–H6, ingestão para Biblioteca, preview/review, discovery e contrato arquitetural para RAG. Não implementado neste ciclo.
+A fundação semântica está materializada em V38 e no código: metadata editorial (`subject`, `tags`, `language`), hash canônico, outline derivado/versionado, `CanonicalDocument` transitório e `ContentCanonicalizer` determinístico. A Biblioteca recebe um pipeline próprio de preview/review para Markdown, texto, arquivo, Notion e URL, seguido de materialização explícita em `LearningResource`.
+
+A mesma estrutura canônica alimenta **Leitura | Estrutura | Mapa do conteúdo**; o mapa é projeção reconstruível do outline, não entidade de domínio, Mastery ou KnowledgeNode. `CONTENT_CANONICAL_MARKDOWN.md` formaliza o contrato.
+
+O fechamento de `16.5D–F` foi absorvido nesta mesma linha: filtros/facets/ordenação, revision awareness com refresh explícito apenas em Journey rascunho, reuso bidirecional, archive/restore e exportação Markdown. Paginação, vocabulário controlado e reuso em lote foram explicitamente adiados por não haver necessidade comprovada. O escopo funcional está congelado; o restante é Release Hardening.
 
 ### Sequência final planejada do 16.5 e fechamento da v0.8
 
-- `16.5C — Semantic Content Foundation & Ingestion → Library`: próximo incremento funcional após o Gate de Estabilização Arquitetural; canonicalização, metadata, estrutura semântica, ingestão revisável e contrato de RAG.
-- `16.5D — Organization & Discovery`: filtros, áreas/tags, paginação/ordenação e descoberta do acervo, sem taxonomia rígida prematura.
-- `16.5E — Revision Awareness & Snapshot Hardening`: atualização de snapshot somente por operação explícita, aviso de revisão disponível e preservação de snapshots existentes.
-- `16.5F — Advanced Reuse & Library Closure`: fechamento do domínio de Biblioteca e reuso avançado somente onde houver necessidade comprovada.
-- `Release Hardening Gate`: E2E, acessibilidade manual, mobile/ultrawide, autorização, migrations/restore, performance, dívida CSS, documentação e release candidate.
+- `16.5C — Semantic Content Foundation & Ingestion → Library`: **concluído tecnicamente**; V38, canonicalização, metadata, estrutura semântica, ingestão revisável e projeções Leitura/Estrutura/Mapa.
+- `16.5D — Organization & Discovery`: **fechado no escopo v0.8** com busca editorial, filtros combináveis, facets e ordenação; paginação/vocabulário controlado ficam pós-v0.8 se volume real exigir.
+- `16.5E — Revision Awareness & Snapshot Hardening`: **concluído**; atualização de snapshot é operação explícita, somente em rascunho, preservando Journeys publicadas.
+- `16.5F — Advanced Reuse & Library Closure`: **fechado no escopo v0.8** com reuso bidirecional, archive/restore e exportação Markdown; batch reuse, marketplace e compartilhamento institucional ficam fora.
+- `Release Hardening Gate`: **linha atual** — E2E, acessibilidade/reflow, autorização, migrations/restore, documentação, manifests e release candidate.
 
 `16.6 — Knowledge & Retrieval Foundation` fica planejado como evolução pós-v0.8/opcional. Não bloqueia a release e só deve começar com corpus real, métricas de retrieval e 16.5 estabilizado.
 
 ### 16.5B.2 — Journey Snapshot Integrity Hardening — implementado
 
-A materialização Biblioteca → Journey agora é explícita: updates comuns preservam a revisão já copiada, inclusive quando a origem foi posteriormente editada ou arquivada. `JourneyStage.updateConfiguration()` não toca no snapshot; `materializeResource()` é a fronteira de escrita. O 16.5E continua responsável pela futura atualização explícita entre revisões.
+A materialização Biblioteca → Journey agora é explícita: updates comuns preservam a revisão já copiada, inclusive quando a origem foi posteriormente editada ou arquivada. `JourneyStage.updateConfiguration()` não toca no snapshot; `materializeResource()` é a fronteira de escrita. O 16.5E fechou essa dívida com atualização explícita entre revisões apenas em Journey `DRAFT`.

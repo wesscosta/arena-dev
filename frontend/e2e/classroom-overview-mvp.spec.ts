@@ -153,7 +153,7 @@ test.describe("Classroom overview MVP contract", () => {
 
     const navigation = page.getByRole("navigation", { name: "Navegação global" });
     await expect(
-      navigation.getByRole("button", { name: "Visão geral" }),
+      navigation.getByRole("button", { name: "Turmas" }),
     ).toHaveAttribute("aria-current", "page");
 
     await navigation.getByRole("button", { name: "Biblioteca" }).click();
@@ -162,7 +162,7 @@ test.describe("Classroom overview MVP contract", () => {
       navigation.getByRole("button", { name: "Biblioteca" }),
     ).toHaveAttribute("aria-current", "page");
 
-    await navigation.getByRole("button", { name: "Visão geral" }).click();
+    await navigation.getByRole("button", { name: "Turmas" }).click();
     await expect(page.getByRole("heading", { name: "Suas turmas" })).toBeVisible();
 
     const search = page.getByLabel("Buscar turma por nome ou código");
@@ -187,7 +187,7 @@ test.describe("Classroom overview MVP contract", () => {
       .click();
     await expect(page.getByTestId("classroom-home-hero")).toBeVisible();
 
-    await navigation.getByRole("button", { name: "Visão geral" }).click();
+    await navigation.getByRole("button", { name: "Turmas" }).click();
     await expect(page.getByRole("heading", { name: "Suas turmas" })).toBeVisible();
 
     const selectedCard = page.getByTestId("classroom-overview-card").filter({ hasText: activeClassroom.name });
@@ -229,7 +229,7 @@ test.describe("Classroom overview MVP contract", () => {
 
         const navigation = page.getByRole("navigation", { name: "Navegação global" });
         await expect(
-          navigation.getByRole("button", { name: "Visão geral" }),
+          navigation.getByRole("button", { name: "Turmas" }),
         ).toBeVisible();
         await expect(
           navigation.getByRole("button", { name: "Biblioteca" }),
