@@ -102,7 +102,7 @@ ContentRef e Provenance da v0.9 devem aproveitar esses identificadores sem dupli
 
 ## Estado atual após o primeiro slice vertical
 
-A fundação prevista acima já avançou de V39 até **V45**:
+A fundação prevista acima já avançou de V39 até **V47**:
 
 ```text
 V39 LearningTarget / ContentRef / Provenance
@@ -112,6 +112,8 @@ V39 LearningTarget / ContentRef / Provenance
 → V43 Evaluation
 → V44 Quiz shadow adapter/validation
 → V45 LearningEvidence
+→ V46 Poll shadow adapter/validation
+→ V47 Word Cloud shadow adapter/validation
 ```
 
 O primeiro fluxo nativo **Verificar aprendizagem** está implementado ponta a ponta:
@@ -147,17 +149,25 @@ Gates validados em 07/10/2026:
 - Chromium E2E crítico: **5/5** verde, cobrindo também reconnect e Evidence sem XP no Learning Check;
 - suíte Playwright completa: **22/22** verde, cobrindo também desktop/mobile/ultrawide e light/dark.
 
+## Estado após consolidação de Quiz/Poll/Nuvem e capacidades de sessão
+
+- Quiz, Poll e Word Cloud possuem adapters/shadow validation no Interaction Core;
+- Poll preserva semântica de opinião: `CHOICE + evaluationMode NONE`, sem accuracy/Evidence;
+- Word Cloud usa `TEXT LIST + WORD_CLOUD`, mantendo uma Response por participante e frequência normalizada equivalente ao legado;
+- Spotlight já separa `ParticipantSelectionService` da apresentação `GRID_SPOTLIGHT`/`WHEEL`; não requer refactor adicional apenas por roadmap;
+- Timer já é capacidade transversal própria da sessão, com lifecycle persistido e realtime; não requer absorção pelo Interaction Core;
+- Groups passou a suportar geração balanceada e composição manual persistida, com invariantes de participantes presentes, ausência de duplicatas e limite de 12 por grupo.
+
 ## Próximo passo arquitetural
 
-Com o primeiro slice comprovado, a sequência de menor risco é:
+A sequência de menor risco agora é:
 
 ```text
-Result → intervenção mínima explícita
-→ validar UX real do Learning Check
-→ consolidar Quiz adapter como fonte oficial quando shadow equivaler
-→ Poll Adapter (CHOICE + NONE)
-→ TEXT / Word Cloud
-→ Session Core / Groups / Spotlight
+Session contract / runtime snapshot
+→ AI-ready audit de proveniência + resposta bruta + avaliação + evidência
+→ definir critérios de cutover dos shadows
+→ remover legado somente após equivalência comprovada
+→ hardening / E2E / a11y / documentação final
 ```
 
-Não iniciar Mastery, IA generativa ou novos game modes antes de fechar essas migrações.
+Não iniciar Mastery, IA generativa, RAG ou novos game modes antes de fechar esses gates.

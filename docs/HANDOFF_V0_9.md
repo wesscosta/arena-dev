@@ -91,7 +91,7 @@ O handoff original continha decisões que foram superadas pela consolidação do
 
 ## 6. Estado real relevante do código
 
-A auditoria inicial partiu da V38. O estado atual da branch v0.9 já avançou de forma aditiva até **Flyway V45**:
+A auditoria inicial partiu da V38. O estado atual da branch v0.9 já avançou de forma aditiva até **Flyway V47**:
 
 - V39: Learning Domain Foundation;
 - V40: Interaction Definition Foundation;
@@ -100,12 +100,16 @@ A auditoria inicial partiu da V38. O estado atual da branch v0.9 já avançou de
 - V43: Interaction Evaluations;
 - V44: Quiz Interaction Shadow;
 - V45: Learning Evidence;
+- V46: Poll Interaction Shadow;
+- V47: Word Cloud Interaction Shadow;
 - `learning_resources` mantém subject/tags/language, revision, hashes, outline e proveniência de snapshot;
 - V38 declara explicitamente que `subject` é metadata editorial flexível, não KnowledgeNode/taxonomia rígida;
 - Quiz usa `QuizRound.question_id → activity_questions`;
 - `ActivityQuestion` pertence ao domínio Atividade;
 - Quiz já preserva resposta bruta em JSON e possui avaliação posterior;
-- Poll, Quiz e Word Cloud possuem runtimes próprios;
+- Poll, Quiz e Word Cloud preservam seus runtimes legados como fonte oficial, mas já possuem adapters/shadow validation no Interaction Core;
+- Poll foi mapeado para `CHOICE + evaluationMode NONE` sem gerar Evidence;
+- Word Cloud foi mapeada para `TEXT LIST + WORD_CLOUD`, preservando frequência normalizada e uma Response por participante;
 - `useArenaRealtime` concentra estados de Buzzer, Timer, Word Cloud, Poll, Quiz e Ranking;
 - `useArenaScoring` permanece boundary próprio.
 
@@ -308,12 +312,12 @@ Não exibir `Domínio 61%` quando o dado real é apenas `Acerto desta verificaç
 | Recurso | Decisão v0.9 |
 |---|---|
 | Grid | manter como apresentação |
-| Spotlight/Sorteio | consolidar seleção separada da apresentação |
+| Spotlight/Sorteio | consolidado: seleção backend separada da apresentação `GRID_SPOTLIGHT`/`WHEEL` |
 | Roleta | renderer opcional |
-| Timer | capacidade transversal |
+| Timer | consolidado como capacidade transversal de sessão/realtime |
 | Participantes/Presença | Session Core |
 | QR/Código | Session Core |
-| Grupos | consolidar MANUAL/RANDOM |
+| Grupos | consolidado com geração balanceada + composição manual persistida/validada |
 | Quiz | primeiro adapter do Interaction Engine |
 | Poll/Votação | CHOICE + evaluation NONE |
 | Nuvem | TEXT + WORD_CLOUD |
@@ -342,18 +346,18 @@ Não exibir `Domínio 61%` quando o dado real é apenas `Acerto desta verificaç
 
 - LearningEvidence;
 - fluxo visível Verificar aprendizagem;
-- Poll Adapter;
-- TEXT/Nuvem;
+- Poll Adapter/shadow — concluído;
+- TEXT/Nuvem Adapter/shadow — concluído;
 - Result → ações mínimas.
 
 ### v0.9-C — Session Integration
 
-- Session contract;
-- Spotlight;
-- Groups;
-- Timer;
-- legacy removal;
-- AI-ready audit.
+- Session contract — pendente de fechamento;
+- Spotlight — consolidado por auditoria, sem refactor adicional necessário;
+- Groups — geração balanceada + edição/manual persistida implementadas;
+- Timer — consolidado por auditoria, sem refactor adicional necessário;
+- legacy removal — pendente após cutover seguro dos adapters;
+- AI-ready audit — próximo gate arquitetural.
 
 ## 16. Primeiro caminho crítico
 

@@ -176,6 +176,91 @@ public class MechanicsService {
     }
 
     @Transactional
+    public GroupsResult setGroups(UUID sessionId, List<List<UUID>> requestedGroups) {
+        ClassSession session = requireActiveSession(sessionId);
+        List<UUID> present = presentStudentIds(sessionId);
+        validateManualGroups(present, requestedGroups);
+
+        List<List<String>> groups = requestedGroups.stream()
+                .map(group -> group.stream().map(UUID::toString).toList())
+                .toList();
+        int groupSize = groups.stream()
+                .mapToInt(List::size)
+                .max()
+                .orElse(1);
+
+        saveState(session, DynamicType.GROUPS, new GroupsState(groups, groupSize));
+        if (groupSize > 1) {
+            groupHistoryRepository.save(
+                    new GroupHistory(
+                            session.getClassroom(),
+                            session,
+                            writeJson(groups)
+                    )
+            );
+        }
+        sessionEventService.record(
+                session,
+                SessionEventType.GROUPS_ORGANIZED,
+                SessionEventActor.TEACHER,
+                "Composição dos grupos atualizada manualmente.",
+                Map.of(
+                        "groupSize", groupSize,
+                        "groupCount", groups.size(),
+                        "method", "MANUAL"
+                )
+        );
+        return new GroupsResult(groups, runtime(sessionId));
+    }
+
+    private static void validateManualGroups(
+            List<UUID> presentStudentIds,
+            List<List<UUID>> requestedGroups
+    ) {
+        if (requestedGroups == null || requestedGroups.isEmpty()) {
+            throw new IllegalArgumentException("Informe ao menos um grupo.");
+        }
+        Set<UUID> expected = new LinkedHashSet<>(presentStudentIds);
+        if (expected.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Não há alunos presentes para organizar."
+            );
+        }
+
+        LinkedHashSet<UUID> assigned = new LinkedHashSet<>();
+        for (List<UUID> group : requestedGroups) {
+            if (group == null || group.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Grupos vazios não são permitidos."
+                );
+            }
+            if (group.size() > 12) {
+                throw new IllegalArgumentException(
+                        "Um grupo pode ter no máximo 12 participantes."
+                );
+            }
+            for (UUID participantId : group) {
+                if (participantId == null || !expected.contains(participantId)) {
+                    throw new IllegalArgumentException(
+                            "A composição contém participante ausente ou desconhecido."
+                    );
+                }
+                if (!assigned.add(participantId)) {
+                    throw new IllegalArgumentException(
+                            "Cada participante deve aparecer em apenas um grupo."
+                    );
+                }
+            }
+        }
+
+        if (!assigned.equals(expected)) {
+            throw new IllegalArgumentException(
+                    "Todos os participantes presentes devem estar em um grupo."
+            );
+        }
+    }
+
+    @Transactional
     public RuntimeView startBoss(UUID sessionId, String name, int maxHp) {
         ClassSession session = requireActiveSession(sessionId);
         if (maxHp < 10) throw new IllegalArgumentException("O Boss precisa ter ao menos 10 HP.");
