@@ -16,26 +16,36 @@ public class InteractionResponseService {
     private final InteractionRunRepository runRepository;
     private final InteractionResponseRepository responseRepository;
     private final SessionParticipantRepository participantRepository;
+    private final InteractionResponseValidator responseValidator;
     private final Clock clock;
 
     @Autowired
     public InteractionResponseService(
             InteractionRunRepository runRepository,
             InteractionResponseRepository responseRepository,
-            SessionParticipantRepository participantRepository
+            SessionParticipantRepository participantRepository,
+            InteractionResponseValidator responseValidator
     ) {
-        this(runRepository, responseRepository, participantRepository, Clock.systemUTC());
+        this(
+                runRepository,
+                responseRepository,
+                participantRepository,
+                responseValidator,
+                Clock.systemUTC()
+        );
     }
 
     InteractionResponseService(
             InteractionRunRepository runRepository,
             InteractionResponseRepository responseRepository,
             SessionParticipantRepository participantRepository,
+            InteractionResponseValidator responseValidator,
             Clock clock
     ) {
         this.runRepository = runRepository;
         this.responseRepository = responseRepository;
         this.participantRepository = participantRepository;
+        this.responseValidator = responseValidator;
         this.clock = clock;
     }
 
@@ -47,6 +57,8 @@ public class InteractionResponseService {
         if (!run.acceptsResponses()) {
             throw new IllegalArgumentException("A interação não está aceitando respostas.");
         }
+
+        responseValidator.validate(run.getDefinition(), responseJson);
 
         UUID sessionId = run.getSession().getId();
         SessionParticipant participant = participantRepository

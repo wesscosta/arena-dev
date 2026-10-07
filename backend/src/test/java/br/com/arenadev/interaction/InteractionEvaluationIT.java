@@ -43,6 +43,7 @@ class InteractionEvaluationIT {
 
     @Autowired private InteractionResponseService responseService;
     @Autowired private InteractionEvaluationService evaluationService;
+    @Autowired private InteractionResultEngine resultEngine;
     @Autowired private InteractionEvaluationRepository evaluationRepository;
     @Autowired private InteractionResponseRepository responseRepository;
     @Autowired private InteractionRunRepository runRepository;
@@ -100,15 +101,26 @@ class InteractionEvaluationIT {
         assertThat(raw.getResponseJson())
                 .isEqualTo("{\"selectedOptionKeys\":[\"B\"]}");
         assertThat(raw.getRevision()).isEqualTo(2);
+
+        InteractionResultEngine.ResultView result = resultEngine.result(locked.getId());
+        assertThat(result.participation().participantCount()).isEqualTo(2);
+        assertThat(result.participation().responseCount()).isEqualTo(1);
+        assertThat(result.participation().participationRate()).isEqualTo(0.5);
+        assertThat(result.choiceDistribution()).containsEntry("A", 0L).containsEntry("B", 1L);
+        assertThat(result.evaluation().correctCount()).isEqualTo(1);
+        assertThat(result.evaluation().incorrectCount()).isZero();
+        assertThat(result.evaluation().accuracy()).isEqualTo(1.0);
     }
 
     private Fixture fixture() {
         Classroom classroom = classroomRepository.save(new Classroom("Turma", "EVAL-IT"));
         Student student = studentRepository.save(new Student("EVAL-001", "Aluno", null));
+        Student observer = studentRepository.save(new Student("EVAL-002", "Sem resposta", null));
         ClassSession session = sessionRepository.save(new ClassSession(classroom, "Aula"));
         SessionParticipant participant = participantRepository.save(
                 new SessionParticipant(session, student, true)
         );
+        participantRepository.save(new SessionParticipant(session, observer, true));
 
         InteractionDefinition definition = new InteractionDefinition(
                 "Qual é a correta?",

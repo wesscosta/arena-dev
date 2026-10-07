@@ -68,23 +68,23 @@ class InteractionResponseIT {
         InteractionResponse first = service.submit(
                 fixture.run().getId(),
                 fixture.participant().getId(),
-                "{\"choice\":\"A\"}"
+                "{\"selectedOptionKeys\":[\"A\"]}"
         );
         InteractionResponse retry = service.submit(
                 fixture.run().getId(),
                 fixture.participant().getId(),
-                "{\"choice\":\"A\"}"
+                "{\"selectedOptionKeys\":[\"A\"]}"
         );
         InteractionResponse changed = service.submit(
                 fixture.run().getId(),
                 fixture.participant().getId(),
-                "{\"choice\":\"B\"}"
+                "{\"selectedOptionKeys\":[\"B\"]}"
         );
 
         assertThat(retry.getId()).isEqualTo(first.getId());
         assertThat(changed.getId()).isEqualTo(first.getId());
         assertThat(changed.getRevision()).isEqualTo(2);
-        assertThat(changed.getResponseJson()).isEqualTo("{\"choice\":\"B\"}");
+        assertThat(changed.getResponseJson()).isEqualTo("{\"selectedOptionKeys\":[\"B\"]}");
         assertThat(responseRepository.countByRunId(fixture.run().getId())).isEqualTo(1);
     }
 
@@ -95,12 +95,12 @@ class InteractionResponseIT {
         InteractionResponse first = service.submit(
                 fixture.run().getId(),
                 fixture.participant().getId(),
-                "{\"choice\":\"A\"}"
+                "{\"selectedOptionKeys\":[\"A\"]}"
         );
         InteractionResponse retry = service.submit(
                 fixture.run().getId(),
                 fixture.participant().getId(),
-                "{\"choice\":\"A\"}"
+                "{\"selectedOptionKeys\":[\"A\"]}"
         );
 
         assertThat(retry.getId()).isEqualTo(first.getId());
@@ -109,7 +109,7 @@ class InteractionResponseIT {
         assertThatThrownBy(() -> service.submit(
                 fixture.run().getId(),
                 fixture.participant().getId(),
-                "{\"choice\":\"B\"}"
+                "{\"selectedOptionKeys\":[\"B\"]}"
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("já foi registrada");
     }

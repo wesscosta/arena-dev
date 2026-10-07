@@ -32,7 +32,7 @@ class InteractionResponseServiceTest {
         InteractionResponse existing = new InteractionResponse(
                 fixture.run(),
                 fixture.participant(),
-                "{\"choice\":\"A\"}",
+                "{\"selectedOptionKeys\":[\"A\"]}",
                 NOW.minusSeconds(5)
         );
         ServiceFixture service = service(fixture, Optional.of(existing));
@@ -40,7 +40,7 @@ class InteractionResponseServiceTest {
         InteractionResponse result = service.service().submit(
                 fixture.runId(),
                 fixture.participantId(),
-                "{\"choice\":\"A\"}"
+                "{\"selectedOptionKeys\":[\"A\"]}"
         );
 
         assertThat(result).isSameAs(existing);
@@ -54,7 +54,7 @@ class InteractionResponseServiceTest {
         InteractionResponse existing = new InteractionResponse(
                 fixture.run(),
                 fixture.participant(),
-                "{\"choice\":\"A\"}",
+                "{\"selectedOptionKeys\":[\"A\"]}",
                 NOW.minusSeconds(5)
         );
         ServiceFixture service = service(fixture, Optional.of(existing));
@@ -62,10 +62,10 @@ class InteractionResponseServiceTest {
         InteractionResponse result = service.service().submit(
                 fixture.runId(),
                 fixture.participantId(),
-                "{\"choice\":\"B\"}"
+                "{\"selectedOptionKeys\":[\"B\"]}"
         );
 
-        assertThat(result.getResponseJson()).isEqualTo("{\"choice\":\"B\"}");
+        assertThat(result.getResponseJson()).isEqualTo("{\"selectedOptionKeys\":[\"B\"]}");
         assertThat(result.getRevision()).isEqualTo(2);
         assertThat(result.getUpdatedAt()).isEqualTo(NOW);
     }
@@ -76,7 +76,7 @@ class InteractionResponseServiceTest {
         InteractionResponse existing = new InteractionResponse(
                 fixture.run(),
                 fixture.participant(),
-                "{\"choice\":\"A\"}",
+                "{\"selectedOptionKeys\":[\"A\"]}",
                 NOW.minusSeconds(5)
         );
         ServiceFixture service = service(fixture, Optional.of(existing));
@@ -84,7 +84,7 @@ class InteractionResponseServiceTest {
         assertThatThrownBy(() -> service.service().submit(
                 fixture.runId(),
                 fixture.participantId(),
-                "{\"choice\":\"B\"}"
+                "{\"selectedOptionKeys\":[\"B\"]}"
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("já foi registrada");
 
@@ -100,7 +100,7 @@ class InteractionResponseServiceTest {
         assertThatThrownBy(() -> service.service().submit(
                 fixture.runId(),
                 fixture.participantId(),
-                "{\"choice\":\"A\"}"
+                "{\"selectedOptionKeys\":[\"A\"]}"
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("aceitando respostas");
 
@@ -127,6 +127,7 @@ class InteractionResponseServiceTest {
                 runRepository,
                 responseRepository,
                 participantRepository,
+                new InteractionResponseValidator(tools.jackson.databind.json.JsonMapper.builder().build()),
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
 
