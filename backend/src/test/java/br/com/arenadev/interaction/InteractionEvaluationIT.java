@@ -128,7 +128,7 @@ class InteractionEvaluationIT {
                 InteractionEvaluationMode.CORRECT_ANSWER,
                 InteractionPresentationMode.DEFAULT,
                 null,
-                true,
+                false,
                 null,
                 new Provenance(
                         ProvenanceOrigin.SYSTEM,
