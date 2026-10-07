@@ -129,6 +129,7 @@ public class InteractionDefinition {
         this.evaluationMode = Objects.requireNonNull(evaluationMode, "O modo de avaliação é obrigatório.");
         this.presentationMode = Objects.requireNonNull(presentationMode, "O modo de apresentação é obrigatório.");
         validatePresentation(responseKind, presentationMode);
+        validateEvidenceContract(learningTarget, producesEvidence, evaluationMode);
         this.learningTarget = learningTarget;
         this.producesEvidence = producesEvidence;
         applyContentRef(contentRef);
@@ -182,6 +183,7 @@ public class InteractionDefinition {
     }
 
     public void relinkLearningTarget(LearningTarget target, boolean producesEvidence) {
+        validateEvidenceContract(target, producesEvidence, evaluationMode);
         this.learningTarget = target;
         this.producesEvidence = producesEvidence;
         touch();
@@ -206,6 +208,24 @@ public class InteractionDefinition {
         provenanceCreatedBy = provenance.createdBy();
         provenanceReviewedBy = provenance.reviewedBy();
         provenanceCreatedAt = provenance.createdAt();
+    }
+
+    private static void validateEvidenceContract(
+            LearningTarget learningTarget,
+            boolean producesEvidence,
+            InteractionEvaluationMode evaluationMode
+    ) {
+        if (!producesEvidence) return;
+        if (learningTarget == null) {
+            throw new IllegalArgumentException(
+                    "Uma interação que produz evidência precisa de LearningTarget."
+            );
+        }
+        if (evaluationMode == InteractionEvaluationMode.NONE) {
+            throw new IllegalArgumentException(
+                    "Uma interação sem avaliação não pode produzir LearningEvidence nesta versão."
+            );
+        }
     }
 
     private static void validatePresentation(

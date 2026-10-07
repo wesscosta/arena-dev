@@ -1,6 +1,8 @@
 package br.com.arenadev.interaction;
 
 import br.com.arenadev.learning.ContentRef;
+import br.com.arenadev.learning.LearningTarget;
+import br.com.arenadev.learning.LearningTargetType;
 import br.com.arenadev.learning.Provenance;
 import br.com.arenadev.learning.ProvenanceOrigin;
 import org.junit.jupiter.api.Test;
@@ -90,6 +92,46 @@ class InteractionDefinitionTest {
         assertThatThrownBy(choice::activate)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("alternativas");
+    }
+
+    @Test
+    void evidenceRequiresLearningTargetAndEvaluation() {
+        Provenance provenance = new Provenance(
+                ProvenanceOrigin.SYSTEM,
+                null,
+                null,
+                null,
+                Instant.parse("2026-10-07T02:00:00Z")
+        );
+
+        assertThatThrownBy(() -> new InteractionDefinition(
+                "Prompt",
+                InteractionResponseKind.CHOICE,
+                InteractionEvaluationMode.CORRECT_ANSWER,
+                InteractionPresentationMode.DEFAULT,
+                null,
+                true,
+                null,
+                provenance
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("LearningTarget");
+
+        LearningTarget target = new LearningTarget(
+                "LEFT JOIN",
+                LearningTargetType.COMPETENCY,
+                null
+        );
+        assertThatThrownBy(() -> new InteractionDefinition(
+                "Prompt",
+                InteractionResponseKind.TEXT,
+                InteractionEvaluationMode.NONE,
+                InteractionPresentationMode.DEFAULT,
+                target,
+                true,
+                null,
+                provenance
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("sem avaliação");
     }
 
     private static InteractionDefinition definition(
