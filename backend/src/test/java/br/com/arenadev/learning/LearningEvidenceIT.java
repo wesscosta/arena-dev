@@ -120,9 +120,10 @@ class LearningEvidenceIT {
         run.lockResponses(Instant.parse("2026-10-07T09:02:00Z"));
         runRepository.saveAndFlush(run);
         evaluationService.evaluateRun(run.getId());
+        List<LearningEvidence> first = evidenceService.evidenceForRun(run.getId());
 
-        List<LearningEvidence> first = evidenceService.recordForRun(run.getId());
-        List<LearningEvidence> second = evidenceService.recordForRun(run.getId());
+        evaluationService.evaluateRun(run.getId());
+        List<LearningEvidence> second = evidenceService.evidenceForRun(run.getId());
 
         assertThat(first).hasSize(1);
         assertThat(second).hasSize(1);
