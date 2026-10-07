@@ -93,6 +93,11 @@ public class LiveStageService {
         if (type == LiveStageType.QUIZ && sourceId == null) {
             throw new IllegalArgumentException("Informe a rodada de Quiz para este palco.");
         }
+        if (type == LiveStageType.LEARNING_CHECK && sourceId == null) {
+            throw new IllegalArgumentException(
+                    "Informe a verificação de aprendizagem para este palco."
+            );
+        }
         if (type == LiveStageType.SLIDE) {
             requirePreparedStep(session, sourceId, ActivityStepType.SLIDE);
         }
@@ -200,6 +205,24 @@ public class LiveStageService {
                 new ActivateCommand(
                         LiveStageType.QUIZ,
                         roundId,
+                        LiveStageAudience.BOTH,
+                        true
+                )
+        );
+    }
+
+    @Transactional
+    public StateView showLearningCheck(UUID sessionId, UUID runId) {
+        if (runId == null) {
+            throw new IllegalArgumentException(
+                    "Informe a verificação de aprendizagem para este palco."
+            );
+        }
+        return activate(
+                sessionId,
+                new ActivateCommand(
+                        LiveStageType.LEARNING_CHECK,
+                        runId,
                         LiveStageAudience.BOTH,
                         true
                 )
