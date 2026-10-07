@@ -62,6 +62,40 @@ class InteractionResponseValidatorTest {
                 .hasMessageContaining("não vazio");
     }
 
+    @Test
+    void validatesTextListPayloadForWordCloudLikeInteractions() {
+        InteractionDefinition definition = new InteractionDefinition(
+                "Liste conceitos",
+                InteractionResponseKind.TEXT,
+                InteractionEvaluationMode.NONE,
+                InteractionPresentationMode.WORD_CLOUD,
+                null,
+                false,
+                null,
+                provenance()
+        );
+        definition.configureResponse(
+                "{\"mode\":\"LIST\",\"minItems\":1,\"maxItems\":3,\"maxItemLength\":10}"
+        );
+
+        assertThatCode(() -> validator.validate(
+                definition,
+                "{\"texts\":[\"Java\",\"SQL\"]}"
+        )).doesNotThrowAnyException();
+
+        assertThatThrownBy(() -> validator.validate(
+                definition,
+                "{\"texts\":[\"Java\",\"SQL\",\"Docker\",\"Git\"]}"
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("quantidade");
+
+        assertThatThrownBy(() -> validator.validate(
+                definition,
+                "{\"texts\":[\"texto muito longo\"]}"
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("limite");
+    }
+
     private static InteractionDefinition choice() {
         InteractionDefinition definition = new InteractionDefinition(
                 "Escolha",

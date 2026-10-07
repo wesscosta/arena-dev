@@ -1,5 +1,6 @@
 package br.com.arenadev.wordcloud;
 
+import br.com.arenadev.interaction.WordCloudInteractionShadowBridge;
 import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.session.ClassSession;
 import br.com.arenadev.session.ClassSessionRepository;
@@ -14,14 +15,12 @@ import br.com.arenadev.stage.LiveStageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.Normalizer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -44,6 +43,7 @@ public class WordCloudService {
     private final SessionRealtimeGateway realtimeGateway;
     private final LiveStageService liveStageService;
     private final SessionEventService sessionEventService;
+    private final WordCloudInteractionShadowBridge shadowBridge;
 
     public WordCloudService(
             WordCloudRoundRepository roundRepository,
@@ -52,7 +52,8 @@ public class WordCloudService {
             SessionParticipantRepository participantRepository,
             SessionRealtimeGateway realtimeGateway,
             LiveStageService liveStageService,
-            SessionEventService sessionEventService
+            SessionEventService sessionEventService,
+            WordCloudInteractionShadowBridge shadowBridge
     ) {
         this.roundRepository = roundRepository;
         this.submissionRepository = submissionRepository;
@@ -61,6 +62,7 @@ public class WordCloudService {
         this.realtimeGateway = realtimeGateway;
         this.liveStageService = liveStageService;
         this.sessionEventService = sessionEventService;
+        this.shadowBridge = shadowBridge;
     }
 
     @Transactional
@@ -88,6 +90,7 @@ public class WordCloudService {
                 command.liveReveal(),
                 command.maxWordsPerParticipant()
         ));
+        shadowBridge.afterLegacyMutation(round.getId());
 
         StateView state = stateOf(round);
         liveStageService.showWordCloud(sessionId, round.getId());
@@ -126,6 +129,7 @@ public class WordCloudService {
         StateView state = stateOf(round);
         liveStageService.showWordCloud(sessionId, round.getId());
         broadcastStateAfterCommit(sessionId, state);
+        shadowBridge.afterLegacyMutation(round.getId());
         return state;
     }
 
@@ -146,6 +150,7 @@ public class WordCloudService {
 
         StateView state = stateOf(round);
         broadcastStateAfterCommit(sessionId, state);
+        shadowBridge.afterLegacyMutation(round.getId());
         sessionEventService.record(
                 session,
                 SessionEventType.WORD_CLOUD_REVEALED,
@@ -171,6 +176,7 @@ public class WordCloudService {
 
         StateView state = stateOf(round);
         broadcastStateAfterCommit(sessionId, state);
+        shadowBridge.afterLegacyMutation(round.getId());
         if (wasOpen) {
             sessionEventService.record(
                     session,
@@ -247,6 +253,7 @@ public class WordCloudService {
         if (!additions.isEmpty()) {
             StateView state = stateOf(round);
             broadcastStateAfterCommit(sessionId, state);
+            shadowBridge.afterLegacyMutation(round.getId());
         }
 
         return participantStateOf(round, participantId);
@@ -274,7 +281,10 @@ public class WordCloudService {
         if (openRounds.isEmpty()) return;
 
         Instant now = Instant.now();
-        openRounds.forEach(round -> round.close(now));
+        openRounds.forEach(round -> {
+            round.close(now);
+            shadowBridge.afterLegacyMutation(round.getId());
+        });
         StateView state = stateOf(openRounds.getFirst());
         broadcastStateAfterCommit(sessionId, state);
     }
@@ -464,12 +474,7 @@ public class WordCloudService {
     }
 
     static String normalizeForFrequency(String value) {
-        return Normalizer.normalize(value, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}+", "")
-                .toLowerCase(Locale.ROOT)
-                .replaceAll("[^\\p{L}\\p{N}\\s-]", " ")
-                .replaceAll("\\s+", " ")
-                .trim();
+        return WordCloudTextNormalizer.normalize(value);
     }
 
     public record CreateCommand(
