@@ -56,6 +56,10 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0037](ADR-0037-avaliacao-no-lock-e-scoreevent-como-ledger-de-xp.md) | Avaliação no lock; ScoreEvent permanece ledger exclusivo de XP | Aceito |
 
 | [ADR-0045](ADR-0045-jornada-e-estudo-sequencial-nao-workflow-de-atividades.md) | Jornada é estudo sequencial, não workflow de atividades | Aceito |
+| [ADR-0046](ADR-0046-arena-learning-core.md) | Arena Learning Core como fundação da v0.9 | Aceito |
+| [ADR-0047](ADR-0047-interaction-como-primitive-comum.md) | Interaction como primitive comum e migração progressiva | Aceito |
+| [ADR-0048](ADR-0048-learning-target-content-ref-e-provenance.md) | LearningTarget separado de conteúdo e proveniência rastreável | Aceito |
+| [ADR-0049](ADR-0049-evidence-nao-e-mastery-ia-consome-dominio.md) | LearningEvidence não é Mastery e IA consome o domínio | Aceito |
 
 ## Template
 

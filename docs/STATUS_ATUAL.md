@@ -1,20 +1,20 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 6 de outubro de 2026
+**Última sincronização documental:** 7 de outubro de 2026
 
-**Baseline publicada:** `v0.7.0 — Educational Integrations`.
+**Baseline publicada:** `v0.8.0 — Professor Experience & Journey MVP`.
 
-**Linha ativa:** `v0.8 — Professor Experience & Journey MVP`.
+**Linha ativa:** `v0.9 — Arena Learning Core`.
 
-**Incremento atual:** **Release Hardening v0.8**. Os escopos 16.5C–F foram tecnicamente fechados na branch `feat/v0.8-semantic-library`; novas funcionalidades estão congeladas até a publicação.
+**Incremento atual:** primeiro slice vertical do Learning Core, com `LearningTarget → Interaction → Response → Evaluation → Result → LearningEvidence` e fluxo visível **Verificar aprendizagem**.
 
-**Branch ativa:** `feat/v0.8-semantic-library`.
+**Branch ativa:** `feat/v0.9-learning-core-foundation`.
 
-**Plano transversal:** [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md).
+**Handoff vigente:** [`HANDOFF_V0_9.md`](HANDOFF_V0_9.md).
 
 ## Estado resumido
 
-A v0.7.0 continua sendo a última baseline publicada. A branch de release candidate da v0.8 contém 16.0–16.5 completos no escopo definido, incluindo Semantic Content Library V38. O trabalho corrente é exclusivamente hardening, evidência de release e alinhamento documental.
+A v0.8.0 está publicada e congelada como baseline. O desenvolvimento funcional corrente ocorre na v0.9, que já avançou de forma aditiva até Flyway V45 e possui o primeiro fluxo nativo de evidência de aprendizagem operando ponta a ponta. A linha v0.8.x permanece restrita a regressão, segurança, acessibilidade crítica e documentação.
 
 A Journey já possui Study API própria, `/learn`, Reader, progresso e retomada, prévia do professor na mesma experiência, Builder reduzido a módulos + conteúdos e Progression UX com estados `COMPLETED`, `CURRENT` e `LOCKED`.
 
@@ -23,13 +23,12 @@ A frente de ingestão `16.3.8` cobre contrato normalizado, adapters Markdown/Tex
 ## Baselines
 
 ```text
-baseline publicada        v0.7.0
-linha ativa               v0.8
-último integrado à main   16.1 · PR #22
-incremento atual           Release Hardening v0.8
-fatia atual                gates técnicos + E2E + restore + documentação + release candidate
-branch                     feat/v0.8-semantic-library
-schema                     Flyway V1–V38
+baseline publicada        v0.8.0
+linha ativa               v0.9 · Arena Learning Core
+incremento atual           primeiro slice vertical de Evidence
+fatia atual                Verificar aprendizagem + realtime/reconnect
+branch                     feat/v0.9-learning-core-foundation
+schema                     Flyway V1–V45
 providers                  Microsoft Teams + Notion OAuth
 Google Classroom           standby
 ```

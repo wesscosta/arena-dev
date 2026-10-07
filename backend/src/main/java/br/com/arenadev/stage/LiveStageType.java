@@ -6,6 +6,7 @@ public enum LiveStageType {
     SLIDE,
     QUESTION,
     QUIZ,
+    LEARNING_CHECK,
     WORD_CLOUD,
     POLL,
     BUZZER,

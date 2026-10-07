@@ -30,6 +30,14 @@ public class MechanicsController {
         return service.organizeGroups(sessionId, input.groupSize());
     }
 
+    @PutMapping("/groups")
+    public MechanicsService.GroupsResult updateGroups(
+            @PathVariable UUID sessionId,
+            @RequestBody ManualGroupsInput input
+    ) {
+        return service.setGroups(sessionId, input.groups());
+    }
+
     @PostMapping("/boss")
     public MechanicsService.RuntimeView startBoss(@PathVariable UUID sessionId, @RequestBody BossInput input) {
         return service.startBoss(sessionId, input.name(), input.maxHp());
@@ -77,6 +85,7 @@ public class MechanicsController {
 
     public record DrawPresentationInput(ParticipantSelectorPresentation presentation) {}
     public record GroupsInput(int groupSize) {}
+    public record ManualGroupsInput(java.util.List<java.util.List<UUID>> groups) {}
     public record BossInput(String name, int maxHp) {}
     public record DamageInput(int amount) {}
     public record ArenaInput(UUID activityId) {}

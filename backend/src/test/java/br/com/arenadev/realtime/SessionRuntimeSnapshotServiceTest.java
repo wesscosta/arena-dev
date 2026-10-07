@@ -1,6 +1,7 @@
 package br.com.arenadev.realtime;
 
 import br.com.arenadev.dynamic.MechanicsService;
+import br.com.arenadev.interaction.LearningCheckService;
 import br.com.arenadev.poll.PollService;
 import br.com.arenadev.quiz.QuizService;
 import br.com.arenadev.ranking.SessionRankingService;
@@ -30,6 +31,7 @@ class SessionRuntimeSnapshotServiceTest {
         WordCloudService wordCloudService = mock(WordCloudService.class);
         PollService pollService = mock(PollService.class);
         QuizService quizService = mock(QuizService.class);
+        LearningCheckService learningCheckService = mock(LearningCheckService.class);
         LiveStageService liveStageService = mock(LiveStageService.class);
         MechanicsService mechanicsService = mock(MechanicsService.class);
         SessionRankingService rankingService = mock(SessionRankingService.class);
@@ -50,6 +52,7 @@ class SessionRuntimeSnapshotServiceTest {
         var pollParticipant = PollService.ParticipantStateView.empty();
         var quiz = QuizService.StateView.empty();
         var quizParticipant = QuizService.ParticipantStateView.empty();
+        var learningCheckParticipant = mock(LearningCheckService.ParticipantStateView.class);
         var boss = new MechanicsService.BossState("Spaghetti Code", 100, 70);
         var runtime = new MechanicsService.RuntimeView(
                 sessionId,
@@ -76,6 +79,7 @@ class SessionRuntimeSnapshotServiceTest {
         when(pollService.participantState(sessionId, participantId)).thenReturn(pollParticipant);
         when(quizService.publicState(sessionId)).thenReturn(quiz);
         when(quizService.participantState(sessionId, participantId)).thenReturn(quizParticipant);
+        when(learningCheckService.participantState(sessionId, participantId)).thenReturn(learningCheckParticipant);
         var hiddenRanking = new SessionRankingService.PublicRankingStateView(
                 sessionId, false, true, br.com.arenadev.ranking.RankingLimit.TOP_5,
                 false, 0, List.of(), java.time.Instant.now()
@@ -89,6 +93,7 @@ class SessionRuntimeSnapshotServiceTest {
                 wordCloudService,
                 pollService,
                 quizService,
+                learningCheckService,
                 liveStageService,
                 mechanicsService,
                 rankingService
@@ -103,6 +108,7 @@ class SessionRuntimeSnapshotServiceTest {
         assertThat(snapshot.pollParticipant()).isSameAs(pollParticipant);
         assertThat(snapshot.quiz()).isSameAs(quiz);
         assertThat(snapshot.quizParticipant()).isSameAs(quizParticipant);
+        assertThat(snapshot.learningCheckParticipant()).isSameAs(learningCheckParticipant);
         assertThat(snapshot.boss()).isEqualTo(boss);
         assertThat(snapshot.ranking()).isSameAs(hiddenRanking);
 
