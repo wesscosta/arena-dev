@@ -42,7 +42,7 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0023](ADR-0023-join-temporario-e-buzzer-autoritativo.md) | Join temporário por sessão e Buzzer autoritativo | Aceito |
 | [ADR-0024](ADR-0024-fronteira-de-seguranca-e-hardening-realtime.md) | Fronteira de segurança do professor e hardening realtime | Aceito |
 | [ADR-0025](ADR-0025-release-readiness-e-versionamento.md) | Release readiness, versionamento `0.3.x` e fronteira de rollback | Aceito |
-| [ADR-0026](ADR-0026-community-mit-e-produto-comercial-verit.md) | Community até v0.4 e linha proprietária a partir da v0.5 | Aceito |
+| [ADR-0026](ADR-0026-community-mit-e-produto-comercial-verit.md) | Arena Dev Community sob MIT e produto comercial Verit em repositório privado separado | Superseded por ADR-0050 |
 | [ADR-0027](ADR-0027-live-stage-e-projecoes-por-audiencia.md) | Live Stage autoritativo e projeções por audiência | Aceito |
 | [ADR-0028](ADR-0028-preferred-name-e-identidade-de-dispositivo.md) | Preferred name por matrícula e identidade opaca de dispositivo | Aceito |
 | [ADR-0029](ADR-0029-orquestracao-live-flow-live-stage.md) | Live Flow orquestra Live Stage sem duplicar runtimes especializados | Aceito |
@@ -60,6 +60,7 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0047](ADR-0047-interaction-como-primitive-comum.md) | Interaction como primitive comum e migração progressiva | Aceito |
 | [ADR-0048](ADR-0048-learning-target-content-ref-e-provenance.md) | LearningTarget separado de conteúdo e proveniência rastreável | Aceito |
 | [ADR-0049](ADR-0049-evidence-nao-e-mastery-ia-consome-dominio.md) | LearningEvidence não é Mastery e IA consome o domínio | Aceito |
+| [ADR-0050](ADR-0050-proprietary-baseline-from-v0.9.md) | Baseline proprietária a partir da v0.9.0 e preservação dos grants MIT históricos | Aceito |
 
 ## Template
 

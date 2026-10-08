@@ -303,7 +303,9 @@ Histórico da v0.6:
 
 ## Licença
 
-Proprietária. Consulte `LICENSE` para os termos aplicáveis.
+A baseline atual é **proprietária**. `v0.9.0` é a primeira release formalmente distribuída sob a **Arena Dev Proprietary License**; consulte [`LICENSE`](LICENSE).
+
+A linha Community foi planejada para encerrar em `v0.4.x`. Por falha de governança, `v0.5.0`–`v0.8.0` também foram efetivamente publicadas com MIT; os direitos já concedidos sobre aquelas cópias históricas permanecem válidos. O registro completo está em [`LEGACY_LICENSE_NOTICE.md`](LEGACY_LICENSE_NOTICE.md) e na ADR-0050.
 
 
 ### Student Live — 16.4B

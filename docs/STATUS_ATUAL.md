@@ -174,7 +174,7 @@ Documento: [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CO
 ```text
 backend unit         OK · 163/163
 backend integration  OK · 109/109
-frontend tests       OK · 299/299
+frontend tests       OK · 300/300
 frontend lint/format OK
 frontend typecheck   OK
 frontend build       OK
