@@ -149,7 +149,7 @@ Gates validados em 07/10/2026:
 - `next build` verde;
 - lint sem erros; warnings históricos permanecem;
 - Chromium E2E crítico: **5/5** verde, cobrindo também reconnect e Evidence sem XP no Learning Check;
-- suíte Playwright completa: **22/22** verde, cobrindo também desktop/mobile/ultrawide e light/dark.
+- suíte Playwright completa: **23/23** verde, cobrindo também desktop/mobile/ultrawide e light/dark.
 
 ## Estado após consolidação de Quiz/Poll/Nuvem e capacidades de sessão
 
@@ -183,7 +183,7 @@ v0.9.0 publicada/congelada com legado autoritativo
 → somente então remoção física do legado em release posterior
 ```
 
-A execução local de 2026-10-07 concluiu `release-gate.sh local` com **163 testes unitários backend, 109 integrações, 298 testes frontend e 22/22 E2E Chromium**, além de stack Compose isolada saudável. O backup do banco em V48 também foi restaurado e validado em PostgreSQL 17 temporário.
+A execução local de 2026-10-07 concluiu `release-gate.sh local` com **163 testes unitários backend, 109 integrações, 299 testes frontend e 23/23 E2E Chromium**, além de stack Compose isolada saudável. O backup do banco em V48 também foi restaurado e validado em PostgreSQL 17 temporário.
 
 A qualificação operacional com três rodadas terminais equivalentes por tipo **não é requisito para publicar a v0.9.0**: ela é requisito para tornar o Interaction Core autoridade. A v0.9 precisa ser publicada primeiro para disponibilizar a observabilidade durável que coleta essa evidência. Detalhes e checklist estão em `FINAL_ARCHITECTURE_GATE.md`.
 

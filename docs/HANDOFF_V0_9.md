@@ -513,7 +513,7 @@ Gates confirmados no frontend do slice visível:
 - production build: verde;
 - lint: 0 erros; warnings preexistentes permanecem como dívida técnica;
 - E2E crítico Chromium: **5/5**, incluindo Learning Check, reconnect, Evidence sem XP e regressões de Quiz/Buzzer/Boss/roteiro;
-- suíte Playwright Chromium completa: **22/22**, incluindo breakpoints desktop/mobile/ultrawide e light/dark.
+- suíte Playwright Chromium completa: **23/23**, incluindo breakpoints desktop/mobile/ultrawide e light/dark.
 
 ## 20. AI-ready Gate
 
