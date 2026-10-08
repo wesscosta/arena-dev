@@ -111,3 +111,10 @@
 - **Amostra de desenvolvimento não descartada:** 374 turmas / 389 sessões; bootstrap 200 em 0,126s com 1,13MB (observação, não p95). Não confundir esse resultado com validação de milhares de turmas, latência WAN ou disponibilidade de produção. ADR-0056 e issue #36.
 
 - **Compatibilidade dos modelos:** `frontend/tests/dashboard-bootstrap.test.ts` verifica `null` do banco convertido para campos vazios/`undefined` como nos antigos adaptadores (aluno, matrícula, recurso, XP e participantes); evita regressão silenciosa em edição de turmas ou atividades.
+
+### P0-H — Concorrência e reversão de XP (Flyway V53)
+
+- `TransactionalRulesIT`: duas threads simultâneas com UUID idêntico → **um único score reversor**, mesmo ID, XP líquido zero, evento `SCORE_EVENT_REVERSED` único; UUID diferente resulta em conflito. O contrato antigo permanece com erro de duplicidade e não reverte reversão.
+- `DrawServiceIT`: XP vinculado a tentativa confirmada, reversão normalizada, tentativa permanece `CONFIRMED` e `scoreReversed=true`; participação não entra novamente na rodada.
+- `DrawHttpSecurityIT`: csrf/role, body inválido, resposta 201, repetição com JSON exatamente igual, comando distinto HTTP 409. Migração V1–V53 em PG17.
+- `arena-shell.spec.ts`: confirma sorteio com XP, estorna, reenvia comando, rejeita concorrente e reabre Arena após F5 com a correção persistida; não depende de `localStorage` para fonte do ledger.

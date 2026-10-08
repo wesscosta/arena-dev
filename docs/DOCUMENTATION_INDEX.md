@@ -114,3 +114,4 @@ Não reescrever documentação histórica para fabricar evidência retroativa. Q
 - [ADR-0054 — Peer Instruction pelo LearningCycle](adr/ADR-0054-peer-instruction-through-learning-cycle.md)
 - [ADR-0055 — Clínica do Erro com leitura docente](adr/ADR-0055-error-clinic-teacher-annotations.md)
 - [ADR-0056 — Bootstrap em lote e mecânicas sob demanda](adr/ADR-0056-dashboard-batch-bootstrap-and-lazy-mechanics.md)
+- [ADR-0057 — Reversão idempotente de XP](adr/ADR-0057-xp-reversal-idempotency-and-participation-independence.md)

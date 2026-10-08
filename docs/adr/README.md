@@ -86,3 +86,4 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0054 — Peer Instruction pelo LearningCycle](ADR-0054-peer-instruction-through-learning-cycle.md)
 - [ADR-0055 — Clínica do Erro com interpretação docente](ADR-0055-error-clinic-teacher-annotations.md)
 - [ADR-0056 — Bootstrap em lote e mecânicas sob demanda](ADR-0056-dashboard-batch-bootstrap-and-lazy-mechanics.md)
+- [ADR-0057 — Reversão idempotente de XP](ADR-0057-xp-reversal-idempotency-and-participation-independence.md)

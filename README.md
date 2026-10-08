@@ -4,6 +4,8 @@
 
 > **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 >
+> **P0-H em homologação:** reversão de XP idempotente no ledger com migração V53, proteção concorrente e participação preservada ([ADR-0057](docs/adr/ADR-0057-xp-reversal-idempotency-and-participation-independence.md)). Não libera a release.
+>
 > **PR de acompanhamento:** [#35 — v0.10 (rascunho; não fazer merge)](https://github.com/wesscosta/arena-dev/pull/35).
 >
 > **P1-A/B em homologação:** Peer Instruction (V51) e Clínica do Erro com interpretação docente (V52). Consulta [ADR-0054](docs/adr/ADR-0054-peer-instruction-through-learning-cycle.md) e [ADR-0055](docs/adr/ADR-0055-error-clinic-teacher-annotations.md). **O bloqueio P0 de escala sob 350+ turmas foi corrigido na branch e validado em Chromium; ainda existem gates independentes de release.** Ver [ADR-0056](docs/adr/ADR-0056-dashboard-batch-bootstrap-and-lazy-mechanics.md).
