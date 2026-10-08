@@ -22,6 +22,8 @@ const v09Contract = readFileSync(
   resolve(root, "scripts/release/verify-v0.9-contract.sh"),
   "utf8",
 );
+const license = readFileSync(resolve(root, "LICENSE"), "utf8");
+const licensingHistory = readFileSync(resolve(root, "LICENSING_HISTORY.md"), "utf8");
 
 function backendVersion(): string {
   const match = pom.match(
@@ -54,6 +56,16 @@ test("release gate selects the v0.9 schema contract when V48 is present", () => 
   assert.match(verifier, /interaction_shadow_observations/);
   assert.match(v09Contract, /V48__learning_core_release_gate\.sql/);
   assert.match(v09Contract, /physicalLegacyRemovalReady/);
+});
+
+test("proprietary licensing boundary from v0.5 remains explicit", () => {
+  assert.match(license, /^Arena Dev Proprietary License/m);
+  assert.doesNotMatch(license, /^MIT License$/m);
+  assert.match(licensingHistory, /v0\.1\.x.*v0\.4\.x.*Arena Dev Community/s);
+  assert.match(licensingHistory, /primeiro commit da linha `v0\.5`.*Arena Dev proprietário/s);
+  assert.match(licensingHistory, /ccfb7f937e7ac7db330cfa5e54c3e3816b69962f/);
+  assert.match(v09Contract, /Arena Dev Proprietary License/);
+  assert.match(v09Contract, /LICENSING_HISTORY\.md/);
 });
 
 test("historical v0.8 semantic-library contract remains protected", () => {

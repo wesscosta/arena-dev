@@ -60,6 +60,7 @@ ADRs aceitos **não devem ser reescritos para esconder mudanças de direção**.
 | [ADR-0047](ADR-0047-interaction-como-primitive-comum.md) | Interaction como primitive comum e migração progressiva | Aceito |
 | [ADR-0048](ADR-0048-learning-target-content-ref-e-provenance.md) | LearningTarget separado de conteúdo e proveniência rastreável | Aceito |
 | [ADR-0049](ADR-0049-evidence-nao-e-mastery-ia-consome-dominio.md) | LearningEvidence não é Mastery e IA consome o domínio | Aceito |
+| [ADR-0050](ADR-0050-history-rewrite-v05-license-boundary.md) | Saneamento do histórico e fronteira proprietária v0.5+ | Aceito |
 
 ## Template
 

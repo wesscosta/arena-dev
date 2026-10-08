@@ -29,6 +29,9 @@ required_files=(
   docs/v0.9/CURRENT_STATE_AUDIT.md
   docs/v0.9/FINAL_ARCHITECTURE_GATE.md
   docs/HANDOFF_V0_9.md
+  docs/adr/ADR-0050-history-rewrite-v05-license-boundary.md
+  LICENSING_HISTORY.md
+  LICENSE
 )
 
 for required in "${required_files[@]}"; do
@@ -57,4 +60,14 @@ grep -q 'physicalLegacyRemovalReady' backend/src/main/java/br/com/arenadev/inter
 grep -q 'ACTIVITY_QUESTION' backend/src/main/java/br/com/arenadev/interaction/QuizInteractionAdapter.java || \
   fail "Quiz adapter não possui ContentRef estruturado"
 
-printf 'Contrato arquitetural mínimo da v0.9 validado até V48.\n'
+grep -q '^Arena Dev Proprietary License$' LICENSE || \
+  fail "v0.9 deve usar a licença proprietária do Arena Dev"
+grep -q 'primeiro commit da linha `v0.5`' LICENSING_HISTORY.md || \
+  fail "histórico de licenciamento não define a fronteira proprietária v0.5+"
+grep -q 'ccfb7f937e7ac7db330cfa5e54c3e3816b69962f' LICENSING_HISTORY.md || \
+  fail "histórico de licenciamento não preserva a âncora imutável v0.4.0"
+if grep -q '^MIT License$' LICENSE; then
+  fail "LICENSE atual não pode permanecer MIT na linha proprietária"
+fi
+
+printf 'Contrato arquitetural mínimo da v0.9 validado até V48, incluindo a fronteira proprietária v0.5+.\n'

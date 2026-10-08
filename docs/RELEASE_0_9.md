@@ -1,7 +1,8 @@
 # Arena Dev v0.9.0 — Arena Learning Core
 
-**Estado:** publicada e congelada
+**Estado:** candidata final à publicação/congelamento
 **Schema:** Flyway V1–V48
+**Licença:** Arena Dev Proprietary License
 **Base anterior:** v0.8.0 — Professor Experience, Journey & Content Library
 
 ## Escopo encerrado
@@ -52,7 +53,7 @@ O fluxo nativo `LearningCheckIT` prova `aiReady=true`, `gaps=[]`, LearningTarget
 A baseline v0.9.0 foi qualificada com:
 
 - backend: **163 testes unitários + 109 integrações**;
-- frontend: **299/299 testes**, lint, format check, TypeScript e production build;
+- frontend: **300/300 testes**, lint, format check, TypeScript e production build;
 - Chromium E2E: **23/23**;
 - Compose isolado saudável, com backend/frontend executando como usuário non-root;
 - Flyway V1–V48;
