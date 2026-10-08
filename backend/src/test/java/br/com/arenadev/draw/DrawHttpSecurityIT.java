@@ -52,9 +52,11 @@ class DrawHttpSecurityIT {
         var session=sessions.start(classroom.id(),"Aula de teste HTTP",Set.of(person.id()));
         String drawPath="/api/sessions/"+session.id()+"/draw-attempts";
         String cyclePath="/api/sessions/"+session.id()+"/learning-cycles";
+        String clinicPath="/api/sessions/"+session.id()+"/learning-checks/"+UUID.randomUUID()+"/error-clinic";
         HttpClient anonymous=HttpClient.newHttpClient();
         assertThat(call(anonymous,"GET",drawPath+"/state",null,null).statusCode()).isEqualTo(401);
         assertThat(call(anonymous,"GET",cyclePath,null,null).statusCode()).isEqualTo(401);
+        assertThat(call(anonymous,"GET",clinicPath,null,null).statusCode()).isEqualTo(401);
         assertThat(call(anonymous,"POST",drawPath,"{}",null).statusCode()).isEqualTo(403);
 
         CookieManager cookies=new CookieManager();
@@ -67,6 +69,8 @@ class DrawHttpSecurityIT {
                 "{\"username\":\"http-teacher\",\"password\":\"http-test-password\"}",token).statusCode()).isEqualTo(200);
         assertThat(call(teacher,"GET",drawPath+"/state",null,null).statusCode()).isEqualTo(200);
         assertThat(call(teacher,"GET",cyclePath,null,null).statusCode()).isEqualTo(200);
+        assertThat(call(teacher,"GET",clinicPath,null,null).statusCode()).isEqualTo(404);
+        assertThat(call(teacher,"POST",clinicPath+"/notes","{}",null).statusCode()).isEqualTo(403);
         assertThat(call(teacher,"POST",drawPath,"{}",null).statusCode()).isEqualTo(403);
 
         String requestId=UUID.randomUUID().toString();

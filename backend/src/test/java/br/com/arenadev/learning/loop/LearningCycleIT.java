@@ -4,6 +4,9 @@ import br.com.arenadev.classroom.ClassroomService;
 import br.com.arenadev.classroom.StudentService;
 import br.com.arenadev.interaction.*;
 import br.com.arenadev.learning.*;
+import br.com.arenadev.learning.clinic.LearningErrorClinicService;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
 import br.com.arenadev.session.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +52,8 @@ class LearningCycleIT {
     @Autowired InteractionResponseService responses;
     @Autowired InteractionEvaluationService evaluations;
     @Autowired LearningCycleService cycles;
+    @Autowired LearningErrorClinicService clinic;
+    @Autowired SessionEventService audit;
 
     @Test
     void requiresEvaluatedEvidenceAndPreservesTwoRunsWithComparableParticipants() {
@@ -165,6 +170,60 @@ class LearningCycleIT {
         // A traditional feedback cycle remains possible after revealing correctness.
         assertThat(cycles.intervene(session.id(), exposedCycle.id(), "Revisão explícita.",
                 InterventionType.EXPLANATION).interventionType()).isEqualTo(InterventionType.EXPLANATION);
+    }
+
+    @Test
+    void errorClinicUsesObservedIncorrectChoicesAndPreservesAppendOnlyTeacherHistory() {
+        String suffix=UUID.randomUUID().toString().substring(0,8).toUpperCase();
+        var classroom=classrooms.create("Clínica de Erro " + suffix, "CE"+suffix);
+        var student=students.create("CE-"+suffix,"Aluna Clínica",null);
+        classrooms.enroll(classroom.id(),student.id());
+        var session=sessions.start(classroom.id(),"Análise de erros",Set.of(student.id()));
+        var participant=participants.findBySessionIdOrderByStudentNameAsc(session.id()).getFirst();
+        var target=targets.save(new LearningTarget("Filtros",LearningTargetType.COMPETENCY,null));
+        InteractionDefinition definition=new InteractionDefinition(
+                "Qual cláusula filtra linhas?",InteractionResponseKind.CHOICE,
+                InteractionEvaluationMode.CORRECT_ANSWER,InteractionPresentationMode.DEFAULT,
+                target,true,null,new Provenance(ProvenanceOrigin.TEACHER,"clinic-test",null,null,Instant.now()));
+        definition.addOption("a","WHERE",0,null);
+        definition.addOption("b","ORDER BY",1,null);
+        definition.addOption("c","GROUP BY",2,null);
+        definition.configureResponse("{\"minSelections\":1,\"maxSelections\":1}");
+        definition.configureEvaluation("{\"correctOptionKeys\":[\"a\"]}");
+        definition.activate();
+        definition=definitions.saveAndFlush(definition);
+        var run=createRun(session.id(),definition,1);
+        assertThatThrownBy(()->clinic.read(session.id(),run.getId()))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Encerre");
+        finishRun(run,participant.getId(),"b");
+        var initial=clinic.read(session.id(),run.getId());
+        assertThat(initial.responseCount()).isEqualTo(1);
+        assertThat(initial.options()).extracting("key").containsExactly("a","b","c");
+        assertThat(initial.options().get(1).count()).isEqualTo(1);
+        assertThat(initial.options().get(1).incorrect()).isTrue();
+        assertThat(initial.options().get(0).incorrect()).isFalse();
+        UUID command=UUID.randomUUID();
+        assertThatThrownBy(()->clinic.annotate(session.id(),run.getId(),UUID.randomUUID(),"a","Não é erro"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(()->clinic.annotate(session.id(),run.getId(),UUID.randomUUID(),"c","Sem votos"))
+                .isInstanceOf(IllegalArgumentException.class);
+        var saved=clinic.annotate(session.id(),run.getId(),command,"b","Retomar diferença entre filtro e ordenação.");
+        assertThat(saved.notes()).hasSize(1);
+        assertThat(clinic.annotate(session.id(),run.getId(),command,"b", "Retomar diferença entre filtro e ordenação.").notes())
+                .hasSize(1);
+        assertThatThrownBy(()->clinic.annotate(session.id(),run.getId(),command,"b", "Conteúdo diferente"))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+        var updated=clinic.annotate(session.id(),run.getId(),UUID.randomUUID(),"b","Novo exemplo contrastivo.");
+        assertThat(updated.notes()).hasSize(2);
+        assertThat(clinic.read(session.id(),run.getId()).notes()).hasSize(2);
+        assertThat(audit.listBySession(session.id()).stream().map(e->e.eventType()))
+                .contains(SessionEventType.ERROR_CLINIC_NOTE_ADDED);
+        var otherClass=classrooms.create("Outra Clínica "+suffix,"OC"+suffix);
+        var other=sessions.start(otherClass.id(),"Outra aula",Set.of());
+        assertThatThrownBy(()->clinic.read(other.id(),run.getId()))
+                .isInstanceOf(br.com.arenadev.shared.ResourceNotFoundException.class);
+        assertThatThrownBy(()->clinic.annotate(other.id(),run.getId(),UUID.randomUUID(),"b","Não autorizada"))
+                .isInstanceOf(br.com.arenadev.shared.ResourceNotFoundException.class);
     }
 
     private InteractionRun createRun(UUID sessionId, InteractionDefinition definition, int seq) {
