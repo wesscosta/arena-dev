@@ -12,6 +12,10 @@ import br.com.arenadev.classroom.Student;
 import br.com.arenadev.classroom.StudentRepository;
 import br.com.arenadev.ranking.SessionRankingService;
 import br.com.arenadev.session.ClassSession;
+import br.com.arenadev.sessionevent.SessionEventActor;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
+import java.util.Map;
 import br.com.arenadev.session.ClassSessionRepository;
 import br.com.arenadev.session.SessionParticipantRepository;
 import br.com.arenadev.shared.ResourceNotFoundException;
@@ -35,6 +39,7 @@ public class ScoreEventService {
     private final ActivityRepository activityRepository;
     private final ActivityQuestionRepository activityQuestionRepository;
     private final SessionRankingService rankingService;
+    private final SessionEventService sessionEvents;
 
     public ScoreEventService(
             ScoreEventRepository scoreEventRepository,
@@ -45,7 +50,8 @@ public class ScoreEventService {
             SessionParticipantRepository participantRepository,
             ActivityRepository activityRepository,
             ActivityQuestionRepository activityQuestionRepository,
-            SessionRankingService rankingService
+            SessionRankingService rankingService,
+            SessionEventService sessionEvents
     ) {
         this.scoreEventRepository = scoreEventRepository;
         this.classroomRepository = classroomRepository;
@@ -56,6 +62,7 @@ public class ScoreEventService {
         this.activityRepository = activityRepository;
         this.activityQuestionRepository = activityQuestionRepository;
         this.rankingService = rankingService;
+        this.sessionEvents = sessionEvents;
     }
 
     @Transactional(readOnly = true)
@@ -103,12 +110,25 @@ public class ScoreEventService {
 
     @Transactional
     public ScoreEventView reverse(UUID eventId) {
-        ScoreEvent original = scoreEventRepository.findById(eventId)
+        return reverse(eventId, null);
+    }
+
+    /** Serializes corrections against the original row; the V3 unique constraint is a second guard. */
+    @Transactional
+    public ScoreEventView reverse(UUID eventId, UUID requestId) {
+        ScoreEvent original = scoreEventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lançamento de XP não encontrado."));
         if (original.getReversalOf() != null) {
             throw new IllegalArgumentException("Um evento de reversão não pode ser revertido diretamente.");
         }
-        if (scoreEventRepository.existsByReversalOfId(eventId)) {
+        var previous = scoreEventRepository.findByReversalOfId(eventId);
+        if (previous.isPresent()) {
+            if (requestId != null && requestId.equals(previous.get().getReversalRequestId())) {
+                return ScoreEventView.from(previous.get(), false);
+            }
+            if (requestId != null) {
+                throw new ScoreConflictException("Este lançamento de XP já possui outra reversão registrada.");
+            }
             throw new IllegalArgumentException("Este lançamento já foi revertido.");
         }
 
@@ -124,7 +144,15 @@ public class ScoreEventService {
                 original.getQuestionRef(),
                 original
         );
-        ScoreEvent saved = scoreEventRepository.save(reversal);
+        if (requestId != null) reversal.setReversalRequestId(requestId);
+        ScoreEvent saved = scoreEventRepository.saveAndFlush(reversal);
+        if (original.getSession() != null) {
+            sessionEvents.record(original.getSession(), SessionEventType.SCORE_EVENT_REVERSED,
+                    SessionEventActor.TEACHER, "Correção de XP registrada",
+                    Map.of("originalEventId", original.getId().toString(),
+                            "reversalEventId", saved.getId().toString(),
+                            "pointsReversed", original.getPoints()));
+        }
         rankingService.publishScoreChange(saved.getSession() == null ? null : saved.getSession().getId());
         return ScoreEventView.from(saved, false);
     }

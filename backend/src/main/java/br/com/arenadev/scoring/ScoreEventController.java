@@ -43,9 +43,12 @@ public class ScoreEventController {
 
     @PostMapping("/{id}/reverse")
     @ResponseStatus(HttpStatus.CREATED)
-    public ScoreEventService.ScoreEventView reverse(@PathVariable UUID id) {
-        return service.reverse(id);
+    public ScoreEventService.ScoreEventView reverse(@PathVariable UUID id,
+            @Valid @RequestBody(required = false) ReverseScoreRequest request) {
+        return service.reverse(id, request == null ? null : request.requestId());
     }
+
+    public record ReverseScoreRequest(@NotNull UUID requestId) {}
 
     public record ScoreEventRequest(
             @NotNull UUID classroomId,

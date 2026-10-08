@@ -231,12 +231,14 @@ public class DrawService {
         UUID scoreId=scoreLinks.findById(a.getId()).map(DrawAttemptScoreLink::getScoreEventId).orElse(null);
         return new DrawAttemptView(a.getId(),a.getSession().getId(),a.getStudent().getId(),
                 a.getStudent().getName(),a.getSequence(),a.getRoundNumber(),a.getSelectionPolicy(),
-                a.getStatus(),scoreId,a.getSelectedAt(),a.getResolvedAt());
+                a.getStatus(),scoreId,scoreId!=null && scoreEvents.existsByReversalOfId(scoreId),
+                a.getSelectedAt(),a.getResolvedAt());
     }
     public record ScoreCommand(int points,ScoreCategory category,String reason) {}
     public record DrawAttemptView(UUID attemptId,UUID sessionId,UUID studentId,String studentName,
                                   int sequence,int roundNumber,DrawPolicy policy,DrawOutcome status,
-                                  UUID scoreEventId,java.time.Instant selectedAt,java.time.Instant resolvedAt) {}
+                                  UUID scoreEventId,boolean scoreReversed,
+                                  java.time.Instant selectedAt,java.time.Instant resolvedAt) {}
     public record DrawStateView(UUID sessionId,DrawPolicy policy,int roundNumber,long revision,
                                 int calledUniqueCount,int confirmedCount,int passedCount,int voidedCount,
                                 int presentCount,int eligibleCurrentRoundCount,boolean canStartNextRound,

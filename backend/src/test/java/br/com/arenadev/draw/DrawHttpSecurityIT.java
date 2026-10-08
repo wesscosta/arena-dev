@@ -3,6 +3,9 @@ package br.com.arenadev.draw;
 import br.com.arenadev.classroom.ClassroomService;
 import br.com.arenadev.classroom.StudentService;
 import br.com.arenadev.session.SessionService;
+import br.com.arenadev.scoring.ScoreEventService;
+import br.com.arenadev.scoring.ScoreCategory;
+import br.com.arenadev.scoring.ScoreSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,6 +45,7 @@ class DrawHttpSecurityIT {
     @Autowired ClassroomService classrooms;
     @Autowired StudentService students;
     @Autowired SessionService sessions;
+    @Autowired ScoreEventService scores;
 
     @Test
     void protectsDrawAndLearningCycleRoutesWithSessionAndCsrfAndRejectsProtocolMixing() throws Exception {
@@ -86,6 +90,40 @@ class DrawHttpSecurityIT {
                 .isEqualTo(404);
         assertThat(call(teacher,"GET","/api/sessions/"+UUID.randomUUID()+"/learning-cycles",null,null).statusCode())
                 .isEqualTo(404);
+    }
+
+    @Test
+    void scoreCorrectionRequiresAuthenticationCsrfAndIsIdempotentOverHttp() throws Exception {
+        String suffix=UUID.randomUUID().toString().substring(0,7).toUpperCase();
+        var classroom=classrooms.create("XP HTTP " + suffix,"XH"+suffix);
+        var person=students.create("XPH-"+suffix,"Pessoa XP HTTP",null);
+        classrooms.enroll(classroom.id(),person.id());
+        var session=sessions.start(classroom.id(),"Reversão auditável",Set.of(person.id()));
+        var original=scores.create(new ScoreEventService.CreateScoreEvent(classroom.id(),person.id(),
+                session.id(),7,ScoreCategory.QUESTION,"Revisão",ScoreSource.ARENA,null,null));
+        String url="/api/score-events/"+original.id()+"/reverse";
+        var anonymous=HttpClient.newHttpClient();
+        assertThat(call(anonymous,"POST",url,"{}",null).statusCode()).isEqualTo(403);
+        CookieManager cookies=new CookieManager();
+        cookies.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+        HttpClient teacher=HttpClient.newBuilder().cookieHandler(cookies).build();
+        String csrf=call(teacher,"GET","/api/auth/csrf",null,null).body();
+        String token=csrf.replaceFirst(".*\\\"token\\\":\\\"([^\\\"]+)\\\".*","$1");
+        assertThat(call(teacher,"POST","/api/auth/login",
+                "{\"username\":\"http-teacher\",\"password\":\"http-test-password\"}",token).statusCode())
+                .isEqualTo(200);
+        assertThat(call(teacher,"POST",url,"{}",null).statusCode()).isEqualTo(403);
+        assertThat(call(teacher,"POST",url,"{}",token).statusCode()).isEqualTo(400);
+        String id=UUID.randomUUID().toString();
+        String body="{\"requestId\":\""+id+"\"}";
+        var first=call(teacher,"POST",url,body,token);
+        assertThat(first.statusCode()).isEqualTo(201);
+        var retry=call(teacher,"POST",url,body,token);
+        assertThat(retry.statusCode()).isEqualTo(201);
+        assertThat(retry.body()).isEqualTo(first.body());
+        assertThat(call(teacher,"POST",url,"{\"requestId\":\""+UUID.randomUUID()+"\"}",token).statusCode())
+                .isEqualTo(409);
+        assertThat(scores.list(classroom.id())).hasSize(2);
     }
 
     private HttpResponse<String> call(HttpClient client, String method, String path, String body, String token)

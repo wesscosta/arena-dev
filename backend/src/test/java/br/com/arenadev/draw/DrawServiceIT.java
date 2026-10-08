@@ -7,6 +7,7 @@ import br.com.arenadev.sessionevent.SessionEventType;
 import br.com.arenadev.classroom.StudentService;
 import br.com.arenadev.scoring.ScoreCategory;
 import br.com.arenadev.scoring.ScoreEventRepository;
+import br.com.arenadev.scoring.ScoreEventService;
 import br.com.arenadev.session.SessionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,7 @@ class DrawServiceIT {
     @Autowired MechanicsService legacy;
     @Autowired SessionEventService audit;
     @Autowired ScoreEventRepository scoreEvents;
+    @Autowired ScoreEventService scoreService;
 
     @Test
     void legacyAndModernProtocolsCannotInterleaveWithinOneSession() {
@@ -117,9 +119,16 @@ class DrawServiceIT {
         var score=new DrawService.ScoreCommand(5,ScoreCategory.COLLABORATION,"Participação");
         var confirmed=draws.resolve(session.id(),first.attemptId(),resolution,DrawOutcome.CONFIRMED,score);
         assertThat(confirmed.scoreEventId()).isNotNull();
+        assertThat(confirmed.scoreReversed()).isFalse();
         assertThat(draws.resolve(session.id(),first.attemptId(),resolution,DrawOutcome.CONFIRMED,score).scoreEventId())
                 .isEqualTo(confirmed.scoreEventId());
         assertThat(scoreEvents.findBySessionIdOrderByCreatedAtAsc(session.id())).hasSize(1);
+        var correction=scoreService.reverse(confirmed.scoreEventId(),UUID.randomUUID());
+        assertThat(correction.points()).isEqualTo(-5);
+        assertThat(draws.state(session.id()).history().getFirst().scoreReversed()).isTrue();
+        assertThat(draws.state(session.id()).history().getFirst().status()).isEqualTo(DrawOutcome.CONFIRMED);
+        assertThat(audit.listBySession(session.id()).stream().map(e->e.eventType()))
+                .contains(SessionEventType.SCORE_EVENT_REVERSED);
         assertThatThrownBy(()->draws.resolve(session.id(),first.attemptId(),resolution,DrawOutcome.PASSED,null))
                 .isInstanceOf(IllegalArgumentException.class);
 
@@ -141,7 +150,7 @@ class DrawServiceIT {
         draws.resolve(session.id(),fourth.attemptId(),UUID.randomUUID(),DrawOutcome.VOIDED,null);
         assertThat(draws.state(session.id()).calledUniqueCount()).isZero();
         assertThat(draws.state(session.id()).voidedCount()).isEqualTo(1);
-        assertThat(scoreEvents.findBySessionIdOrderByCreatedAtAsc(session.id())).hasSize(1);
+        assertThat(scoreEvents.findBySessionIdOrderByCreatedAtAsc(session.id())).hasSize(2);
         draws.setPolicy(session.id(),DrawPolicy.BALANCED_WEIGHTED);
         assertThat(draws.state(session.id()).policy()).isEqualTo(DrawPolicy.BALANCED_WEIGHTED);
         var balanced=draws.select(session.id(),UUID.randomUUID());

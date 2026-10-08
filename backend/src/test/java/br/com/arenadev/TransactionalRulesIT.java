@@ -7,6 +7,12 @@ import br.com.arenadev.scoring.ScoreCategory;
 import br.com.arenadev.scoring.ScoreEventRepository;
 import br.com.arenadev.scoring.ScoreEventService;
 import br.com.arenadev.scoring.ScoreSource;
+import br.com.arenadev.scoring.ScoreConflictException;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import br.com.arenadev.session.ClassSession;
 import br.com.arenadev.session.ClassSessionRepository;
 import br.com.arenadev.session.SessionService;
@@ -64,6 +70,8 @@ class TransactionalRulesIT {
 
     @Autowired
     private ScoreEventRepository scoreEventRepository;
+    @Autowired
+    private SessionEventService sessionEvents;
 
     @Test
     void snapshotsParticipantsAndAllowsANewSessionOnlyAfterFinishingTheActiveOne() {
@@ -161,6 +169,45 @@ class TransactionalRulesIT {
         assertThatThrownBy(() -> scoreEventService.reverse(reversal.id()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Um evento de reversão não pode ser revertido diretamente.");
+    }
+
+    @Test
+    void scoreReversalRetriesAreIdempotentAndConcurrentCommandsCannotDuplicateXpOrAudit() throws Exception {
+        Fixture fixture = createFixture();
+        var session=sessionService.start(fixture.classroomId(),"Auditoria concorrente de XP",
+                Set.of(fixture.firstStudentId()));
+        var original=scoreEventService.create(new ScoreEventService.CreateScoreEvent(
+                fixture.classroomId(),fixture.firstStudentId(),session.id(),20,
+                ScoreCategory.QUESTION,"Verificação autoral",ScoreSource.ARENA,null,null));
+        UUID commandId=UUID.randomUUID();
+        CountDownLatch ready=new CountDownLatch(2);
+        CountDownLatch go=new CountDownLatch(1);
+        try(var executor=Executors.newFixedThreadPool(2)) {
+            var first=executor.submit(()->{
+                ready.countDown(); go.await(); return scoreEventService.reverse(original.id(),commandId);
+            });
+            var second=executor.submit(()->{
+                ready.countDown(); go.await(); return scoreEventService.reverse(original.id(),commandId);
+            });
+            assertThat(ready.await(10,TimeUnit.SECONDS)).isTrue();
+            go.countDown();
+            var a=first.get(20,TimeUnit.SECONDS);
+            var b=second.get(20,TimeUnit.SECONDS);
+            assertThat(a.id()).isEqualTo(b.id());
+            assertThat(a.reversalOf()).isEqualTo(original.id());
+        }
+        assertThat(scoreEventService.list(fixture.classroomId())).hasSize(2);
+        assertThat(scoreEventService.list(fixture.classroomId()).stream().mapToInt(
+                ScoreEventService.ScoreEventView::points).sum()).isZero();
+        assertThat(sessionEvents.listBySession(session.id()).stream()
+                .filter(e->e.eventType()==SessionEventType.SCORE_EVENT_REVERSED)).hasSize(1);
+        assertThatThrownBy(()->scoreEventService.reverse(original.id(),UUID.randomUUID()))
+                .isInstanceOf(ScoreConflictException.class);
+        assertThat(scoreEventService.list(fixture.classroomId())).hasSize(2);
+        assertThatThrownBy(()->scoreEventService.reverse(original.id()))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("Este lançamento já foi revertido.");
+        assertThatThrownBy(()->scoreEventService.reverse(original.id(),null))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

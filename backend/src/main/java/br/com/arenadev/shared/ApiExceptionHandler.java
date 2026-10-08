@@ -3,6 +3,7 @@ package br.com.arenadev.shared;
 import br.com.arenadev.auth.LoginRateLimitExceededException;
 import br.com.arenadev.content.LearningResourceInUseException;
 import br.com.arenadev.draw.DrawConflictException;
+import br.com.arenadev.scoring.ScoreConflictException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -42,6 +43,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(DrawConflictException.class)
     public ResponseEntity<Map<String, Object>> drawConflict(DrawConflictException exception) {
+        return response(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(ScoreConflictException.class)
+    public ResponseEntity<Map<String, Object>> scoreConflict(ScoreConflictException exception) {
         return response(HttpStatus.CONFLICT, exception.getMessage());
     }
 
