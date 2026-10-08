@@ -85,3 +85,42 @@
 .error {
   color: var(--ds-danger, #b91c1c) !important;
 }
+
+.strategies {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--ds-border);
+  border-radius: 0.65rem;
+  min-width: 0;
+}
+.strategies legend {
+  padding: 0 0.25rem;
+  font-weight: 750;
+}
+.strategies label {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+.strategies input {
+  width: 1.2rem;
+  height: 1.2rem;
+  flex: none;
+  accent-color: var(--ds-accent);
+}
+.strategies input:disabled {
+  opacity: 0.55;
+}
+.panel p.guidance {
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+  border-left: 3px solid var(--ds-border);
+  background: var(--ds-surface-subtle);
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}

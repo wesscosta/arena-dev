@@ -10,6 +10,7 @@ import {
   compareLearningCycle,
   type LearningCycleView,
   type LearningCycleComparison,
+  type InterventionType,
 } from "@/lib/learning-cycle-api";
 import styles from "./LearningCyclePanel.module.css";
 
@@ -30,6 +31,7 @@ export default function LearningCyclePanel({
 }: Props) {
   const [cycles, setCycles] = useState<LearningCycleView[]>([]);
   const [note, setNote] = useState("");
+  const [strategy, setStrategy] = useState<InterventionType>("EXPLANATION");
   const [comparison, setComparison] = useState<LearningCycleComparison | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,9 +124,58 @@ export default function LearningCyclePanel({
           Iniciar ciclo com esta verificação
         </button>
       )}
-      {!current && run.status !== "CLOSED" && <p>Encerre a primeira verificação para começar.</p>}
+      {!current && run.status !== "CLOSED" && (
+        <p>
+          Para usar discussão em pares: receba as respostas individuais, bloqueie e encerre sem
+          revelar a correção. Só depois organize a discussão e aplique novamente.
+        </p>
+      )}
       {current?.status === "DIAGNOSED" && (
         <div className={styles.intervention}>
+          <fieldset className={styles.strategies}>
+            <legend>Estratégia de intervenção</legend>
+            <label>
+              <input
+                type="radio"
+                name={`intervention-${current.id}`}
+                value="EXPLANATION"
+                checked={strategy === "EXPLANATION"}
+                onChange={() => setStrategy("EXPLANATION")}
+              />
+              Explicação ou revisão orientada
+            </label>
+            <label>
+              <input
+                type="radio"
+                name={`intervention-${current.id}`}
+                value="PEER_DISCUSSION"
+                checked={strategy === "PEER_DISCUSSION"}
+                disabled={current.baselineResultsRevealed || current.baselineResponseCount < 2}
+                onChange={() => setStrategy("PEER_DISCUSSION")}
+              />
+              Discussão em pares (Peer Instruction)
+            </label>
+          </fieldset>
+          {current.baselineResultsRevealed && (
+            <p className={styles.guidance}>
+              A correção já foi revelada nesta primeira aplicação. Para preservar a discussão entre
+              pares, a estratégia de Peer Instruction só pode começar com uma questão ainda não
+              revelada.
+            </p>
+          )}
+          {current.baselineResponseCount < 2 && (
+            <p className={styles.guidance}>
+              Foram registradas {current.baselineResponseCount} resposta(s) individuais. Para
+              discussão em pares, são necessárias pelo menos duas.
+            </p>
+          )}
+          {strategy === "PEER_DISCUSSION" && !current.baselineResultsRevealed && (
+            <p className={styles.guidance}>
+              1. A turma já respondeu individualmente. 2. Organize a discussão sem mostrar o
+              gabarito. 3. Registre o que foi discutido. 4. Reaplique a mesma questão e compare as
+              respostas dos mesmos alunos.
+            </p>
+          )}
           <label>
             Intervenção docente
             <textarea
@@ -144,8 +195,8 @@ export default function LearningCyclePanel({
               disabled={busy || !note.trim()}
               onClick={() =>
                 void action(
-                  () => interveneLearningCycle(sessionId, current.id, note),
-                  "Intervenção registrada; nova verificação disponível.",
+                  () => interveneLearningCycle(sessionId, current.id, note, strategy),
+                  "Intervenção registrada; a mesma questão pode ser aplicada novamente.",
                 )
               }
             >
@@ -153,6 +204,15 @@ export default function LearningCyclePanel({
             </button>
           </div>
         </div>
+      )}
+      {(current?.status === "INTERVENED" || current?.status === "VERIFIED") && (
+        <p className={styles.guidance}>
+          Estratégia registrada:{" "}
+          {current.interventionType === "PEER_DISCUSSION"
+            ? "discussão em pares"
+            : "explicação / revisão"}
+          . Respostas individuais permanecem privadas; a comparação é agregada.
+        </p>
       )}
       {current?.status === "INTERVENED" && (
         <div className={styles.actions}>

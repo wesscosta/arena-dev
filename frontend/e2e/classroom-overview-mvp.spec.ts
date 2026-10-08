@@ -219,6 +219,9 @@ test.describe("Classroom overview MVP contract", () => {
   });
 
   test("survives every target breakpoint and both themes without overflow", async ({ page }) => {
+    // Twelve full navigations across mobile, tablet and ultrawide: allow fixture loading
+    // without relaxing the individual visibility/geometry assertions.
+    test.setTimeout(120_000);
     await page.setViewportSize(viewports[0]);
     await login(page);
 

@@ -1,6 +1,7 @@
 import { apiRequest } from "./http/client";
 
 export type LearningCycleStatus = "DIAGNOSED" | "INTERVENED" | "VERIFIED";
+export type InterventionType = "EXPLANATION" | "PEER_DISCUSSION";
 export type LearningCycleView = {
   id: string;
   sessionId: string;
@@ -9,6 +10,9 @@ export type LearningCycleView = {
   followupRunId: string | null;
   status: LearningCycleStatus;
   interventionNote: string | null;
+  interventionType: InterventionType | null;
+  baselineResultsRevealed: boolean;
+  baselineResponseCount: number;
 };
 export type LearningCycleComparison = {
   cycleId: string;
@@ -38,10 +42,15 @@ export function diagnoseLearningCycle(sessionId: string, baselineRunId: string) 
     body: JSON.stringify({ baselineRunId }),
   });
 }
-export function interveneLearningCycle(sessionId: string, cycleId: string, note: string) {
+export function interveneLearningCycle(
+  sessionId: string,
+  cycleId: string,
+  note: string,
+  type: InterventionType = "EXPLANATION",
+) {
   return apiRequest<LearningCycleView>(`${url(sessionId)}/${cycleId}/intervention`, {
     method: "POST",
-    body: JSON.stringify({ note }),
+    body: JSON.stringify({ note, type }),
   });
 }
 export function verifyLearningCycle(sessionId: string, cycleId: string, followupRunId: string) {
