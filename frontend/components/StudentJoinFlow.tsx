@@ -140,13 +140,23 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
   }
 
   useEffect(() => {
-    const updateNetworkState = () => setBrowserOnline(navigator.onLine);
-    updateNetworkState();
-    window.addEventListener("online", updateNetworkState);
-    window.addEventListener("offline", updateNetworkState);
+    const onOffline = () => {
+      setBrowserOnline(false);
+      setSocketState("offline");
+      // A formerly connected socket cannot be considered authoritative while offline.
+      socketRef.current?.close();
+    };
+    const onOnline = () => {
+      setBrowserOnline(true);
+      reconnectAttemptRef.current = 0;
+      setReconnectVersion((value) => value + 1);
+    };
+    setBrowserOnline(navigator.onLine);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
     return () => {
-      window.removeEventListener("online", updateNetworkState);
-      window.removeEventListener("offline", updateNetworkState);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
     };
   }, []);
 
@@ -277,6 +287,10 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
         setSocketState("offline");
         void recoverParticipantAccess(event.reason || "Sua identificação temporária expirou.");
         return;
+      }
+      if (!navigator.onLine) {
+        setSocketState("offline");
+        return; // Wait for the online event; don't hammer the backend while disconnected.
       }
       setSocketState("reconnecting");
       const delay = reconnectDelayMs(reconnectAttemptRef.current);
