@@ -30,6 +30,16 @@ A v0.9 cria a fundação pedagógica estruturada necessária para evoluir a Aren
 - publicação da v0.9.0 não executa cutover lógico automaticamente;
 - remoção física do legado é proibida na primeira release do novo core.
 
+## Polish final antes do freeze
+
+O fechamento também absorve correções localizadas de qualidade sem ampliar o escopo funcional da v0.9:
+
+- navegação lateral da Arena preserva rolagem, mas oculta o scrollbar visual que quebrava a composição do cockpit;
+- roster lateral permanece top-aligned mesmo com um único participante, mantendo leitura natural de cima para baixo;
+- card de perfil do professor usa colunas estáveis, contenção de texto e `min-width: 0`, eliminando sobreposição entre nome e avatar;
+- handshake WebSocket de participante/projetor serializa registro + `RUNTIME_SNAPSHOT` + `AUTH_OK`, impedindo eventos concorrentes de ultrapassarem o snapshot inicial;
+- os três ajustes visuais possuem regressão automatizada no frontend/E2E e o handshake possui cobertura de ordem no backend.
+
 ## Cutover e rollback
 
 O endpoint `/api/learning-core/gate/cutover` qualifica Quiz, Poll e Word Cloud. O default operacional exige por tipo:

@@ -1,6 +1,6 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 7 de outubro de 2026
+**Última sincronização documental:** 8 de outubro de 2026
 
 **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 
@@ -109,7 +109,8 @@ Contrato: [`CONTENT_CANONICAL_MARKDOWN.md`](CONTENT_CANONICAL_MARKDOWN.md). Plan
 - confinamento `100dvh`/`overflow: hidden` ficou restrito à Arena ao vivo via `arena-fullscreen-shell`;
 - scroll lock de overlays centralizado e seguro para locks simultâneos;
 - tela de participantes simplificada com busca, nome de exibição sob demanda e ações por ícones;
-- baseline atual: Next.js 16.3.8; `npm audit --omit=dev --audit-level=high` com 0 vulnerabilidades; frontend 284/284, typecheck e build verdes; backend `mvn verify` verde com 106 testes unitários + 87 ITs;
+- polish final da Arena: scrollbar visual da sidebar oculto sem perder rolagem, roster escasso alinhado ao topo e card de perfil com contenção de texto sem colisão com avatar;
+- baseline atual: Next.js 16.3.8; `npm audit --omit=dev --audit-level=high` com 0 vulnerabilidades de produção; frontend 300/300, lint/format/typecheck/build verdes; backend 163 testes unitários + 109 integrações;
 - transporte HTTP frontend consolidado em `lib/http/client.ts`; módulos de domínio não implementam mais parsing/CSRF/credentials de forma independente;
 - direção de dependência CSS corrigida: componentes não importam mais módulos de estilo privados de `app/`; Projector, Student Join e Study possuem ownership de feature em `components/`;
 
@@ -162,7 +163,8 @@ Documento: [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CO
 - QR ampliável em Presença e acesso;
 - indicadores de online e presença consolidados no roster;
 - selects nativos com contraste dark consistente;
-- Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle em workspace de altura integral no desktop.
+- Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle em workspace de altura integral no desktop;
+- handshake WebSocket público serializado: participante/projetor recebem o `RUNTIME_SNAPSHOT` inicial de forma ordenada antes do `AUTH_OK`, protegendo a hidratação contra eventos concorrentes logo após o registro.
 
 ## Fechamentos anteriores
 

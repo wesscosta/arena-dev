@@ -1,6 +1,6 @@
 # v0.9 — Final Architecture Gate
 
-**Data:** 2026-10-07  
+**Data:** 2026-10-08
 **Escopo:** AI-ready · shadow cutover · retirada segura do legado · release hardening  
 **Estado:** gate concluído; v0.9.0 publicada/congelada. Cutover lógico permanece operacional e posterior à release.
 
@@ -139,6 +139,8 @@ Checklist do artefato candidato:
 - [x] Compose isolado verde com shadows habilitados, coexistindo com a stack de desenvolvimento;
 - [x] backup + checksum + restore validados em PostgreSQL 17 até **Flyway V48**;
 - [x] acessibilidade/reflow dos fluxos alterados sem regressão nos breakpoints e temas cobertos;
+- [x] polish final da Arena validado — sidebar rolável sem scrollbar visual, roster top-aligned e profile card sem sobreposição;
+- [x] handshake WebSocket participante/projetor serializado e coberto por testes de ordem, preservando snapshot inicial antes de declarar autenticação concluída;
 - [x] documentação e manifests sincronizados em `0.9.0`;
 - [x] CI do **mesmo SHA final** verde antes da tag/publicação.
 
