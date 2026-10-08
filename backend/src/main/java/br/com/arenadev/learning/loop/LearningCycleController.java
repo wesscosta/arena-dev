@@ -28,6 +28,12 @@ public class LearningCycleController {
         return service.diagnose(sessionId, request.baselineRunId());
     }
 
+    @GetMapping("/{cycleId}/comparison")
+    public LearningCycleService.ComparisonView comparison(@PathVariable UUID sessionId,
+                                                          @PathVariable UUID cycleId) {
+        return service.comparison(sessionId, cycleId);
+    }
+
     @PostMapping("/{cycleId}/intervention")
     public LearningCycleService.CycleView intervene(@PathVariable UUID sessionId,
                                                     @PathVariable UUID cycleId,
