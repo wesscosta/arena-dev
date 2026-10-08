@@ -9,6 +9,7 @@ type DrawWheelProps = {
   participants: Student[];
   selectedStudentId?: string;
   drawing: boolean;
+  disabled?: boolean;
   onDraw: () => void;
 };
 
@@ -95,7 +96,7 @@ function labelRotation(midAngle: number) {
   return Math.max(-MAX_LABEL_ROTATION, Math.min(MAX_LABEL_ROTATION, normalized * 0.32));
 }
 
-export default function DrawWheel({ participants, selectedStudentId, drawing, onDraw }: DrawWheelProps) {
+export default function DrawWheel({ participants, selectedStudentId, drawing, disabled = false, onDraw }: DrawWheelProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const previousDrawingRef = useRef(drawing);
   const [wheelWidth, setWheelWidth] = useState(0);
@@ -328,8 +329,8 @@ export default function DrawWheel({ participants, selectedStudentId, drawing, on
           type="button"
           className={styles.commandHub}
           onClick={onDraw}
-          disabled={drawing || participants.length === 0}
-          aria-label={drawing ? "Sorteio em andamento" : "Sortear aluno"}
+          disabled={drawing || disabled || participants.length === 0}
+          aria-label={drawing ? "Sorteio em andamento" : disabled ? "Resolva o sorteio atual para continuar" : "Sortear aluno"}
         >
           <span className={styles.commandIcon} aria-hidden="true">◇</span>
           <strong>{drawing ? "SORTEANDO..." : "SORTEAR"}</strong>

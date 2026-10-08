@@ -16,13 +16,15 @@ import ArenaContextRail from "@/components/arena/live/ArenaContextRail";
 import { useArenaRealtime } from "@/components/arena/live/useArenaRealtime";
 import { useArenaScoring } from "@/components/arena/live/useArenaScoring";
 import { useArenaToolState } from "@/components/arena/live/useArenaToolState";
+import ArenaNextActions from "@/components/arena/live/ArenaNextActions";
 import WheelParticipantSelector from "@/components/arena/selection/WheelParticipantSelector";
 import {
   presentationToSelectorMode,
   selectorModeToPresentation,
 } from "@/components/arena/selection/selector-mode";
 import type { ParticipantSelectorMode } from "@/components/arena/selection/selection.types";
-import { useParticipantSelection } from "@/components/arena/selection/useParticipantSelection";
+import { useDrawSession } from "@/components/arena/selection/useDrawSession";
+import DrawOutcomeActions from "@/components/arena/selection/DrawOutcomeActions";
 import {
   ArenaGlyph,
   ArenaLiveShell,
@@ -77,7 +79,7 @@ import {
   startLiveFlow,
   type LiveFlowState,
 } from "@/lib/mechanics-api";
-import { createScoreEvents as createScoreEventsApi, fetchScoreDomain, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
+import { createScoreEvents as createScoreEventsApi, fetchScoreDomain, fetchScoreEvents, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
 import { closeBuzzer as closeBuzzerApi, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode } from "@/lib/realtime-api";
 import { fetchSessionEventsBySession, type SessionEvent } from "@/lib/session-event-api";
 import { updateRankingPresentation, type RankingPresentationInput } from "@/lib/ranking-api";
@@ -2288,45 +2290,21 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   );
   const [activityId, setActivityId] = useState<string>(currentSession?.activityId ?? preferredActivityId ?? "");
   const selectorMode = presentationToSelectorMode(currentSession?.selectorPresentation);
-  const {
-    busy: drawBusy,
-    phase: selectionPhase,
-    selectedStudentId: selectedId,
-    spotlightStudentId,
-    setSelectedStudentId: setSelectedId,
-    draw,
-    closeSpotlight,
-  } = useParticipantSelection({
-    sessionId: currentSession?.id,
-    presentStudentIds: currentSession?.presentStudentIds ?? [],
-    initialSelectedStudentId: currentSession?.lastDrawnStudentId,
-    mode: selectorMode,
-    onRuntime: (runtime) => {
-      if (!currentSession) return;
-      patch((current) => ({
-        ...current,
-        sessions: current.sessions.map((session) =>
-          session.id === currentSession.id
-            ? mergeSessionMechanics(session, runtime)
-            : session
-        ),
-      }));
-    },
-    onAfterDraw: () => {
-      if (!currentSession) return;
-      void fetchSessionEventsBySession(currentSession.id)
-        .then(setSessionEvents)
-        .catch(() => undefined);
-    },
-    onError: (error) => notify(errorMessage(error)),
-  });
+  const [selectedId, setSelectedId] = useState<string | undefined>();
+  const drawSession = useDrawSession(currentSession?.id);
+  const drawBusy = drawSession.busy || drawSession.loading;
+  const currentDrawAttempt = drawSession.state?.currentAttempt;
+  useEffect(() => {
+    setSelectedId(undefined);
+  // A identidade da sessão define o contexto da seleção do professor.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSession?.id]);
 
   const {
     reason,
     setReason,
     customPoints,
     setCustomPoints,
-    scoreFeedback,
     addScore,
     addBuzzerScore,
   } = useArenaScoring({
@@ -2584,10 +2562,37 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     }
   }
 
-  function confirmSpotlight() {
-    if (!spotlightStudentId) return;
-    setSelectedId(spotlightStudentId);
-    closeSpotlight();
+  async function drawParticipant() {
+    try {
+      const result = await drawSession.draw();
+      if (result) setSelectedId(result.studentId);
+    } catch (error) { notify(errorMessage(error)); }
+  }
+
+  async function resolveParticipant(outcome: "CONFIRMED" | "PASSED" | "VOIDED", points?: number) {
+    if (!currentSession || !currentDrawAttempt) return;
+    try {
+      await drawSession.resolve(currentDrawAttempt.attemptId, outcome, points);
+      setSelectedId(undefined);
+      if (points != null) {
+        const updated = await fetchScoreEvents(classroomId);
+        patch((current) => ({ ...current,
+          scoreEvents: [...current.scoreEvents.filter((event) => event.classroomId !== classroomId), ...updated],
+        }));
+      }
+      notify(outcome === "CONFIRMED" ? (points == null ? "Participação confirmada sem XP." : `Participação confirmada: +${points} XP.`)
+        : outcome === "PASSED" ? "Vez passada sem pontuação." : "Sorteio anulado; participante volta a ficar elegível.");
+    } catch (error) { notify(errorMessage(error)); }
+  }
+
+  async function changeDrawPolicy(policy: "ROUND_ROBIN_SHUFFLED" | "BALANCED_WEIGHTED") {
+    try { await drawSession.changePolicy(policy); }
+    catch (error) { notify(errorMessage(error)); }
+  }
+
+  async function startNextDrawRound() {
+    try { await drawSession.nextRound(); }
+    catch (error) { notify(errorMessage(error)); }
   }
 
   async function changeDrawPresentation(mode: ParticipantSelectorMode) {
@@ -2599,7 +2604,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         currentSession.id,
         selectorModeToPresentation(mode),
       );
-      closeSpotlight();
       patch((current) => ({
         ...current,
         sessions: current.sessions.map((session) =>
@@ -2923,7 +2927,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     window.open(projectorUrl, "_blank", "noopener,noreferrer");
   }
 
-  const selected = students.find((student) => student.id === selectedId);
+  const selected = students.find((student) => student.id === (currentDrawAttempt?.studentId ?? selectedId));
   const selectedXp = selected ? xpForStudent(data.scoreEvents, classroomId, selected.id) : 0;
   const activeActivity = data.activities.find((activity) => activity.id === (currentSession?.activityId ?? activityId));
   const currentQuestion = activeActivity?.questions?.find((question) => question.id === currentSession?.currentQuestionId);
@@ -2931,11 +2935,23 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     .filter((event) => event.eventType === "DRAW_COMPLETED")
     .sort((a, b) => b.sequenceNo - a.sequenceNo);
   const presentStudentIdSet = new Set(currentSession?.presentStudentIds ?? []);
-  const drawnStudentIds = new Set(
-    Object.entries(currentSession?.drawCounts ?? {})
-      .filter(([studentId, count]) => count > 0 && presentStudentIdSet.has(studentId))
-      .map(([studentId]) => studentId),
-  );
+  const drawAttemptCounts = (drawSession.state?.history ?? []).reduce<Record<string, number>>((counts, attempt) => {
+    if (attempt.status !== "VOIDED") counts[attempt.studentId] = (counts[attempt.studentId] ?? 0) + 1;
+    return counts;
+  }, {});
+  const drawRoundCounts = (drawSession.state?.history ?? [])
+    .filter((attempt) => attempt.roundNumber === drawSession.state?.roundNumber)
+    .reduce<Record<string, number>>((counts, attempt) => {
+      if (attempt.status === "CONFIRMED" || attempt.status === "PASSED") {
+        counts[attempt.studentId] = (counts[attempt.studentId] ?? 0) + 1;
+      }
+      return counts;
+    }, {});
+  const drawnStudentIds = new Set((drawSession.state?.history ?? [])
+    .filter((attempt) => attempt.roundNumber === drawSession.state?.roundNumber)
+    .filter((attempt) => attempt.status === "CONFIRMED" || attempt.status === "PASSED")
+    .filter((attempt) => presentStudentIdSet.has(attempt.studentId))
+    .map((attempt) => attempt.studentId));
   const drawCoverage = currentSession?.presentStudentIds.length
     ? Math.round((drawnStudentIds.size / currentSession.presentStudentIds.length) * 100)
     : 0;
@@ -3024,9 +3040,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           onLogout={onLogout}
           onSelectDynamic={(dynamic) => {
             selectDynamic(dynamic);
-            if (dynamic !== "draw") {
-              closeSpotlight();
-            }
           }}
           onSelectTool={selectTool}
         />
@@ -3135,15 +3148,22 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               <ParticipantSelectionExperience
                 students={students}
                 presentStudentIds={currentSession.presentStudentIds}
-                drawCounts={currentSession.drawCounts}
-                selectedStudentId={spotlightStudentId}
-                phase={selectionPhase}
-                onDraw={() => { void draw(); }}
-                onConfirm={confirmSpotlight}
+                drawCounts={drawRoundCounts}
+                selectedStudentId={currentDrawAttempt?.studentId}
+                phase={currentDrawAttempt ? "revealed" : "ready"}
+                busy={drawBusy}
+                canStartNextRound={drawSession.state?.canStartNextRound ?? false}
+                onNextRound={() => { void startNextDrawRound(); }}
+                onDraw={() => { void drawParticipant(); }}
+                onResolve={(outcome, points) => { void resolveParticipant(outcome, points); }}
                 onOpenSettings={openDrawSettings}
               />
             ) : (
             <div className="smart-draw-hero">
+              {drawSession.state?.canStartNextRound && (
+                <button className="button primary" disabled={drawBusy} type="button"
+                  onClick={() => { void startNextDrawRound(); }}>Iniciar próxima rodada</button>
+              )}
               <div className="smart-draw-titlebar">
                 <div className="smart-draw-title-copy">
                   <span className="smart-draw-title-icon" aria-hidden="true"><ArenaGlyph name="draw" /></span>
@@ -3162,7 +3182,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 participants={students.filter((student) => currentSession.presentStudentIds.includes(student.id))}
                 selectedStudentId={selectedId}
                 drawing={drawBusy}
-                onDraw={() => { void draw(); }}
+                disabled={Boolean(currentDrawAttempt) || Boolean(drawSession.state?.canStartNextRound)}
+                onDraw={() => { void drawParticipant(); }}
               />
 
               <div className={selected ? "selected-student-bar active" : "selected-student-bar"}>
@@ -3177,7 +3198,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                             <span>🏆 Sorteado agora</span>
                           </div>
                           <p>
-                            Participações nesta sessão: {currentSession.drawCounts[selected.id] ?? 0}
+                            Vezes chamado nesta sessão: {drawAttemptCounts[selected.id] ?? 0}
                             <b>·</b>
                             <em>+{selectedXp} XP</em>
                           </p>
@@ -3203,16 +3224,13 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                     )}
                   </div>
 
-                  {selected && (
-                    <button type="button" className={scoreFeedback ? "selected-student-cta success" : "selected-student-cta"} onClick={() => { setReason("Participação"); void addScore(5, "COLLABORATION", "Participação"); }}>
-                      {scoreFeedback ? "✓ Pontuado" : "Confirmar e pontuar →"}
-                    </button>
-                  )}
+                  {currentDrawAttempt && <DrawOutcomeActions busy={drawBusy}
+                    onResolve={(outcome, points) => { void resolveParticipant(outcome, points); }} />}
                 </div>
 
                 <section className="draw-coverage-summary" aria-label={`Cobertura do sorteio: ${drawnStudentIds.size} de ${currentSession.presentStudentIds.length}, ${drawCoverage}%`}>
                   <div className="draw-coverage-count">
-                    <span className="draw-coverage-badge">já sorteados</span>
+                    <span className="draw-coverage-badge">chamados nesta rodada</span>
                     <details className="draw-history-popover draw-history-inline">
                       <summary aria-label="Exibir últimos sorteados" title="Exibir últimos sorteados">
                         <strong>{drawnStudentIds.size}/{currentSession.presentStudentIds.length}</strong>
@@ -3253,8 +3271,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             <section className="quick-score-dock" aria-label="Ações rápidas de pontuação">
               <div className="quick-score-head">
                 <div>
-                  <strong>Ações rápidas</strong>
-                  <small>Pontue o aluno selecionado.</small>
+                  <strong>Pontuação avulsa</strong>
+                  <small>XP manual separado da confirmação do sorteio.</small>
                 </div>
                 <label className="quick-score-student">
                   <span className="sr-only">Aluno para pontuação</span>
@@ -3636,6 +3654,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       )}
 
 
+          <ArenaNextActions dynamic={activeDynamic} onSelectDynamic={selectDynamic}
+            onOpenGroups={() => selectTool("groups")} />
         </main>
 
         <ArenaContextRail
@@ -3645,11 +3665,13 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           presentStudentIds={currentSession.presentStudentIds}
           sessionParticipants={sessionParticipants}
           drawnCount={drawnStudentIds.size}
-          drawHistory={recentDrawEvents.map((event) => ({
-            id: event.id,
-            studentId: typeof event.payload.studentId === "string" ? event.payload.studentId : "",
-            occurredAt: event.occurredAt,
-          }))}
+          drawHistory={(drawSession.state?.history ?? [])
+            .filter((attempt) => attempt.status !== "VOIDED")
+            .slice().reverse().map((attempt) => ({
+              id: attempt.attemptId,
+              studentId: attempt.studentId,
+              occurredAt: attempt.selectedAt,
+            }))}
           sessionId={currentSession.id}
           joinCode={joinCode}
           publicBaseUrl={publicBaseUrl}
@@ -3697,7 +3719,10 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       <DrawSettingsDrawer
         open={drawSettingsOpen}
         mode={selectorMode}
-        busy={drawPresentationBusy}
+        busy={drawPresentationBusy || drawBusy}
+        policy={drawSession.state?.policy ?? "ROUND_ROBIN_SHUFFLED"}
+        policyLocked={Boolean(currentDrawAttempt)}
+        onPolicyChange={(policy) => { void changeDrawPolicy(policy); }}
         onClose={closeDrawSettings}
         onPresentationChange={(mode) => { void changeDrawPresentation(mode); }}
       />

@@ -4,11 +4,15 @@ import ArenaToolDrawer from "@/components/ArenaToolDrawer";
 import { RadioCard } from "@/components/ui";
 import styles from "./DrawSettingsDrawer.module.css";
 import type { ParticipantSelectorMode } from "./selection.types";
+import type { DrawPolicy } from "@/lib/draw-api";
 
 type DrawSettingsDrawerProps = {
   open: boolean;
   mode: ParticipantSelectorMode;
   busy: boolean;
+  policy: DrawPolicy;
+  policyLocked: boolean;
+  onPolicyChange: (policy: DrawPolicy) => void;
   onClose: () => void;
   onPresentationChange: (mode: ParticipantSelectorMode) => void;
 };
@@ -17,6 +21,9 @@ export default function DrawSettingsDrawer({
   open,
   mode,
   busy,
+  policy,
+  policyLocked,
+  onPolicyChange,
   onClose,
   onPresentationChange,
 }: DrawSettingsDrawerProps) {
@@ -24,18 +31,23 @@ export default function DrawSettingsDrawer({
     <ArenaToolDrawer
       open={open}
       title="Configurações do Sorteio"
-      subtitle="Defina a apresentação sem alterar as regras de seleção da turma."
+      subtitle="Escolha como chamar participantes e como apresentar o resultado."
       onClose={onClose}
     >
       <div className={styles.panel}>
         <section className={styles.section}>
           <span className={styles.label}>CRITÉRIO DE SELEÇÃO</span>
-          <div className={styles.modeCard}>
-            <span className={styles.modeIndicator} aria-hidden="true" />
-            <div>
-              <strong>Balanceado</strong>
-              <p>Prioriza quem foi sorteado menos vezes durante a sessão.</p>
-            </div>
+          <div className={styles.choiceList} role="radiogroup" aria-label="Critério de sorteio">
+            <RadioCard name="draw-policy" value="ROUND_ROBIN_SHUFFLED"
+              checked={policy === "ROUND_ROBIN_SHUFFLED"} disabled={busy || policyLocked}
+              label="Rodada completa (recomendado)"
+              description="Chama todos os presentes antes de repetir alguém. Passar a vez conta como chamado; anular não conta."
+              onChange={() => onPolicyChange("ROUND_ROBIN_SHUFFLED")} />
+            <RadioCard name="draw-policy" value="BALANCED_WEIGHTED"
+              checked={policy === "BALANCED_WEIGHTED"} disabled={busy || policyLocked}
+              label="Balanceado"
+              description="Prioriza quem foi menos chamado, mas pode repetir antes de todos participarem."
+              onChange={() => onPolicyChange("BALANCED_WEIGHTED")} />
           </div>
         </section>
 
@@ -61,7 +73,7 @@ export default function DrawSettingsDrawer({
               checked={mode === "wheel"}
               disabled={busy}
               label="Roleta"
-              description="Mantém a seleção balanceada e altera somente a apresentação visual."
+              description="Altera somente a apresentação visual, preservando o critério de seleção escolhido."
               onChange={() => onPresentationChange("wheel")}
             />
           </div>
@@ -84,18 +96,16 @@ export default function DrawSettingsDrawer({
             <div>
               <strong>Evita repetição imediata</strong>
               <p>
-                Quando há mais de um participante, o último sorteado não é escolhido novamente na rodada seguinte.
+                Rodada completa evita repetição até chamar todos. No balanceado, a última pessoa é excluída da próxima seleção quando possível.
               </p>
             </div>
           </div>
         </section>
 
         <section className={`${styles.section} ${styles.explainer}`}>
-          <strong>Como o balanceamento funciona</strong>
-          <p>
-            Todos continuam com chance de serem sorteados, mas o peso aumenta para quem participou menos.
-            A apresentação não altera o resultado: a decisão final continua sendo feita pelo servidor.
-          </p>
+          <strong>Seleção não é participação</strong>
+          <p>Após cada sorteio, confirme participação, pontue se necessário, passe a vez ou anule.
+          Grid e Roleta não alteram o critério escolhido.</p>
         </section>
       </div>
     </ArenaToolDrawer>

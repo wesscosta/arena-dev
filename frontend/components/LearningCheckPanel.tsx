@@ -14,6 +14,7 @@ import {
   type LearningTarget,
 } from "@/lib/learning-check-api";
 import styles from "./LearningCheckPanel.module.css";
+import LearningCyclePanel from "./learning/LearningCyclePanel";
 
 type Props = {
   sessionId: string;
@@ -533,6 +534,8 @@ export default function LearningCheckPanel({
           </>
         )}
       </div>
+      <LearningCyclePanel sessionId={sessionId} state={state} onStateChange={onStateChange}
+        notify={notify} onOpenGroups={onOpenGroups} />
     </section>
   );
 }

@@ -105,13 +105,18 @@ test("Participant selection defaults to Grid + Spotlight and keeps Wheel as a pr
 test("Grid + Spotlight keeps scoring and draw evidence visible without duplicating the selection algorithm", () => {
   const app = read("components/ArenaApp.tsx");
   const selection = read("components/arena/selection/ParticipantSelectionExperience.tsx");
-  const orchestration = read("components/arena/selection/useParticipantSelection.ts");
+  const outcome = read("components/arena/selection/DrawOutcomeActions.tsx");
+  const api = read("lib/draw-api.ts");
 
   assert.match(selection, /drawCounts/);
-  assert.match(selection, /Continuar para pontuação/);
+  assert.match(selection, /<DrawOutcomeActions/);
+  assert.match(outcome, /Confirmar participação/);
+  assert.match(outcome, /Confirmar e pontuar/);
+  assert.match(outcome, /Passar a vez/);
+  assert.match(outcome, /Anular sorteio/);
   assert.match(selection, /Já sorteado/);
   assert.match(app, /Pontuação rápida/);
-  assert.match(orchestration, /drawStudent\(sessionId\)/);
+  assert.match(api, /selectDrawParticipant/);
 });
 
 
@@ -727,9 +732,9 @@ test("Smart Draw folds history and coverage into the single result HUD without l
   assert.match(app, /className="draw-coverage-badge"/);
   assert.match(app, /className="draw-coverage-ring"/);
   assert.match(app, /const presentStudentIdSet = new Set\(currentSession\?\.presentStudentIds \?\? \[\]\)/);
-  assert.match(app, /count > 0 && presentStudentIdSet\.has\(studentId\)/);
+  assert.match(app, /attempt\.status === "CONFIRMED" \|\| attempt\.status === "PASSED"/);
   assert.match(app, /<span>\{drawCoverage\}%<\/span>/);
-  assert.match(app, /<span className="draw-coverage-badge">já sorteados<\/span>/);
+  assert.match(app, /<span className="draw-coverage-badge">chamados nesta rodada<\/span>/);
   assert.match(app, /<strong>\{drawnStudentIds\.size\}\/\{currentSession\.presentStudentIds\.length\}<\/strong>/);
   assert.match(css, /\.draw-history-menu\s*\{[\s\S]*?position:\s*absolute/);
   assert.match(css, /\.draw-coverage-summary\s*\{/);
@@ -743,7 +748,7 @@ test("Quick score keeps the selected-student context and presets compact while c
   assert.match(app, /className="quick-score-student"/);
   assert.match(app, /className="sr-only">Aluno para pontuação<\/span>/);
   assert.match(app, /aria-label="Aluno para pontuação"/);
-  assert.match(app, /Pontue o aluno selecionado\./);
+  assert.match(app, /XP manual separado da confirmação do sorteio/);
   assert.match(app, /className="quick-score-presets"/);
   assert.match(app, /quick-score-custom-popover/);
   assert.match(app, /aria-expanded=\{customScoreOpen\}/);

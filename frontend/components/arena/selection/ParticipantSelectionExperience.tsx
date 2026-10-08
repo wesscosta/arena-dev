@@ -4,6 +4,7 @@ import type { Student } from "@/lib/types";
 import { ArenaGlyph } from "@/components/arena/live/ArenaLiveChrome";
 import type { ParticipantSelectionPhase } from "./selection.types";
 import styles from "./ParticipantSelectionExperience.module.css";
+import DrawOutcomeActions from "./DrawOutcomeActions";
 
 type ParticipantSelectionExperienceProps = {
   students: Student[];
@@ -12,7 +13,10 @@ type ParticipantSelectionExperienceProps = {
   selectedStudentId?: string;
   phase: ParticipantSelectionPhase;
   onDraw: () => void;
-  onConfirm: () => void;
+  onResolve: (outcome: "CONFIRMED" | "PASSED" | "VOIDED", points?: number) => void;
+  busy: boolean;
+  canStartNextRound: boolean;
+  onNextRound: () => void;
   onOpenSettings: () => void;
 };
 
@@ -37,7 +41,10 @@ export default function ParticipantSelectionExperience({
   selectedStudentId,
   phase,
   onDraw,
-  onConfirm,
+  onResolve,
+  busy,
+  canStartNextRound,
+  onNextRound,
   onOpenSettings,
 }: ParticipantSelectionExperienceProps) {
   const presentSet = new Set(presentStudentIds);
@@ -92,12 +99,18 @@ export default function ParticipantSelectionExperience({
             type="button"
             className={styles.drawButton}
             onClick={onDraw}
-            disabled={phase === "selecting" || presentStudentIds.length === 0}
+            disabled={busy || canStartNextRound || phase === "revealed" || presentStudentIds.length === 0}
           >
             {phase === "selecting" ? "Selecionando..." : "Sortear participante"}
           </button>
         </div>
       </header>
+
+      {canStartNextRound && (
+        <button type="button" className={styles.drawButton} disabled={busy} onClick={onNextRound}>
+          Iniciar próxima rodada
+        </button>
+      )}
 
       <div className={styles.gridViewport} data-testid="participant-grid-viewport">
         {gridStudents.length === 0 ? (
@@ -177,15 +190,10 @@ export default function ParticipantSelectionExperience({
               <p>{selected.name}</p>
             )}
             <span className={styles.spotlightMeta}>
-              Participações nesta sessão: {drawCounts[selected.id] ?? 0}
+              Vezes chamado na sessão: {drawCounts[selected.id] ?? 0}
             </span>
             <div className={styles.spotlightActions}>
-              <button type="button" className={styles.confirmButton} onClick={onConfirm} autoFocus>
-                Continuar para pontuação
-              </button>
-              <small className={styles.scoringHint}>
-                A pontuação é opcional e permanece separada do sorteio.
-              </small>
+              <DrawOutcomeActions busy={busy} onResolve={onResolve} />
             </div>
           </div>
           <div className={styles.liveAnnouncement} aria-live="assertive">
