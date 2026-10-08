@@ -465,9 +465,15 @@ export default function ProjectorView() {
             )}
           </div>
         ) : showDraw ? (
-          <div className={styles.drawStage}>
-            <span className={styles.eyebrow}>SORTEIO</span>
-            <p>Aluno sorteado</p>
+          <div
+            className={styles.drawStage}
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            data-testid="projector-draw-stage"
+          >
+            <span className={styles.eyebrow}>SORTEIO DA TURMA</span>
+            <p>Participante selecionado</p>
             <h1>{liveStage.primary.displayName}</h1>
             {showTimerOverlay && timer && status && (
               <div className={styles.miniTimer}>

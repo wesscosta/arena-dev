@@ -315,6 +315,16 @@
   font-size: .8rem;
 }
 
+.spotlightCard:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ds-accent) 74%, white);
+  outline-offset: 4px;
+}
+
+.spotlightGuidance {
+  max-width: 28rem;
+  line-height: 1.45;
+}
+
 .spotlightActions {
   display: flex;
   flex-wrap: wrap;
@@ -384,6 +394,11 @@
   .experience {
     min-height: 36rem;
     padding: .8rem;
+  }
+
+  .settings,
+  .drawButton {
+    min-height: 2.75rem;
   }
 
   .headerActions {

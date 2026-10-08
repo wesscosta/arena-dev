@@ -513,3 +513,73 @@ test("v0.10 sorteio registra confirmação, passagem e anulação sem repetir na
     await api.dispose();
   }
 });
+
+
+test("Spotlight move o foco para o resultado e devolve ao comando após resolver", async ({ browser }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 2);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+
+    const drawButton = page.getByRole("button", { name: "Sortear participante" });
+    await drawButton.focus();
+    await expect(drawButton).toBeFocused();
+    await page.keyboard.press("Enter");
+
+    const spotlightCard = page.getByTestId("spotlight-card");
+    await expect(spotlightCard).toBeVisible();
+    await expect(spotlightCard).toBeFocused();
+
+    await page.keyboard.press("Tab");
+    const confirm = page.getByTestId("spotlight-reveal")
+      .getByRole("button", { name: "Confirmar participação", exact: true });
+    await expect(confirm).toBeFocused();
+    await page.keyboard.press("Enter");
+
+    await expect(page.getByTestId("spotlight-reveal")).toBeHidden();
+    await expect(drawButton).toBeFocused();
+  } finally {
+    await context.close();
+    await api.dispose();
+  }
+});
+
+test("Selector permanece operável em viewport estreita equivalente a zoom alto", async ({ browser }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 8);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    await page.setViewportSize({ width: 720, height: 900 });
+
+    const drawButton = page.getByRole("button", { name: "Sortear participante" });
+    const settingsButton = page.getByRole("button", { name: /Ajustes/ });
+
+    await expect(drawButton).toBeVisible();
+    await expect(settingsButton).toBeVisible();
+    expect(await page.evaluate(
+      () => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth,
+    )).toBeLessThanOrEqual(1);
+
+    await settingsButton.click();
+    const dialog = page.getByRole("dialog", { name: "Configurações do Sorteio" });
+    await expect(dialog.getByRole("radio", { name: /Grid \+ Spotlight/ })).toBeVisible();
+    await expect(dialog.getByRole("radio", { name: /Roleta/ })).toBeVisible();
+
+    const minTargetHeight = await dialog.getByRole("radio", { name: /Grid \+ Spotlight/ })
+      .evaluate((input) => input.closest("label")?.getBoundingClientRect().height ?? 0);
+    expect(minTargetHeight).toBeGreaterThanOrEqual(44);
+
+    expect(await page.evaluate(
+      () => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth,
+    )).toBeLessThanOrEqual(1);
+  } finally {
+    await context.close();
+    await api.dispose();
+  }
+});

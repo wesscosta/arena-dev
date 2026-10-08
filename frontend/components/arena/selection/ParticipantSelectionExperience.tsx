@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { Student } from "@/lib/types";
 import { ArenaGlyph } from "@/components/arena/live/ArenaLiveChrome";
 import type { ParticipantSelectionPhase } from "./selection.types";
@@ -62,9 +63,37 @@ export default function ParticipantSelectionExperience({
   const progress = presentStudentIds.length
     ? Math.round((drawnIds.size / presentStudentIds.length) * 100)
     : 0;
+  const drawButtonRef = useRef<HTMLButtonElement | null>(null);
+  const spotlightRef = useRef<HTMLDivElement | null>(null);
+  const previousPhaseRef = useRef<ParticipantSelectionPhase>(phase);
+
+  useEffect(() => {
+    const previousPhase = previousPhaseRef.current;
+    previousPhaseRef.current = phase;
+
+    if (phase === "revealed" && selectedStudentId) {
+      window.requestAnimationFrame(() => {
+        spotlightRef.current?.focus({ preventScroll: true });
+      });
+      return;
+    }
+
+    if (previousPhase === "revealed" && phase === "ready") {
+      window.requestAnimationFrame(() => {
+        if (!drawButtonRef.current?.disabled) {
+          drawButtonRef.current?.focus({ preventScroll: true });
+        }
+      });
+    }
+  }, [phase, selectedStudentId]);
 
   return (
-    <section className={styles.experience} aria-label="Seleção de participante" data-testid="participant-selection-experience">
+    <section
+      className={styles.experience}
+      aria-label="Seleção de participante"
+      aria-busy={phase === "selecting"}
+      data-testid="participant-selection-experience"
+    >
       <header className={styles.header}>
         <div className={styles.heading}>
           <span className={styles.headingIcon} aria-hidden="true">
@@ -96,6 +125,7 @@ export default function ParticipantSelectionExperience({
             ⚙ Ajustes
           </button>
           <button
+            ref={drawButtonRef}
             type="button"
             className={styles.drawButton}
             onClick={onDraw}
@@ -181,8 +211,20 @@ export default function ParticipantSelectionExperience({
       )}
 
       {phase === "revealed" && selected && (
-        <div className={styles.spotlightLayer} role="dialog" aria-modal="false" aria-labelledby="spotlight-participant-name" data-testid="spotlight-reveal">
-          <div className={styles.spotlightCard}>
+        <div
+          className={styles.spotlightLayer}
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="spotlight-participant-name"
+          aria-describedby="spotlight-participant-guidance"
+          data-testid="spotlight-reveal"
+        >
+          <div
+            className={styles.spotlightCard}
+            ref={spotlightRef}
+            tabIndex={-1}
+            data-testid="spotlight-card"
+          >
             <span className={styles.spotlightEyebrow}>PARTICIPANTE SELECIONADO</span>
             <div className={styles.spotlightAvatar}>{initials(selected.name)}</div>
             <h3 id="spotlight-participant-name">{participantLabel(selected)}</h3>
@@ -192,6 +234,9 @@ export default function ParticipantSelectionExperience({
             <span className={styles.spotlightMeta}>
               Vezes chamado na sessão: {drawCounts[selected.id] ?? 0}
             </span>
+            <p id="spotlight-participant-guidance" className={styles.spotlightGuidance}>
+              Registre o desfecho antes de realizar um novo sorteio.
+            </p>
             <div className={styles.spotlightActions}>
               <DrawOutcomeActions busy={busy} onResolve={onResolve} />
             </div>

@@ -187,7 +187,8 @@ test.describe("Arena session ranking", () => {
 
     const projector = await openProjector(browser, fixture.joinCode.code);
     try {
-      await expect(projector.page.getByText("Aluno sorteado", { exact: true })).toBeVisible();
+      await expect(projector.page.getByTestId("projector-draw-stage")).toBeVisible();
+      await expect(projector.page.getByText("Participante selecionado", { exact: true })).toBeVisible();
       await expect(projector.page.getByText("Ana", { exact: true })).toBeVisible();
       await expect(projector.page.getByTestId("projector-session-ranking")).toHaveCount(0);
 
@@ -215,7 +216,11 @@ test.describe("Arena session ranking", () => {
 
       await page.getByRole("button", { name: "Ocultar do projetor" }).click();
       await expect(projector.page.getByTestId("projector-session-ranking")).toHaveCount(0);
-      await expect(projector.page.getByText("Aluno sorteado", { exact: true })).toBeVisible();
+      await expect(projector.page.getByText("Participante selecionado", { exact: true })).toBeVisible();
+      await expect(projector.page.getByText("Ana", { exact: true })).toBeVisible();
+      await projector.page.reload();
+      await expect(projector.page.getByTestId("projector-draw-stage")).toBeVisible();
+      await expect(projector.page.getByText("Participante selecionado", { exact: true })).toBeVisible();
       await expect(projector.page.getByText("Ana", { exact: true })).toBeVisible();
 
       const reverse = await api.post(`/api/score-events/${fixture.anaScore.id}/reverse`, { headers: csrfHeaders });
