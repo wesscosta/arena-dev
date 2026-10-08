@@ -152,4 +152,6 @@ O teardown da suíte backend ainda emite um warning do Surefire ao encerrar o fo
 
 O `npm audit --omit=dev --audit-level=high` retorna **0 vulnerabilidades de produção**. O grafo de desenvolvimento possui advisory alto na cadeia `eslint-config-next → fast-glob → micromatch → braces@3.0.3`; não existe versão corrigida de `braces` publicada no registry no momento e o fix sugerido pelo npm exige downgrade incompatível do toolchain, portanto não foi aplicado.
 
+Como hardening de reprodutibilidade, os três jobs do CI foram fixados em `ubuntu-24.04` (em vez de `ubuntu-latest`) e o job frontend passou a executar também `lint` e `format:check`, alinhando o gate remoto ao gate local.
+
 Estado correto neste ponto: **release candidate 0.9.0 tecnicamente verde localmente; aguardando CI verde no mesmo SHA final e integração em `main` antes do freeze/publicação formal**.
