@@ -1,3 +1,5 @@
+> **Estado de implementação em 08/10/2026:** contratos V49–V51 de `LearningCycle`, sorteio V50 e interface de intervenção P1-A existem na branch de desenvolvimento. Partes desta especificação continuam propostas futuras; para estado verificável, consultar [EXECUTION_STATUS.md](EXECUTION_STATUS.md).
+
 # Arena Dev v0.10 — Contratos, Persistência e Estados (proposta)
 
 **Referência:** [Plano de implementação](IMPLEMENTATION_PLAN.md). Este documento é especificação de API/DDL para PRs futuros. Os endpoints V49 existentes estão indicados; os demais **ainda não existem**. Campos/nomes apresentados são proposta e devem ser ratificados por testes de contrato antes de implementação.
@@ -223,3 +225,17 @@ Os números acima são **dados fictícios somente para descrever o payload**; em
 - `externalEmbedPilotEnabled` **off por padrão** e fora do P0; kill switch imediato.
 
 **Contrato de eventos realtime:** envelope único por módulo (`sessionId`,`revision`,`eventId`,`eventType`,`publicStage`,`serverTime`) na evolução, com GET snapshot por versão. Não substituir abruptamente todos os tópicos WebSocket atuais; criar adapter e eliminar duplicações só após telemetria.
+
+## Contrato implementado P1-A — Peer Instruction (Flyway V51)
+
+`POST /api/sessions/{sessionId}/learning-cycles/{cycleId}/intervention`
+
+```json
+{"note":"Debate em pares sem revelar gabarito", "type":"PEER_DISCUSSION"}
+```
+
+- `type` aceita `EXPLANATION` (padrão de retrocompatibilidade) e `PEER_DISCUSSION`.
+- O servidor rejeita `PEER_DISCUSSION` caso a primeira verificação tenha revelado a resposta ou conte com menos de duas respostas individuais persistidas. A questão de origem deve estar avaliada e fechada; outra `InteractionRun` posterior é ligada à verificação do ciclo.
+- `CycleView` inclui `interventionType` (null até registrar), `baselineResultsRevealed` e `baselineResponseCount`. Esses campos são do professor; aluno/projetor não obtêm opções individuais de terceiros.
+- SQL V51 altera **somente** `learning_intervention_cycles.intervention_type` e faz backfill de ciclos intervenidos existentes com `EXPLANATION`, sem criar tabelas de questionário paralelas.
+- **Não representa** mastery, prova de participação em grupos nem certificado. Critérios pedagógicos em [ADR-0054](../adr/ADR-0054-peer-instruction-through-learning-cycle.md).

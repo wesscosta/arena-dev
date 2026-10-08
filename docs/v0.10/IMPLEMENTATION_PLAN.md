@@ -3,6 +3,7 @@
 **Revisão:** 08/10/2026 · **Estado:** contrato técnico de planejamento, não implementação concluída.  
 **Origem congelada:** tag `v0.9.0` / Flyway V48 · **Branch ativa:** `feat/v0.10-learning-loop`.  
 **Fontes de decisão:** [roadmap da release](../ROADMAP_V0_10.md), [auditoria dos fluxos](../AVALIACAO_V0_10_ARENA_MATERIAIS.md), ADR-0045, ADR-0046, ADR-0049, ADR-0050, ADR-0051, ADR-0052.  
+**Implementação incremental verificada:** P1-A passou a usar V51 + `InterventionType.PEER_DISCUSSION` e o `LearningCycle`/LearningCheck existentes, exigindo pelo menos dois respondentes e baseline sem gabarito revelado; ver [ADR-0054](../adr/ADR-0054-peer-instruction-through-learning-cycle.md) e [registro da execução](EXECUTION_STATUS.md). A presente especificação contém também itens futuros não implementados.
 **Anexos executáveis de especificação:** [Contratos e persistência](API_CONTRACTS.md) · [Fluxos UX](UX_FLOWS.md) · [Matriz de testes](TEST_MATRIX.md).
 
 ## 1. Resultado esperado e definição do produto

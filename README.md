@@ -4,6 +4,10 @@
 
 > **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 >
+> **PR de acompanhamento:** [#35 — v0.10 (rascunho; não fazer merge)](https://github.com/wesscosta/arena-dev/pull/35).
+>
+> **P1-A em andamento de homologação:** Peer Instruction reutiliza LearningCycle e LearningCheck com migração V51, sem divulgar gabarito durante a discussão. [ADR-0054](docs/adr/ADR-0054-peer-instruction-through-learning-cycle.md). Sem anúncio de release.
+>
 > **Linha v0.10 em desenvolvimento:** `feat/v0.10-learning-loop` — [roadmap revisado](docs/ROADMAP_V0_10.md) e [plano técnico detalhado](docs/v0.10/IMPLEMENTATION_PLAN.md) e [registro verificável dos incrementos e gates pendentes](docs/v0.10/EXECUTION_STATUS.md) e [auditoria crítica da Arena, sorteio e materiais externos](docs/AVALIACAO_V0_10_ARENA_MATERIAIS.md).
 >
 > **Execução atual:** a v0.9.0 está publicada e congelada. Learning Domain, Interaction Core, LearningEvidence, AI-ready trace e shadow/cutover gate fazem parte da baseline. O legado permanece autoritativo até que a amostra operacional de shadows aprove o cutover lógico; remoção física fica para release posterior à janela de rollback.

@@ -248,3 +248,7 @@ A materialização Biblioteca → Journey agora é explícita: updates comuns pr
 
 
 **Homologação parcial v0.10 — 08/10/2026:** seleção legada/atual isolada por sessão, auditoria de sorteios, validações HTTP/CSRF e **24 cenários Playwright Chromium aprovados**. Interface de continuidade movida ao cabeçalho para preservar altura útil da Arena. Consulte [registro da execução](v0.10/EXECUTION_STATUS.md). A aplicação mantém **uma conta docente por instalação** (ADR-0053) até evolução explícita do domínio de identidades e autorizações. **Não há release v0.10.0.**
+
+**Incremento P1-A — 08/10/2026:** Peer Instruction usa V51 e duas execuções nativas de `LearningCheck`, com requisito de duas respostas iniciais e ausência de revelação prévia. Cobertura PG17 e Playwright para dois estudantes incluída; consulta [ADR-0054](adr/ADR-0054-peer-instruction-through-learning-cycle.md). Clínica do Erro, Biblioteca contextual, Confidence e Recovery permanecem pendentes.
+
+**Qualidade após P1-A (08/10/2026):** Flyway V51, backend unitário+integração sem erros, frontend typecheck/build/300 testes e **25/25 testes E2E Chromium** com docente e dois estudantes. A suite incluiu revisão do cenário de 12 recargas de tema/responsividade com timeout proporcional à matriz, sem remover verificações. A v0.10 continua **não publicada**, PR #35 em rascunho.

@@ -5,7 +5,7 @@
 ## 1. Níveis e critérios de bloqueio
 
 - **Unit:** invariantes de domínio determinísticas, policy de sorteio, semântica dos contadores, comparações e DTO.
-- **Integration:** PostgreSQL 17/Testcontainers com Flyway V1–V50+, lock concorrente, FKs, rollback, ownership e emissão realtime after-commit.
+- **Integration:** PostgreSQL 17/Testcontainers com Flyway V1–V51+, lock concorrente, FKs, rollback, ownership e emissão realtime after-commit.
 - **Contract/API:** HTTP, CSRF, ROLE_TEACHER, professor dono da sessão, join/token do estudante, 4xx corretos, retry idempotente.
 - **E2E:** Playwright com docente, aluno (inclusive outra aba/dispositivo) e projetor simultâneos, mobile, reconexão e roteiro estruturado/ad hoc.
 - **Pedagogia/UX:** aula demonstrável com material, pergunta, intervenção, segunda tentativa, devolutiva honesta; teste com professor, sem supor efeito de aprendizagem por aparição na tela.
@@ -75,7 +75,7 @@
 | U09 | teclado/leitor/reduced-motion/light-dark | role/labels, foco visível, contrastes mínimos, animação opcional | axe/manual |
 | U10 | sem rede, erro 4xx/5xx, loading | erro claro, botão retry seguro, estado consistente | E2E |
 | U11 | falha de score depois de decidir confirmed with score | rollback total ou resolução explícita, não participação confirmada sem score prometido | IT |
-| U12 | migração Flyway V49/V50 em Postgres 17 | Hibernate valida, índices/checks executam, regressão v0.9 verde | IT/migration |
+| U12 | migração Flyway V49/V50/V51 em Postgres 17 | Hibernate valida, índices/checks executam, regressão v0.9 verde | IT/migration |
 | U13 | flag OFF e rollback lógico | cliente legado permanece funcional, novos dados preservados; nenhum drop | E2E/IT |
 | U14 | primeira aula real com professor e aluno | registro de passos, confusões e resposta ao fluxo; sem tratar entrevista como prova causal | validação docente |
 
@@ -83,7 +83,7 @@
 
 | ID | Caso | Aceite específico |
 |---|---|---|
-| P11 | Peer Instruction | duas respostas individuais distintas + discussão em pares; preservação privacidade |
+| P11 | Peer Instruction | pelo menos duas respostas individuais iniciais; baseline não revelada; discussão documentada; novo run da mesma definição; comparação pareada e nenhuma pontuação automática. **Automatizado:** `LearningCycleIT`, `LearningCycleTest`, Playwright `Peer Instruction protege primeira resposta...`; **pendente:** observação pedagógica com docente |
 | P12 | Clínica do Erro | distribuição real e intervenção autoral; sem diagnóstico por IA não validado |
 | P13 | LearnerConfidence | opt-in/skip, só próprio participante, sem impacto em XP e LearningEvidence.confidence |
 | P14 | Encaminhamento a Jornada | link legítimo para recurso com permissão, sem inscrição ou progressão inventada |

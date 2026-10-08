@@ -83,3 +83,4 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0052 — Recursos externos como placements](ADR-0052-external-resources-as-placements.md)
 
 - [ADR-0053 — Limitação de identidade docente única na v0.10](ADR-0053-single-operator-teacher-security-boundary.md)
+- [ADR-0054 — Peer Instruction pelo LearningCycle](ADR-0054-peer-instruction-through-learning-cycle.md)
