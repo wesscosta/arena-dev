@@ -84,12 +84,12 @@ class ProjectorSocketHandlerTest {
                 any()
         );
         ordered.verify(gateway).registerProjector(sessionId, socket);
+        ordered.verify(gateway).send(socket, "RUNTIME_SNAPSHOT", sessionId, runtimeSnapshot);
         ordered.verify(gateway).send(
                 eq(socket),
                 eq("AUTH_OK"),
                 eq(sessionId),
                 any()
         );
-        ordered.verify(gateway).send(socket, "RUNTIME_SNAPSHOT", sessionId, runtimeSnapshot);
     }
 }
