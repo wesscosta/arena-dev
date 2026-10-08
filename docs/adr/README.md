@@ -81,3 +81,5 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0050 — LearningCycle e Confidence](ADR-0050-learning-loop-cycle-and-confidence-boundaries.md)
 - [ADR-0051 — Seleção e desfecho](ADR-0051-selection-outcome-and-draw-policy.md)
 - [ADR-0052 — Recursos externos como placements](ADR-0052-external-resources-as-placements.md)
+
+- [ADR-0053 — Limitação de identidade docente única na v0.10](ADR-0053-single-operator-teacher-security-boundary.md)

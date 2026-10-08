@@ -6,7 +6,7 @@
 
 **Linha em desenvolvimento:** `v0.10 — Learning Loop`, branch `feat/v0.10-learning-loop`. [Roadmap](ROADMAP_V0_10.md).
 
-**Estado corrente:** v0.9.0 publicada e congelada; v0.10 em implementação isolada (LearningCycle, DrawAttempt/V50, UI do sorteio e Before & After), ainda não publicada. A v0.10 foi revisada para priorizar coerência do fluxo da Arena, sorteio com confirmação e uso contextual de materiais; iframe/Canva apenas após piloto de valor ([auditoria](AVALIACAO_V0_10_ARENA_MATERIAIS.md) e [plano técnico executável](v0.10/IMPLEMENTATION_PLAN.md)).
+**Estado corrente:** v0.9.0 publicada e congelada; v0.10 em implementação e homologação isoladas (LearningCycle, DrawAttempt/V50, UI do sorteio e Before & After), ainda não publicada. A v0.10 foi revisada para priorizar coerência do fluxo da Arena, sorteio com confirmação e uso contextual de materiais; iframe/Canva apenas após piloto de valor ([auditoria](AVALIACAO_V0_10_ARENA_MATERIAIS.md) e [plano técnico executável](v0.10/IMPLEMENTATION_PLAN.md)).
 
 **Branch de release:** `main`.
 
@@ -245,3 +245,6 @@ O plano pedagógico seguinte foi renumerado para evitar colisão com 16.6: `17.0
 ### 16.5B.2 — Journey Snapshot Integrity Hardening — implementado
 
 A materialização Biblioteca → Journey agora é explícita: updates comuns preservam a revisão já copiada, inclusive quando a origem foi posteriormente editada ou arquivada. `JourneyStage.updateConfiguration()` não toca no snapshot; `materializeResource()` é a fronteira de escrita. O 16.5E concluiu a atualização explícita entre revisões apenas em Journey `DRAFT`.
+
+
+**Homologação parcial v0.10 — 08/10/2026:** seleção legada/atual isolada por sessão, auditoria de sorteios, validações HTTP/CSRF e **24 cenários Playwright Chromium aprovados**. Interface de continuidade movida ao cabeçalho para preservar altura útil da Arena. Consulte [registro da execução](v0.10/EXECUTION_STATUS.md). A aplicação mantém **uma conta docente por instalação** (ADR-0053) até evolução explícita do domínio de identidades e autorizações. **Não há release v0.10.0.**

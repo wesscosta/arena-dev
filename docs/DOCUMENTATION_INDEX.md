@@ -110,3 +110,4 @@ Não reescrever documentação histórica para fabricar evidência retroativa. Q
 - [Auditoria da Arena, sorteio e Canva/HTML](AVALIACAO_V0_10_ARENA_MATERIAIS.md)
 - [ADR-0051 — Seleção e desfecho](adr/ADR-0051-selection-outcome-and-draw-policy.md)
 - [ADR-0052 — Recursos externos](adr/ADR-0052-external-resources-as-placements.md)
+- [ADR-0053 — Operador docente único e limites de segurança](adr/ADR-0053-single-operator-teacher-security-boundary.md)
