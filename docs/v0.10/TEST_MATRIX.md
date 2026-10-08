@@ -118,3 +118,10 @@
 - `DrawServiceIT`: XP vinculado a tentativa confirmada, reversão normalizada, tentativa permanece `CONFIRMED` e `scoreReversed=true`; participação não entra novamente na rodada.
 - `DrawHttpSecurityIT`: csrf/role, body inválido, resposta 201, repetição com JSON exatamente igual, comando distinto HTTP 409. Migração V1–V53 em PG17.
 - `arena-shell.spec.ts`: confirma sorteio com XP, estorna, reenvia comando, rejeita concorrente e reabre Arena após F5 com a correção persistida; não depende de `localStorage` para fonte do ledger.
+
+### P0-I — PWA/caches/versionamento e reentrada
+
+- **Imagem real do Docker:** garantir `GET /sw.js`, `/offline.html`, ícones = HTTP 200 na **etapa production**, não apenas no diretório `public/` local.
+- **Worker lifecycle simulado:** `pwa-lifecycle.test.ts` usa caches v0.8/v0.9 de HTML `/join` e chunks, executa install/activate, prova limpeza só de caches próprios, fallback neutro e **bypass de API/WS** mesmo que haja estado antigo cacheado.
+- **Chromium real:** `pwa-upgrade-recovery.spec.ts` instala service worker vindo de Docker, simula queda da rede, nunca usa HTML antigo, exige indisponibilidade de API offline e retorno à rota real; segundo cenário garante sinal Offline e recuperação de aluno pelo WebSocket sem duplicar presença ou pontuação.
+- **Pendente:** atualizações efetivas de aplicações PWA v0.9 **previamente instaladas** em Android/iOS, drafts durante mudança de versão, modo de economia de bateria, WAN real e certificados de acessibilidade.

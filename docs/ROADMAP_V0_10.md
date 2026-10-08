@@ -9,6 +9,7 @@
 **P1-B implementada na branch:** Clínica do Erro usa V52, distribuição de alternativas, notas docentes append-only e auditoria sem PII. Registro e bloqueio de escala em [ADR-0055](adr/ADR-0055-error-clinic-teacher-annotations.md).
 **P0-G de escala do Dashboard:** a causa do N+1 de requisições foi eliminada na branch: API em lote, mecânicas por demanda e regressão de 350+ turmas. Ver [ADR-0056](adr/ADR-0056-dashboard-batch-bootstrap-and-lazy-mechanics.md); a release continua não publicada.
 **P0-H de reversão XP:** implementada a proteção idempotente do ledger com Flyway V53, bloqueio concorrente, auditoria de sessão e XP revertido distinto da participação confirmada. Ver [ADR-0057](adr/ADR-0057-xp-reversal-idempotency-and-participation-independence.md).
+**P0-I PWA/reconexão:** produção Docker agora contém service worker/offline/icons, SW sem HTML obsoleto em cache e cliente estudante reconecta sob sinal de online. [ADR-0058](adr/ADR-0058-pwa-versioned-offline-shell-and-connection-recovery.md); validação em Android/iOS e clientes v0.9 instalados ainda não realizada.
 **Progresso verificável por fase:** [v0.10/EXECUTION_STATUS.md](v0.10/EXECUTION_STATUS.md), com separação entre código já integrado à branch e gates ainda pendentes.
 
 ## Tese de produto e North Star

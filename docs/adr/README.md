@@ -87,3 +87,4 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0055 — Clínica do Erro com interpretação docente](ADR-0055-error-clinic-teacher-annotations.md)
 - [ADR-0056 — Bootstrap em lote e mecânicas sob demanda](ADR-0056-dashboard-batch-bootstrap-and-lazy-mechanics.md)
 - [ADR-0057 — Reversão idempotente de XP](ADR-0057-xp-reversal-idempotency-and-participation-independence.md)
+- [ADR-0058 — PWA seguro e recuperação de conexão](ADR-0058-pwa-versioned-offline-shell-and-connection-recovery.md)
