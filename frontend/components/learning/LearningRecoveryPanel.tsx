@@ -27,7 +27,7 @@ export default function LearningRecoveryPanel({ sessionId, targetTitle, comparis
     return () => { active = false; };
   }, [targetTitle]);
 
-  async function useMaterial(id: string) {
+  async function attachMaterial(id: string) {
     if (busy) return;
     setBusy(true);
     setError(null);
@@ -53,7 +53,7 @@ export default function LearningRecoveryPanel({ sessionId, targetTitle, comparis
             <ul>
               {materials.map((material) => <li key={material.id}>
                 <span>{material.title}</span>
-                <button type="button" disabled={busy} onClick={() => { void useMaterial(material.id); }}>
+                <button type="button" disabled={busy} onClick={() => { void attachMaterial(material.id); }}>
                   Vincular à Arena
                 </button>
               </li>)}
