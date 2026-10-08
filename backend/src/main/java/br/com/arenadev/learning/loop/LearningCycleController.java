@@ -38,7 +38,8 @@ public class LearningCycleController {
     public LearningCycleService.CycleView intervene(@PathVariable UUID sessionId,
                                                     @PathVariable UUID cycleId,
                                                     @Valid @RequestBody InterventionRequest request) {
-        return service.intervene(sessionId, cycleId, request.note());
+        return service.intervene(sessionId, cycleId, request.note(),
+                request.type() == null ? InterventionType.EXPLANATION : request.type());
     }
 
     @PostMapping("/{cycleId}/verification")
@@ -49,6 +50,7 @@ public class LearningCycleController {
     }
 
     public record DiagnoseRequest(@NotNull UUID baselineRunId) {}
-    public record InterventionRequest(@NotBlank @Size(max = 2000) String note) {}
+    public record InterventionRequest(@NotBlank @Size(max = 2000) String note,
+                                      InterventionType type) {}
     public record VerificationRequest(@NotNull UUID followupRunId) {}
 }

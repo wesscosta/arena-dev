@@ -28,6 +28,9 @@ public class LearningCycle {
     @Column(name = "intervention_note", length = 2000)
     private String interventionNote;
     @Enumerated(EnumType.STRING)
+    @Column(name = "intervention_type", length = 24)
+    private InterventionType interventionType;
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private LearningCycleStatus status = LearningCycleStatus.DIAGNOSED;
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -49,6 +52,14 @@ public class LearningCycle {
     }
 
     public void intervene(String note) {
+        intervene(note, InterventionType.EXPLANATION);
+    }
+
+    public void intervene(String note, InterventionType type) {
+        if (type == null) throw new IllegalArgumentException("Selecione a estratégia de intervenção.");
+        if (type == InterventionType.PEER_DISCUSSION && baseline.resultsVisiblePublicly()) {
+            throw new IllegalArgumentException("Para discussão em pares, encerre a primeira verificação sem revelar a correção.");
+        }
         if (status != LearningCycleStatus.DIAGNOSED) {
             throw new IllegalArgumentException("A intervenção já foi registrada.");
         }
@@ -56,6 +67,7 @@ public class LearningCycle {
             throw new IllegalArgumentException("Descreva a intervenção em até 2000 caracteres.");
         }
         interventionNote = note.trim();
+        interventionType = type;
         status = LearningCycleStatus.INTERVENED;
         updatedAt = Instant.now();
     }
@@ -81,6 +93,7 @@ public class LearningCycle {
     public InteractionRun getBaseline() { return baseline; }
     public InteractionRun getFollowup() { return followup; }
     public String getInterventionNote() { return interventionNote; }
+    public InterventionType getInterventionType() { return interventionType; }
     public LearningCycleStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }
 }

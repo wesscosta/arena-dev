@@ -38,7 +38,7 @@ public class LearningCycleService {
     @Transactional(readOnly = true)
     public List<CycleView> list(UUID sessionId) {
         requireSession(sessionId);
-        return cycles.findBySessionIdOrderByCreatedAtDesc(sessionId).stream().map(CycleView::from).toList();
+        return cycles.findBySessionIdOrderByCreatedAtDesc(sessionId).stream().map(this::view).toList();
     }
 
     @Transactional
@@ -49,16 +49,25 @@ public class LearningCycleService {
         if (cycles.existsByBaselineId(runId)) {
             throw new IllegalArgumentException("Esta execução já iniciou um ciclo de aprendizagem.");
         }
-        return CycleView.from(cycles.save(new LearningCycle(
+        return view(cycles.save(new LearningCycle(
                 baseline.getSession(), baseline.getDefinition().getLearningTarget(), baseline)));
     }
 
     @Transactional
     public CycleView intervene(UUID sessionId, UUID cycleId, String note) {
+        return intervene(sessionId, cycleId, note, InterventionType.EXPLANATION);
+    }
+
+    @Transactional
+    public CycleView intervene(UUID sessionId, UUID cycleId, String note, InterventionType type) {
         lockSession(sessionId);
         LearningCycle cycle = cycleInSession(sessionId, cycleId);
-        cycle.intervene(note);
-        return CycleView.from(cycle);
+        if (type == InterventionType.PEER_DISCUSSION
+                && responses.countByRunId(cycle.getBaseline().getId()) < 2) {
+            throw new IllegalArgumentException("Discussão em pares requer ao menos duas respostas individuais na primeira verificação.");
+        }
+        cycle.intervene(note, type);
+        return view(cycle);
     }
 
     @Transactional
@@ -74,7 +83,7 @@ public class LearningCycleService {
             throw new IllegalArgumentException("A verificação precisa ter ocorrido após o diagnóstico.");
         }
         cycle.verify(followup);
-        return CycleView.from(cycle);
+        return view(cycle);
     }
 
     @Transactional(readOnly = true)
@@ -159,14 +168,22 @@ public class LearningCycleService {
         return cycle;
     }
 
+    private CycleView view(LearningCycle cycle) {
+        return CycleView.from(cycle, responses.countByRunId(cycle.getBaseline().getId()));
+    }
+
     public record CycleView(UUID id, UUID sessionId, UUID learningTargetId,
                             UUID baselineRunId, UUID followupRunId,
-                            LearningCycleStatus status, String interventionNote) {
-        static CycleView from(LearningCycle cycle) {
+                            LearningCycleStatus status, String interventionNote,
+                            InterventionType interventionType, boolean baselineResultsRevealed,
+                            long baselineResponseCount) {
+        static CycleView from(LearningCycle cycle, long baselineResponseCount) {
             return new CycleView(cycle.getId(), cycle.getSession().getId(), cycle.getTarget().getId(),
                     cycle.getBaseline().getId(),
                     cycle.getFollowup() == null ? null : cycle.getFollowup().getId(),
-                    cycle.getStatus(), cycle.getInterventionNote());
+                    cycle.getStatus(), cycle.getInterventionNote(),
+                    cycle.getInterventionType(), cycle.getBaseline().resultsVisiblePublicly(),
+                    baselineResponseCount);
         }
     }
 

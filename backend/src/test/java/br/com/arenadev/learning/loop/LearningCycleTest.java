@@ -43,6 +43,29 @@ class LearningCycleTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test
+    void peerDiscussionCannotBeRecordedAfterCorrectionWasRevealed() throws Exception {
+        UUID sessionId=UUID.randomUUID();
+        UUID targetId=UUID.randomUUID();
+        ClassSession session=mock(ClassSession.class);
+        LearningTarget target=mock(LearningTarget.class);
+        InteractionDefinition definition=mock(InteractionDefinition.class);
+        when(session.getId()).thenReturn(sessionId);
+        when(target.getId()).thenReturn(targetId);
+        when(definition.getLearningTarget()).thenReturn(target);
+        InteractionRun first=run(session,definition);
+        first.open(java.time.Instant.now());
+        first.lockResponses(java.time.Instant.now());
+        first.revealResults(java.time.Instant.now());
+        first.close(java.time.Instant.now());
+        LearningCycle cycle=new LearningCycle(session,target,first);
+        assertThatThrownBy(()->cycle.intervene("Debate",InterventionType.PEER_DISCUSSION))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("sem revelar");
+        assertThat(cycle.getInterventionType()).isNull();
+        cycle.intervene("Explicação sem restrição",InterventionType.EXPLANATION);
+        assertThat(cycle.getInterventionType()).isEqualTo(InterventionType.EXPLANATION);
+    }
+
     private static InteractionRun run(ClassSession session, InteractionDefinition definition) throws Exception {
         InteractionRun run = new InteractionRun(session, definition, 1);
         Field id = InteractionRun.class.getDeclaredField("id");

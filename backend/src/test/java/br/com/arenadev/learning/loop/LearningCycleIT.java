@@ -99,6 +99,74 @@ class LearningCycleIT {
         assertThat(cycles.list(otherSession.id())).isEmpty();
     }
 
+    @Test
+    void peerInstructionRecordsStrategyAndBlocksPreviouslyRevealedAnswers() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        var classroom = classrooms.create("Peer Instruction " + suffix, "PI" + suffix);
+        var student = students.create("PI-" + suffix, "Estudante pares " + suffix, null);
+        var peer = students.create("PI-PAIR-" + suffix, "Colega pares " + suffix, null);
+        classrooms.enroll(classroom.id(), student.id());
+        classrooms.enroll(classroom.id(), peer.id());
+        var session = sessions.start(classroom.id(), "Discussão em pares", Set.of(student.id(), peer.id()));
+        var members = participants.findBySessionIdOrderByStudentNameAsc(session.id());
+        var participant = members.stream().filter(p -> p.getStudent().getId().equals(student.id())).findFirst().orElseThrow();
+        var peerParticipant = members.stream().filter(p -> p.getStudent().getId().equals(peer.id())).findFirst().orElseThrow();
+        var target = targets.save(new LearningTarget("Filtrar registros", LearningTargetType.COMPETENCY, null));
+        InteractionDefinition definition = new InteractionDefinition(
+                "Onde fica a condição de filtragem?", InteractionResponseKind.CHOICE,
+                InteractionEvaluationMode.CORRECT_ANSWER, InteractionPresentationMode.DEFAULT,
+                target, true, null, new Provenance(ProvenanceOrigin.TEACHER, "lesson:peer", null,
+                null, Instant.now()));
+        definition.addOption("a", "WHERE", 0, null);
+        definition.addOption("b", "ORDER BY", 1, null);
+        definition.configureResponse("{\"minSelections\":1,\"maxSelections\":1}");
+        definition.configureEvaluation("{\"correctOptionKeys\":[\"a\"]}");
+        definition.activate();
+        definition = definitions.saveAndFlush(definition);
+
+        var before = createRun(session.id(), definition, 1);
+        responses.submit(before.getId(), peerParticipant.getId(), "{\"selectedOptionKeys\":[\"a\"]}");
+        finishRun(before, participant.getId(), "b");
+        var cycle = cycles.diagnose(session.id(), before.getId());
+        assertThat(cycle.baselineResultsRevealed()).isFalse();
+        var intervention = cycles.intervene(session.id(), cycle.id(),
+                "Pares discutiram as alternativas, sem revelar o gabarito.", InterventionType.PEER_DISCUSSION);
+        assertThat(intervention.interventionType()).isEqualTo(InterventionType.PEER_DISCUSSION);
+        assertThat(cycles.list(session.id()).getFirst().interventionType())
+                .isEqualTo(InterventionType.PEER_DISCUSSION);
+
+        var after = createRun(session.id(), definition, 2);
+        responses.submit(after.getId(), peerParticipant.getId(), "{\"selectedOptionKeys\":[\"a\"]}");
+        finishRun(after, participant.getId(), "a");
+        var verified = cycles.verify(session.id(), cycle.id(), after.getId());
+        assertThat(verified.interventionType()).isEqualTo(InterventionType.PEER_DISCUSSION);
+        assertThat(verified.baselineResponseCount()).isEqualTo(2);
+        assertThat(cycles.comparison(session.id(), cycle.id()).transitions().incorrectToCorrect()).isEqualTo(1);
+
+        var revealed = createRun(session.id(), definition, 3);
+        responses.submit(revealed.getId(), peerParticipant.getId(), "{\"selectedOptionKeys\":[\"b\"]}");
+        finishRun(revealed, participant.getId(), "b", true);
+        var exposedCycle = cycles.diagnose(session.id(), revealed.getId());
+        assertThat(exposedCycle.baselineResultsRevealed()).isTrue();
+        assertThatThrownBy(() -> cycles.intervene(session.id(), exposedCycle.id(),
+                "Não deve ser permitido", InterventionType.PEER_DISCUSSION))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("sem revelar a correção");
+        assertThat(cycles.list(session.id()).getFirst().status())
+                .isEqualTo(LearningCycleStatus.DIAGNOSED);
+        var single = createRun(session.id(), definition, 4);
+        finishRun(single, participant.getId(), "b");
+        var loneCycle = cycles.diagnose(session.id(), single.getId());
+        assertThat(loneCycle.baselineResponseCount()).isEqualTo(1);
+        assertThatThrownBy(() -> cycles.intervene(session.id(), loneCycle.id(),
+                "Discussão inviável", InterventionType.PEER_DISCUSSION))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("duas respostas individuais");
+        // A traditional feedback cycle remains possible after revealing correctness.
+        assertThat(cycles.intervene(session.id(), exposedCycle.id(), "Revisão explícita.",
+                InterventionType.EXPLANATION).interventionType()).isEqualTo(InterventionType.EXPLANATION);
+    }
+
     private InteractionRun createRun(UUID sessionId, InteractionDefinition definition, int seq) {
         InteractionRun run = new InteractionRun(sessionRepository.findById(sessionId).orElseThrow(), definition, seq);
         run.open(Instant.now());
@@ -106,10 +174,15 @@ class LearningCycleIT {
     }
 
     private void finishRun(InteractionRun run, UUID participantId, String key) {
+        finishRun(run, participantId, key, false);
+    }
+
+    private void finishRun(InteractionRun run, UUID participantId, String key, boolean reveal) {
         responses.submit(run.getId(), participantId, "{\"selectedOptionKeys\":[\"" + key + "\"]}");
         run.lockResponses(Instant.now());
         runs.saveAndFlush(run);
         evaluations.evaluateRun(run.getId());
+        if (reveal) run.revealResults(Instant.now());
         run.close(Instant.now());
         runs.saveAndFlush(run);
     }
