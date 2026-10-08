@@ -102,7 +102,7 @@ ContentRef e Provenance da v0.9 devem aproveitar esses identificadores sem dupli
 
 ## Estado atual após o primeiro slice vertical
 
-A fundação prevista acima já avançou de V39 até **V47**:
+A fundação prevista acima já avançou de V39 até **V48**:
 
 ```text
 V39 LearningTarget / ContentRef / Provenance
@@ -114,6 +114,7 @@ V39 LearningTarget / ContentRef / Provenance
 → V45 LearningEvidence
 → V46 Poll shadow adapter/validation
 → V47 Word Cloud shadow adapter/validation
+→ V48 observações duráveis + gate final AI-ready/cutover
 ```
 
 O primeiro fluxo nativo **Verificar aprendizagem** está implementado ponta a ponta:
@@ -158,16 +159,36 @@ Gates validados em 07/10/2026:
 - Timer já é capacidade transversal própria da sessão, com lifecycle persistido e realtime; não requer absorção pelo Interaction Core;
 - Groups passou a suportar geração balanceada e composição manual persistida, com invariantes de participantes presentes, ausência de duplicatas e limite de 12 por grupo.
 
-## Próximo passo arquitetural
+## Gate arquitetural final — estado atual
 
-A sequência de menor risco agora é:
+O `SessionRuntimeSnapshotService` já materializa o runtime snapshot da sessão; criar um segundo aggregate seria redundante.
+
+A V48 adiciona `interaction_shadow_observations` e o fechamento passa a ter dois contratos consultáveis:
+
+- `/api/learning-core/gate/runs/{runId}/trace` — prova estruturada de AI-ready;
+- `/api/learning-core/gate/cutover` — qualificação de Quiz/Poll/Word Cloud por evidência terminal equivalente.
+
+Os três shadows persistem EQUIVALENT/MISMATCH/SYNC_ERROR sem afetar o fluxo legado. O gate exige, por default, 3 rodadas encerradas equivalentes por tipo e nenhuma divergência não resolvida na amostra.
+
+A remoção física das tabelas legadas **não pertence ao mesmo passo do primeiro cutover**: ela permanece bloqueada até uma release com core autoritativo atravessar a janela de rollback. Isso é requisito de reversibilidade, não débito ignorado.
+
+Próxima sequência de menor risco:
 
 ```text
-Session contract / runtime snapshot
-→ AI-ready audit de proveniência + resposta bruta + avaliação + evidência
-→ definir critérios de cutover dos shadows
-→ remover legado somente após equivalência comprovada
-→ hardening / E2E / a11y / documentação final
+gate local completo V48 + Compose/E2E + backup/restore (concluídos)
+→ CI verde no mesmo SHA final
+→ merge em main + gate final
+→ freeze/publicação v0.9.0 com legado ainda autoritativo
+→ coleta operacional dos shadows
+→ cutover lógico somente quando /api/learning-core/gate/cutover aprovar
+→ janela de rollback
+→ somente então remoção física do legado em release posterior
 ```
+
+A execução local de 2026-10-07 concluiu `release-gate.sh local` com **163 testes unitários backend, 109 integrações, 298 testes frontend e 22/22 E2E Chromium**, além de stack Compose isolada saudável. O backup do banco em V48 também foi restaurado e validado em PostgreSQL 17 temporário.
+
+A qualificação operacional com três rodadas terminais equivalentes por tipo **não é requisito para publicar a v0.9.0**: ela é requisito para tornar o Interaction Core autoridade. A v0.9 precisa ser publicada primeiro para disponibilizar a observabilidade durável que coleta essa evidência. Detalhes e checklist estão em `FINAL_ARCHITECTURE_GATE.md`.
+
+Detalhes: `docs/v0.9/FINAL_ARCHITECTURE_GATE.md`.
 
 Não iniciar Mastery, IA generativa, RAG ou novos game modes antes de fechar esses gates.

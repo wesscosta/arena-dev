@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-RELEASE_VERSION="${ARENA_RELEASE_VERSION:-0.8.0}"
+RELEASE_VERSION="${ARENA_RELEASE_VERSION:-}"
 MODE="${1:-}"
 CI_RUN_URL=""
 BACKUP_FILE=""
@@ -63,6 +63,23 @@ while (($#)); do
 done
 
 cd "$PROJECT_ROOT"
+
+if [[ -z "$RELEASE_VERSION" ]]; then
+  RELEASE_VERSION="$({
+    awk '
+      /<artifactId>arena-dev-api<\/artifactId>/ { artifact = 1; next }
+      artifact && /<version>/ {
+        line = $0
+        sub(/^.*<version>/, "", line)
+        sub(/<\/version>.*$/, "", line)
+        print line
+        exit
+      }
+    ' backend/pom.xml
+  })"
+fi
+[[ -n "$RELEASE_VERSION" ]] || fail "não foi possível determinar a versão do release"
+
 mkdir -p release-evidence
 evidence_file="release-evidence/v${RELEASE_VERSION}-${MODE}-$(date -u +%Y%m%dT%H%M%SZ).log"
 exec > >(tee "$evidence_file") 2>&1
@@ -82,7 +99,14 @@ node_line="$(node --version)"
 [[ "$node_line" == v22.* ]] || fail "Node.js 22 é obrigatório; encontrado: $node_line"
 
 "$SCRIPT_DIR/check-metadata.sh"
-"$SCRIPT_DIR/verify-v0.8-contract.sh"
+if [[ -x "$SCRIPT_DIR/verify-v0.9-contract.sh" \
+      && -f backend/src/main/resources/db/migration/V48__learning_core_release_gate.sql ]]; then
+  "$SCRIPT_DIR/verify-v0.9-contract.sh"
+  expected_schema_version=48
+else
+  "$SCRIPT_DIR/verify-v0.8-contract.sh"
+  expected_schema_version=38
+fi
 git diff --check || fail "git diff --check falhou"
 
 head_sha="$(git rev-parse HEAD)"
@@ -135,7 +159,8 @@ if [[ "$MODE" == "final" ]]; then
     fail "CI validou $ci_sha, mas a release aponta para $head_sha"
   printf 'CI validado: %s\n' "$verified_ci_url"
 
-  "$SCRIPT_DIR/verify-backup.sh" "$BACKUP_FILE"
+  ARENA_SCHEMA_VERSION="$expected_schema_version" \
+    "$SCRIPT_DIR/verify-backup.sh" "$BACKUP_FILE"
 fi
 
 printf 'Executando gate backend...\n'
@@ -165,12 +190,6 @@ APP_TEACHER_USERNAME='professor' \
 APP_TEACHER_PASSWORD='release-gate-teacher-password' \
 NEXT_PUBLIC_API_URL='https://api.arena.example.test' \
   docker compose -f compose.yaml -f compose.prod.yaml config --quiet
-
-for fixed_container in arena-dev-postgres arena-dev-backend arena-dev-frontend; do
-  if docker ps --all --format '{{.Names}}' | grep --fixed-strings --line-regexp --quiet "$fixed_container"; then
-    fail "o container $fixed_container já existe; preserve-o e remova/renomeie antes do gate isolado"
-  fi
-done
 
 compose_project="arena_release_gate_$$"
 export COMPOSE_PROJECT_NAME="$compose_project"

@@ -17,8 +17,10 @@ class WordCloudInteractionShadowBridgeTest {
     void disabledBridgeDoesNothing() {
         WordCloudInteractionShadowService service =
                 mock(WordCloudInteractionShadowService.class);
+        InteractionShadowObservationService observations =
+                mock(InteractionShadowObservationService.class);
         WordCloudInteractionShadowBridge bridge =
-                new WordCloudInteractionShadowBridge(service, false);
+                new WordCloudInteractionShadowBridge(service, observations, false);
         UUID roundId = UUID.randomUUID();
 
         bridge.afterLegacyMutation(roundId);
@@ -27,31 +29,51 @@ class WordCloudInteractionShadowBridgeTest {
     }
 
     @Test
-    void enabledBridgeRunsComparisonOutsideTransaction() {
+    void enabledBridgeRunsComparisonAndPersistsEvidenceOutsideTransaction() {
         WordCloudInteractionShadowService service =
                 mock(WordCloudInteractionShadowService.class);
+        InteractionShadowObservationService observations =
+                mock(InteractionShadowObservationService.class);
         UUID roundId = UUID.randomUUID();
-        when(service.compare(roundId)).thenReturn(comparison(roundId, true));
+        WordCloudInteractionShadowService.ShadowComparison comparison =
+                comparison(roundId, true);
+        when(service.compare(roundId)).thenReturn(comparison);
         WordCloudInteractionShadowBridge bridge =
-                new WordCloudInteractionShadowBridge(service, true);
+                new WordCloudInteractionShadowBridge(service, observations, true);
 
         bridge.afterLegacyMutation(roundId);
 
         verify(service).compare(roundId);
+        verify(observations).record(
+                InteractionShadowType.WORD_CLOUD,
+                roundId,
+                comparison.interactionRunId(),
+                true,
+                List.of(),
+                0
+        );
     }
 
     @Test
-    void shadowFailureNeverEscapesIntoLegacyFlow() {
+    void shadowFailureNeverEscapesIntoLegacyFlowAndIsRecorded() {
         WordCloudInteractionShadowService service =
                 mock(WordCloudInteractionShadowService.class);
+        InteractionShadowObservationService observations =
+                mock(InteractionShadowObservationService.class);
         UUID roundId = UUID.randomUUID();
-        when(service.compare(roundId))
-                .thenThrow(new IllegalStateException("shadow failure"));
+        IllegalStateException error = new IllegalStateException("shadow failure");
+        when(service.compare(roundId)).thenThrow(error);
         WordCloudInteractionShadowBridge bridge =
-                new WordCloudInteractionShadowBridge(service, true);
+                new WordCloudInteractionShadowBridge(service, observations, true);
 
         assertThatCode(() -> bridge.afterLegacyMutation(roundId))
                 .doesNotThrowAnyException();
+
+        verify(observations).recordFailure(
+                InteractionShadowType.WORD_CLOUD,
+                roundId,
+                error
+        );
     }
 
     private static WordCloudInteractionShadowService.ShadowComparison comparison(

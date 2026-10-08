@@ -2,7 +2,7 @@
 
 **Arena Dev Community** é uma plataforma open source e self-hosted para condução, participação e gamificação de dinâmicas de sala, com foco em baixa fricção para o professor.
 
-> **Baseline publicada:** `v0.7.0 — Educational Integrations`.
+> **Baseline publicada:** `v0.8.0 — Professor Experience & Journey MVP`.
 >
 > **Linha ativa:** `v0.9 — Arena Learning Core`.
 >
@@ -118,7 +118,7 @@ flowchart LR
     P["Projetor"] --> F
     F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
     F <-->|"WebSocket"| B
-    B --> D["PostgreSQL 17 + Flyway V1–V47"]
+    B --> D["PostgreSQL 17 + Flyway V1–V48"]
 ```
 
 Princípios:
@@ -281,7 +281,7 @@ Histórico da v0.6:
 - `v0.6.0` — baseline técnica encerrada e congelada;
 - `v0.7.0` — Educational Integrations; publicada e encerrada;
 - `v0.8.0` — Professor Experience & Journey MVP; publicada, encerrada e congelada em V38;
-- `v0.9` — **Arena Learning Core em desenvolvimento**; schema aditivo até V47, fluxo nativo `Verificar aprendizagem` operando de LearningTarget até LearningEvidence e shadows validados para Quiz, Poll e Nuvem de Palavras. Spotlight/Timer já atendem o desenho de sessão; Groups agora suporta geração balanceada e composição manual persistida.
+- `v0.9` — **Arena Learning Core em fechamento arquitetural**; schema aditivo até V48, fluxo nativo `Verificar aprendizagem` operando de LearningTarget até LearningEvidence, trace AI-ready estruturado e shadows de Quiz/Poll/Nuvem com observações duráveis e gate objetivo de cutover. A remoção física do legado permanece bloqueada até a janela segura de rollback; consulte `docs/v0.9/FINAL_ARCHITECTURE_GATE.md`.
 
 ## Licença
 

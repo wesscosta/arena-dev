@@ -53,6 +53,7 @@ class QuizInteractionShadowIT {
     @Autowired private QuizInteractionShadowLinkRepository linkRepository;
     @Autowired private InteractionResponseRepository responseRepository;
     @Autowired private InteractionEvaluationRepository evaluationRepository;
+    @Autowired private InteractionShadowObservationRepository observationRepository;
 
     @Test
     void automaticShadowMatchesLegacyQuizAcrossAnswerChangeLockRevealAndClose() {
@@ -112,6 +113,12 @@ class QuizInteractionShadowIT {
                 .isEqualTo(InteractionRunStatus.CLOSED);
 
         assertThat(shadowService.compare(prepared.round().id()).equivalent()).isTrue();
+        assertThat(observationRepository.findAll()).anyMatch(observation ->
+                observation.getLegacyRoundId().equals(prepared.round().id())
+                        && observation.terminal()
+                        && observation.getStatus()
+                        == InteractionShadowObservationStatus.EQUIVALENT
+        );
     }
 
     private QuizInteractionShadowLink link(UUID quizRoundId) {

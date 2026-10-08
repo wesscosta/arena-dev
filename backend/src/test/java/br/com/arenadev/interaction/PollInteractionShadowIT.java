@@ -47,6 +47,7 @@ class PollInteractionShadowIT {
     @Autowired private PollInteractionShadowService shadowService;
     @Autowired private PollInteractionShadowLinkRepository linkRepository;
     @Autowired private InteractionResponseRepository responseRepository;
+    @Autowired private InteractionShadowObservationRepository observationRepository;
 
     @Test
     void automaticShadowMatchesLegacyPollAcrossVoteRevealAndClose() {
@@ -106,6 +107,12 @@ class PollInteractionShadowIT {
         assertThat(closedLink.getRun().acceptsResponses()).isFalse();
 
         assertThat(shadowService.compare(created.round().id()).equivalent()).isTrue();
+        assertThat(observationRepository.findAll()).anyMatch(observation ->
+                observation.getLegacyRoundId().equals(created.round().id())
+                        && observation.terminal()
+                        && observation.getStatus()
+                        == InteractionShadowObservationStatus.EQUIVALENT
+        );
     }
 
     @Test

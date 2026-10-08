@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-EXPECTED_VERSION="${ARENA_RELEASE_VERSION:-0.8.0}"
+EXPECTED_VERSION="${ARENA_RELEASE_VERSION:-}"
 REQUIRE_LICENSE=false
 
 fail() {
@@ -54,6 +54,7 @@ backend_version="$({
     }
   ' backend/pom.xml
 })"
+EXPECTED_VERSION="${EXPECTED_VERSION:-$backend_version}"
 frontend_version="$(node -p "require('./frontend/package.json').version")"
 lock_version="$(node -p "require('./frontend/package-lock.json').version")"
 lock_root_version="$(node -p "require('./frontend/package-lock.json').packages[''].version")"
