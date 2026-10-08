@@ -4,9 +4,9 @@
 
 **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 
-**Próxima linha planejada:** `v0.10 — Learning Loop`.
+**Linha em desenvolvimento:** `v0.10 — Learning Loop`, branch `feat/v0.10-learning-loop`. [Roadmap](ROADMAP_V0_10.md).
 
-**Estado corrente:** v0.9.0 publicada e congelada; nenhum incremento funcional novo pertence a esta linha.
+**Estado corrente:** v0.9.0 publicada e congelada; fundação 10.1 em desenvolvimento isolado, ainda não publicada.
 
 **Branch de release:** `main`.
 

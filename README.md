@@ -4,7 +4,7 @@
 
 > **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 >
-> **Próxima linha planejada:** `v0.10 — Learning Loop`.
+> **Linha v0.10 em desenvolvimento:** `feat/v0.10-learning-loop` — [plano de implementação](docs/ROADMAP_V0_10.md).
 >
 > **Execução atual:** a v0.9.0 está publicada e congelada. Learning Domain, Interaction Core, LearningEvidence, AI-ready trace e shadow/cutover gate fazem parte da baseline. O legado permanece autoritativo até que a amostra operacional de shadows aprove o cutover lógico; remoção física fica para release posterior à janela de rollback.
 
