@@ -16,7 +16,7 @@ concurrency:
 jobs:
   backend:
     name: Backend — Java 21, PostgreSQL and integration tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     defaults:
       run:
@@ -38,7 +38,7 @@ jobs:
 
   frontend:
     name: Frontend — tests, TypeScript and production build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
@@ -60,6 +60,12 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Check release formatting
+        run: npm run format:check
+
       - name: Run frontend tests
         run: npm test
 
@@ -71,7 +77,7 @@ jobs:
 
   e2e:
     name: Compose and E2E — Chromium critical flows
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     needs: [backend, frontend]
     env:
