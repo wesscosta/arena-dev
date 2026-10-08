@@ -58,14 +58,15 @@ import {
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
-import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, fetchClassroomDomain, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName } from "@/lib/classroom-api";
-import { createSession as createSessionApi, fetchSessionDomain, fetchSessionParticipants, finishSession as finishSessionApi, releaseParticipantDevice, setParticipantPresence } from "@/lib/session-api";
-import { copyActivity as copyActivityApi, createActivity as createActivityApi, fetchActivityDomain, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
+import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName } from "@/lib/classroom-api";
+import { createSession as createSessionApi, fetchSessionParticipants, finishSession as finishSessionApi, releaseParticipantDevice, setParticipantPresence } from "@/lib/session-api";
+import { copyActivity as copyActivityApi, createActivity as createActivityApi, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
 import { fetchActivitySteps, replaceActivitySteps } from "@/lib/activity-step-api";
 import { validateActivitySteps } from "@/lib/activity-steps";
 import {
   damageBoss as damageBossApi,
   fetchLiveFlow,
+  fetchSessionMechanics,
   mergeSessionMechanics,
   nextArenaQuestion as nextArenaQuestionApi,
   nextLiveFlow,
@@ -79,11 +80,12 @@ import {
   startLiveFlow,
   type LiveFlowState,
 } from "@/lib/mechanics-api";
-import { createScoreEvents as createScoreEventsApi, fetchScoreDomain, fetchScoreEvents, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
+import { createScoreEvents as createScoreEventsApi, fetchScoreEvents, reverseScoreEvent as reverseScoreEventApi, type CreateScoreEventInput } from "@/lib/score-api";
 import { closeBuzzer as closeBuzzerApi, joinQrImageUrl, openBuzzer as openBuzzerApi, rotateJoinCode } from "@/lib/realtime-api";
 import { fetchSessionEventsBySession, type SessionEvent } from "@/lib/session-event-api";
 import { updateRankingPresentation, type RankingPresentationInput } from "@/lib/ranking-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
+import { fetchDashboardBootstrap } from "@/lib/dashboard-bootstrap-api";
 import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
 import { activeSessionId, selectPreferredClassroomId } from "@/lib/app-state";
 import {
@@ -186,24 +188,16 @@ export default function ArenaApp() {
     async function bootstrap() {
       const localData = loadData();
       try {
-        const domain = await fetchClassroomDomain();
-        const [sessionDomain, scoreEvents, activities] = await Promise.all([
-          fetchSessionDomain(domain.classrooms),
-          fetchScoreDomain(domain.classrooms),
-          fetchActivityDomain(domain.classrooms),
-        ]);
+        const domain = await fetchDashboardBootstrap();
         if (cancelled) return;
         const selectedClassroomId = selectPreferredClassroomId(domain.classrooms, localData.activeClassroomId);
         setData({
           ...localData,
           ...domain,
-          ...sessionDomain,
-          scoreEvents,
-          activities,
           sessionRuntime: [],
           groupHistory: [],
           activeClassroomId: selectedClassroomId,
-          currentSessionId: activeSessionId(sessionDomain.sessions, selectedClassroomId),
+          currentSessionId: activeSessionId(domain.sessions, selectedClassroomId),
         });
         setApiError("");
       } catch (error) {
@@ -299,16 +293,11 @@ export default function ArenaApp() {
   }
 
   async function refreshClassroomDomain(preferredClassroomId?: string) {
-    const domain = await fetchClassroomDomain();
-    const [sessionDomain, scoreEvents, activities] = await Promise.all([
-      fetchSessionDomain(domain.classrooms),
-      fetchScoreDomain(domain.classrooms),
-      fetchActivityDomain(domain.classrooms),
-    ]);
+    const domain = await fetchDashboardBootstrap();
     setData((current) => {
       const candidate = preferredClassroomId ?? current.activeClassroomId;
       const activeClassroomId = selectPreferredClassroomId(domain.classrooms, candidate);
-      return { ...current, ...domain, ...sessionDomain, scoreEvents, activities, sessionRuntime: [], groupHistory: [], activeClassroomId, currentSessionId: activeSessionId(sessionDomain.sessions, activeClassroomId) };
+      return { ...current, ...domain, sessionRuntime: [], groupHistory: [], activeClassroomId, currentSessionId: activeSessionId(domain.sessions, activeClassroomId) };
     });
     setApiError("");
   }
@@ -2367,6 +2356,24 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     setSessionNow(Date.now());
     const intervalId = window.setInterval(() => setSessionNow(Date.now()), 1000);
     return () => window.clearInterval(intervalId);
+  }, [currentSession?.id]);
+
+  // The dashboard loads only session summaries. Hydrate authoritative mechanics for the
+  // single session actually opened by the teacher, never for hundreds of historical runs.
+  useEffect(() => {
+    if (!currentSession) return;
+    let active = true;
+    void fetchSessionMechanics(currentSession.id)
+      .then((runtime) => {
+        if (!active) return;
+        patch((current) => ({
+          ...current,
+          sessions: current.sessions.map((session) => session.id === runtime.sessionId
+            ? mergeSessionMechanics(session, runtime) : session),
+        }));
+      })
+      .catch((error) => { if (active) notify(errorMessage(error)); });
+    return () => { active = false; };
   }, [currentSession?.id]);
 
   useEffect(() => {
