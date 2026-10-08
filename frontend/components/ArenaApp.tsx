@@ -17,6 +17,7 @@ import { useArenaRealtime } from "@/components/arena/live/useArenaRealtime";
 import { useArenaScoring } from "@/components/arena/live/useArenaScoring";
 import { useArenaToolState } from "@/components/arena/live/useArenaToolState";
 import ArenaNextActions from "@/components/arena/live/ArenaNextActions";
+import ArenaContextualMaterial from "@/components/arena/live/ArenaContextualMaterial";
 import WheelParticipantSelector from "@/components/arena/selection/WheelParticipantSelector";
 import {
   presentationToSelectorMode,
@@ -3058,8 +3059,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           elapsed={formatSessionElapsed(currentSession.startedAt, sessionNow)}
           sessionBusy={sessionBusy}
           canProject={Boolean(joinCode)}
-          nextActions={<ArenaNextActions dynamic={activeDynamic} onSelectDynamic={selectDynamic}
-            onOpenGroups={() => selectTool("groups")} />}
+          nextActions={<>
+            <ArenaNextActions dynamic={activeDynamic} onSelectDynamic={selectDynamic}
+              onOpenGroups={() => selectTool("groups")} />
+            <ArenaContextualMaterial sessionId={currentSession.id} notify={notify} />
+          </>}
           onGoDashboard={onGoDashboard}
           onBack={onBack}
           onOpenProjector={openProjector}

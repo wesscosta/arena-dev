@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { expect, request, test, type APIRequestContext, type APIResponse, type Page } from "@playwright/test";
 
 type ClassroomView = { id: string; name: string };
@@ -638,4 +640,86 @@ test("reverter XP de sorteio mantém participação e histórico sem duplicar le
   } finally {
     await api.dispose();
   }
+});
+
+test("Biblioteca contextual mantém a mesma referência na Arena e retorna ao palco após F5", async ({ page }) => {
+  test.setTimeout(85_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    const title = `WHERE - contexto ${fixture.session.id.slice(0,8)}`;
+    const created = await api.post("/api/library/resources", {
+      data: { title, summary: "Cláusula de filtragem", body: "# WHERE\nCritérios em SQL.",
+        format: "MARKDOWN", sourceType: "MANUAL", subject: "Banco de Dados", tags: ["SQL"], language: "pt-BR" },
+      headers: csrfHeaders,
+    });
+    await expectOk(created, "Material da Biblioteca");
+    const resource = (await created.json()) as { id: string; revision: number };
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    const open = page.getByRole("button", { name: "Selecionar material" });
+    await expect(open).toBeVisible();
+    await open.click();
+    const dialog = page.getByRole("dialog", { name: "Biblioteca nesta aula" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel("Encontrar material na Biblioteca").fill(title);
+    await dialog.getByRole("button", { name: new RegExp(title) }).click();
+    await expect(dialog.getByRole("heading", { name: title })).toBeVisible();
+    await expect(dialog.getByRole("heading", { name: "WHERE", exact: true })).toBeVisible();
+    await page.addScriptTag({ content: readFileSync(resolve(process.cwd(), "node_modules/axe-core/axe.min.js"), "utf8") });
+    const accessibility = await page.evaluate(async () => {
+      const runner = (window as unknown as { axe: { run: (selector: string, options: object) => Promise<{
+        violations: Array<{ id: string; impact: string; nodes: Array<{ target: string[] }> }>
+      }> } }).axe;
+      const result = await runner.run('[role="dialog"][aria-label], [role="dialog"][aria-labelledby]', {
+        runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] },
+      });
+      return result.violations.map((violation) => ({
+        id: violation.id, impact: violation.impact,
+        targets: violation.nodes.slice(0, 3).map((node) => node.target.join(" ")),
+      }));
+    });
+    console.log("A11Y_CONTEXT_MATERIAL", JSON.stringify(accessibility));
+    expect(accessibility.filter((violation) => ["critical", "serious"].includes(violation.impact))).toEqual([]);
+    // The contextual panel must also retain its accessible dialog semantics in light mode.
+    await page.evaluate(() => { document.documentElement.dataset.theme = "light"; });
+    const lightIssues = await page.evaluate(async () => {
+      const runner = (window as unknown as { axe: { run: (selector: string, options: object) => Promise<{
+        violations: Array<{ id: string; impact: string }>
+      }> } }).axe;
+      const result = await runner.run('[role="dialog"]', {
+        runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
+      });
+      return result.violations.map((violation) => ({ id: violation.id, impact: violation.impact }));
+    });
+    console.log("A11Y_CONTEXT_MATERIAL_LIGHT", JSON.stringify(lightIssues));
+    expect(lightIssues.filter((issue) => ["critical", "serious"].includes(issue.impact))).toEqual([]);
+    await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
+    await expect(page.getByRole("button", { name: "Abrir material" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Abrir material" })).toBeFocused();
+    await expect(page.getByTestId("participant-selection-experience")).toBeVisible();
+
+    const linked = await api.get(`/api/sessions/${fixture.session.id}/contextual-material`);
+    await expectOk(linked, "Vínculo persistido");
+    expect(await linked.json()).toMatchObject({ resourceId: resource.id, revision: resource.revision, available: true });
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Suas turmas" })).toBeVisible();
+    await page.locator("article.overview-class-card")
+      .filter({ hasText: fixture.classroomName }).click();
+    await page.getByRole("button", { name: "Continuar Arena" }).click();
+    await expect(page.getByRole("button", { name: "Abrir material" })).toBeVisible();
+    await page.getByRole("button", { name: "Abrir material" }).click();
+    await expect(page.getByRole("dialog", { name: "Biblioteca nesta aula" })
+      .getByRole("heading", { name: title })).toBeVisible();
+    // No duplication of material body. The same canonical resource also remains usable by a Journey.
+    const canonical = await api.get(`/api/library/resources/${resource.id}`);
+    await expectOk(canonical, "Material canônico preservado");
+    expect((await canonical.json()) as { body: string }).toMatchObject({ body: "# WHERE\nCritérios em SQL." });
+    await dialog.getByRole("button", { name: "Desvincular desta aula" }).click();
+    await expect(dialog.getByText("Selecione um material publicado.", { exact: false })).toBeVisible();
+    const absent = await api.get(`/api/sessions/${fixture.session.id}/contextual-material`);
+    await expectOk(absent, "Desvinculação");
+    expect(await absent.text()).toBe("");
+  } finally { await api.dispose(); }
 });
