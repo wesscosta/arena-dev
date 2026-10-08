@@ -45,7 +45,7 @@ A v0.9.0 é o **Arena Learning Core** e está publicada/congelada. A linha conso
 
 ## Próxima linha planejada — v0.10
 
-A próxima evolução é **Learning Loop**. Confidence, Before & After, Error Clinic, Recovery e Mastery v1 permanecem fora da baseline v0.9.0 até abertura formal da nova linha.
+A linha **v0.10 — Learning Loop** está aberta em branch isolada, com [roadmap revisado](ROADMAP_V0_10.md) e [auditoria crítica de navegação, sorteio e materiais](AVALIACAO_V0_10_ARENA_MATERIAIS.md). Confidence, Before & After, Error Clinic e Recovery são incrementos planejados, não publicados. **Mastery v1 fica adiada até taxonomia e blueprint validados.**
 
 ## Baseline histórica — v0.8
 
@@ -98,3 +98,10 @@ Não reescrever documentação histórica para fabricar evidência retroativa. Q
 `16.6 — Knowledge & Retrieval Foundation` é pós-v0.8/opcional e não bloqueia a release. O planejamento semântico/RAG inicial permanece em [`INCREMENT_16_5C_PLAN.md`](INCREMENT_16_5C_PLAN.md).
 
 - [`INCREMENT_16_5B_2_SNAPSHOT_HARDENING.md`](INCREMENT_16_5B_2_SNAPSHOT_HARDENING.md) — integridade do snapshot Biblioteca → Journey e preservação de revisão em updates comuns.
+
+## v0.10 — Decisões de produto (08/10/2026)
+
+- [Roadmap técnico e critérios de release](ROADMAP_V0_10.md)
+- [Auditoria da Arena, sorteio e Canva/HTML](AVALIACAO_V0_10_ARENA_MATERIAIS.md)
+- [ADR-0051 — Seleção e desfecho](adr/ADR-0051-selection-outcome-and-draw-policy.md)
+- [ADR-0052 — Recursos externos](adr/ADR-0052-external-resources-as-placements.md)

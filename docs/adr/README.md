@@ -75,3 +75,9 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0044 — SubmissionItem representa entregas polimórficas](ADR-0044-submissionitem-entrega-polimorfica.md)
 
 - [ADR-0045 — Jornada é estudo sequencial, não workflow de atividades](ADR-0045-jornada-e-estudo-sequencial-nao-workflow-de-atividades.md)
+
+### Decisões da linha v0.10 (08/10/2026)
+
+- [ADR-0050 — LearningCycle e Confidence](ADR-0050-learning-loop-cycle-and-confidence-boundaries.md)
+- [ADR-0051 — Seleção e desfecho](ADR-0051-selection-outcome-and-draw-policy.md)
+- [ADR-0052 — Recursos externos como placements](ADR-0052-external-resources-as-placements.md)
