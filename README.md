@@ -6,7 +6,7 @@
 >
 > **PR de acompanhamento:** [#35 — v0.10 (rascunho; não fazer merge)](https://github.com/wesscosta/arena-dev/pull/35).
 >
-> **P1-A em andamento de homologação:** Peer Instruction reutiliza LearningCycle e LearningCheck com migração V51, sem divulgar gabarito durante a discussão. [ADR-0054](docs/adr/ADR-0054-peer-instruction-through-learning-cycle.md). Sem anúncio de release.
+> **P1-A/B em homologação:** Peer Instruction (V51) e Clínica do Erro com interpretação docente (V52). Consulta [ADR-0054](docs/adr/ADR-0054-peer-instruction-through-learning-cycle.md) e [ADR-0055](docs/adr/ADR-0055-error-clinic-teacher-annotations.md). **Há um bloqueio P0 de escala no bootstrap do Dashboard sob centenas de turmas/sessões; não publicar v0.10.**
 >
 > **Linha v0.10 em desenvolvimento:** `feat/v0.10-learning-loop` — [roadmap revisado](docs/ROADMAP_V0_10.md) e [plano técnico detalhado](docs/v0.10/IMPLEMENTATION_PLAN.md) e [registro verificável dos incrementos e gates pendentes](docs/v0.10/EXECUTION_STATUS.md) e [auditoria crítica da Arena, sorteio e materiais externos](docs/AVALIACAO_V0_10_ARENA_MATERIAIS.md).
 >

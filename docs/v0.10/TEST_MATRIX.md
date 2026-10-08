@@ -84,7 +84,7 @@
 | ID | Caso | Aceite específico |
 |---|---|---|
 | P11 | Peer Instruction | pelo menos duas respostas individuais iniciais; baseline não revelada; discussão documentada; novo run da mesma definição; comparação pareada e nenhuma pontuação automática. **Automatizado:** `LearningCycleIT`, `LearningCycleTest`, Playwright `Peer Instruction protege primeira resposta...`; **pendente:** observação pedagógica com docente |
-| P12 | Clínica do Erro | distribuição real e intervenção autoral; sem diagnóstico por IA não validado |
+| P12 | Clínica do Erro | Distribuição real e anotação autoral append-only só em distratores incorretos escolhidos, sem diagnóstico por IA, notas privadas, retry idempotente e cross-session bloqueado. Cobertura: `LearningCycleIT`, `DrawHttpSecurityIT`, Playwright `Verificar aprendizagem...`; **pendente** validação presencial |
 | P13 | LearnerConfidence | opt-in/skip, só próprio participante, sem impacto em XP e LearningEvidence.confidence |
 | P14 | Encaminhamento a Jornada | link legítimo para recurso com permissão, sem inscrição ou progressão inventada |
 | P15 | Biblioteca contextual | resourceId canônico, abertura e retorno preservam estado do palco |
@@ -99,3 +99,7 @@
 **Go somente com:** todas as linhas D01–D20, L01–L18 e U01–U14 pertinentes a P0 cobridas e verificadas (exceções explicitamente justificadas no relatório), builds e ITs verdes, changelog + migration report, evidências E2E, testes em dois tamanhos mobile e desktop, documento de gate assinado/registrado. Registrar condição de release, limitações P1 e resultado do piloto E01/E02 separadamente.
 
 **Não prometer SLA/p95 ou benefício pedagógico sem baseline empírica.** Definir metas operacionais após instrumentação e primeira bateria de observações.
+
+### Bloqueio P0 de escala do Dashboard — detectado em P1-B
+
+**Reprodução ([issue #36](https://github.com/wesscosta/arena-dev/issues/36)):** banco de desenvolvimento com 353 turmas / 343 sessões ativas; bootstrap frontend dispara requisições fan-out `/api/sessions/{id}/mechanics` e outras por turma, causando `net::ERR_INSUFFICIENT_RESOURCES` no Chromium, apesar dos contêineres saudáveis. A UI mostra `Backend indisponível: Failed to fetch`. Este problema não foi solucionado pela execução em stack E2E isolada. Exigir read-model/batch e/ou hidratação sob demanda, limite de concorrência e teste regressivo com 300+ turmas, sem mascarar falha por timeout/retry e sem excluir dados existentes. **Bloqueia gate P0.**

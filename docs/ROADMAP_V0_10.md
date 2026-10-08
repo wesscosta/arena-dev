@@ -6,6 +6,7 @@
 **Auditoria:** [AVALIACAO_V0_10_ARENA_MATERIAIS.md](AVALIACAO_V0_10_ARENA_MATERIAIS.md).
 **Plano técnico fechado para implementação incremental:** [v0.10/IMPLEMENTATION_PLAN.md](v0.10/IMPLEMENTATION_PLAN.md) (arquitetura, prioridade P0/P1/P2, contrato de dados, fluxos, testes e gates). Os itens planejados **não** estão implementados só por constarem no documento.
 **P1-A em implementação validada:** discussão em pares integrada ao LearningCycle (V51), sem revelar gabarito antes da nova resposta e exigindo duas respostas individuais. Não é declaração de release; ver [ADR-0054](adr/ADR-0054-peer-instruction-through-learning-cycle.md).
+**P1-B implementada na branch:** Clínica do Erro usa V52, distribuição de alternativas, notas docentes append-only e auditoria sem PII. Registro e bloqueio de escala em [ADR-0055](adr/ADR-0055-error-clinic-teacher-annotations.md).
 **Progresso verificável por fase:** [v0.10/EXECUTION_STATUS.md](v0.10/EXECUTION_STATUS.md), com separação entre código já integrado à branch e gates ainda pendentes.
 
 ## Tese de produto e North Star

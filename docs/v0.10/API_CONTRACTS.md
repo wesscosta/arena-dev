@@ -239,3 +239,15 @@ Os números acima são **dados fictícios somente para descrever o payload**; em
 - `CycleView` inclui `interventionType` (null até registrar), `baselineResultsRevealed` e `baselineResponseCount`. Esses campos são do professor; aluno/projetor não obtêm opções individuais de terceiros.
 - SQL V51 altera **somente** `learning_intervention_cycles.intervention_type` e faz backfill de ciclos intervenidos existentes com `EXPLANATION`, sem criar tabelas de questionário paralelas.
 - **Não representa** mastery, prova de participação em grupos nem certificado. Critérios pedagógicos em [ADR-0054](../adr/ADR-0054-peer-instruction-through-learning-cycle.md).
+
+## Contrato implementado P1-B — Clínica do Erro (Flyway V52)
+
+`GET /api/sessions/{sessionId}/learning-checks/{runId}/error-clinic` → vista docente com `runId`, `responseCount`, `options` (`key`, `label`, `count`, `incorrect`), histórico de notas (sem PII) e disclaimer. Somente para `InteractionRun` da mesma sessão **CLOSED**, de múltipla escolha com gabarito e evidências completas.
+
+`POST /api/sessions/{sessionId}/learning-checks/{runId}/error-clinic/notes`:
+
+```json
+{"commandId":"5ae34017-e329-4c84-a949-ea0c2434fb14", "optionKey":"a", "note":"Revisar a diferença entre filtragem e ordenação com dois exemplos."}
+```
+
+Aceita somente alternativa **incorreta e com votos reais**. Até 1200 caracteres, append-only; reenvio idêntico do `commandId` retorna mesma vista, alteração da mesma chave é `409`. Exige autenticação docente e CSRF; registro no `SessionEvent` guarda run/alternativa, não copia a nota. **Não** altera a resposta original, XP, `LearningEvidence`, a correção nem o palco. Documentação de decisão: [ADR-0055](../adr/ADR-0055-error-clinic-teacher-annotations.md).
