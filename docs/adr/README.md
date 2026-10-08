@@ -85,3 +85,4 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0053 — Limitação de identidade docente única na v0.10](ADR-0053-single-operator-teacher-security-boundary.md)
 - [ADR-0054 — Peer Instruction pelo LearningCycle](ADR-0054-peer-instruction-through-learning-cycle.md)
 - [ADR-0055 — Clínica do Erro com interpretação docente](ADR-0055-error-clinic-teacher-annotations.md)
+- [ADR-0056 — Bootstrap em lote e mecânicas sob demanda](ADR-0056-dashboard-batch-bootstrap-and-lazy-mechanics.md)

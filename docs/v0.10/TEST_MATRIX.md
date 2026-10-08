@@ -103,3 +103,11 @@
 ### Bloqueio P0 de escala do Dashboard — detectado em P1-B
 
 **Reprodução ([issue #36](https://github.com/wesscosta/arena-dev/issues/36)):** banco de desenvolvimento com 353 turmas / 343 sessões ativas; bootstrap frontend dispara requisições fan-out `/api/sessions/{id}/mechanics` e outras por turma, causando `net::ERR_INSUFFICIENT_RESOURCES` no Chromium, apesar dos contêineres saudáveis. A UI mostra `Backend indisponível: Failed to fetch`. Este problema não foi solucionado pela execução em stack E2E isolada. Exigir read-model/batch e/ou hidratação sob demanda, limite de concorrência e teste regressivo com 300+ turmas, sem mascarar falha por timeout/retry e sem excluir dados existentes. **Bloqueia gate P0.**
+
+### Issue #36 — regressão P0-G de Bootstrap
+
+- **Backend:** `DashboardBootstrapIT` (350 turmas e 340 sessões + reversão XP + participant preferred name + atividade); GET anônimo 401, docente 200, payload sem tokens.
+- **Frontend:** `dashboard-bootstrap-scale.spec.ts` confronta cards/sessões com a projeção, garante **uma só requisição** de bootstrap e **zero** chamadas individuais `/mechanics` na Home; ao abrir Arena, uma leitura runtime da sessão selecionada. Sem `ERR_INSUFFICIENT_RESOURCES`.
+- **Amostra de desenvolvimento não descartada:** 374 turmas / 389 sessões; bootstrap 200 em 0,126s com 1,13MB (observação, não p95). Não confundir esse resultado com validação de milhares de turmas, latência WAN ou disponibilidade de produção. ADR-0056 e issue #36.
+
+- **Compatibilidade dos modelos:** `frontend/tests/dashboard-bootstrap.test.ts` verifica `null` do banco convertido para campos vazios/`undefined` como nos antigos adaptadores (aluno, matrícula, recurso, XP e participantes); evita regressão silenciosa em edição de turmas ou atividades.

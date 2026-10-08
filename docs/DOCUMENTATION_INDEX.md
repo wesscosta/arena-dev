@@ -113,3 +113,4 @@ Não reescrever documentação histórica para fabricar evidência retroativa. Q
 - [ADR-0053 — Operador docente único e limites de segurança](adr/ADR-0053-single-operator-teacher-security-boundary.md)
 - [ADR-0054 — Peer Instruction pelo LearningCycle](adr/ADR-0054-peer-instruction-through-learning-cycle.md)
 - [ADR-0055 — Clínica do Erro com leitura docente](adr/ADR-0055-error-clinic-teacher-annotations.md)
+- [ADR-0056 — Bootstrap em lote e mecânicas sob demanda](adr/ADR-0056-dashboard-batch-bootstrap-and-lazy-mechanics.md)
