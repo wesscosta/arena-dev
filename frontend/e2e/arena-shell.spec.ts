@@ -723,3 +723,86 @@ test("Biblioteca contextual mantém a mesma referência na Arena e retorna ao pa
     expect(await absent.text()).toBe("");
   } finally { await api.dispose(); }
 });
+
+test("Material é um modal centralizado no viewport real, sem corte em desktop, mobile ou zoom", async ({ page }) => {
+  test.setTimeout(90_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    const materialTitle = `Leitura responsiva ${fixture.session.id.slice(0,8)}`;
+    const created = await api.post("/api/library/resources", {
+      data: {
+        title: materialTitle,
+        subject: "Banco de Dados",
+        summary: "Material extenso para testar rolagem e foco",
+        format: "MARKDOWN", sourceType: "MANUAL", language: "pt-BR", tags: ["SQL"],
+        body: `# Material da aula\n${Array.from({ length: 70 }, (_, i) => `## Seção ${i + 1}\nExemplo de consulta SQL e revisão.`).join("\n")}`,
+      },
+      headers: csrfHeaders,
+    });
+    await expectOk(created, "Material extenso do teste de viewport");
+    await page.setViewportSize({ width: 1792, height: 854 });
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    await page.getByRole("button", { name: "Selecionar material" }).click();
+    const dialog = page.getByRole("dialog", { name: "Biblioteca nesta aula" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel("Encontrar material na Biblioteca").fill(materialTitle);
+    await dialog.getByRole("button", { name: new RegExp(materialTitle) }).click();
+    await expect(dialog.getByRole("heading", { name: materialTitle })).toBeVisible();
+
+    for (const viewport of [
+      { width: 1792, height: 854 }, // screenshot's approximate desktop size
+      { width: 1366, height: 768 },
+      { width: 1024, height: 600 },
+      { width: 800, height: 450 },  // constrained height / browser zoom
+      { width: 390, height: 844 },
+      { width: 320, height: 568 },
+      { width: 320, height: 400 }, // 400% zoom / very short browser viewport
+      { width: 320, height: 320 }, // compact viewport ensures footer remains reachable
+    ]) {
+      await page.setViewportSize(viewport);
+      const geometry = await dialog.evaluate((element) => {
+        const modal = element.getBoundingClientRect();
+        const backdrop = element.parentElement?.getBoundingClientRect();
+        const innerWidth = document.documentElement.clientWidth;
+        const innerHeight = window.innerHeight;
+        return {
+          bodyPortal: element.parentElement?.parentElement === document.body,
+          backdrop: backdrop && { x: backdrop.x, y: backdrop.y,
+            width: backdrop.width, height: backdrop.height },
+          modal: { left: modal.left, top: modal.top, right: modal.right,
+            bottom: modal.bottom, centerX: modal.left + modal.width / 2,
+            centerY: modal.top + modal.height / 2 },
+          innerWidth, innerHeight,
+        };
+      });
+      expect(geometry.bodyPortal, `Deve sair da árvore recortada do cabeçalho: ${JSON.stringify(viewport)}`).toBe(true);
+      expect(geometry.backdrop?.x).toBeCloseTo(0, 0);
+      expect(geometry.backdrop?.y).toBeCloseTo(0, 0);
+      expect(geometry.backdrop?.width).toBeCloseTo(geometry.innerWidth, 0);
+      expect(geometry.backdrop?.height).toBeCloseTo(geometry.innerHeight, 0);
+      expect(geometry.modal.top, `Topo cortado em ${JSON.stringify(viewport)}`).toBeGreaterThanOrEqual(0);
+      expect(geometry.modal.left, `Lateral cortada em ${JSON.stringify(viewport)}`).toBeGreaterThanOrEqual(0);
+      expect(geometry.modal.right, `Lateral cortada em ${JSON.stringify(viewport)}`).toBeLessThanOrEqual(geometry.innerWidth + 1);
+      expect(geometry.modal.bottom, `Rodapé cortado em ${JSON.stringify(viewport)}`).toBeLessThanOrEqual(geometry.innerHeight + 1);
+      expect(Math.abs(geometry.modal.centerX - geometry.innerWidth / 2)).toBeLessThanOrEqual(2);
+      expect(Math.abs(geometry.modal.centerY - geometry.innerHeight / 2)).toBeLessThanOrEqual(2);
+      await expect(dialog.getByRole("heading", { name: "Biblioteca nesta aula" })).toBeInViewport();
+      await expect(dialog.getByRole("button", { name: "Voltar à aula" })).toBeInViewport();
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    const preview = dialog.locator('div[class*="preview"]');
+    const scrolling = await preview.evaluate((element) => ({
+      scrollHeight: element.scrollHeight, clientHeight: element.clientHeight,
+    }));
+    expect(scrolling.scrollHeight).toBeGreaterThan(scrolling.clientHeight);
+    await preview.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+    await expect(dialog.getByRole("button", { name: "Voltar à aula" })).toBeInViewport();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Abrir material" })).toBeFocused();
+    await expect(page.getByTestId("participant-selection-experience")).toBeVisible();
+  } finally {
+    await api.dispose();
+  }
+});

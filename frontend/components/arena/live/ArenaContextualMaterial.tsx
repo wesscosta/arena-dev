@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnchoredMarkdown } from "@/components/LibraryContentViews";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import {
@@ -140,7 +141,7 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
           Material
         </button>
       </div>
-      {open && (
+      {open && typeof document !== "undefined" && createPortal(
         <div className={styles.backdrop}>
           <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={headingId} className={styles.dialog}>
             <header className={styles.header}>
@@ -196,7 +197,8 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
               <button type="button" className={styles.action} onClick={() => setOpen(false)}>Voltar à aula</button>
             </footer>
           </section>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
