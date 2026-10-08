@@ -138,3 +138,8 @@
 - `learning-recovery.test.ts`: erro persistente, ausência de pares, regressão, melhora no instrumento e estabilidade; nenhuma regra afirma mastery.
 - `critical-flows.spec.ts` no Chromium: aluno declara LOW, recarrega o join, docente só vê agregado suprimido para um aluno; após duas verificações comparadas, professor escolhe manualmente material da Biblioteca e o vínculo aparece na Arena; sem XP gerado pelo auto-relato.
 - **Pendências:** privacidade com múltiplos operadores (ADR-0053), revisão de leitores de tela, avaliação em sala, validação de taxa voluntária e eficiência pedagógica de recomendação literal.
+
+### P1-C — Correção de modal cortado/descentralizado
+
+- `arena-shell.spec.ts` testa o portal no `document.body`, backdrop ocupando toda a viewport, posição do diálogo sem negativos/overflow, centralização horizontal/vertical (tolerância de 2px) e cabeçalho/CTA visíveis em 8 dimensões, inclusive **1792×854** da captura e **320×320** como estresse de altura/zoom.
+- Material Markdown com 70 seções possui preview rolável internamente, sem deslocar rodapé do diálogo. Escape devolve foco ao botão Material no cabeçalho; Grid mantém palco e controles. Cenário anterior da Biblioteca (F5, conteúdo canônico, axe light/dark) permanece íntegro.
