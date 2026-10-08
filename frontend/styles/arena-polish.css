@@ -613,7 +613,13 @@
   gap: var(--space-4);
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+
+.arena-nav-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 .arena-cockpit-nav-group {
   display: grid;
@@ -666,10 +672,15 @@
 .arena-nav-professor .arena-live-profile {
   width: 100%;
   min-width: 0;
-  grid-template-columns: 2.15rem minmax(0, 1fr) .75rem;
+  grid-template-columns: var(--control-md) minmax(0, 1fr) .75rem;
   gap: .55rem;
   padding: .4rem .45rem;
   color: var(--text);
+}
+
+.arena-nav-professor .topbar-profile-avatar {
+  width: var(--control-md);
+  height: var(--control-md);
 }
 
 .arena-nav-professor .topbar-profile-copy {
@@ -1320,6 +1331,8 @@
 }
 .arena-participant-list {
   display: grid;
+  align-content: start;
+  grid-auto-rows: max-content;
   max-height: 34rem;
   overflow: auto;
   padding: 0 .45rem .45rem;

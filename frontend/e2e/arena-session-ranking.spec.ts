@@ -203,6 +203,7 @@ test.describe("Arena session ranking", () => {
       await projector.page.reload();
       await expect(projector.page.getByTestId("projector-session-ranking")).toBeVisible();
       await expect(projector.page.getByText("A.", { exact: true })).toBeVisible();
+      await expect(projector.page.getByText("Sincronizado", { exact: true })).toBeVisible({ timeout: 10_000 });
 
       await fixture.score(fixture.students[2]!, 40, "Ranking E2E realtime");
       await expect(projector.page.getByText("120 pts", { exact: true })).toBeVisible({ timeout: 10_000 });

@@ -760,6 +760,16 @@ test("Live Arena stretches the cockpit to the full dynamic viewport height", () 
   assert.match(css, /\.arena-content-full \.arena-participant-list\s*\{[\s\S]*?max-height:\s*none/);
 });
 
+test("Live Arena keeps sidebar scrolling visually hidden, sparse roster top-aligned and profile columns collision-free", () => {
+  const css = read("styles/arena-polish.css");
+
+  assert.match(css, /\.arena-nav-scroll\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?scrollbar-width:\s*none/);
+  assert.match(css, /\.arena-nav-scroll::\-webkit-scrollbar\s*\{[\s\S]*?display:\s*none/);
+  assert.match(css, /\.arena-participant-list\s*\{[\s\S]*?align-content:\s*start;[\s\S]*?grid-auto-rows:\s*max-content/);
+  assert.match(css, /\.arena-nav-professor \.arena-live-profile\s*\{[\s\S]*?grid-template-columns:\s*var\(--control-md\) minmax\(0, 1fr\) \.75rem/);
+  assert.match(css, /\.arena-nav-professor \.topbar-profile-avatar\s*\{[\s\S]*?width:\s*var\(--control-md\);[\s\S]*?height:\s*var\(--control-md\)/);
+});
+
 
 test("Live Arena replaces the duplicated root header with one operational topbar", () => {
   const app = read("components/ArenaApp.tsx");

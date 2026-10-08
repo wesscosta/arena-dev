@@ -52,8 +52,8 @@ O fluxo nativo `LearningCheckIT` prova `aiReady=true`, `gaps=[]`, LearningTarget
 A baseline v0.9.0 foi qualificada com:
 
 - backend: **163 testes unitários + 109 integrações**;
-- frontend: **298/298 testes**, lint, format check, TypeScript e production build;
-- Chromium E2E: **22/22**;
+- frontend: **299/299 testes**, lint, format check, TypeScript e production build;
+- Chromium E2E: **23/23**;
 - Compose isolado saudável, com backend/frontend executando como usuário non-root;
 - Flyway V1–V48;
 - backup PostgreSQL 17 em formato custom + checksum SHA-256;

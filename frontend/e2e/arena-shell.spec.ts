@@ -140,6 +140,30 @@ for (const viewport of [
       await expect(sessionCode).toBeVisible();
       await expect(professor).toBeVisible();
 
+      const sidebarChrome = await page.evaluate(() => {
+        const scroll = document.querySelector(".arena-nav-scroll") as HTMLElement | null;
+        const avatar = document.querySelector(".arena-nav-professor .topbar-profile-avatar") as HTMLElement | null;
+        const copy = document.querySelector(".arena-nav-professor .topbar-profile-copy") as HTMLElement | null;
+        const chevron = document.querySelector(".arena-nav-professor .topbar-profile-chevron") as HTMLElement | null;
+        if (!scroll || !avatar || !copy || !chevron) return null;
+        const avatarBox = avatar.getBoundingClientRect();
+        const copyBox = copy.getBoundingClientRect();
+        const chevronBox = chevron.getBoundingClientRect();
+        return {
+          scrollbarWidth: getComputedStyle(scroll).scrollbarWidth,
+          avatarRight: avatarBox.right,
+          copyLeft: copyBox.left,
+          copyRight: copyBox.right,
+          chevronLeft: chevronBox.left,
+        };
+      });
+      expect(sidebarChrome).not.toBeNull();
+      if (sidebarChrome) {
+        expect(sidebarChrome.scrollbarWidth).toBe("none");
+        expect(sidebarChrome.avatarRight).toBeLessThanOrEqual(sidebarChrome.copyLeft + 1);
+        expect(sidebarChrome.copyRight).toBeLessThanOrEqual(sidebarChrome.chevronLeft + 1);
+      }
+
       const [
         shellBox,
         sidebarBox,
@@ -228,6 +252,36 @@ for (const viewport of [
     }
   });
 }
+
+test("Roster com um único participante permanece ancorado no topo do rail", async ({ browser }) => {
+  const viewport = { width: 1440, height: 900 };
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport });
+  const page = await context.newPage();
+
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 1);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+
+    await page.getByRole("button", { name: "Quiz", exact: true }).click();
+
+    const list = page.locator(".arena-participant-list");
+    const row = page.locator(".arena-participant-row");
+    await expect(list).toBeVisible();
+    await expect(row).toHaveCount(1);
+
+    const [listBox, rowBox] = await Promise.all([list.boundingBox(), row.boundingBox()]);
+    expect(listBox).not.toBeNull();
+    expect(rowBox).not.toBeNull();
+    if (!listBox || !rowBox) return;
+
+    expect(rowBox.y).toBeLessThanOrEqual(listBox.y + 8);
+    expect(rowBox.height).toBeLessThan(80);
+  } finally {
+    await context.close();
+    await api.dispose();
+  }
+});
 
 test("Arena com 22 participantes mantém controles e código visíveis em 1821x831", async ({ browser }) => {
   const viewport = { width: 1821, height: 831 };

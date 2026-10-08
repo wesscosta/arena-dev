@@ -174,12 +174,12 @@ Documento: [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CO
 ```text
 backend unit         OK · 163/163
 backend integration  OK · 109/109
-frontend tests       OK · 298/298
+frontend tests       OK · 299/299
 frontend lint/format OK
 frontend typecheck   OK
 frontend build       OK
 Compose isolado      OK
-Chromium E2E         OK · 22/22
+Chromium E2E         OK · 23/23
 backup/restore       OK · PostgreSQL 17
 Flyway               V1–V48
 ```
