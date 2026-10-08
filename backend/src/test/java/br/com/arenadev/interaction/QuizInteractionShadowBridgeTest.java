@@ -15,35 +15,62 @@ class QuizInteractionShadowBridgeTest {
     @Test
     void disabledBridgeDoesNothing() {
         QuizInteractionShadowService service = mock(QuizInteractionShadowService.class);
-        QuizInteractionShadowBridge bridge = new QuizInteractionShadowBridge(service, false);
+        InteractionShadowObservationService observations =
+                mock(InteractionShadowObservationService.class);
+        QuizInteractionShadowBridge bridge =
+                new QuizInteractionShadowBridge(service, observations, false);
         UUID roundId = UUID.randomUUID();
 
         bridge.afterLegacyMutation(roundId);
 
         verify(service, never()).compare(roundId);
+        verify(observations, never()).recordFailure(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()
+        );
     }
 
     @Test
-    void enabledBridgeRunsComparisonOutsideTransaction() {
+    void enabledBridgeRunsComparisonAndPersistsEvidenceOutsideTransaction() {
         QuizInteractionShadowService service = mock(QuizInteractionShadowService.class);
+        InteractionShadowObservationService observations =
+                mock(InteractionShadowObservationService.class);
         UUID roundId = UUID.randomUUID();
-        when(service.compare(roundId)).thenReturn(comparison(roundId, true));
-        QuizInteractionShadowBridge bridge = new QuizInteractionShadowBridge(service, true);
+        QuizInteractionShadowService.ShadowComparison comparison =
+                comparison(roundId, true);
+        when(service.compare(roundId)).thenReturn(comparison);
+        QuizInteractionShadowBridge bridge =
+                new QuizInteractionShadowBridge(service, observations, true);
 
         bridge.afterLegacyMutation(roundId);
 
         verify(service).compare(roundId);
+        verify(observations).record(
+                InteractionShadowType.QUIZ,
+                roundId,
+                comparison.interactionRunId(),
+                true,
+                List.of(),
+                0
+        );
     }
 
     @Test
-    void shadowFailureNeverEscapesIntoLegacyFlow() {
+    void shadowFailureNeverEscapesIntoLegacyFlowAndIsRecorded() {
         QuizInteractionShadowService service = mock(QuizInteractionShadowService.class);
+        InteractionShadowObservationService observations =
+                mock(InteractionShadowObservationService.class);
         UUID roundId = UUID.randomUUID();
-        when(service.compare(roundId)).thenThrow(new IllegalStateException("shadow failure"));
-        QuizInteractionShadowBridge bridge = new QuizInteractionShadowBridge(service, true);
+        IllegalStateException error = new IllegalStateException("shadow failure");
+        when(service.compare(roundId)).thenThrow(error);
+        QuizInteractionShadowBridge bridge =
+                new QuizInteractionShadowBridge(service, observations, true);
 
         assertThatCode(() -> bridge.afterLegacyMutation(roundId))
                 .doesNotThrowAnyException();
+
+        verify(observations).recordFailure(InteractionShadowType.QUIZ, roundId, error);
     }
 
     private static QuizInteractionShadowService.ShadowComparison comparison(

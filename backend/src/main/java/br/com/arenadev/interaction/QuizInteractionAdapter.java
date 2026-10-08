@@ -2,6 +2,7 @@ package br.com.arenadev.interaction;
 
 import br.com.arenadev.activity.ActivityQuestion;
 import br.com.arenadev.activity.QuestionType;
+import br.com.arenadev.learning.ContentRef;
 import br.com.arenadev.learning.Provenance;
 import br.com.arenadev.learning.ProvenanceOrigin;
 import org.springframework.stereotype.Component;
@@ -40,7 +41,12 @@ public class QuizInteractionAdapter {
                 InteractionPresentationMode.DEFAULT,
                 null,
                 false,
-                null,
+                new ContentRef(
+                        "ACTIVITY_QUESTION",
+                        question.getId().toString(),
+                        null,
+                        null
+                ),
                 new Provenance(
                         ProvenanceOrigin.SYSTEM,
                         "activity-question:" + question.getId(),

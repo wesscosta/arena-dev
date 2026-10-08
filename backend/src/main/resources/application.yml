@@ -51,6 +51,13 @@ app:
       max-failures: ${APP_LOGIN_RATE_LIMIT_MAX_FAILURES:5}
       window-seconds: ${APP_LOGIN_RATE_LIMIT_WINDOW_SECONDS:60}
       block-seconds: ${APP_LOGIN_RATE_LIMIT_BLOCK_SECONDS:300}
+  learning-core:
+    quiz-shadow-enabled: ${APP_LEARNING_CORE_QUIZ_SHADOW_ENABLED:false}
+    poll-shadow-enabled: ${APP_LEARNING_CORE_POLL_SHADOW_ENABLED:false}
+    word-cloud-shadow-enabled: ${APP_LEARNING_CORE_WORD_CLOUD_SHADOW_ENABLED:false}
+    cutover:
+      minimum-terminal-rounds: ${APP_LEARNING_CORE_CUTOVER_MINIMUM_TERMINAL_ROUNDS:3}
+      sample-size: ${APP_LEARNING_CORE_CUTOVER_SAMPLE_SIZE:200}
 
 logging:
   pattern:
