@@ -175,16 +175,19 @@ A remoção física das tabelas legadas **não pertence ao mesmo passo do primei
 Próxima sequência de menor risco:
 
 ```text
-manifests 0.9.0 + backend/frontend gate em V48 (concluídos localmente)
-→ Compose/E2E do artefato candidato
-→ qualificação operacional de cutover sem divergências
-→ CI verde no mesmo SHA + backup/restore V48
-→ freeze/publicação
+gate local completo V48 + Compose/E2E + backup/restore (concluídos)
+→ CI verde no mesmo SHA final
+→ merge em main + gate final
+→ freeze/publicação v0.9.0 com legado ainda autoritativo
+→ coleta operacional dos shadows
+→ cutover lógico somente quando /api/learning-core/gate/cutover aprovar
 → janela de rollback
-→ somente então remoção física do legado
+→ somente então remoção física do legado em release posterior
 ```
 
-A execução local de 2026-10-07 encontrou um travamento do BuildKit durante a construção isolada, sem erro de aplicação. Por disciplina de release, Compose/E2E permanecem pendentes até existir evidência concluída; detalhes e checklist estão em `FINAL_ARCHITECTURE_GATE.md`.
+A execução local de 2026-10-07 concluiu `release-gate.sh local` com **163 testes unitários backend, 109 integrações, 298 testes frontend e 22/22 E2E Chromium**, além de stack Compose isolada saudável. O backup do banco em V48 também foi restaurado e validado em PostgreSQL 17 temporário.
+
+A qualificação operacional com três rodadas terminais equivalentes por tipo **não é requisito para publicar a v0.9.0**: ela é requisito para tornar o Interaction Core autoridade. A v0.9 precisa ser publicada primeiro para disponibilizar a observabilidade durável que coleta essa evidência. Detalhes e checklist estão em `FINAL_ARCHITECTURE_GATE.md`.
 
 Detalhes: `docs/v0.9/FINAL_ARCHITECTURE_GATE.md`.
 
