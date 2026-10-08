@@ -149,38 +149,42 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         if (Boolean.TRUE.equals(socket.getAttributes().get(ATTR_PROJECTOR))) return;
 
         SessionJoinService.PublicSessionView access = joinService.validateProjectorAccess(sessionId, code);
-        gateway.registerProjector(sessionId, socket);
-        socket.getAttributes().put(ATTR_PROJECTOR, true);
-        gateway.send(socket, "AUTH_OK", sessionId, Map.of(
-                "role", "PROJECTOR",
-                "code", access.code(),
-                "expiresAt", access.expiresAt().toString()
-        ));
-        gateway.send(
-                socket,
-                "RUNTIME_SNAPSHOT",
-                sessionId,
-                runtimeSnapshotService.projector(sessionId)
-        );
+        synchronized (socket) {
+            gateway.registerProjector(sessionId, socket);
+            socket.getAttributes().put(ATTR_PROJECTOR, true);
+            gateway.send(
+                    socket,
+                    "RUNTIME_SNAPSHOT",
+                    sessionId,
+                    runtimeSnapshotService.projector(sessionId)
+            );
+            gateway.send(socket, "AUTH_OK", sessionId, Map.of(
+                    "role", "PROJECTOR",
+                    "code", access.code(),
+                    "expiresAt", access.expiresAt().toString()
+            ));
+        }
     }
 
     private void authenticateParticipant(WebSocketSession socket, UUID sessionId, String token) {
         if (socket.getAttributes().get(ATTR_TOKEN) != null) return;
         SessionParticipant participant = joinService.validateParticipantToken(sessionId, token);
-        int connections = gateway.registerParticipant(sessionId, participant.getId(), socket);
-        socket.getAttributes().put(ATTR_TOKEN, token);
-        socket.getAttributes().put(ATTR_PARTICIPANT_ID, participant.getId());
-        SessionJoinService.ParticipantConnectionView view = connections == 1
-                ? joinService.markConnected(sessionId, token)
-                : SessionJoinService.ParticipantConnectionView.from(participant);
-        gateway.broadcast(sessionId, "PARTICIPANT_CONNECTED", view);
-        gateway.send(socket, "AUTH_OK", sessionId, view);
-        gateway.send(
-                socket,
-                "RUNTIME_SNAPSHOT",
-                sessionId,
-                runtimeSnapshotService.participant(sessionId, participant.getId())
-        );
+        synchronized (socket) {
+            int connections = gateway.registerParticipant(sessionId, participant.getId(), socket);
+            socket.getAttributes().put(ATTR_TOKEN, token);
+            socket.getAttributes().put(ATTR_PARTICIPANT_ID, participant.getId());
+            SessionJoinService.ParticipantConnectionView view = connections == 1
+                    ? joinService.markConnected(sessionId, token)
+                    : SessionJoinService.ParticipantConnectionView.from(participant);
+            gateway.broadcast(sessionId, "PARTICIPANT_CONNECTED", view);
+            gateway.send(
+                    socket,
+                    "RUNTIME_SNAPSHOT",
+                    sessionId,
+                    runtimeSnapshotService.participant(sessionId, participant.getId())
+            );
+            gateway.send(socket, "AUTH_OK", sessionId, view);
+        }
     }
 
     private void rejectAuthentication(

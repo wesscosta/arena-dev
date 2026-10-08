@@ -137,14 +137,16 @@ class SessionSocketHandlerTimerTest {
                 )
         );
 
-        verify(gateway).send(
+        var ordered = inOrder(gateway);
+        ordered.verify(gateway).send(
                 socket,
                 "AUTH_REQUIRED",
                 sessionId,
                 Map.of("message", "Autentique o participante neste canal.")
         );
-        verify(gateway).send(socket, "AUTH_OK", sessionId, connection);
-        verify(gateway).send(socket, "RUNTIME_SNAPSHOT", sessionId, participantRuntimeSnapshot);
+        ordered.verify(gateway).registerParticipant(sessionId, participantId, socket);
+        ordered.verify(gateway).send(socket, "RUNTIME_SNAPSHOT", sessionId, participantRuntimeSnapshot);
+        ordered.verify(gateway).send(socket, "AUTH_OK", sessionId, connection);
     }
 
     @Test
