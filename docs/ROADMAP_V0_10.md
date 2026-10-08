@@ -11,6 +11,7 @@
 **P0-H de reversão XP:** implementada a proteção idempotente do ledger com Flyway V53, bloqueio concorrente, auditoria de sessão e XP revertido distinto da participação confirmada. Ver [ADR-0057](adr/ADR-0057-xp-reversal-idempotency-and-participation-independence.md).
 **P0-I PWA/reconexão:** produção Docker agora contém service worker/offline/icons, SW sem HTML obsoleto em cache e cliente estudante reconecta sob sinal de online. [ADR-0058](adr/ADR-0058-pwa-versioned-offline-shell-and-connection-recovery.md); validação em Android/iOS e clientes v0.9 instalados ainda não realizada.
 **P1-C material contextual:** Arena referencia um recurso canônico publicado com V54, preservando abertura, fechamento e roteiro. A Jornada continua reutilizando o mesmo recurso; o acesso de aluno/projetor não é publicado automaticamente. [ADR-0059](adr/ADR-0059-canonical-library-context-in-arena.md).
+**P1-D/R Confidence e Recovery:** migração V55 registra autopercepção opcional sem misturar `LearningEvidence.confidence` ou XP; professor vê agregado somente com 3+ declarações após lock. A recuperação interpreta a comparação pareada do LearningCycle por regras determinísticas e permite selecionar manualmente material canônico (V54) sem considerar leitura como evidência. [ADR-0060](adr/ADR-0060-student-self-confidence-and-evidence-based-recovery.md).
 **Progresso verificável por fase:** [v0.10/EXECUTION_STATUS.md](v0.10/EXECUTION_STATUS.md), com separação entre código já integrado à branch e gates ainda pendentes.
 
 ## Tese de produto e North Star

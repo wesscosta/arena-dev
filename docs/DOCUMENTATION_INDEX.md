@@ -117,3 +117,4 @@ Não reescrever documentação histórica para fabricar evidência retroativa. Q
 - [ADR-0057 — Reversão idempotente de XP](adr/ADR-0057-xp-reversal-idempotency-and-participation-independence.md)
 - [ADR-0058 — PWA seguro e recuperação de conexão](adr/ADR-0058-pwa-versioned-offline-shell-and-connection-recovery.md)
 - [ADR-0059 — Biblioteca contextual e material canônico na Arena](adr/ADR-0059-canonical-library-context-in-arena.md)
+- [ADR-0060 — Autoconfiança opcional e recuperação com evidências](adr/ADR-0060-student-self-confidence-and-evidence-based-recovery.md)

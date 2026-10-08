@@ -131,3 +131,10 @@
 - `ArenaResourcePlacementIT` PG17: referência única por sessão, reuso em outra sessão, link idempotente, substituição, GET/PUT/DELETE, arquivo indisponível, CSRF/auth, nenhuma cópia/exclusão de material.
 - `arena-shell.spec.ts`: abrir material canônico e ler Markdown, troca de foco por Escape, F5 com vínculo persistido, retorno ao Grid sem alteração do palco, exclusão apenas da associação.
 - Axe-core WCAG 2.0–2.2 A/AA no diálogo em light/dark e no login (sem achados automatizados); **pente-fino de AAA e leitor de tela em todos os contextos ainda depende de teste manual**, incluindo modo claro/escuro e zoom 400%.
+
+### P1-D/R — LearnerConfidence V55 + recuperação determinística
+
+- `LearningCheckJoinIT`: token próprio válido, token inválido negado, autoconfiança antes de responder bloqueada, declaração HIGH repetida com idempotência, SKIPPED e reconexão, bloqueio após lock, 0 XP; agregado docente não disponível para uma pessoa. Três declarações permitem somente níveis agregados após lock, sem nomes/IDs. `SecurityAndMigrationIT` exige V55 e 68 tabelas.
+- `learning-recovery.test.ts`: erro persistente, ausência de pares, regressão, melhora no instrumento e estabilidade; nenhuma regra afirma mastery.
+- `critical-flows.spec.ts` no Chromium: aluno declara LOW, recarrega o join, docente só vê agregado suprimido para um aluno; após duas verificações comparadas, professor escolhe manualmente material da Biblioteca e o vínculo aparece na Arena; sem XP gerado pelo auto-relato.
+- **Pendências:** privacidade com múltiplos operadores (ADR-0053), revisão de leitores de tela, avaliação em sala, validação de taxa voluntária e eficiência pedagógica de recomendação literal.

@@ -89,3 +89,4 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0057 — Reversão idempotente de XP](ADR-0057-xp-reversal-idempotency-and-participation-independence.md)
 - [ADR-0058 — PWA seguro e recuperação de conexão](ADR-0058-pwa-versioned-offline-shell-and-connection-recovery.md)
 - [ADR-0059 — Biblioteca contextual e material canônico na Arena](ADR-0059-canonical-library-context-in-arena.md)
+- [ADR-0060 — Autoconfiança opcional e recuperação por evidências](ADR-0060-student-self-confidence-and-evidence-based-recovery.md)

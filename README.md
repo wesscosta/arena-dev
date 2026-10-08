@@ -4,6 +4,8 @@
 
 > **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 >
+> **P1-D/R na branch:** autoconfiança voluntária do aluno (V55) separada de avaliação/XP, agregação docente privada e recuperação determinística por comparação de LearningCycle, com material escolhido pelo professor ([ADR-0060](docs/adr/ADR-0060-student-self-confidence-and-evidence-based-recovery.md)). Sem mastery automático; exige piloto real.
+>
 > **P1-C na branch:** o professor seleciona material canônico da Biblioteca para a sessão Arena e retorna ao mesmo roteiro, sem duplicar conteúdo ou expor aluno/projetor ([ADR-0059](docs/adr/ADR-0059-canonical-library-context-in-arena.md)). Testes manuais de acessibilidade continuam obrigatórios.
 >
 > **P0-I em homologação:** corrigido o empacotamento Docker do PWA (antes `/sw.js` era 404), cache seguro e reconexão de aluno; [ADR-0058](docs/adr/ADR-0058-pwa-versioned-offline-shell-and-connection-recovery.md). Instalação antiga em Android/iOS ainda exige ensaio real, sem release.

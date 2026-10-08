@@ -216,6 +216,10 @@ Os números acima são **dados fictícios somente para descrever o payload**; em
 
 `POST /api/join/sessions/{sessionId}/learning-checks/{runId}/confidence` (forma **proposta**, verificar rotas e autenticação real do join antes de fixá-la), corpo `{ "level":"LOW|MEDIUM|HIGH|SKIPPED" }`. Identificar estudante pela sessão autenticada/token de participante, **jamais aceitar `studentId` arbitrário do cliente**. Uma única resposta por participante/run, upsert idempotente; não incluir confidence em score/mastery. Medir somente distribuição agregada no painel docente e oferecer não responder.
 
+### Contrato implementado P1-D — V55 (08/10/2026)
+
+A implementação segue as rotas **reais** do join: `POST /api/join/{code}/learning-check/{runId}/confidence` com `{ "token":"...", "level":"LOW|MEDIUM|HIGH|SKIPPED" }`, e GET equivalente com `?token=...` para recuperar apenas a própria percepção. O professor consulta somente `GET /api/sessions/{sessionId}/learning-checks/{runId}/confidence-summary`. A distribuição exige verificação bloqueada e ao menos três declarações; caso contrário retorna `{ "available":false,"declarations":0,"counts":{},"reason":"..." }`. A declaração exige uma resposta individual real já registrada e run aberto, é idempotente e pode ser corrigida até o lock; código/token autenticam a identidade. `LearningCheckParticipantState.selfConfidence` é apenas do próprio aluno (ou null). Nenhum dos contratos expõe nomes, matrículas, outros alunos ou modifica avaliação/XP. Ver [ADR-0060](../adr/ADR-0060-student-self-confidence-and-evidence-based-recovery.md).
+
 ## 6. Feature flags e evolução de API
 
 - `learningLoopEnabled` ativa UI nova só após 10.1 passar integração, não altera baseline V49.
