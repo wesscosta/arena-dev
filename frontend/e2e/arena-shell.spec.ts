@@ -361,7 +361,7 @@ test("Grid + Spotlight revela a seleção e devolve o participante ao grid como 
     await expect(spotlight.getByText("Shell 1", { exact: true })).toBeVisible();
     await expect(participantCard).toHaveAttribute("data-status", "selected");
 
-    await spotlight.getByRole("button", { name: "Continuar para pontuação" }).click();
+    await spotlight.getByRole("button", { name: "Confirmar participação", exact: true }).click();
 
     await expect(spotlight).toBeHidden();
     await expect(participantCard).toHaveAttribute("data-status", "drawn");
@@ -373,7 +373,7 @@ test("Grid + Spotlight revela a seleção e devolve o participante ao grid como 
 });
 
 
-test("Configurações do sorteio alternam Grid + Spotlight e Roleta sem mudar o critério balanceado", async ({ browser }) => {
+test("Configurações do sorteio alternam Grid e Roleta sem afetar o critério de seleção", async ({ browser }) => {
   const { api, csrfHeaders } = await authenticatedApi();
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
@@ -389,6 +389,8 @@ test("Configurações do sorteio alternam Grid + Spotlight e Roleta sem mudar o 
 
     await expect(gridOption).toBeChecked();
     await expect(dialog.getByText("Balanceado", { exact: true })).toBeVisible();
+    const fullRound = dialog.getByRole("radio", { name: /Rodada completa/ });
+    await expect(fullRound).toBeChecked();
     await expect(dialog.getByText("REGRAS DA SELEÇÃO", { exact: true })).toBeVisible();
 
     await dialog.locator("label").filter({ hasText: "Roleta" }).click();
@@ -442,6 +444,70 @@ test("Grid mantém cards compactos quando há poucos participantes", async ({ br
 
     expect(Math.max(...widths)).toBeLessThanOrEqual(218);
     expect(gridWidth).toBeGreaterThan(Math.max(...widths) * 2);
+  } finally {
+    await context.close();
+    await api.dispose();
+  }
+});
+
+test("v0.10 sorteio registra confirmação, passagem e anulação sem repetir na rodada", async ({
+  browser,
+}) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 3);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    const path = `/api/sessions/${fixture.session.id}/draw-attempts/state`;
+    const drawButton = page.getByRole("button", { name: "Sortear participante" });
+    const spotlight = page.getByTestId("spotlight-reveal");
+    const readState = async () => {
+      const response = await api.get(path);
+      await expectOk(response, "Estado do sorteio");
+      return response.json() as Promise<{
+        roundNumber: number;
+        calledUniqueCount: number;
+        confirmedCount: number;
+        passedCount: number;
+        voidedCount: number;
+        canStartNextRound: boolean;
+        currentAttempt: { studentId: string } | null;
+      }>;
+    };
+
+    await drawButton.click();
+    await expect(spotlight).toBeVisible();
+    const first = (await readState()).currentAttempt?.studentId;
+    expect(first).toBeTruthy();
+    await expect(drawButton).toBeDisabled();
+    await spotlight.getByRole("button", { name: "Confirmar e pontuar" }).click();
+    await expect(spotlight).toBeHidden();
+    await expect.poll(async () => (await readState()).confirmedCount).toBe(1);
+
+    await drawButton.click();
+    await expect(spotlight).toBeVisible();
+    const second = (await readState()).currentAttempt?.studentId;
+    expect(second).not.toBe(first);
+    await spotlight.getByRole("button", { name: "Passar a vez" }).click();
+    await expect.poll(async () => (await readState()).passedCount).toBe(1);
+
+    await drawButton.click();
+    await expect(spotlight).toBeVisible();
+    const third = (await readState()).currentAttempt?.studentId;
+    expect(new Set([first, second, third]).size).toBe(3);
+    await spotlight.getByRole("button", { name: "Anular sorteio" }).click();
+    await expect.poll(async () => (await readState()).voidedCount).toBe(1);
+    expect((await readState()).calledUniqueCount).toBe(2);
+
+    await drawButton.click();
+    await expect(spotlight).toBeVisible();
+    expect((await readState()).currentAttempt?.studentId).toBe(third);
+    await spotlight.getByRole("button", { name: "Confirmar participação", exact: true }).click();
+    await expect.poll(async () => (await readState()).canStartNextRound).toBe(true);
+    await page.getByRole("button", { name: "Iniciar próxima rodada" }).click();
+    await expect.poll(async () => (await readState()).roundNumber).toBe(2);
+    expect((await readState()).calledUniqueCount).toBe(0);
   } finally {
     await context.close();
     await api.dispose();

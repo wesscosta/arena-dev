@@ -41,6 +41,7 @@ export function useDrawSession(sessionId?: string) {
   async function refresh() {
     if (!sessionId) return;
     setState(await getDrawState(sessionId));
+    setError(null);
   }
   async function mutate<T>(action: (id: string) => Promise<T>): Promise<T | undefined> {
     if (!sessionId || busy) return;

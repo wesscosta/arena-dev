@@ -605,6 +605,7 @@
 }
 .arena-cockpit-main {
   min-width: 0;
+  position: relative;
 }
 .arena-nav-scroll {
   min-height: 0;
@@ -753,6 +754,7 @@
 }
 .arena-cockpit-main {
   min-width: 0;
+  position: relative;
 }
 @media (max-width: 72rem) {
   .arena-live-shell {
@@ -897,6 +899,7 @@
 }
 .arena-cockpit-main {
   min-width: 0;
+  position: relative;
 }
 .arena-context-rail {
   position: sticky;
@@ -4848,3 +4851,18 @@ html[data-theme="dark"] [role="dialog"] select:focus {
     white-space: normal;
   }
 }
+
+/* v0.10: protocolo legado e confirmação moderna não compartilham o mesmo histórico. */
+.arena-legacy-draw-warning {
+  display: grid;
+  gap: .75rem;
+  max-width: 45rem;
+  padding: 1.2rem;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--radius-md);
+  background: var(--ds-surface-raised);
+  color: var(--ds-text-primary);
+}
+.arena-legacy-draw-warning h2 { margin: 0; font-size: 1.25rem; }
+.arena-legacy-draw-warning p { margin: 0; color: var(--ds-text-secondary); line-height: 1.5; }
+.arena-legacy-draw-warning button { justify-self: start; }

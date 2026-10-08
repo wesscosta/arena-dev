@@ -6,7 +6,7 @@ import styles from "./ArenaNextActions.module.css";
 type Action = { label: string; dynamic?: ArenaDynamic; groups?: boolean };
 const SUGGESTIONS: Record<Exclude<ArenaDynamic, "runbook">, Action[]> = {
   draw: [
-    { label: "Verificar aprendizagem", dynamic: "learning-check" },
+    { label: "Aplicar uma verificação", dynamic: "learning-check" },
     { label: "Retomar roteiro", dynamic: "runbook" },
   ],
   wordcloud: [
@@ -15,7 +15,7 @@ const SUGGESTIONS: Record<Exclude<ArenaDynamic, "runbook">, Action[]> = {
   ],
   poll: [
     { label: "Discutir em grupos", groups: true },
-    { label: "Verificar aprendizagem", dynamic: "learning-check" },
+    { label: "Aplicar uma verificação", dynamic: "learning-check" },
   ],
   quiz: [
     { label: "Aprofundar por objetivo", dynamic: "learning-check" },
@@ -26,11 +26,11 @@ const SUGGESTIONS: Record<Exclude<ArenaDynamic, "runbook">, Action[]> = {
     { label: "Retomar roteiro", dynamic: "runbook" },
   ],
   buzzer: [
-    { label: "Verificar aprendizagem", dynamic: "learning-check" },
+    { label: "Aplicar uma verificação", dynamic: "learning-check" },
     { label: "Retomar roteiro", dynamic: "runbook" },
   ],
   boss: [
-    { label: "Verificar aprendizagem", dynamic: "learning-check" },
+    { label: "Aplicar uma verificação", dynamic: "learning-check" },
     { label: "Retomar roteiro", dynamic: "runbook" },
   ],
 };
@@ -47,23 +47,31 @@ export default function ArenaNextActions({
   if (dynamic === "runbook") return null;
   return (
     <nav className={styles.panel} aria-label="Sugestões para continuar a aula">
-      <div>
-        <strong>Continuar a aula</strong>
-        <span>Próximas ações sugeridas. O professor decide quando avançar.</span>
-      </div>
-      <div className={styles.actions}>
-        {SUGGESTIONS[dynamic].map((item) => (
-          <button
-            type="button"
-            key={item.label}
-            onClick={() =>
-              item.groups ? onOpenGroups() : item.dynamic && onSelectDynamic(item.dynamic)
-            }
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      <details className={styles.details}>
+        <summary>
+          Próximas ações <span aria-hidden="true">▴</span>
+        </summary>
+        <div className={styles.menu}>
+          <strong>Continuar a aula</strong>
+          <p>Escolha uma possibilidade. O roteiro só avança por decisão do professor.</p>
+          <div className={styles.actions}>
+            {SUGGESTIONS[dynamic].map((item) => (
+              <button
+                type="button"
+                key={item.label}
+                onClick={(event) => {
+                  const details = event.currentTarget.closest("details");
+                  if (details) details.open = false;
+                  if (item.groups) onOpenGroups();
+                  else if (item.dynamic) onSelectDynamic(item.dynamic);
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </details>
     </nav>
   );
 }

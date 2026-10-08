@@ -3051,6 +3051,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           elapsed={formatSessionElapsed(currentSession.startedAt, sessionNow)}
           sessionBusy={sessionBusy}
           canProject={Boolean(joinCode)}
+          nextActions={<ArenaNextActions dynamic={activeDynamic} onSelectDynamic={selectDynamic}
+            onOpenGroups={() => selectTool("groups")} />}
           onGoDashboard={onGoDashboard}
           onBack={onBack}
           onOpenProjector={openProjector}
@@ -3144,7 +3146,16 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         <div className="stack-lg arena-tab-content">
           {activeDynamic === "draw" ? (
           <div className="smart-draw-workspace">
-            {selectorMode === "grid-spotlight" ? (
+            {drawSession.error ? (
+              <section role="alert" className="arena-legacy-draw-warning">
+                <h2>Sorteio indisponível nesta sessão</h2>
+                <p>{errorMessage(drawSession.error)}</p>
+                <p>Se a sessão começou com o sorteio de outra versão, conclua-a antes de usar o novo formato com confirmação.</p>
+                <button type="button" className="button secondary" onClick={() => {
+                  void drawSession.refresh().catch((error) => notify(errorMessage(error)));
+                }}>Tentar novamente</button>
+              </section>
+            ) : selectorMode === "grid-spotlight" ? (
               <ParticipantSelectionExperience
                 students={students}
                 presentStudentIds={currentSession.presentStudentIds}
@@ -3654,8 +3665,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       )}
 
 
-          <ArenaNextActions dynamic={activeDynamic} onSelectDynamic={selectDynamic}
-            onOpenGroups={() => selectTool("groups")} />
         </main>
 
         <ArenaContextRail

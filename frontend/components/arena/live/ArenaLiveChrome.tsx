@@ -168,6 +168,7 @@ type ArenaSessionHeaderProps = {
   elapsed: string;
   sessionBusy: boolean;
   canProject: boolean;
+  nextActions?: ReactNode;
   onGoDashboard: () => void;
   onBack: () => void;
   onOpenProjector: () => void;
@@ -180,6 +181,7 @@ export function ArenaSessionHeader({
   elapsed,
   sessionBusy,
   canProject,
+  nextActions,
   onGoDashboard,
   onBack,
   onOpenProjector,
@@ -197,6 +199,7 @@ export function ArenaSessionHeader({
       </nav>
 
       <div className="topbar-actions arena-session-actions">
+        {nextActions}
         <div className="arena-session-elapsed" aria-label={`Tempo de sessão ${elapsed}`}>
           <span aria-hidden="true">◷</span>
           <div>

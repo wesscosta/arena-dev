@@ -908,6 +908,29 @@ test("Verificar aprendizagem preserva reconnect, revela correção e gera Eviden
         { exact: true },
       ),
     ).toBeVisible();
+    // v0.10: a valid intervention must preserve the baseline and its denominator.
+    await page.getByRole("button", { name: "Iniciar ciclo com esta verificação" }).click();
+    await expect(page.getByLabel("Intervenção docente")).toBeVisible();
+    await page
+      .getByLabel("Intervenção docente")
+      .fill("Discussão das alternativas e revisão do tema.");
+    await page.getByRole("button", { name: "Registrar intervenção" }).click();
+    await page.getByRole("button", { name: "Verificar novamente" }).click();
+    await expect(page.getByRole("button", { name: "Bloquear respostas" })).toBeVisible();
+
+    await expect(participantPage.getByRole("heading", { name: questionText })).toBeVisible();
+    await participantPage.getByRole("radio", { name: new RegExp(distractorA) }).click();
+    await expect(participantPage.getByText(/^Resposta registrada/)).toBeVisible();
+    await page.getByRole("button", { name: "Bloquear respostas" }).click();
+    await page.getByRole("button", { name: "Revelar correção" }).click();
+    await page.getByRole("button", { name: "Encerrar verificação" }).click();
+    await page.getByRole("button", { name: "Comparar com o diagnóstico" }).click();
+    await expect(page.getByText("Comparáveis", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Variação neste instrumento/)).toBeVisible();
+    const comparisonResponse = await api.get(`/api/sessions/${fixture.session.id}/learning-cycles`);
+    await expectOk(comparisonResponse, "Ciclo de aprendizagem v0.10");
+    const cycles = (await comparisonResponse.json()) as Array<{ status: string }>;
+    expect(cycles).toContainEqual(expect.objectContaining({ status: "VERIFIED" }));
   } finally {
     await participantContext.close().catch(() => {});
     await api.dispose();
