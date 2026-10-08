@@ -4,6 +4,8 @@
 
 > **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 >
+> **P1-C na branch:** o professor seleciona material canônico da Biblioteca para a sessão Arena e retorna ao mesmo roteiro, sem duplicar conteúdo ou expor aluno/projetor ([ADR-0059](docs/adr/ADR-0059-canonical-library-context-in-arena.md)). Testes manuais de acessibilidade continuam obrigatórios.
+>
 > **P0-I em homologação:** corrigido o empacotamento Docker do PWA (antes `/sw.js` era 404), cache seguro e reconexão de aluno; [ADR-0058](docs/adr/ADR-0058-pwa-versioned-offline-shell-and-connection-recovery.md). Instalação antiga em Android/iOS ainda exige ensaio real, sem release.
 >
 > **P0-H em homologação:** reversão de XP idempotente no ledger com migração V53, proteção concorrente e participação preservada ([ADR-0057](docs/adr/ADR-0057-xp-reversal-idempotency-and-participation-independence.md)). Não libera a release.

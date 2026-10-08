@@ -88,3 +88,4 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0056 — Bootstrap em lote e mecânicas sob demanda](ADR-0056-dashboard-batch-bootstrap-and-lazy-mechanics.md)
 - [ADR-0057 — Reversão idempotente de XP](ADR-0057-xp-reversal-idempotency-and-participation-independence.md)
 - [ADR-0058 — PWA seguro e recuperação de conexão](ADR-0058-pwa-versioned-offline-shell-and-connection-recovery.md)
+- [ADR-0059 — Biblioteca contextual e material canônico na Arena](ADR-0059-canonical-library-context-in-arena.md)

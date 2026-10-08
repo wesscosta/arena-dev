@@ -125,3 +125,9 @@
 - **Worker lifecycle simulado:** `pwa-lifecycle.test.ts` usa caches v0.8/v0.9 de HTML `/join` e chunks, executa install/activate, prova limpeza só de caches próprios, fallback neutro e **bypass de API/WS** mesmo que haja estado antigo cacheado.
 - **Chromium real:** `pwa-upgrade-recovery.spec.ts` instala service worker vindo de Docker, simula queda da rede, nunca usa HTML antigo, exige indisponibilidade de API offline e retorno à rota real; segundo cenário garante sinal Offline e recuperação de aluno pelo WebSocket sem duplicar presença ou pontuação.
 - **Pendente:** atualizações efetivas de aplicações PWA v0.9 **previamente instaladas** em Android/iOS, drafts durante mudança de versão, modo de economia de bateria, WAN real e certificados de acessibilidade.
+
+### P1-C — Material contextual canônico / v54
+
+- `ArenaResourcePlacementIT` PG17: referência única por sessão, reuso em outra sessão, link idempotente, substituição, GET/PUT/DELETE, arquivo indisponível, CSRF/auth, nenhuma cópia/exclusão de material.
+- `arena-shell.spec.ts`: abrir material canônico e ler Markdown, troca de foco por Escape, F5 com vínculo persistido, retorno ao Grid sem alteração do palco, exclusão apenas da associação.
+- Axe-core WCAG 2.0–2.2 A/AA no diálogo em light/dark e no login (sem achados automatizados); **pente-fino de AAA e leitor de tela em todos os contextos ainda depende de teste manual**, incluindo modo claro/escuro e zoom 400%.

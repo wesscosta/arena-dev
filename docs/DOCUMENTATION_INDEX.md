@@ -116,3 +116,4 @@ Não reescrever documentação histórica para fabricar evidência retroativa. Q
 - [ADR-0056 — Bootstrap em lote e mecânicas sob demanda](adr/ADR-0056-dashboard-batch-bootstrap-and-lazy-mechanics.md)
 - [ADR-0057 — Reversão idempotente de XP](adr/ADR-0057-xp-reversal-idempotency-and-participation-independence.md)
 - [ADR-0058 — PWA seguro e recuperação de conexão](adr/ADR-0058-pwa-versioned-offline-shell-and-connection-recovery.md)
+- [ADR-0059 — Biblioteca contextual e material canônico na Arena](adr/ADR-0059-canonical-library-context-in-arena.md)
