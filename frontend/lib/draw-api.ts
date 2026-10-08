@@ -12,6 +12,7 @@ export type DrawAttempt = {
   policy: DrawPolicy;
   status: DrawOutcome;
   scoreEventId: string | null;
+  scoreReversed: boolean;
   selectedAt: string;
   resolvedAt: string | null;
 };

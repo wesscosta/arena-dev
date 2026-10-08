@@ -90,7 +90,9 @@ export async function createScoreEvents(inputs: CreateScoreEventInput[]): Promis
   return rows.map(mapEvent);
 }
 
-export async function reverseScoreEvent(eventId: string): Promise<ScoreEvent> {
-  const row = await scoreRequest<ScoreEventView>(`/api/score-events/${eventId}/reverse`, { method: "POST" });
+export async function reverseScoreEvent(eventId: string, requestId = crypto.randomUUID()): Promise<ScoreEvent> {
+  const row = await scoreRequest<ScoreEventView>(`/api/score-events/${eventId}/reverse`, {
+    method: "POST", body: JSON.stringify({ requestId }),
+  });
   return mapEvent(row);
 }

@@ -583,3 +583,59 @@ test("Selector permanece operável em viewport estreita equivalente a zoom alto"
     await api.dispose();
   }
 });
+
+test("reverter XP de sorteio mantém participação e histórico sem duplicar ledger após F5", async ({ page }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    const sessionId = fixture.session.id;
+    const selected = await api.post(`/api/sessions/${sessionId}/draw-attempts`, {
+      data: { requestId: crypto.randomUUID() }, headers: csrfHeaders,
+    });
+    await expectOk(selected, "Sorteio selecionado");
+    const attempt = (await selected.json()) as { attemptId: string };
+    const resolved = await api.post(`/api/sessions/${sessionId}/draw-attempts/${attempt.attemptId}/resolve`, {
+      data: { requestId: crypto.randomUUID(), outcome: "CONFIRMED",
+        score: { points: 5, category: "COLLABORATION", reason: "Participação" } },
+      headers: csrfHeaders,
+    });
+    await expectOk(resolved, "Confirmação com XP");
+    const awarded = (await resolved.json()) as { scoreEventId: string };
+    expect(awarded.scoreEventId).toBeTruthy();
+    const correctionId = crypto.randomUUID();
+    const correctionPath = `/api/score-events/${awarded.scoreEventId}/reverse`;
+    const first = await api.post(correctionPath, { data: { requestId: correctionId }, headers: csrfHeaders });
+    await expectOk(first, "Reversão auditável");
+    const retry = await api.post(correctionPath, { data: { requestId: correctionId }, headers: csrfHeaders });
+    await expectOk(retry, "Retry idempotente");
+    expect(await retry.json()).toEqual(await first.json());
+    const conflict = await api.post(correctionPath, {
+      data: { requestId: crypto.randomUUID() }, headers: csrfHeaders,
+    });
+    expect(conflict.status()).toBe(409);
+    const drawState = await api.get(`/api/sessions/${sessionId}/draw-attempts/state`);
+    await expectOk(drawState, "Histórico do sorteio");
+    const state = (await drawState.json()) as { history: Array<{
+      attemptId: string; status: string; scoreReversed: boolean;
+    }> };
+    expect(state.history).toContainEqual(expect.objectContaining({
+      attemptId: attempt.attemptId, status: "CONFIRMED", scoreReversed: true,
+    }));
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    await page.reload();
+    // After F5 the app returns to the class overview; opening the same Arena must
+    // rehydrate the authoritative draw/score state rather than resurrect local state.
+    await expect(page.getByRole("heading", { name: "Suas turmas" })).toBeVisible();
+    await page.locator("article.overview-class-card")
+      .filter({ hasText: fixture.classroomName }).click();
+    await page.getByRole("button", { name: "Continuar Arena" }).click();
+    await expect(page.getByRole("navigation", { name: "Contexto da sessão" })
+      .getByText(fixture.sessionTitle, { exact: true })).toBeVisible();
+    const persisted = await api.get(`/api/sessions/${sessionId}/draw-attempts/state`);
+    await expectOk(persisted, "Histórico após F5");
+    expect((await persisted.json()) as { history: Array<{ scoreReversed: boolean }> })
+      .toMatchObject({ history: [{ scoreReversed: true }] });
+  } finally {
+    await api.dispose();
+  }
+});
