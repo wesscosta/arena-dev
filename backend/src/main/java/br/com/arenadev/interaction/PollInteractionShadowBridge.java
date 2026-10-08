@@ -15,13 +15,16 @@ public class PollInteractionShadowBridge {
             LoggerFactory.getLogger(PollInteractionShadowBridge.class);
 
     private final PollInteractionShadowService shadowService;
+    private final InteractionShadowObservationService observationService;
     private final boolean enabled;
 
     public PollInteractionShadowBridge(
             PollInteractionShadowService shadowService,
+            InteractionShadowObservationService observationService,
             @Value("${app.learning-core.poll-shadow-enabled:false}") boolean enabled
     ) {
         this.shadowService = shadowService;
+        this.observationService = observationService;
         this.enabled = enabled;
     }
 
@@ -32,6 +35,7 @@ public class PollInteractionShadowBridge {
             try {
                 PollInteractionShadowService.ShadowComparison comparison =
                         shadowService.compare(pollRoundId);
+                recordComparison(pollRoundId, comparison);
                 if (!comparison.equivalent()) {
                     log.warn(
                             "Poll shadow mismatch. pollRoundId={}, interactionRunId={}, mismatches={}",
@@ -47,6 +51,7 @@ public class PollInteractionShadowBridge {
                     );
                 }
             } catch (RuntimeException error) {
+                recordFailure(pollRoundId, error);
                 log.warn(
                         "Poll shadow synchronization failed without affecting legacy Poll. pollRoundId={}",
                         pollRoundId,
@@ -68,6 +73,44 @@ public class PollInteractionShadowBridge {
                     }
                 }
         );
+    }
+
+    private void recordComparison(
+            UUID pollRoundId,
+            PollInteractionShadowService.ShadowComparison comparison
+    ) {
+        try {
+            observationService.record(
+                    InteractionShadowType.POLL,
+                    pollRoundId,
+                    comparison.interactionRunId(),
+                    comparison.equivalent(),
+                    comparison.mismatches(),
+                    comparison.legacy().responseCount()
+            );
+        } catch (RuntimeException error) {
+            log.warn(
+                    "Poll shadow observation could not be persisted. pollRoundId={}",
+                    pollRoundId,
+                    error
+            );
+        }
+    }
+
+    private void recordFailure(UUID pollRoundId, RuntimeException shadowError) {
+        try {
+            observationService.recordFailure(
+                    InteractionShadowType.POLL,
+                    pollRoundId,
+                    shadowError
+            );
+        } catch (RuntimeException observationError) {
+            log.warn(
+                    "Poll shadow failure observation could not be persisted. pollRoundId={}",
+                    pollRoundId,
+                    observationError
+            );
+        }
     }
 
     boolean isEnabled() {

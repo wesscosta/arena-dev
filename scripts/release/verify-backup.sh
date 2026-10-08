@@ -19,7 +19,7 @@ usage() {
 Uso: scripts/release/verify-backup.sh CAMINHO_DO_DUMP
 
 Restaura o dump em um PostgreSQL 17 temporário e isolado, valida o histórico
-Flyway da v0.8 até V38 e confirma os contratos persistentes críticos.
+Flyway até ARENA_SCHEMA_VERSION (default V38) e confirma os contratos persistentes críticos.
 EOF
 }
 
@@ -92,6 +92,21 @@ for table in "${expected_tables[@]}"; do
   [[ "$exists" == "t" ]] || fail "tabela obrigatória ausente após restore: $table"
 done
 
+if (( EXPECTED_SCHEMA_VERSION >= 48 )); then
+  v09_tables=(
+    learning_targets interaction_definitions interaction_options interaction_runs
+    interaction_responses interaction_evaluations learning_evidence
+    quiz_interaction_shadow_links poll_interaction_shadow_links
+    word_cloud_interaction_shadow_links interaction_shadow_observations
+  )
+  for table in "${v09_tables[@]}"; do
+    exists="$(docker exec "$CONTAINER_NAME" \
+      psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
+      --command "select to_regclass('public.$table') is not null")"
+    [[ "$exists" == "t" ]] || fail "tabela v0.9 obrigatória ausente após restore: $table"
+  done
+fi
+
 semantic_columns="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select count(*) from information_schema.columns where table_schema='public' and table_name='learning_resources' and column_name in ('library_visible','revision','archived_at','subject','language','content_sha256','outline_json','outline_parser_version')")"
 [[ "$semantic_columns" -eq 8 ]] || fail "LearningResource não contém o contrato completo da Biblioteca semântica"
 
@@ -101,4 +116,4 @@ snapshot_columns="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-alig
 study_access="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select count(*) from information_schema.columns where table_schema='public' and table_name='classrooms' and column_name='student_study_access_enabled'")"
 [[ "$study_access" -eq 1 ]] || fail "controle de visibilidade do workspace estudantil ausente"
 
-printf 'Backup v0.8 restaurado e validado em PostgreSQL 17 até Flyway V%s: %s\n' "$EXPECTED_SCHEMA_VERSION" "$backup_file"
+printf 'Backup restaurado e validado em PostgreSQL 17 até Flyway V%s: %s\n' "$EXPECTED_SCHEMA_VERSION" "$backup_file"

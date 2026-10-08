@@ -52,6 +52,7 @@ class WordCloudInteractionShadowIT {
     @Autowired private InteractionResponseRepository responseRepository;
     @Autowired private InteractionEvaluationRepository evaluationRepository;
     @Autowired private LearningEvidenceRepository evidenceRepository;
+    @Autowired private InteractionShadowObservationRepository observationRepository;
 
     @Test
     void shadowPreservesParticipantListsAndNormalizedFrequency() {
@@ -144,6 +145,12 @@ class WordCloudInteractionShadowIT {
                 .isEqualTo(InteractionRunStatus.CLOSED);
         assertThat(shadowService.compare(created.round().id()).equivalent())
                 .isTrue();
+        assertThat(observationRepository.findAll()).anyMatch(observation ->
+                observation.getLegacyRoundId().equals(created.round().id())
+                        && observation.terminal()
+                        && observation.getStatus()
+                        == InteractionShadowObservationStatus.EQUIVALENT
+        );
         assertThat(evidenceRepository.count()).isZero();
     }
 
