@@ -1,0 +1,22 @@
+.shell { border: 1px solid var(--ds-border); border-radius: .85rem; background: var(--ds-surface-raised); color: var(--ds-text-primary); }
+.shell summary { cursor: pointer; min-height: 2.9rem; padding: .85rem 1rem; font-weight: 800; }
+.shell summary span { font-weight: 500; font-size: .85rem; color: var(--ds-text-secondary); }
+.shell summary:focus-visible, .shell button:focus-visible, .shell input:focus-visible, .shell textarea:focus-visible { outline: 3px solid var(--ds-accent); outline-offset: 2px; }
+.body { display: grid; gap: 1rem; padding: 0 1rem 1rem; }
+.body p { margin: 0; line-height: 1.55; }
+.meta { font-size: .88rem; color: var(--ds-text-secondary); }
+.options { min-width: 0; border: 1px solid var(--ds-border); border-radius: .65rem; padding: .7rem; display: grid; gap: .4rem; }
+.options legend { font-weight: 750; }
+.option { min-width: 0; display: flex; align-items: center; gap: .65rem; padding: .55rem; border-radius: .5rem; background: var(--ds-surface-subtle); }
+.option input { width: 1.2rem; height: 1.2rem; flex: none; accent-color: var(--ds-accent); }
+.option span { min-width: 0; overflow-wrap: anywhere; flex: 1; }
+.option small { color: var(--ds-text-secondary); }
+.compose { display: grid; gap: .65rem; }
+.compose label { font-weight: 750; }
+.compose textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--ds-border); background: var(--ds-surface-subtle); color: var(--ds-text-primary); padding: .75rem; border-radius: .55rem; font: inherit; }
+.compose button { justify-self: start; min-height: 2.75rem; padding: .7rem 1rem; border: 1px solid var(--ds-accent); border-radius: .55rem; background: var(--ds-accent); color: var(--ds-on-accent, white); font-weight: 750; cursor: pointer; }
+.compose button:disabled { opacity: .55; cursor: not-allowed; }
+.history { display: grid; gap: .5rem; padding-top: .6rem; border-top: 1px solid var(--ds-border); }
+.history p { padding: .65rem; border-radius: .45rem; background: var(--ds-surface-subtle); white-space: pre-wrap; overflow-wrap: anywhere; }
+.error { color: var(--ds-danger); }
+@media (max-width: 540px) { .option { flex-wrap: wrap; } .option small { width: 100%; padding-left: 2rem; } }

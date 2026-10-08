@@ -15,6 +15,7 @@ import {
 } from "@/lib/learning-check-api";
 import styles from "./LearningCheckPanel.module.css";
 import LearningCyclePanel from "./learning/LearningCyclePanel";
+import LearningErrorClinicPanel from "./learning/LearningErrorClinicPanel";
 
 type Props = {
   sessionId: string;
@@ -534,6 +535,9 @@ export default function LearningCheckPanel({
           </>
         )}
       </div>
+      {run.status === "CLOSED" && state.evidenceCount > 0 && (
+        <LearningErrorClinicPanel sessionId={sessionId} runId={run.id} notify={notify} />
+      )}
       <LearningCyclePanel sessionId={sessionId} state={state} onStateChange={onStateChange}
         notify={notify} onOpenGroups={onOpenGroups} />
     </section>

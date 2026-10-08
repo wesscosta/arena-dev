@@ -947,6 +947,29 @@ test("Verificar aprendizagem preserva reconnect, revela correção e gera Eviden
     await page.getByRole("button", { name: "Bloquear respostas" }).click();
     await page.getByRole("button", { name: "Revelar correção" }).click();
     await page.getByRole("button", { name: "Encerrar verificação" }).click();
+    // Clínica do Erro: registrar interpretação sobre um distrator realmente selecionado.
+    const clinicPanel = page.getByRole("region", { name: "Clínica do Erro" });
+    await clinicPanel.locator("summary").click();
+    await expect(clinicPanel.getByRole("group", { name: "Alternativas observadas" })).toBeVisible();
+    await clinicPanel.getByRole("group", { name: "Alternativas observadas" })
+      .getByRole("radio", { name: new RegExp(distractorA) }).check();
+    await clinicPanel.getByLabel("Interpretação ou orientação do professor")
+      .fill("Hipótese docente: confusão entre tipos de JOIN; revisar exemplos contrastivos.");
+    const savedResponsePromise = page.waitForResponse((response) =>
+      response.url().endsWith("/error-clinic/notes") && response.request().method() === "POST",
+    );
+    await clinicPanel.getByRole("button", { name: "Registrar análise" }).click();
+    const savedResponse = await savedResponsePromise;
+    expect(savedResponse.status()).toBe(200);
+    const savedClinic = (await savedResponse.json()) as { runId: string; notes: unknown[] };
+    expect(savedClinic.notes).toHaveLength(1);
+    await expect(clinicPanel.getByText(/Hipótese docente: confusão entre tipos de JOIN/)).toBeVisible();
+    const persistedClinic = await api.get(
+      `/api/sessions/${fixture.session.id}/learning-checks/${savedClinic.runId}/error-clinic`,
+    );
+    await expectOk(persistedClinic, "Análise docente persistida");
+    expect((await persistedClinic.json()) as { notes: unknown[] }).toMatchObject({ notes: [{ optionKey: "a" }] });
+
     await page.getByRole("button", { name: "Comparar com o diagnóstico" }).click();
     await expect(page.getByText("Comparáveis", { exact: true })).toBeVisible();
     await expect(page.getByText(/Variação neste instrumento/)).toBeVisible();
