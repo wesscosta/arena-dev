@@ -1,6 +1,7 @@
 package br.com.arenadev.dynamic;
 
 import br.com.arenadev.activity.Activity;
+import br.com.arenadev.draw.DrawProtocolGuard;
 import br.com.arenadev.activity.ActivityQuestion;
 import br.com.arenadev.activity.ActivityRepository;
 import br.com.arenadev.activity.ActivityStep;
@@ -34,6 +35,7 @@ public class MechanicsService {
     private final SessionRealtimeGateway realtimeGateway;
     private final SessionEventService sessionEventService;
     private final ParticipantSelectionService participantSelectionService;
+    private final DrawProtocolGuard drawProtocolGuard;
     private final JsonMapper objectMapper;
 
     public MechanicsService(
@@ -48,6 +50,7 @@ public class MechanicsService {
             SessionRealtimeGateway realtimeGateway,
             SessionEventService sessionEventService,
             ParticipantSelectionService participantSelectionService,
+            DrawProtocolGuard drawProtocolGuard,
             JsonMapper objectMapper
     ) {
         this.sessionRepository = sessionRepository;
@@ -61,6 +64,7 @@ public class MechanicsService {
         this.realtimeGateway = realtimeGateway;
         this.sessionEventService = sessionEventService;
         this.participantSelectionService = participantSelectionService;
+        this.drawProtocolGuard = drawProtocolGuard;
         this.objectMapper = objectMapper;
     }
 
@@ -72,7 +76,10 @@ public class MechanicsService {
 
     @Transactional
     public DrawResult draw(UUID sessionId) {
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = sessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+        if (session.getStatus() != SessionStatus.ACTIVE) throw new IllegalArgumentException("Sessão não está ativa.");
+        drawProtocolGuard.requireLegacyAllowed(sessionId);
         List<UUID> present = presentStudentIds(sessionId);
         if (present.isEmpty()) throw new IllegalArgumentException("Não há alunos presentes para o sorteio.");
 

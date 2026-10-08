@@ -3,6 +3,7 @@ package br.com.arenadev.draw;
 import br.com.arenadev.classroom.Student;
 import br.com.arenadev.dynamic.ParticipantSelectionService;
 import br.com.arenadev.scoring.*;
+import br.com.arenadev.sessionevent.*;
 import br.com.arenadev.session.*;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import br.com.arenadev.stage.LiveStageService;
@@ -28,20 +29,24 @@ public class DrawService {
     private final ScoreEventRepository scoreEvents;
     private final ParticipantSelectionService selector;
     private final LiveStageService stage;
+    private final DrawProtocolGuard protocolGuard;
+    private final SessionEventService events;
 
     public DrawService(ClassSessionRepository sessions, SessionParticipantRepository participants,
                        DrawSettingsRepository settingsRepository, DrawAttemptRepository attempts,
                        DrawAttemptScoreLinkRepository scoreLinks, ScoreEventService scores,
                        ScoreEventRepository scoreEvents, ParticipantSelectionService selector,
-                       LiveStageService stage) {
+                       LiveStageService stage, DrawProtocolGuard protocolGuard, SessionEventService events) {
         this.sessions=sessions; this.participants=participants; this.settingsRepository=settingsRepository;
         this.attempts=attempts; this.scoreLinks=scoreLinks; this.scores=scores;
         this.scoreEvents=scoreEvents; this.selector=selector; this.stage=stage;
+        this.protocolGuard=protocolGuard; this.events=events;
     }
 
     @Transactional(readOnly=true)
     public DrawStateView state(UUID sessionId) {
         requireSession(sessionId);
+        protocolGuard.requireModernAllowed(sessionId);
         DrawSettings settings=settingsRepository.findById(sessionId).orElse(null);
         List<DrawAttempt> all=attempts.findBySessionIdOrderBySequenceAsc(sessionId);
         return snapshot(sessionId, settings, all);
@@ -54,8 +59,14 @@ public class DrawService {
         if (attempts.findBySessionIdAndStatus(sessionId,DrawOutcome.PENDING).isPresent()) {
             throw new DrawConflictException("Resolva o participante atual antes de trocar o critério.");
         }
+        protocolGuard.requireModernAllowed(sessionId);
         DrawSettings settings=getOrCreate(session);
+        DrawPolicy previousPolicy = settings.getSelectionPolicy();
         settings.changePolicy(policy);
+        if (previousPolicy != policy) {
+            events.record(session, SessionEventType.DRAW_POLICY_CHANGED, SessionEventActor.TEACHER,
+                    "Critério de sorteio alterado", Map.of("policy", policy.name()));
+        }
         settingsRepository.save(settings);
         return snapshot(sessionId,settings,attempts.findBySessionIdOrderBySequenceAsc(sessionId));
     }
@@ -64,6 +75,7 @@ public class DrawService {
     public DrawStateView nextRound(UUID sessionId, UUID requestId) {
         ClassSession session=activeSessionForUpdate(sessionId);
         requireId(requestId);
+        protocolGuard.requireModernAllowed(sessionId);
         DrawSettings settings=getOrCreate(session);
         if(requestId.equals(settings.getLastRoundRequestId()))return snapshot(sessionId,settings,all(sessionId));
         List<DrawAttempt> all=all(sessionId);
@@ -77,6 +89,8 @@ public class DrawService {
         if(present.isEmpty() || !called.containsAll(present))
             throw new DrawConflictException("A rodada atual ainda tem participantes elegíveis.");
         settings.nextRound(requestId);
+        events.record(session, SessionEventType.DRAW_ROUND_STARTED, SessionEventActor.TEACHER,
+                "Nova rodada de sorteio iniciada", Map.of("round", settings.getRoundNumber()));
         return snapshot(sessionId,settings,all);
     }
 
@@ -88,6 +102,7 @@ public class DrawService {
         if(previous.isPresent())return view(previous.get());
         if(attempts.findBySessionIdAndStatus(sessionId,DrawOutcome.PENDING).isPresent())
             throw new DrawConflictException("Resolva o sorteio atual antes de selecionar novamente.");
+        protocolGuard.requireModernAllowed(sessionId);
         DrawSettings settings=getOrCreate(session);
         List<UUID> present=presentIds(sessionId);
         if(present.isEmpty())throw new IllegalArgumentException("Nenhum participante presente está disponível.");
@@ -115,6 +130,10 @@ public class DrawService {
                 settings.getRoundNumber(),settings.getSelectionPolicy(),requestId));
         settings.touch();
         stage.showDraw(sessionId,studentId);
+        events.record(session, SessionEventType.DRAW_SELECTED, SessionEventActor.TEACHER,
+                "Aluno selecionado; participação aguardando confirmação",
+                Map.of("attemptId", attempt.getId().toString(), "round", attempt.getRoundNumber(),
+                        "policy", attempt.getSelectionPolicy().name()));
         return view(attempt);
     }
 
@@ -144,6 +163,10 @@ public class DrawService {
             scoreLinks.save(new DrawAttemptScoreLink(attempt,scoreEvents.getReferenceById(event.id())));
         }
         settingsRepository.findById(sessionId).ifPresent(DrawSettings::touch);
+        events.record(session, SessionEventType.DRAW_RESOLVED, SessionEventActor.TEACHER,
+                "Sorteio encerrado: " + outcome.name(),
+                Map.of("attemptId", attempt.getId().toString(), "outcome", outcome.name(),
+                        "pointsGranted", score == null ? 0 : score.points()));
         return view(attempt);
     }
 

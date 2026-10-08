@@ -4,6 +4,7 @@ import br.com.arenadev.classroom.Student;
 import br.com.arenadev.session.ClassSession;
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Entity
@@ -34,7 +35,7 @@ public class DrawAttempt {
     @Column(name="resolution_fingerprint",length=64)
     private String resolutionFingerprint;
     @Column(name="selected_at",nullable=false)
-    private Instant selectedAt=Instant.now();
+    private Instant selectedAt=Instant.now().truncatedTo(ChronoUnit.MICROS);
     @Column(name="resolved_at")
     private Instant resolvedAt;
 
@@ -49,7 +50,7 @@ public class DrawAttempt {
         if (requestId == null || outcome == null || outcome == DrawOutcome.PENDING) {
             throw new IllegalArgumentException("Desfecho do sorteio inválido.");
         }
-        status=outcome; resolutionRequestId=requestId; resolutionFingerprint=fingerprint; resolvedAt=Instant.now();
+        status=outcome; resolutionRequestId=requestId; resolutionFingerprint=fingerprint; resolvedAt=Instant.now().truncatedTo(ChronoUnit.MICROS);
     }
     public UUID getId(){return id;}
     public ClassSession getSession(){return session;}

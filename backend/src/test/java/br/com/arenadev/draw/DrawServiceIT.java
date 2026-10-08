@@ -1,6 +1,9 @@
 package br.com.arenadev.draw;
 
 import br.com.arenadev.classroom.ClassroomService;
+import br.com.arenadev.dynamic.MechanicsService;
+import br.com.arenadev.sessionevent.SessionEventService;
+import br.com.arenadev.sessionevent.SessionEventType;
 import br.com.arenadev.classroom.StudentService;
 import br.com.arenadev.scoring.ScoreCategory;
 import br.com.arenadev.scoring.ScoreEventRepository;
@@ -38,7 +41,38 @@ class DrawServiceIT {
     @Autowired StudentService students;
     @Autowired SessionService sessions;
     @Autowired DrawService draws;
+    @Autowired MechanicsService legacy;
+    @Autowired SessionEventService audit;
     @Autowired ScoreEventRepository scoreEvents;
+
+    @Test
+    void legacyAndModernProtocolsCannotInterleaveWithinOneSession() {
+        String suffix=UUID.randomUUID().toString().substring(0,7).toUpperCase();
+        var classroom=classrooms.create("Protocol Gate " + suffix,"PG" + suffix);
+        var student=students.create("PG-"+suffix,"Estudante Protocol",null);
+        classrooms.enroll(classroom.id(),student.id());
+        var first=sessions.start(classroom.id(),"Turma com sorteio antigo",Set.of(student.id()));
+        legacy.draw(first.id());
+        assertThatThrownBy(()->draws.state(first.id()))
+                .isInstanceOf(DrawConflictException.class);
+        assertThatThrownBy(()->draws.select(first.id(),UUID.randomUUID()))
+                .isInstanceOf(DrawConflictException.class)
+                .hasMessageContaining("sorteio antigo");
+        assertThatThrownBy(()->draws.setPolicy(first.id(),DrawPolicy.BALANCED_WEIGHTED))
+                .isInstanceOf(DrawConflictException.class);
+        sessions.finish(first.id());
+        var next=sessions.start(classroom.id(),"Turma com sorteio novo",Set.of(student.id()));
+        var selected=draws.select(next.id(),UUID.randomUUID());
+        assertThatThrownBy(()->legacy.draw(next.id()))
+                .isInstanceOf(DrawConflictException.class)
+                .hasMessageContaining("Atualize a página");
+        draws.resolve(next.id(),selected.attemptId(),UUID.randomUUID(),DrawOutcome.PASSED,null);
+        assertThat(audit.listBySession(next.id()).stream().map(event->event.eventType()))
+                .contains(SessionEventType.DRAW_SELECTED, SessionEventType.DRAW_RESOLVED);
+        assertThat(audit.listBySession(next.id()).stream()
+                .filter(event->event.eventType()==SessionEventType.DRAW_RESOLVED)
+                .map(event->event.payload().get("outcome"))).containsExactly("PASSED");
+    }
 
     @Test
     void concurrentSelectionOnlyCreatesOnePendingAttempt() throws Exception {
