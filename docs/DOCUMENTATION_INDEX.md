@@ -106,6 +106,7 @@ Não reescrever documentação histórica para fabricar evidência retroativa. Q
 - [Contratos API, dados e migrações](v0.10/API_CONTRACTS.md)
 - [Wireflows de professor, aluno e projetor](v0.10/UX_FLOWS.md)
 - [Matriz de testes e go/no-go](v0.10/TEST_MATRIX.md)
+- [Registro da execução e pendências reais v0.10](v0.10/EXECUTION_STATUS.md)
 - [Auditoria da Arena, sorteio e Canva/HTML](AVALIACAO_V0_10_ARENA_MATERIAIS.md)
 - [ADR-0051 — Seleção e desfecho](adr/ADR-0051-selection-outcome-and-draw-policy.md)
 - [ADR-0052 — Recursos externos](adr/ADR-0052-external-resources-as-placements.md)

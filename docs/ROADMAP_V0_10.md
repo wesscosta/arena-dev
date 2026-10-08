@@ -5,6 +5,7 @@
 **ADRs:** [0045](adr/ADR-0045-jornada-e-estudo-sequencial-nao-workflow-de-atividades.md), [0046](adr/ADR-0046-arena-learning-core.md), [0049](adr/ADR-0049-evidence-nao-e-mastery-ia-consome-dominio.md), [0050](adr/ADR-0050-learning-loop-cycle-and-confidence-boundaries.md), [0051](adr/ADR-0051-selection-outcome-and-draw-policy.md), [0052](adr/ADR-0052-external-resources-as-placements.md).
 **Auditoria:** [AVALIACAO_V0_10_ARENA_MATERIAIS.md](AVALIACAO_V0_10_ARENA_MATERIAIS.md).
 **Plano técnico fechado para implementação incremental:** [v0.10/IMPLEMENTATION_PLAN.md](v0.10/IMPLEMENTATION_PLAN.md) (arquitetura, prioridade P0/P1/P2, contrato de dados, fluxos, testes e gates). Os itens planejados **não** estão implementados só por constarem no documento.
+**Progresso verificável por fase:** [v0.10/EXECUTION_STATUS.md](v0.10/EXECUTION_STATUS.md), com separação entre código já integrado à branch e gates ainda pendentes.
 
 ## Tese de produto e North Star
 

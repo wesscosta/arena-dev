@@ -6,7 +6,7 @@
 
 **Linha em desenvolvimento:** `v0.10 — Learning Loop`, branch `feat/v0.10-learning-loop`. [Roadmap](ROADMAP_V0_10.md).
 
-**Estado corrente:** v0.9.0 publicada e congelada; fundação 10.1 em desenvolvimento isolado, ainda não publicada. A v0.10 foi revisada para priorizar coerência do fluxo da Arena, sorteio com confirmação e uso contextual de materiais; iframe/Canva apenas após piloto de valor ([auditoria](AVALIACAO_V0_10_ARENA_MATERIAIS.md) e [plano técnico executável](v0.10/IMPLEMENTATION_PLAN.md)).
+**Estado corrente:** v0.9.0 publicada e congelada; v0.10 em implementação isolada (LearningCycle, DrawAttempt/V50, UI do sorteio e Before & After), ainda não publicada. A v0.10 foi revisada para priorizar coerência do fluxo da Arena, sorteio com confirmação e uso contextual de materiais; iframe/Canva apenas após piloto de valor ([auditoria](AVALIACAO_V0_10_ARENA_MATERIAIS.md) e [plano técnico executável](v0.10/IMPLEMENTATION_PLAN.md)).
 
 **Branch de release:** `main`.
 
