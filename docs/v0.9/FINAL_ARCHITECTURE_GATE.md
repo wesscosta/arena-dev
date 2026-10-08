@@ -2,7 +2,7 @@
 
 **Data:** 2026-10-07  
 **Escopo:** AI-ready · shadow cutover · retirada segura do legado · release hardening  
-**Estado:** gate implementado; freeze/publicação dependem da evidência final.
+**Estado:** gate concluído; v0.9.0 publicada/congelada. Cutover lógico permanece operacional e posterior à release.
 
 ## 1. Decisão
 
@@ -140,7 +140,7 @@ Checklist do artefato candidato:
 - [x] backup + checksum + restore validados em PostgreSQL 17 até **Flyway V48**;
 - [x] acessibilidade/reflow dos fluxos alterados sem regressão nos breakpoints e temas cobertos;
 - [x] documentação e manifests sincronizados em `0.9.0`;
-- [ ] CI do **mesmo SHA final** verde.
+- [x] CI do **mesmo SHA final** verde antes da tag/publicação.
 
 ### Evidência local de 2026-10-07
 
@@ -154,4 +154,4 @@ O `npm audit --omit=dev --audit-level=high` retorna **0 vulnerabilidades de prod
 
 Como hardening de reprodutibilidade, os três jobs do CI foram fixados em `ubuntu-24.04` (em vez de `ubuntu-latest`) e o job frontend passou a executar também `lint` e `format:check`, alinhando o gate remoto ao gate local.
 
-Estado correto neste ponto: **release candidate 0.9.0 tecnicamente verde localmente; aguardando CI verde no mesmo SHA final e integração em `main` antes do freeze/publicação formal**.
+Estado final da linha: **v0.9.0 publicada e congelada em `main` após CI verde no mesmo SHA, backup/restore V48 e gate final de release**. O cutover lógico continua deliberadamente separado da publicação e depende da amostra operacional real dos shadows.

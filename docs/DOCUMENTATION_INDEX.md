@@ -4,7 +4,7 @@
 
 1. [`../README.md`](../README.md) — visão pública e operacional do projeto.
 2. [`STATUS_ATUAL.md`](STATUS_ATUAL.md) — estado técnico corrente.
-3. [`HANDOFF_V0_9.md`](HANDOFF_V0_9.md) — contrato vigente da linha ativa v0.9.
+3. [`HANDOFF_V0_9.md`](HANDOFF_V0_9.md) — handoff histórico da baseline v0.9.0.
 4. [`v0.9/CURRENT_STATE_AUDIT.md`](v0.9/CURRENT_STATE_AUDIT.md) — estado implementado e próximos passos da v0.9.
 5. [`ROADMAP_0_8.md`](ROADMAP_0_8.md) — roadmap histórico da baseline v0.8.
 6. [`INCREMENT_16_3.md`](INCREMENT_16_3.md) — plano técnico de Journey Study Experience.
@@ -15,14 +15,15 @@
 11. [`ROADMAP_0_7.md`](ROADMAP_0_7.md) — fechamento histórico da linha de integrações.
 12. [`RELEASE_0_7.md`](RELEASE_0_7.md) — release publicada da v0.7.0.
 13. [`RELEASE_0_8.md`](RELEASE_0_8.md) — contrato histórico da release v0.8.
-14. [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md) — gate transversal concluído antes da retomada do 16.5C.
-15. [`CONTENT_CANONICAL_MARKDOWN.md`](CONTENT_CANONICAL_MARKDOWN.md) — contrato canônico de conteúdo da Biblioteca, outline e projeções Leitura/Estrutura/Mapa.
-16. [`INCREMENT_16_5C_PLAN.md`](INCREMENT_16_5C_PLAN.md) — plano e registro da Semantic Content Foundation & Ingestion → Library.
-17. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
-18. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
-19. [`LEARNING_VALIDATION_ROADMAP.md`](LEARNING_VALIDATION_ROADMAP.md) — plano posterior para evidências, Mastery, revisão e progressão visual.
-20. [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md) — decisões e gates de Turmas/Biblioteca global, cards, temas e responsividade.
-21. [`adr/README.md`](adr/README.md).
+14. [`RELEASE_0_9.md`](RELEASE_0_9.md) — registro de fechamento, gates e invariantes da v0.9.0.
+15. [`ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](ARCHITECTURE_STABILIZATION_GATE_V0_8.md) — gate transversal concluído antes da retomada do 16.5C.
+16. [`CONTENT_CANONICAL_MARKDOWN.md`](CONTENT_CANONICAL_MARKDOWN.md) — contrato canônico de conteúdo da Biblioteca, outline e projeções Leitura/Estrutura/Mapa.
+17. [`INCREMENT_16_5C_PLAN.md`](INCREMENT_16_5C_PLAN.md) — plano e registro da Semantic Content Foundation & Ingestion → Library.
+18. [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+19. [`ACCESSIBILITY.md`](ACCESSIBILITY.md).
+20. [`LEARNING_VALIDATION_ROADMAP.md`](LEARNING_VALIDATION_ROADMAP.md) — plano posterior para evidências, Mastery, revisão e progressão visual.
+21. [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md) — decisões e gates de Turmas/Biblioteca global, cards, temas e responsividade.
+22. [`adr/README.md`](adr/README.md).
 
 ## Baseline encerrada — v0.6
 
@@ -38,11 +39,15 @@
 - [`adr/ADR-0043-activitysubmission-fonte-de-verdade-e-ia-supervisionada.md`](adr/ADR-0043-activitysubmission-fonte-de-verdade-e-ia-supervisionada.md);
 - [`adr/ADR-0044-submissionitem-entrega-polimorfica.md`](adr/ADR-0044-submissionitem-entrega-polimorfica.md).
 
-## Linha ativa — v0.9
+## Baseline publicada — v0.9
 
-A v0.9 é o **Arena Learning Core**. A branch `feat/v0.9-learning-core-foundation` avançou de V39 a V45 e já possui o primeiro slice vertical `LearningTarget → Interaction → Response → Evaluation → Result → LearningEvidence`, exposto pelo fluxo **Verificar aprendizagem**. Consulte `HANDOFF_V0_9.md` e `v0.9/CURRENT_STATE_AUDIT.md` antes de documentos de roadmap antigos.
+A v0.9.0 é o **Arena Learning Core** e está publicada/congelada. A linha consolidou Flyway V39–V48, `LearningTarget → Interaction → Response → Evaluation → Result → LearningEvidence`, o fluxo **Verificar aprendizagem**, trace AI-ready e shadow/cutover gate para Quiz, Poll e Word Cloud. O legado permanece autoritativo até o gate operacional aprovar o cutover real.
 
-## Baseline publicada — v0.8
+## Próxima linha planejada — v0.10
+
+A próxima evolução é **Learning Loop**. Confidence, Before & After, Error Clinic, Recovery e Mastery v1 permanecem fora da baseline v0.9.0 até abertura formal da nova linha.
+
+## Baseline histórica — v0.8
 
 O **Gate de Estabilização Arquitetural v0.8** foi concluído, `16.5C–F` foram fechados no escopo MVP e a v0.8.0 foi publicada/congelada.
 
@@ -68,17 +73,17 @@ O 16.2 — Learning Resources & Content Ingestion e o 16.3 — Study Experience 
 
 ## Regra de precedência
 
-1. código, migrations e configuração da branch ativa;
+1. código, migrations e configuração da `main` publicada;
 2. `STATUS_ATUAL.md`;
-3. `HANDOFF_V0_9.md`;
-4. `v0.9/CURRENT_STATE_AUDIT.md`;
+3. `v0.9/FINAL_ARCHITECTURE_GATE.md`;
+4. `HANDOFF_V0_9.md` e `v0.9/CURRENT_STATE_AUDIT.md` como fechamento da baseline;
 5. ADRs aceitos da v0.9;
-6. `ROADMAP_0_8.md` e incrementos 16.x como histórico da baseline;
+6. `ROADMAP_0_8.md` e incrementos 16.x como histórico;
 7. documentos históricos anteriores.
 
 Não reescrever documentação histórica para fabricar evidência retroativa. Quando houver divergência entre fechamento técnico e publicação externa, registrar explicitamente a evidência disponível.
 
-**Atualizado em 07/10/2026:** v0.8.0 está publicada/congelada. A v0.9 é a linha ativa, com Learning Core até V45 e primeiro fluxo nativo de LearningEvidence disponível na Arena.
+**Atualizado em 07/10/2026:** v0.9.0 está publicada/congelada em Flyway V48. A próxima linha planejada é v0.10 — Learning Loop; cutover lógico do legado permanece condicionado à evidência operacional real.
 - [`CLOSURE_16_4_STUDENT_EXPERIENCE.md`](CLOSURE_16_4_STUDENT_EXPERIENCE.md) — fechamento do ciclo 16.4, decisões consolidadas, gates e pendências.
 - [INCREMENT_16_4D.md](INCREMENT_16_4D.md) — Achievements Foundation: domínio, persistência, reconciliação, API, UX e gates.
 - [INCREMENT_16_5_0_ARCHITECTURE_AUDIT.md](INCREMENT_16_5_0_ARCHITECTURE_AUDIT.md) — gate arquitetural da Content Library: LearningResource, ownership, snapshot, ingestão e migration strategy.

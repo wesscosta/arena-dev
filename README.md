@@ -2,11 +2,11 @@
 
 **Arena Dev** é uma plataforma proprietária e self-hosted para condução, participação e gamificação de dinâmicas de sala, com foco em baixa fricção para o professor.
 
-> **Baseline publicada:** `v0.8.0 — Professor Experience & Journey MVP`.
+> **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 >
-> **Linha ativa:** `v0.9 — Arena Learning Core`.
+> **Próxima linha planejada:** `v0.10 — Learning Loop`.
 >
-> **Execução atual:** a v0.8.0 está publicada e congelada. O desenvolvimento funcional corrente ocorre na v0.9, com Learning Domain, Interaction Core, LearningEvidence e migração progressiva dos runtimes legados por adapters/shadow validation.
+> **Execução atual:** a v0.9.0 está publicada e congelada. Learning Domain, Interaction Core, LearningEvidence, AI-ready trace e shadow/cutover gate fazem parte da baseline. O legado permanece autoritativo até que a amostra operacional de shadows aprove o cutover lógico; remoção física fica para release posterior à janela de rollback.
 
 ## Modelo do produto
 
@@ -170,7 +170,7 @@ Schema consolidado da linha: **Flyway V1–V25**.
 
 Detalhes de fechamento em `docs/RELEASE_0_7.md`.
 
-## v0.8 — linha ativa
+## v0.8 — linha encerrada
 
 O `16.1 — Journey Core` introduziu a base persistente de progressão: jornadas por turma, etapas ordenadas, regras de desbloqueio, critérios de conclusão e progresso por matrícula.
 
@@ -201,6 +201,24 @@ Estado final do `16.0 — Professor Arena Experience`:
 - quality gate técnico `16.0F.18` concluído: CSS legado da roleta removido, responsividade desktop validada, estados vazios explícitos e drawers com contenção/retorno de foco; os passes `16.0F.19/20` fecharam consistência visual e Projetor antes do merge no PR #21.
 
 Roadmap e estado detalhado em `docs/ROADMAP_0_8.md`, `docs/INCREMENT_16_3.md` e `docs/INCREMENT_16_2.md`.
+
+## v0.9.0 — linha publicada e congelada
+
+A v0.9 consolida o **Arena Learning Core** como fundação pedagógica estruturada, sem remover prematuramente os runtimes legados:
+
+- `LearningTarget`, `ContentRef` e `Provenance` como base semântica;
+- `InteractionDefinition → InteractionRun → Response → Evaluation → Result`;
+- `LearningEvidence` persistida no fluxo nativo **Verificar aprendizagem**, sem XP automático;
+- Quiz, Poll e Word Cloud integrados ao novo core por adapters/shadow validation;
+- trace estruturado AI-ready por `InteractionRun`, com `aiReady` e lacunas explícitas;
+- observações duráveis `EQUIVALENT / MISMATCH / SYNC_ERROR`;
+- cutover lógico fail-closed, condicionado à evidência operacional real;
+- legado preservado como autoridade e rollback durante a primeira release;
+- Flyway consolidado até **V48**.
+
+O cutover lógico **não acontece automaticamente com a publicação da v0.9.0**. Por padrão, cada tipo precisa atingir a amostra mínima de rodadas terminais equivalentes e não pode ter divergência não resolvida. A exclusão física do legado pertence a uma release posterior à janela de rollback.
+
+A próxima linha planejada é **v0.10 — Learning Loop**, com evolução das intervenções pedagógicas, Confidence, Before & After, Error Clinic, Recovery e Mastery v1. Essas capacidades não fazem parte da baseline v0.9.0.
 
 ## Executando localmente
 
