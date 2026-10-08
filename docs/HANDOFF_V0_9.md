@@ -1,6 +1,8 @@
 # Handoff — Arena Dev v0.9
 
-**Versão:** v0.9 — Arena Learning Core
+**Versão:** v0.9.0 — Arena Learning Core
+**Estado:** publicada e congelada; documento preservado como handoff histórico da baseline
+**Integração final:** PR #31
 **Origem:** v0.8.0 publicada e congelada
 **Tag de origem:** `v0.8.0`
 **Merge da v0.8:** `03bf09c35b58878bc22ba43ad114d7b9080e4923`
@@ -631,4 +633,4 @@ Se não houver resposta clara, a funcionalidade é periférica, experimental ou 
 
 ## 26. Gate final de arquitetura
 
-O fechamento AI-ready/cutover/rollback está documentado em `docs/v0.9/FINAL_ARCHITECTURE_GATE.md`. O freeze exige o mecanismo de cutover validado, CI/E2E e rollback comprovados no mesmo SHA; não exige `logicalCutoverReady=true`. O cutover lógico permanece uma decisão operacional posterior, baseada na amostra real dos shadows.
+O fechamento AI-ready/cutover/rollback está documentado em `docs/v0.9/FINAL_ARCHITECTURE_GATE.md`. A v0.9.0 foi congelada com CI/E2E e rollback comprovados no mesmo SHA; o freeze não exige `logicalCutoverReady=true`. O cutover lógico permanece uma decisão operacional posterior, baseada na amostra real dos shadows. Novas capacidades funcionais pertencem à v0.10.

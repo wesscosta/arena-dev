@@ -1,8 +1,9 @@
 # v0.9 — Current State Audit
 
 **Data:** 2026-10-07  
-**Branch de implementação:** `feat/v0.9-learning-core-foundation`  
-**Baseline de código:** `main@03bf09c` + handoff auditado `02c4b1c`
+**Estado:** baseline v0.9.0 publicada/congelada
+**Branch final:** `main`
+**Origem da implementação:** `feat/v0.9-learning-core-foundation` + `feat/v0.9-release-gate-hardening`
 
 ## Baseline validada
 
@@ -172,16 +173,13 @@ Os três shadows persistem EQUIVALENT/MISMATCH/SYNC_ERROR sem afetar o fluxo leg
 
 A remoção física das tabelas legadas **não pertence ao mesmo passo do primeiro cutover**: ela permanece bloqueada até uma release com core autoritativo atravessar a janela de rollback. Isso é requisito de reversibilidade, não débito ignorado.
 
-Próxima sequência de menor risco:
+Sequência pós-publicação:
 
 ```text
-gate local completo V48 + Compose/E2E + backup/restore (concluídos)
-→ CI verde no mesmo SHA final
-→ merge em main + gate final
-→ freeze/publicação v0.9.0 com legado ainda autoritativo
+v0.9.0 publicada/congelada com legado autoritativo
 → coleta operacional dos shadows
 → cutover lógico somente quando /api/learning-core/gate/cutover aprovar
-→ janela de rollback
+→ release com core autoritativo atravessa a janela de rollback
 → somente então remoção física do legado em release posterior
 ```
 
@@ -191,4 +189,4 @@ A qualificação operacional com três rodadas terminais equivalentes por tipo *
 
 Detalhes: `docs/v0.9/FINAL_ARCHITECTURE_GATE.md`.
 
-Não iniciar Mastery, IA generativa, RAG ou novos game modes antes de fechar esses gates.
+Mastery, IA generativa, RAG e novos game modes permanecem fora da baseline congelada e só podem avançar em linhas posteriores com escopo próprio.

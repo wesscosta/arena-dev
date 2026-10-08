@@ -2,19 +2,21 @@
 
 **Última sincronização documental:** 7 de outubro de 2026
 
-**Baseline publicada:** `v0.8.0 — Professor Experience & Journey MVP`.
+**Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 
-**Linha ativa:** `v0.9 — Arena Learning Core`.
+**Próxima linha planejada:** `v0.10 — Learning Loop`.
 
-**Incremento atual:** primeiro slice vertical do Learning Core, com `LearningTarget → Interaction → Response → Evaluation → Result → LearningEvidence` e fluxo visível **Verificar aprendizagem**.
+**Estado corrente:** v0.9.0 publicada e congelada; nenhum incremento funcional novo pertence a esta linha.
 
-**Branch ativa:** `feat/v0.9-learning-core-foundation`.
+**Branch de release:** `main`.
 
-**Handoff vigente:** [`HANDOFF_V0_9.md`](HANDOFF_V0_9.md).
+**Handoff histórico da linha:** [`HANDOFF_V0_9.md`](HANDOFF_V0_9.md).
 
 ## Estado resumido
 
-A v0.8.0 está publicada e congelada como baseline. O desenvolvimento funcional corrente ocorre na v0.9, que já avançou de forma aditiva até Flyway V45 e possui o primeiro fluxo nativo de evidência de aprendizagem operando ponta a ponta. A linha v0.8.x permanece restrita a regressão, segurança, acessibilidade crítica e documentação.
+A v0.9.0 consolida o Learning Core até Flyway V48: LearningTarget, Interaction Core, Evaluation/Result, LearningEvidence, fluxo **Verificar aprendizagem**, trace AI-ready e shadow/cutover gate para Quiz, Poll e Word Cloud. A linha v0.9 está em feature freeze; novas capacidades seguem para v0.10.
+
+A publicação da v0.9.0 não executa cutover automático. O legado continua autoritativo até que a amostra operacional real aprove `/api/learning-core/gate/cutover`; a remoção física permanece bloqueada até uma release posterior à janela de rollback.
 
 A Journey já possui Study API própria, `/learn`, Reader, progresso e retomada, prévia do professor na mesma experiência, Builder reduzido a módulos + conteúdos e Progression UX com estados `COMPLETED`, `CURRENT` e `LOCKED`.
 
@@ -23,12 +25,13 @@ A frente de ingestão `16.3.8` cobre contrato normalizado, adapters Markdown/Tex
 ## Baselines
 
 ```text
-baseline publicada        v0.8.0
-linha ativa               v0.9 · Arena Learning Core
-incremento atual           primeiro slice vertical de Evidence
-fatia atual                Verificar aprendizagem + realtime/reconnect
-branch                     feat/v0.9-learning-core-foundation
-schema                     Flyway V1–V45
+baseline publicada        v0.9.0 · Arena Learning Core
+próxima linha             v0.10 · Learning Loop
+estado                     feature freeze
+branch                     main
+schema                     Flyway V1–V48
+cutover                    pendente de evidência operacional real
+legado                     autoritativo durante a janela de rollback
 providers                  Microsoft Teams + Notion OAuth
 Google Classroom           standby
 ```
@@ -169,21 +172,23 @@ Documento: [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CO
 ## Validação corrente
 
 ```text
-backend tests        OK · 111/111
-frontend tests       OK · baseline corrente: 284/284
+backend unit         OK · 163/163
+backend integration  OK · 109/109
+frontend tests       OK · 298/298
+frontend lint/format OK
 frontend typecheck   OK
 frontend build       OK
-git diff --check     OK
-Ranking E2E          OK · 2/2 (fluxo + 12 combinações viewport/tema)
-E2E transversal      OK · 10/10 (Ranking + Home responsiva + Visão geral + fluxos críticos)
-Flyway               V1–V38
+Compose isolado      OK
+Chromium E2E         OK · 22/22
+backup/restore       OK · PostgreSQL 17
+Flyway               V1–V48
 ```
 
-## Gate atual — Release Hardening
+## Gate atual — v0.9.0 congelada
 
-**Validação local de 06/10/2026:** gate oficial verde com backend unitário/integração, frontend, build e **21/21 E2E**; backup com checksum restaurado em PostgreSQL 17 e validado até **Flyway V38**. Resta somente commit/push/PR e CI verde no mesmo SHA para liberar a tag.
+O release hardening da v0.9.0 foi concluído com gate local completo, backup/restore V48 e CI verde no mesmo SHA antes da tag. A linha está em **feature freeze**.
 
-A v0.8 está em **feature freeze**. O gate restante é operacional: concluir E2E, reflow/acessibilidade, validação de restore até V38, alinhamento dos manifests em 0.8.0, documentação e CI do mesmo SHA. O eixo pedagógico de roadmaps, questões, Mastery e progressão permanece separado em `17.x`.
+O único gate ainda aberto é operacional e posterior à publicação: coletar a amostra real de shadow validation para autorizar o cutover lógico. Até lá, o legado permanece autoritativo e removível apenas após uma release posterior atravessar a janela de rollback.
 
 Detalhes:
 - [`ROADMAP_0_8.md`](ROADMAP_0_8.md)
