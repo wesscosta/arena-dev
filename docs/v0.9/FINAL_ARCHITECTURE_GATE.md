@@ -134,7 +134,7 @@ Checklist do artefato candidato:
 - [x] AI-ready trace de uma Interaction real retorna `aiReady=true` e `gaps=[]` — coberto por `LearningCheckIT` com resposta, avaliação e LearningEvidence;
 - [x] Quiz/Poll/Word Cloud shadow lifecycle verde em integração;
 - [x] critérios de cutover automatizados e fail-closed — shadow habilitado, mínimo de 3 rodadas terminais equivalentes por tipo e zero mismatch/sync error não resolvido; a amostra operacional real será exigida quando o cutover for solicitado;
-- [x] frontend tests/typecheck/build/lint/format verdes — **299/299** testes;
+- [x] frontend tests/typecheck/build/lint/format verdes — **300/300** testes;
 - [x] Chromium E2E completo verde no artefato candidato — **23/23**;
 - [x] Compose isolado verde com shadows habilitados, coexistindo com a stack de desenvolvimento;
 - [x] backup + checksum + restore validados em PostgreSQL 17 até **Flyway V48**;

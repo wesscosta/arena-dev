@@ -1,21 +1,60 @@
-MIT License
+Arena Dev Proprietary License
 
-Copyright (c) 2026 Weslley Costa
+Copyright (c) 2026 Weslley Costa. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. PROPRIETARY SOFTWARE
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Arena Dev, including its source code, object code, documentation, visual assets,
+database schemas, application logic, and other materials distributed with this
+license (collectively, the "Software"), is proprietary software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Except as expressly authorized by a separate written agreement with the
+copyright holder, no permission is granted to use, copy, reproduce, modify,
+merge, publish, distribute, sublicense, sell, lease, host for third parties,
+create derivative works from, or otherwise exploit the Software, in whole or
+in substantial part.
+
+Access to the source code or possession of a copy of the Software does not by
+itself grant any license or other right beyond those expressly stated in a
+separate written agreement or written authorization from the copyright holder.
+
+2. AUTHORIZED USE
+
+A person or organization may use the Software only to the extent expressly
+permitted by a written agreement, commercial license, employment/contractual
+relationship, or other written authorization from the copyright holder.
+Any authorized copy must preserve applicable copyright and proprietary notices.
+
+3. THIRD-PARTY SOFTWARE
+
+This license does not alter or restrict the licenses of third-party libraries,
+frameworks, tools, assets, or other components incorporated into or used by the
+Software. Those components remain governed by their respective licenses and
+notices.
+
+4. HISTORICAL RELEASES
+
+This license does not revoke rights previously granted for historical copies
+that were distributed under the MIT License. See LEGACY_LICENSE_NOTICE.md for
+the version history and the boundary between historical MIT distributions and
+the proprietary product line.
+
+No MIT or other open-source license is granted to Arena Dev v0.9.0 or later
+merely because earlier releases were distributed under the MIT License.
+
+5. NO WARRANTY
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS PROVIDED
+"AS IS" AND WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE COPYRIGHT HOLDER SHALL
+NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR
+EXEMPLARY DAMAGES ARISING FROM THE SOFTWARE OR ITS USE, EXCEPT WHERE SUCH
+LIMITATION IS PROHIBITED BY LAW.
+
+6. RESERVATION OF RIGHTS
+
+All rights not expressly granted are reserved by the copyright holder.
+
+For commercial licensing or other permissions, contact the repository owner.

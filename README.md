@@ -1,6 +1,6 @@
-# Arena Dev Community
+# Arena Dev
 
-**Arena Dev Community** é uma plataforma open source e self-hosted para condução, participação e gamificação de dinâmicas de sala, com foco em baixa fricção para o professor.
+**Arena Dev** é uma plataforma proprietária e self-hosted para condução, participação e gamificação de dinâmicas de sala, com foco em baixa fricção para o professor.
 
 > **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 >
@@ -303,7 +303,9 @@ Histórico da v0.6:
 
 ## Licença
 
-MIT.
+A baseline atual é **proprietária**. `v0.9.0` é a primeira release formalmente distribuída sob a **Arena Dev Proprietary License**; consulte [`LICENSE`](LICENSE).
+
+A linha Community foi planejada para encerrar em `v0.4.x`. Por falha de governança, `v0.5.0`–`v0.8.0` também foram efetivamente publicadas com MIT; os direitos já concedidos sobre aquelas cópias históricas permanecem válidos. O registro completo está em [`LEGACY_LICENSE_NOTICE.md`](LEGACY_LICENSE_NOTICE.md) e na ADR-0050.
 
 
 ### Student Live — 16.4B

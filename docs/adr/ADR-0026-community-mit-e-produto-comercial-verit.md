@@ -1,7 +1,8 @@
 # ADR-0026 — Arena Dev Community sob MIT e produto comercial Verit separado
 
-- **Status:** Aceito
+- **Status:** Superseded por ADR-0050
 - **Data:** 2026-08-31
+- **Superseded em:** 2026-10-07
 
 ## Contexto
 
