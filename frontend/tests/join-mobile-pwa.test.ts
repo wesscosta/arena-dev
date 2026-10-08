@@ -31,3 +31,11 @@ test("quiz answers keep coarse-pointer touch targets", () => {
   assert.match(quizCss, /min-height:\s*56px/);
   assert.match(quizCss, /touch-action:\s*manipulation/);
 });
+
+test("offline status is never presented as connected and online triggers explicit socket resync", () => {
+  assert.match(join, /const onOffline = \(\) =>/);
+  assert.match(join, /setSocketState\("offline"\)/);
+  assert.match(join, /socketRef\.current\?\.close\(\)/);
+  assert.match(join, /const onOnline = \(\) =>/);
+  assert.match(join, /setReconnectVersion\(\(value\) => value \+ 1\)/);
+});
