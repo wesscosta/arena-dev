@@ -1,6 +1,6 @@
 # Arena Dev v0.9.0 — Arena Learning Core
 
-**Estado:** candidata final à publicação/congelamento
+**Estado:** publicada e congelada
 **Schema:** Flyway V1–V48
 **Licença:** Arena Dev Proprietary License
 **Base anterior:** v0.8.0 — Professor Experience, Journey & Content Library
