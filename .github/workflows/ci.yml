@@ -70,7 +70,7 @@ jobs:
         run: npm run build
 
   e2e:
-    name: Compose and E2E — Chromium v0.8 critical flows
+    name: Compose and E2E — Chromium critical flows
     runs-on: ubuntu-latest
     timeout-minutes: 35
     needs: [backend, frontend]
@@ -94,6 +94,7 @@ jobs:
         run: |
           bash -n scripts/release/*.sh
           scripts/release/check-metadata.sh --require-license
+          scripts/release/verify-v0.9-contract.sh
 
       - name: Install locked frontend dependencies
         working-directory: frontend

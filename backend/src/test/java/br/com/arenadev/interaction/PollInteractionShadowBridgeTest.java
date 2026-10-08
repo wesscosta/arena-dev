@@ -15,7 +15,10 @@ class PollInteractionShadowBridgeTest {
     @Test
     void disabledBridgeDoesNothing() {
         PollInteractionShadowService service = mock(PollInteractionShadowService.class);
-        PollInteractionShadowBridge bridge = new PollInteractionShadowBridge(service, false);
+        InteractionShadowObservationService observations =
+                mock(InteractionShadowObservationService.class);
+        PollInteractionShadowBridge bridge =
+                new PollInteractionShadowBridge(service, observations, false);
         UUID roundId = UUID.randomUUID();
 
         bridge.afterLegacyMutation(roundId);
@@ -24,26 +27,45 @@ class PollInteractionShadowBridgeTest {
     }
 
     @Test
-    void enabledBridgeRunsComparisonOutsideTransaction() {
+    void enabledBridgeRunsComparisonAndPersistsEvidenceOutsideTransaction() {
         PollInteractionShadowService service = mock(PollInteractionShadowService.class);
+        InteractionShadowObservationService observations =
+                mock(InteractionShadowObservationService.class);
         UUID roundId = UUID.randomUUID();
-        when(service.compare(roundId)).thenReturn(comparison(roundId, true));
-        PollInteractionShadowBridge bridge = new PollInteractionShadowBridge(service, true);
+        PollInteractionShadowService.ShadowComparison comparison =
+                comparison(roundId, true);
+        when(service.compare(roundId)).thenReturn(comparison);
+        PollInteractionShadowBridge bridge =
+                new PollInteractionShadowBridge(service, observations, true);
 
         bridge.afterLegacyMutation(roundId);
 
         verify(service).compare(roundId);
+        verify(observations).record(
+                InteractionShadowType.POLL,
+                roundId,
+                comparison.interactionRunId(),
+                true,
+                List.of(),
+                0
+        );
     }
 
     @Test
-    void shadowFailureNeverEscapesIntoLegacyFlow() {
+    void shadowFailureNeverEscapesIntoLegacyFlowAndIsRecorded() {
         PollInteractionShadowService service = mock(PollInteractionShadowService.class);
+        InteractionShadowObservationService observations =
+                mock(InteractionShadowObservationService.class);
         UUID roundId = UUID.randomUUID();
-        when(service.compare(roundId)).thenThrow(new IllegalStateException("shadow failure"));
-        PollInteractionShadowBridge bridge = new PollInteractionShadowBridge(service, true);
+        IllegalStateException error = new IllegalStateException("shadow failure");
+        when(service.compare(roundId)).thenThrow(error);
+        PollInteractionShadowBridge bridge =
+                new PollInteractionShadowBridge(service, observations, true);
 
         assertThatCode(() -> bridge.afterLegacyMutation(roundId))
                 .doesNotThrowAnyException();
+
+        verify(observations).recordFailure(InteractionShadowType.POLL, roundId, error);
     }
 
     private static PollInteractionShadowService.ShadowComparison comparison(

@@ -91,7 +91,7 @@ O handoff original continha decisões que foram superadas pela consolidação do
 
 ## 6. Estado real relevante do código
 
-A auditoria inicial partiu da V38. O estado atual da branch v0.9 já avançou de forma aditiva até **Flyway V47**:
+A auditoria inicial partiu da V38. O estado atual da branch v0.9 já avançou de forma aditiva até **Flyway V48**:
 
 - V39: Learning Domain Foundation;
 - V40: Interaction Definition Foundation;
@@ -102,12 +102,13 @@ A auditoria inicial partiu da V38. O estado atual da branch v0.9 já avançou de
 - V45: Learning Evidence;
 - V46: Poll Interaction Shadow;
 - V47: Word Cloud Interaction Shadow;
+- V48: Learning Core Release Gate — observações duráveis de shadow + critérios de cutover;
 - `learning_resources` mantém subject/tags/language, revision, hashes, outline e proveniência de snapshot;
 - V38 declara explicitamente que `subject` é metadata editorial flexível, não KnowledgeNode/taxonomia rígida;
 - Quiz usa `QuizRound.question_id → activity_questions`;
 - `ActivityQuestion` pertence ao domínio Atividade;
 - Quiz já preserva resposta bruta em JSON e possui avaliação posterior;
-- Poll, Quiz e Word Cloud preservam seus runtimes legados como fonte oficial, mas já possuem adapters/shadow validation no Interaction Core;
+- Poll, Quiz e Word Cloud ainda preservam os runtimes legados como autoridade durante o gate, mas seus adapters/shadows agora persistem observações EQUIVALENT/MISMATCH/SYNC_ERROR no Interaction Core;
 - Poll foi mapeado para `CHOICE + evaluationMode NONE` sem gerar Evidence;
 - Word Cloud foi mapeada para `TEXT LIST + WORD_CLOUD`, preservando frequência normalizada e uma Response por participante;
 - `useArenaRealtime` concentra estados de Buzzer, Timer, Word Cloud, Poll, Quiz e Ranking;
@@ -352,12 +353,13 @@ Não exibir `Domínio 61%` quando o dado real é apenas `Acerto desta verificaç
 
 ### v0.9-C — Session Integration
 
-- Session contract — pendente de fechamento;
+- Session contract/runtime snapshot — consolidado em `SessionRuntimeSnapshotService`;
 - Spotlight — consolidado por auditoria, sem refactor adicional necessário;
 - Groups — geração balanceada + edição/manual persistida implementadas;
 - Timer — consolidado por auditoria, sem refactor adicional necessário;
-- legacy removal — pendente após cutover seguro dos adapters;
-- AI-ready audit — próximo gate arquitetural.
+- AI-ready trace — implementado por `InteractionTraceService`, com gaps explícitos;
+- shadow cutover gate — implementado com amostra terminal mínima e bloqueio por mismatch/sync error;
+- legacy removal — retirada lógica condicionada ao cutover; remoção física deliberadamente postergada até uma janela de rollback pós-release.
 
 ## 16. Primeiro caminho crítico
 
@@ -426,6 +428,8 @@ Responses
 Comparar participação, distribuição e acertos/erros.
 
 O novo engine só vira fonte oficial depois de equivalência explicada.
+
+Desde V48, a equivalência deixa de existir apenas em log/teste: `interaction_shadow_observations` persiste a observação e `/api/learning-core/gate/cutover` calcula a prontidão por tipo. Uma rodada só conta para o corte quando está encerrada e sua observação mais recente é `EQUIVALENT`; qualquer `MISMATCH` ou `SYNC_ERROR` não resolvido bloqueia o cutover.
 
 ## 19. Primeiro fluxo visível
 
@@ -623,3 +627,8 @@ Journey
 ```
 
 Se não houver resposta clara, a funcionalidade é periférica, experimental ou fora do núcleo da release.
+
+
+## 26. Gate final de arquitetura
+
+O fechamento AI-ready/cutover/rollback está documentado em `docs/v0.9/FINAL_ARCHITECTURE_GATE.md`. A v0.9 não deve ser marcada como congelada/publicada antes do gate final do mesmo SHA.

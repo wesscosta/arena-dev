@@ -47,6 +47,7 @@ class LearningCheckIT {
     @Autowired private LearningTargetService targetService;
     @Autowired private LearningCheckService checkService;
     @Autowired private InteractionResponseService responseService;
+    @Autowired private InteractionTraceService traceService;
 
     @Test
     void runsNativeLearningCheckFromTargetToEvidence() {
@@ -103,6 +104,21 @@ class LearningCheckIT {
         assertThat(current.run().status()).isEqualTo(InteractionRunStatus.CLOSED);
         assertThat(current.run().resultsVisiblePublicly()).isTrue();
         assertThat(current.result().evaluation().accuracy()).isEqualTo(1.0);
+
+        InteractionTraceService.TraceView trace = traceService.trace(prepared.run().id());
+        assertThat(trace.aiReady()).isTrue();
+        assertThat(trace.gaps()).isEmpty();
+        assertThat(trace.sessionId()).isEqualTo(fixture.sessionId());
+        assertThat(trace.definition().learningTarget().id()).isEqualTo(fixture.targetId());
+        assertThat(trace.responses()).hasSize(1);
+        assertThat(trace.responses().getFirst().participantId())
+                .isEqualTo(fixture.participantId());
+        assertThat(trace.responses().getFirst().rawResponseJson())
+                .contains("selectedOptionKeys");
+        assertThat(trace.responses().getFirst().evaluation()).isNotNull();
+        assertThat(trace.responses().getFirst().evaluation().evaluatorVersion()).isNotBlank();
+        assertThat(trace.responses().getFirst().evidence()).isNotNull();
+        assertThat(trace.result().evaluation().accuracy()).isEqualTo(1.0);
     }
 
     @Test
