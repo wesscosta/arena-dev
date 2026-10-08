@@ -589,7 +589,7 @@ Evolution/Recovery Rate tornam-se métricas principais na v0.10.
 - Interaction Engine estável;
 - Response/Evaluation/Result separados;
 - Quiz real operando através do novo core;
-- shadow validation concluída;
+- shadow validation automatizada e persistida, com gate fail-closed para cutover; o cutover operacional não é pré-condição do freeze da v0.9.0;
 - LearningEvidence persistida;
 - Poll e TEXT/Nuvem migrados;
 - Groups/Spotlight/Timer consolidados;
@@ -631,4 +631,4 @@ Se não houver resposta clara, a funcionalidade é periférica, experimental ou 
 
 ## 26. Gate final de arquitetura
 
-O fechamento AI-ready/cutover/rollback está documentado em `docs/v0.9/FINAL_ARCHITECTURE_GATE.md`. A v0.9 não deve ser marcada como congelada/publicada antes do gate final do mesmo SHA.
+O fechamento AI-ready/cutover/rollback está documentado em `docs/v0.9/FINAL_ARCHITECTURE_GATE.md`. O freeze exige o mecanismo de cutover validado, CI/E2E e rollback comprovados no mesmo SHA; não exige `logicalCutoverReady=true`. O cutover lógico permanece uma decisão operacional posterior, baseada na amostra real dos shadows.

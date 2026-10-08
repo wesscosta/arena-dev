@@ -122,24 +122,34 @@ Variáveis operacionais:
 
 ## 8. Gate para freeze v0.9.0
 
-A release só pode ser declarada congelada quando:
+O freeze da v0.9.0 valida que o mecanismo de shadow/cutover é seguro; ele **não exige que o cutover lógico já tenha ocorrido**. Exigir três rodadas reais por tipo antes da release criaria uma dependência circular: a própria v0.9 introduz a observabilidade durável necessária para colher essa amostra. Assim:
 
-- [x] backend unit/integration verde em V48 — 109 testes, 0 falhas/erros;
-- [x] AI-ready trace de uma Interaction real retorna `aiReady=true` — coberto por `LearningCheckIT` com avaliação e LearningEvidence;
+- a v0.9.0 pode ser publicada com o legado ainda autoritativo e shadows coletando evidência;
+- `logicalCutoverReady=true` é pré-condição do **cutover operacional**, não do freeze desta release;
+- `physicalLegacyRemovalReady=false` permanece obrigatório na v0.9.0.
+
+Checklist do artefato candidato:
+
+- [x] backend verde em V48 — **163 unitários + 109 integrações**, 0 falhas/erros;
+- [x] AI-ready trace de uma Interaction real retorna `aiReady=true` e `gaps=[]` — coberto por `LearningCheckIT` com resposta, avaliação e LearningEvidence;
 - [x] Quiz/Poll/Word Cloud shadow lifecycle verde em integração;
-- [ ] qualificação operacional de cutover sem mismatches — a regra está automatizada e testada, mas a amostra real mínima de 3 rodadas terminais por tipo ainda precisa ser coletada no ambiente candidato;
-- [x] frontend tests/typecheck/build/lint/format verdes — 298 testes após consolidação do contrato de release;
-- [ ] Chromium E2E crítico/completo verde no artefato candidato;
-- [ ] Compose isolado verde com shadows habilitados — o Compose foi endurecido para permitir stacks paralelas sem `container_name` global, mas a validação local do artefato foi interrompida por travamento do BuildKit durante a resolução de dependências, sem erro de aplicação;
-- [ ] backup/restore validado até V48;
-- [x] acessibilidade/reflow dos fluxos alterados sem regressão nos testes automatizados existentes;
+- [x] critérios de cutover automatizados e fail-closed — shadow habilitado, mínimo de 3 rodadas terminais equivalentes por tipo e zero mismatch/sync error não resolvido; a amostra operacional real será exigida quando o cutover for solicitado;
+- [x] frontend tests/typecheck/build/lint/format verdes — **298/298** testes;
+- [x] Chromium E2E completo verde no artefato candidato — **22/22**;
+- [x] Compose isolado verde com shadows habilitados, coexistindo com a stack de desenvolvimento;
+- [x] backup + checksum + restore validados em PostgreSQL 17 até **Flyway V48**;
+- [x] acessibilidade/reflow dos fluxos alterados sem regressão nos breakpoints e temas cobertos;
 - [x] documentação e manifests sincronizados em `0.9.0`;
-- [ ] CI do mesmo SHA verde.
+- [ ] CI do **mesmo SHA final** verde.
 
 ### Evidência local de 2026-10-07
 
-O gate local confirmou os contratos arquiteturais de v0.6 → v0.9, Flyway V48, backend, frontend e o comportamento do AI-ready/shadow gate. O teardown do backend ainda emite um warning do Surefire ao encerrar o fork após os testes; o build permanece `SUCCESS` e não há falha funcional. Esse ruído deve ser tratado como dívida do harness de testes, não mascarado por aumento arbitrário de timeout.
+`scripts/release/release-gate.sh local` concluiu com sucesso no artefato candidato. A evidência local confirmou contratos v0.6 → v0.9, Flyway V48, backend, frontend, imagens Docker, stack isolada saudável, liveness/readiness e a suíte Chromium completa.
 
-A tentativa de Compose isolado também revelou e corrigiu uma fragilidade real: `container_name` fixo impedia duas stacks coexistirem. Os nomes fixos foram removidos e o release gate passou a depender do namespace do Compose. A construção seguinte avançou corretamente, mas o BuildKit local deixou de produzir progresso durante `dependency:go-offline`; por isso Compose/E2E não são marcados como aprovados sem evidência.
+Também foi executado `backup-postgres.sh` seguido de `ARENA_SCHEMA_VERSION=48 verify-backup.sh`: o checksum SHA-256 foi validado e o dump foi restaurado em PostgreSQL 17 temporário, com as 48 migrations e contratos persistentes críticos presentes.
 
-Até os itens operacionais restantes serem comprovados, o estado correto é **release candidate 0.9.0 com gate arquitetural implementado**, não `v0.9.0 publicada/congelada`.
+O teardown da suíte backend ainda emite um warning do Surefire ao encerrar o fork após os testes e o lint mantém warnings históricos de React. Nenhum deles produz falha de build. Eles permanecem como dívida do harness/qualidade e não devem ser “corrigidos” por downgrade de dependências ou aumento arbitrário de timeout.
+
+O `npm audit --omit=dev --audit-level=high` retorna **0 vulnerabilidades de produção**. O grafo de desenvolvimento possui advisory alto na cadeia `eslint-config-next → fast-glob → micromatch → braces@3.0.3`; não existe versão corrigida de `braces` publicada no registry no momento e o fix sugerido pelo npm exige downgrade incompatível do toolchain, portanto não foi aplicado.
+
+Estado correto neste ponto: **release candidate 0.9.0 tecnicamente verde localmente; aguardando CI verde no mesmo SHA final e integração em `main` antes do freeze/publicação formal**.

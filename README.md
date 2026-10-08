@@ -2,7 +2,7 @@
 
 **Arena Dev Community** é uma plataforma open source e self-hosted para condução, participação e gamificação de dinâmicas de sala, com foco em baixa fricção para o professor.
 
-> **Baseline publicada:** `v0.7.0 — Educational Integrations`.
+> **Baseline publicada:** `v0.8.0 — Professor Experience & Journey MVP`.
 >
 > **Linha ativa:** `v0.9 — Arena Learning Core`.
 >
