@@ -41,6 +41,17 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
   }, [sessionId]);
 
   useEffect(() => {
+    const onMaterialUpdated = (event: Event) => {
+      if ((event as CustomEvent<{ sessionId: string }>).detail?.sessionId !== sessionId) return;
+      void fetchArenaContextMaterial(sessionId)
+        .then(setPlacement)
+        .catch(() => setError("Não foi possível atualizar o vínculo do material."));
+    };
+    window.addEventListener("arena-context-material-updated", onMaterialUpdated);
+    return () => window.removeEventListener("arena-context-material-updated", onMaterialUpdated);
+  }, [sessionId]);
+
+  useEffect(() => {
     if (!open) return;
     let active = true;
     setLoading(true);

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import StudentActivitiesPanel from "@/components/StudentActivitiesPanel";
+import { recordSelfConfidence, type SelfConfidence } from "@/lib/learner-confidence-api";
 import {
   connectSessionSocket,
   fetchPublicSession,
@@ -56,6 +57,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
   const [quizParticipant, setQuizParticipant] = useState<QuizParticipantState>(emptyQuizParticipantState());
   const [learningCheckParticipant, setLearningCheckParticipant] = useState<LearningCheckParticipantState>(emptyLearningCheckParticipantState());
   const [learningCheckSubmitting, setLearningCheckSubmitting] = useState(false);
+  const [selfConfidenceSubmitting, setSelfConfidenceSubmitting] = useState(false);
   const [quizDraftAnswer, setQuizDraftAnswer] = useState<string | boolean | null>(null);
   const [quizSubmitting, setQuizSubmitting] = useState(false);
   const [wordDraft, setWordDraft] = useState("");
@@ -411,6 +413,20 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
     }
   }
 
+  async function submitSelfConfidence(level: SelfConfidence) {
+    if (!access || !learningCheckParticipant.runId || !learningCheckParticipant.answered
+        || !learningCheckParticipant.acceptsResponses || !browserOnline || selfConfidenceSubmitting) return;
+    const runId = learningCheckParticipant.runId;
+    setSelfConfidenceSubmitting(true);
+    setError("");
+    try {
+      const recorded = await recordSelfConfidence(access.code, runId, access.token, level);
+      setLearningCheckParticipant((current) => current.runId === runId
+        ? { ...current, selfConfidence: recorded.level } : current);
+    } catch (cause) { setError(messageOf(cause)); }
+    finally { setSelfConfidenceSubmitting(false); }
+  }
+
   async function answerLearningCheck(optionKey: string) {
     if (!access || !learningCheckParticipant.runId
         || !learningCheckParticipant.acceptsResponses || learningCheckSubmitting) return;
@@ -687,6 +703,28 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
                       );
                     })}
                   </div>
+
+                  {learningCheckParticipant.answered && (
+                    <fieldset className={learningCheckStyles.confidence}>
+                      <legend>Como você se sentiu ao responder? (opcional)</legend>
+                      <p>Esta percepção é privada, não vale pontos e não substitui a correção.</p>
+                      <div className={learningCheckStyles.confidenceOptions}>
+                        {([
+                          ["LOW", "Pouca confiança"],
+                          ["MEDIUM", "Confiança média"],
+                          ["HIGH", "Muita confiança"],
+                          ["SKIPPED", "Prefiro não informar"],
+                        ] as const).map(([value, label]) => (
+                          <button key={value} type="button" aria-pressed={learningCheckParticipant.selfConfidence === value}
+                            disabled={!learningCheckParticipant.acceptsResponses || selfConfidenceSubmitting || !browserOnline}
+                            onClick={() => { void submitSelfConfidence(value); }}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      {learningCheckParticipant.selfConfidence && <p role="status">Percepção registrada. Nenhuma pontuação foi alterada.</p>}
+                    </fieldset>
+                  )}
 
                   {learningCheckParticipant.resultsVisiblePublicly ? (
                     <div className={`${learningCheckStyles.feedback} ${learningCheckParticipant.answered

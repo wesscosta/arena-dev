@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { repeatLearningCheck, type LearningCheckState } from "@/lib/learning-check-api";
+import { fetchConfidenceSummary, type ConfidenceSummary } from "@/lib/learner-confidence-api";
+import LearningRecoveryPanel from "./LearningRecoveryPanel";
 import {
   fetchLearningCycles,
   diagnoseLearningCycle,
@@ -33,11 +35,21 @@ export default function LearningCyclePanel({
   const [note, setNote] = useState("");
   const [strategy, setStrategy] = useState<InterventionType>("EXPLANATION");
   const [comparison, setComparison] = useState<LearningCycleComparison | null>(null);
+  const [confidenceSummary, setConfidenceSummary] = useState<ConfidenceSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const run = state.run;
   const runId = run?.id;
   const targetId = state.definition?.learningTargetId;
+  useEffect(() => {
+    let active = true;
+    setConfidenceSummary(null);
+    if (!runId || run?.acceptsResponses || run?.status === "CREATED") return;
+    void fetchConfidenceSummary(sessionId, runId)
+      .then((value) => { if (active) setConfidenceSummary(value); })
+      .catch(() => { if (active) setConfidenceSummary(null); });
+    return () => { active = false; };
+  }, [sessionId, runId, run?.acceptsResponses, run?.status]);
 
   useEffect(() => {
     let active = true;
@@ -246,6 +258,20 @@ export default function LearningCyclePanel({
           )}
           {!firstRun && !canCompare && <p>Encerre a segunda aplicação antes de comparar.</p>}
         </div>
+      )}
+      {confidenceSummary && (
+        <section className={styles.guidance} aria-label="Autoconfiança agregada">
+          <strong>Autopercepção declarada (opcional)</strong>
+          {confidenceSummary.available ? (
+            <p>Baixa: {confidenceSummary.counts.LOW ?? 0} · Média: {confidenceSummary.counts.MEDIUM ?? 0} · Alta: {confidenceSummary.counts.HIGH ?? 0} · Não informou: {confidenceSummary.counts.SKIPPED ?? 0}.</p>
+          ) : <p>{confidenceSummary.reason}</p>}
+          <small>Distribuição agregada apenas com três ou mais declarações e respostas bloqueadas. Nunca representa confiança técnica, nota ou mastery.</small>
+        </section>
+      )}
+      {comparison && (
+        <LearningRecoveryPanel sessionId={sessionId}
+          targetTitle={state.definition?.learningTargetTitle ?? ""}
+          comparison={comparison} notify={notify} />
       )}
       {comparison && (
         <div className={styles.compare}>

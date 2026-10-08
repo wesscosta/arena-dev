@@ -1,3 +1,4 @@
+import type { SelfConfidence } from "./learner-confidence-api";
 import { apiRequest } from "./http/client";
 import { normalizeJoinCode } from "./app-state";
 
@@ -81,6 +82,7 @@ export type LearningCheckParticipantState = {
   selectedOptionKey?: string | null;
   resultsVisiblePublicly: boolean;
   correctOptionKey?: string | null;
+  selfConfidence?: SelfConfidence | null;
 };
 
 export type LearningCheckParticipantSignal = {
@@ -119,6 +121,7 @@ export function emptyLearningCheckParticipantState(): LearningCheckParticipantSt
     selectedOptionKey: null,
     resultsVisiblePublicly: false,
     correctOptionKey: null,
+    selfConfidence: null,
   };
 }
 

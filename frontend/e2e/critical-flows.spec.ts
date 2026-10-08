@@ -862,6 +862,10 @@ test("Verificar aprendizagem preserva reconnect, revela correção e gera Eviden
       participantPage.getByText(/^Resposta registrada/),
     ).toBeVisible();
 
+    // Optional self-perception is separate from grading, token-bound and restored after refresh.
+    await participantPage.getByRole("button", { name: "Pouca confiança" }).click();
+    await expect(participantPage.getByRole("button", { name: "Pouca confiança" }))
+      .toHaveAttribute("aria-pressed", "true");
     await participantPage.reload();
     await expect(
       participantPage.getByRole("heading", { name: questionText }),
@@ -881,6 +885,8 @@ test("Verificar aprendizagem preserva reconnect, revela correção e gera Eviden
     await page
       .getByRole("button", { name: "Bloquear respostas", exact: true })
       .click();
+    // For one student the teacher must not see an individual confidence level.
+    await expect(page.getByText("Distribuição indisponível com menos de três declarações.")).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Revelar correção", exact: true }),
     ).toBeVisible();
@@ -970,9 +976,31 @@ test("Verificar aprendizagem preserva reconnect, revela correção e gera Eviden
     await expectOk(persistedClinic, "Análise docente persistida");
     expect((await persistedClinic.json()) as { notes: unknown[] }).toMatchObject({ notes: [{ optionKey: "a" }] });
 
+    const material = await api.post("/api/library/resources", {
+      data: { title: targetTitle, subject: targetTitle, summary: "Revisão dirigida",
+        format: "MARKDOWN", sourceType: "MANUAL", body: "# Revisão\nExemplos de JOIN.",
+        tags: ["JOIN"], language: "pt-BR" },
+      headers: csrfHeaders,
+    });
+    await expectOk(material, "Material para recuperação");
+    const materialId = ((await material.json()) as { id: string }).id;
     await page.getByRole("button", { name: "Comparar com o diagnóstico" }).click();
     await expect(page.getByText("Comparáveis", { exact: true })).toBeVisible();
     await expect(page.getByText(/Variação neste instrumento/)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Investigar oscilações de resposta" })).toBeVisible();
+    const stored = page.waitForResponse((response) =>
+      response.url().endsWith(`/api/sessions/${fixture.session.id}/contextual-material`)
+      && response.request().method() === "PUT");
+    await page.getByRole("button", { name: "Vincular à Arena" }).click();
+    const linked = await stored;
+    expect(linked.status(), await linked.text()).toBe(200);
+    const linkedMaterial = await api.get(`/api/sessions/${fixture.session.id}/contextual-material`);
+    await expectOk(linkedMaterial, "Vínculo após recuperação");
+    expect((await linkedMaterial.json()) as { resourceId: string }).toMatchObject({ resourceId: materialId });
+    await page.getByRole("button", { name: "Abrir material" }).click();
+    await expect(page.getByRole("dialog", { name: "Biblioteca nesta aula" })
+      .getByRole("heading", { name: targetTitle })).toBeVisible();
+    await page.keyboard.press("Escape");
     const comparisonResponse = await api.get(`/api/sessions/${fixture.session.id}/learning-cycles`);
     await expectOk(comparisonResponse, "Ciclo de aprendizagem v0.10");
     const cycles = (await comparisonResponse.json()) as Array<{ status: string }>;
@@ -1123,7 +1151,7 @@ test("Peer Instruction protege primeira resposta e compara nova decisão após d
     await page.getByRole("button", { name: "Encerrar verificação" }).click();
     await page.getByRole("button", { name: "Comparar com o diagnóstico" }).click();
     await expect(page.getByText("Comparáveis", { exact: true })).toBeVisible();
-    await expect(page.getByText("Passaram de erro a acerto")).toBeVisible();
+    await expect(page.getByText("Passaram de erro a acerto", { exact: true })).toBeVisible();
     const cyclesResponse = await api.get(`/api/sessions/${fixture.session.id}/learning-cycles`);
     await expectOk(cyclesResponse, "Ciclo de discussão entre pares");
     const cycles = (await cyclesResponse.json()) as Array<{

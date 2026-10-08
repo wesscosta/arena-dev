@@ -137,3 +137,13 @@
   .option { min-height: 56px; padding: 14px 12px; }
   .heading h2 { font-size: clamp(20px, 6vw, 26px); }
 }
+
+.confidence { min-width:0; border:1px solid var(--border); border-radius:14px; padding:14px; display:grid; gap:10px; }
+.confidence legend { padding:0 .25rem; font-size:1rem; font-weight:800; }
+.confidence p { margin:0; color:var(--muted); line-height:1.5; }
+.confidenceOptions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.confidenceOptions button { min-height:44px; border:1px solid var(--border); border-radius:10px; padding:.7rem; background:var(--surface); color:var(--text); font:inherit; cursor:pointer; font-weight:700; overflow-wrap:anywhere; }
+.confidenceOptions button[aria-pressed="true"] { background:color-mix(in srgb,var(--accent) 14%,var(--surface)); outline:2px solid var(--accent); }
+.confidenceOptions button:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+.confidenceOptions button:disabled { cursor:default; opacity:.75; }
+@media(max-width:410px) { .confidenceOptions {grid-template-columns:minmax(0,1fr);} }
