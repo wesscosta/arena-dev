@@ -2283,7 +2283,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   const selectorMode = presentationToSelectorMode(currentSession?.selectorPresentation);
   const [selectedId, setSelectedId] = useState<string | undefined>();
   const drawSession = useDrawSession(currentSession?.id);
-  const drawBusy = drawSession.busy || drawSession.loading;
+  const drawBusy = drawSession.busy || drawSession.loading || drawSession.needsReconciliation;
   const currentDrawAttempt = drawSession.state?.currentAttempt;
   useEffect(() => {
     setSelectedId(undefined);
@@ -3160,7 +3160,15 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         <div className="stack-lg arena-tab-content">
           {activeDynamic === "draw" ? (
           <div className="smart-draw-workspace">
-            {drawSession.error ? (
+            {drawSession.needsReconciliation ? (
+              <section role="alert" className="arena-legacy-draw-warning" data-testid="draw-reconciliation-warning">
+                <h2>Verificar estado do sorteio</h2>
+                <p>A conexão falhou durante um comando. Ele pode ter sido registrado no servidor. Não repita o sorteio nem conceda XP até conferir o estado atualizado.</p>
+                <button type="button" className="button secondary" onClick={() => {
+                  void drawSession.refresh().catch(() => notify("Ainda sem conexão. Tente sincronizar ao reconectar."));
+                }}>Sincronizar sorteio</button>
+              </section>
+            ) : drawSession.error ? (
               <section role="alert" className="arena-legacy-draw-warning">
                 <h2>Sorteio indisponível nesta sessão</h2>
                 <p>{errorMessage(drawSession.error)}</p>

@@ -101,3 +101,47 @@ test("participante reconecta após perda de rede sem criar nova presença ou nov
     expect((await events.json()) as unknown[]).toHaveLength(0);
   } finally { await context.close(); await api.dispose(); }
 });
+
+test("PWA atualiza controlador sem recarregar resposta não enviada e descarta cache v0.9", async ({ browser }) => {
+  test.setTimeout(90_000);
+  const context = await browser.newContext({ serviceWorkers: "allow" });
+  const page = await context.newPage();
+  try {
+    await page.goto("/join");
+    await page.evaluate(async () => { await navigator.serviceWorker.ready; });
+    await page.reload();
+    await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+    const input = page.getByRole("textbox", { name: "Código da sessão" });
+    await input.fill("RASCUNHO");
+    await page.evaluate(async () => {
+      const oldShell = await caches.open("arena-dev-shell-v0.9.0");
+      await oldShell.put("/join", new Response("HTML_ANTIGO_PRIVADO"));
+      const oldStatic = await caches.open("arena-dev-static-v0.9.0");
+      await oldStatic.put("/_next/static/old-script.js", new Response("OLD_JS_BUNDLE"));
+      // A new same-origin SW script URL forces activation, simulating an
+      // installed older worker being replaced without relying on a hosted v0.9.
+      await Promise.race([
+        navigator.serviceWorker.register("/sw.js?upgrade-e2e=1", { scope: "/", updateViaCache: "none" }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Service worker upgrade registration timed out")), 10000)),
+      ]);
+    });
+    await expect(page.getByRole("status", { name: "Atualização da Arena Dev" })).toBeVisible();
+    await expect(input).toHaveValue("RASCUNHO");
+    // controllerchange fires during activation, whereas cache eviction runs
+    // asynchronously in activate.waitUntil. Wait for the authoritative result.
+    await expect.poll(async () => page.evaluate(async () => {
+      const remaining = await caches.keys();
+      return remaining.includes("arena-dev-shell-v0.9.0")
+        || remaining.includes("arena-dev-static-v0.9.0");
+    }), { timeout: 10_000 }).toBe(false);
+    await page.getByRole("button", { name: "Depois" }).click();
+    await expect(input).toHaveValue("RASCUNHO");
+    await context.setOffline(true);
+    await page.goto("/join?code=NO_NETWORK");
+    await expect(page.getByRole("heading", { name: "Arena Dev está sem conexão" })).toBeVisible();
+    await expect(page.getByText("HTML_ANTIGO_PRIVADO")).toHaveCount(0);
+    await context.setOffline(false);
+    await page.goto("/join");
+    await expect(page.getByRole("heading", { name: "Código de acesso" })).toBeVisible();
+  } finally { await context.close(); }
+});

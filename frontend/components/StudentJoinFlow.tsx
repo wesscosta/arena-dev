@@ -469,7 +469,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
         {!session && (
           <form className="student-join-form" onSubmit={submitCode}>
             <div className="student-join-heading"><span>ENTRAR</span><h1>Código de acesso</h1><p>Use o código da aula ao vivo ou o código J-... de uma Jornada compartilhada pelo professor.</p></div>
-            <input className="student-code-input" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} maxLength={8} placeholder="ABC123" autoFocus />
+            <input className="student-code-input" aria-label="Código da sessão" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} maxLength={8} placeholder="ABC123" autoFocus />
             <button className="student-primary-button" disabled={loading || !code.trim()}>{loading ? "Validando..." : "Continuar"}</button>
           </form>
         )}

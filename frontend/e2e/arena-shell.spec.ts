@@ -859,3 +859,101 @@ test("Painel pedagógico conserva o cockpit e explica ausência de evidências e
     await expect(page.getByRole("heading", { name: "Verificar aprendizagem" })).toBeVisible();
   } finally { await api.dispose(); }
 });
+
+test("perda da resposta HTTP depois do commit do sorteio exige reconciliação e não duplica XP", async ({ browser }) => {
+  test.setTimeout(100_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 2);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    const basePath = `/api/sessions/${fixture.session.id}/draw-attempts`;
+    const stateFromServer = async () => {
+      const response = await api.get(`${basePath}/state`);
+      await expectOk(response, "Estado do sorteio após falha de rede");
+      return response.json() as Promise<{
+        currentAttempt: { attemptId: string } | null;
+        history: Array<{ attemptId: string; status: string }>;
+        confirmedCount: number;
+      }>;
+    };
+    let interceptedSelection = false;
+    await page.route(`**${basePath}`, async (route) => {
+      if (route.request().method() !== "POST" || interceptedSelection) {
+        await route.continue();return;
+      }
+      interceptedSelection = true;
+      const committed = await route.fetch();
+      expect(committed.ok()).toBe(true);
+      // The server has committed, but the teacher's browser never receives ACK.
+      await route.abort("failed");
+    });
+    await page.getByRole("button", { name: "Sortear participante" }).click();
+    const warning = page.getByTestId("draw-reconciliation-warning");
+    await expect(warning.getByRole("heading", { name: "Verificar estado do sorteio" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sortear participante" })).toHaveCount(0);
+    await expect.poll(async () => (await stateFromServer()).history.length).toBe(1);
+    await warning.getByRole("button", { name: "Sincronizar sorteio" }).click();
+    await expect(warning).toHaveCount(0);
+    const spotlight = page.getByTestId("spotlight-reveal");
+    await expect(spotlight).toBeVisible();
+    const current = await stateFromServer();
+    expect(current.history).toHaveLength(1);
+    expect(current.currentAttempt).not.toBeNull();
+
+    let interceptedResolution = false;
+    await page.route(`**${basePath}/${current.currentAttempt!.attemptId}/resolve`, async (route) => {
+      if (route.request().method() !== "POST" || interceptedResolution) {
+        await route.continue();return;
+      }
+      interceptedResolution = true;
+      const committed = await route.fetch();
+      expect(committed.ok()).toBe(true);
+      await route.abort("failed");
+    });
+    await spotlight.getByRole("button", { name: "Confirmar e pontuar" }).click();
+    await expect(warning).toBeVisible();
+    await expect.poll(async () => (await stateFromServer()).confirmedCount).toBe(1);
+    await warning.getByRole("button", { name: "Sincronizar sorteio" }).click();
+    await expect(warning).toHaveCount(0);
+    await expect(spotlight).toBeHidden();
+    const finalState = await stateFromServer();
+    expect(finalState.history).toHaveLength(1);
+    expect(finalState.history[0].status).toBe("CONFIRMED");
+    expect(finalState.currentAttempt).toBeNull();
+    const scoreResponse = await api.get(`/api/sessions/${fixture.session.id}/draw-attempts/state`);
+    await expectOk(scoreResponse, "Estado final do sorteio reconciliado");
+    const persisted = (await scoreResponse.json()) as {
+      history: Array<{ scoreEventId: string | null }>;
+    };
+    expect(persisted.history.filter((attempt) => attempt.scoreEventId != null)).toHaveLength(1);
+  } finally {
+    await context.close();
+    await api.dispose();
+  }
+});
+
+test("sorteio não envia comando offline e só é liberado após sincronizar ao reconectar", async ({ browser }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 2);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    await context.setOffline(true);
+    await page.getByRole("button", { name: "Sortear participante" }).click();
+    const warning = page.getByTestId("draw-reconciliation-warning");
+    await expect(warning).toBeVisible();
+    const before = await api.get(`/api/sessions/${fixture.session.id}/draw-attempts/state`);
+    await expectOk(before, "Sorteio no servidor enquanto navegador está offline");
+    expect((await before.json() as { history: unknown[] }).history).toHaveLength(0);
+    await context.setOffline(false);
+    await expect(warning).toHaveCount(0);
+    await page.getByRole("button", { name: "Sortear participante" }).click();
+    await expect(page.getByTestId("spotlight-reveal")).toBeVisible();
+    const after = await api.get(`/api/sessions/${fixture.session.id}/draw-attempts/state`);
+    await expectOk(after, "Sorteio após reconexão");
+    expect((await after.json() as { history: unknown[] }).history).toHaveLength(1);
+  } finally { await context.close(); await api.dispose(); }
+});
