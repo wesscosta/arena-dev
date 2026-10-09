@@ -4,6 +4,8 @@
 
 > **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 >
+> **10.12 — rede incerta/PWA simulada:** sorteio e confirmação de XP não repetem comandos após perder resposta HTTP; nova operação fica bloqueada até ler estado do servidor. Cenário PWA com cache simulado v0.9 e resposta ainda digitada validado no Chromium, sem afirmar upgrade físico de app instalada ([ADR-0064](docs/adr/ADR-0064-network-uncertainty-draw-reconciliation-and-pwa-cache.md)).
+>
 > **10.11 — rollback técnico validado:** tag v0.9.0/V48 → dump + SHA-256 sintético → candidata V55 → restore V48 → mesma v0.9 original, em PostgreSQL/Docker **isolados**, com IDs/presença/XP preservados ([ADR-0063](docs/adr/ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)). Isso não substitui RTO/RPO operacional ou upgrade PWA real.
 >
 > **10.10 — candidata ainda não publicada:** manifestos v0.10 alinhados para `0.10.0-rc.1` e gate V55/backup corrigido; restore real de banco de desenvolvimento em PostgreSQL 17 e recusa de publicação prematura ([ADR-0062](docs/adr/ADR-0062-v010-release-candidate-schema-and-rollback-gate.md), [checklist](docs/v0.10/RELEASE_CANDIDATE_CHECKLIST.md)). Release v0.9.0 preservada.

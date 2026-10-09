@@ -157,3 +157,10 @@
 - `scripts/release/rehearse-v09-v010-rollback.sh` foi executado duas vezes (segunda vez recompilando ambas as imagens no mesmo HEAD): tag original v0.9.0, V48, snapshot/checksum SHA256, atualização de V48→V55, conferência de cinco entidades e saldo XP com evento de reversão, restore apenas da base temporária para V48 e nova partida real da API v0.9.
 - Fingerprint estável `1|1|1|1|2|0|1`, readiness dos dois binários, versões Flyway e presença/ausência de tabelas conferidas; rede/containers removidos ao final. Nenhum dump de usuário entra em CI ou Git. Teste estático de proteção no frontend impede perder isolamento e rollback explícito ao evoluir o roteiro.
 - **Pendente de homologação operacional:** massa de dados representativa, indisponibilidade e RTO mensurado, risco de escritas após snapshot (RPO), clientes PWA v0.9 reais e redes móveis.
+
+### 10.12 — Rede incerta, reversão de comandos e cache antigo PWA
+
+- `arena-shell.spec.ts` intercepta o POST de seleção e de confirmação/XP, aguarda o commit real no servidor, **descarta apenas a resposta HTTP** e verifica bloqueio de novas mutações até GET de sincronização; resultado final no banco: um draw attempt e uma associação de pontuação.
+- Em outro teste, navegador fica totalmente offline antes de sortear: zero POST/attempt; evento `online` dispara GET e desbloqueia a seleção.
+- `pwa-upgrade-recovery.spec.ts`: cache v0.9 simulado, worker da mesma origem substituído via script URL versionada, sem recarregar código ainda digitado; caches antigos deixam de existir **após ativação**, sem HTML autenticado reutilizado offline. O `StudentJoinFlow` expõe label de código para tecnologias assistivas.
+- Testes focados **3/3**, frontend **313/313**. A suíte total de **38** casos deve ser reexecutada em ambiente com credenciais corretas; uma tentativa local sem configurações causou 401/429 e foi **invalidada**. Não usar essa tentativa como prova de regressão funcional.

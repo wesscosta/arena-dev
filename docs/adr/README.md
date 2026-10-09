@@ -93,3 +93,4 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0061 — Painel pedagógico docente](ADR-0061-session-learning-overview-teacher-only.md)
 - [ADR-0062 — Candidata v0.10, contrato V55 e rollback](ADR-0062-v010-release-candidate-schema-and-rollback-gate.md)
 - [ADR-0063 — Ensaio seguro de rollback binário v0.9↔v0.10](ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)
+- [ADR-0064 — Conciliação de rede e PWA cache](ADR-0064-network-uncertainty-draw-reconciliation-and-pwa-cache.md)
