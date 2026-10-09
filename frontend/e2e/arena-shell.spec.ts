@@ -957,3 +957,32 @@ test("sorteio não envia comando offline e só é liberado após sincronizar ao 
     expect((await after.json() as { history: unknown[] }).history).toHaveLength(1);
   } finally { await context.close(); await api.dispose(); }
 });
+
+test("professor não repete consultas em loop offline e retoma snapshot ao reconectar", async ({ browser }) => {
+  test.setTimeout(80_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+  const page = await context.newPage();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 2);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    const joinCodeApi = `/api/sessions/${fixture.session.id}/join-code`;
+    const seenQueries: string[] = [];
+    page.on("request", (req) => {
+      if (req.method() === "GET" && req.url().includes(joinCodeApi)) seenQueries.push(req.url());
+    });
+    await context.setOffline(true);
+    await page.waitForTimeout(3400); // Exceeds two of the old fixed 1500ms WS retry cycles.
+    expect(seenQueries).toHaveLength(0);
+    await context.setOffline(false);
+    await expect.poll(() => seenQueries.length, { timeout: 15000 }).toBeGreaterThan(0);
+    const result = await api.get(`/api/sessions/${fixture.session.id}/draw-attempts/state`);
+    await expectOk(result, "Sorteio após reconexão do professor");
+    const state = (await result.json()) as { history: unknown[] };
+    expect(state.history).toHaveLength(0);
+    await expect(page.getByTestId("participant-selection-experience")).toBeVisible();
+  } finally {
+    await context.close();
+    await api.dispose();
+  }
+});
