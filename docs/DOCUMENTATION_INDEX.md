@@ -120,4 +120,5 @@ Não reescrever documentação histórica para fabricar evidência retroativa. Q
 - [ADR-0060 — Autoconfiança opcional e recuperação com evidências](adr/ADR-0060-student-self-confidence-and-evidence-based-recovery.md)
 - [ADR-0061 — Painel pedagógico docente com evidências reais](adr/ADR-0061-session-learning-overview-teacher-only.md)
 - [ADR-0062 — Identidade da candidata v0.10 e backup V55](adr/ADR-0062-v010-release-candidate-schema-and-rollback-gate.md)
+- [ADR-0063 — Ensaio isolado de rollback v0.9↔v0.10](adr/ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)
 - [Gate GO/NO-GO v0.10](v0.10/RELEASE_CANDIDATE_CHECKLIST.md)

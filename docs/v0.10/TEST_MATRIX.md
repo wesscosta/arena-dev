@@ -151,3 +151,9 @@
 - `arena-shell.spec.ts`: vazio e geometria do modal em 8 viewports, portal no body, CTA e Escape/foco; GET anônimo 401.
 - `critical-flows.spec.ts`: após Before & After real, aluno com transição acerto→erro, contagens/revisão/status e nota docente aparecem no painel, sem mudar XP, palco nem intervenção.
 - **Não substituir por testes automatizados:** NVDA/VoiceOver, simulação de ausência real, amostras parciais em campo, p95 de leitura e autorização multi-docente.
+
+### 10.11 — Ensaio binário de rollback v0.9→v0.10→v0.9
+
+- `scripts/release/rehearse-v09-v010-rollback.sh` foi executado duas vezes (segunda vez recompilando ambas as imagens no mesmo HEAD): tag original v0.9.0, V48, snapshot/checksum SHA256, atualização de V48→V55, conferência de cinco entidades e saldo XP com evento de reversão, restore apenas da base temporária para V48 e nova partida real da API v0.9.
+- Fingerprint estável `1|1|1|1|2|0|1`, readiness dos dois binários, versões Flyway e presença/ausência de tabelas conferidas; rede/containers removidos ao final. Nenhum dump de usuário entra em CI ou Git. Teste estático de proteção no frontend impede perder isolamento e rollback explícito ao evoluir o roteiro.
+- **Pendente de homologação operacional:** massa de dados representativa, indisponibilidade e RTO mensurado, risco de escritas após snapshot (RPO), clientes PWA v0.9 reais e redes móveis.

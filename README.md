@@ -4,6 +4,8 @@
 
 > **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 >
+> **10.11 — rollback técnico validado:** tag v0.9.0/V48 → dump + SHA-256 sintético → candidata V55 → restore V48 → mesma v0.9 original, em PostgreSQL/Docker **isolados**, com IDs/presença/XP preservados ([ADR-0063](docs/adr/ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)). Isso não substitui RTO/RPO operacional ou upgrade PWA real.
+>
 > **10.10 — candidata ainda não publicada:** manifestos v0.10 alinhados para `0.10.0-rc.1` e gate V55/backup corrigido; restore real de banco de desenvolvimento em PostgreSQL 17 e recusa de publicação prematura ([ADR-0062](docs/adr/ADR-0062-v010-release-candidate-schema-and-rollback-gate.md), [checklist](docs/v0.10/RELEASE_CANDIDATE_CHECKLIST.md)). Release v0.9.0 preservada.
 >
 > **10.9 implementada na branch:** painel pedagógico docente da sessão com presença marcada, ciclo por objetivo e comparação antes/depois apenas para respostas pareáveis, com recomendação da próxima ação docente ([ADR-0061](docs/adr/ADR-0061-session-learning-overview-teacher-only.md)). CI de migração histórica V25→atual corrigido, sem alterar tabelas nem v0.9.

@@ -19,7 +19,8 @@
 - [ ] Upgrade de PWA **previamente instalada em v0.9** para v0.10 em Android/Chrome e iOS/Safari, com atividade em andamento e cache/service worker antigo; perda de rede, retomada, gabarito e tokens.
 - [ ] Navegação por teclado, ordem/foco, NVDA/VoiceOver, zoom 200–400%, contraste claro/escuro, tamanhos mobile/tablet/desktop e modo projetor. Testes axe-core **não certificam WCAG AAA**.
 - [ ] Roteiro docente piloto em turma real: Sorteio, Peer Instruction, Clínica do Erro, Material contextual, Verificar aprendizagem, Antes/Depois e Painel de evidências. Registrar feedback e métrica operacional; **não medir mastery com apenas uma verificação**.
-- [ ] Ensaio **separado** de rollback: dump sanitizado V48, upgrade V55, restauração do dump anterior e partida do binário v0.9, tempo de recuperação e invariantes de XP/dados.
+- [x] **Ensaio técnico isolado** v0.9.0 real / V48 → dump sintético + SHA-256 → backend v0.10 / V55 → restore V48 → reinício v0.9 original, com integridade de IDs, presença, reversão e saldo XP confirmados em **duas execuções exit 0** (`scripts/release/rehearse-v09-v010-rollback.sh`; [ADR-0063](../adr/ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)). Sem tocar a instalação principal.
+- [ ] **Homologação de rollback operacional:** volume representativo, janela de manutenção, cronômetro RTO/RPO, snapshot pré-upgrade validado, dados gravados durante janela, cliente PWA antigo e rede/reconexão; o teste sintético não comprova recuperação real de produção.
 - [ ] Decisão operacional documentada: v0.10 é edição **self-hosted de operador docente único**, conforme ADR-0053, até que propriedade/autorização multi-docente seja implementada; não apresentar como SaaS multi-tenant.
 - [ ] README, docs, Notion, release notes, decisão GO/NO-GO, PR aprovado, plano de suporte e monitoração de erros atualizados.
 
