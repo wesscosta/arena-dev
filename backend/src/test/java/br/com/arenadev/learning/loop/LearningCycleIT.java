@@ -5,6 +5,7 @@ import br.com.arenadev.classroom.StudentService;
 import br.com.arenadev.interaction.*;
 import br.com.arenadev.learning.*;
 import br.com.arenadev.learning.clinic.LearningErrorClinicService;
+import br.com.arenadev.learning.overview.SessionLearningOverviewService;
 import br.com.arenadev.sessionevent.SessionEventService;
 import br.com.arenadev.sessionevent.SessionEventType;
 import br.com.arenadev.session.*;
@@ -52,6 +53,7 @@ class LearningCycleIT {
     @Autowired InteractionResponseService responses;
     @Autowired InteractionEvaluationService evaluations;
     @Autowired LearningCycleService cycles;
+    @Autowired SessionLearningOverviewService overview;
     @Autowired LearningErrorClinicService clinic;
     @Autowired SessionEventService audit;
 
@@ -63,6 +65,11 @@ class LearningCycleIT {
         classrooms.enroll(classView.id(), person.id());
         var session = sessions.start(classView.id(), "Aula de SQL", Set.of(person.id()));
         var participant = participants.findBySessionIdOrderByStudentNameAsc(session.id()).getFirst();
+        var emptyOverview = overview.get(session.id());
+        assertThat(emptyOverview.presentNow()).isEqualTo(1);
+        assertThat(emptyOverview.absentNow()).isZero();
+        assertThat(emptyOverview.cycles()).isZero();
+        assertThat(emptyOverview.rows()).isEmpty();
         var target = targets.save(new LearningTarget("WHERE", LearningTargetType.COMPETENCY, null));
         InteractionDefinition definition = new InteractionDefinition(
                 "Qual expressão filtra registros?", InteractionResponseKind.CHOICE,
@@ -81,6 +88,11 @@ class LearningCycleIT {
         finishRun(before, participant.getId(), "b");
         var diagnosed = cycles.diagnose(session.id(), before.getId());
         assertThat(diagnosed.status()).isEqualTo(LearningCycleStatus.DIAGNOSED);
+        var pendingOverview = overview.get(session.id());
+        assertThat(pendingOverview.cycles()).isEqualTo(1);
+        assertThat(pendingOverview.verifiedCycles()).isZero();
+        assertThat(pendingOverview.rows().getFirst().comparison()).isNull();
+        assertThat(pendingOverview.rows().getFirst().learningTargetTitle()).isEqualTo("WHERE");
         assertThatThrownBy(() -> cycles.diagnose(session.id(), before.getId()))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> cycles.comparison(session.id(), diagnosed.id()))
@@ -95,6 +107,13 @@ class LearningCycleIT {
         assertThat(comparison.transitions().incorrectToCorrect()).isEqualTo(1);
         assertThat(comparison.baseline().responses()).isEqualTo(1);
         assertThat(comparison.followup().responses()).isEqualTo(1);
+        var verifiedOverview = overview.get(session.id());
+        assertThat(verifiedOverview.verifiedCycles()).isEqualTo(1);
+        assertThat(verifiedOverview.rows().getFirst().comparison().paired()).isEqualTo(1);
+        assertThat(verifiedOverview.rows().getFirst().comparison().transitions().incorrectToCorrect()).isEqualTo(1);
+        assertThat(verifiedOverview.rows().getFirst().interventionNote())
+                .isEqualTo("Explicou WHERE por exemplos.");
+        assertThat(verifiedOverview.disclaimer()).contains("não demonstram domínio consolidado");
         assertThatThrownBy(() -> cycles.verify(session.id(), diagnosed.id(), after.getId()))
                 .isInstanceOf(IllegalArgumentException.class);
         var otherClass = classrooms.create("Outra turma " + suffix, "OT" + suffix);
@@ -102,6 +121,10 @@ class LearningCycleIT {
         assertThatThrownBy(() -> cycles.comparison(otherSession.id(), diagnosed.id()))
                 .isInstanceOf(RuntimeException.class);
         assertThat(cycles.list(otherSession.id())).isEmpty();
+        assertThat(overview.get(otherSession.id()).cycles()).isZero();
+        assertThat(overview.get(otherSession.id()).rows()).isEmpty();
+        assertThatThrownBy(() -> overview.get(UUID.randomUUID()))
+                .isInstanceOf(RuntimeException.class);
     }
 
     @Test
