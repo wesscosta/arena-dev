@@ -26,6 +26,7 @@ required=(
   frontend/components/arena/live/ArenaContextualMaterial.tsx
   frontend/public/sw.js
   frontend/public/offline.html
+  scripts/release/rehearse-v09-v010-rollback.sh
   docs/adr/ADR-0061-session-learning-overview-teacher-only.md
 )
 for path in "${required[@]}"; do

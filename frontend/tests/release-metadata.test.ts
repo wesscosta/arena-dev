@@ -26,6 +26,10 @@ const v010Contract = readFileSync(
   resolve(root, "scripts/release/verify-v0.10-contract.sh"),
   "utf8",
 );
+const rollbackRehearsal = readFileSync(
+  resolve(root, "scripts/release/rehearse-v09-v010-rollback.sh"),
+  "utf8",
+);
 const license = readFileSync(resolve(root, "LICENSE"), "utf8");
 const licensingHistory = readFileSync(resolve(root, "LICENSING_HISTORY.md"), "utf8");
 
@@ -79,6 +83,18 @@ test("final v0.10 release cannot ship prerelease metadata or missing backup", ()
   assert.match(gate, /ci_sha.*head_sha/);
   assert.match(gate, /--backup/);
   assert.match(gate, /verify-backup\.sh/);
+});
+
+test("v0.9-to-v0.10 rollback uses immutable tag, synthetic fixtures and isolated backup", () => {
+  assert.match(rollbackRehearsal, /git archive v0\.9\.0 backend\//);
+  assert.match(rollbackRehearsal, /docker network create/);
+  assert.match(rollbackRehearsal, /CANDIDATE_IMAGE_FROM_CURRENT_SOURCE=ok/);
+  assert.match(rollbackRehearsal, /sha256sum --check v48\.dump\.sha256/);
+  assert.match(rollbackRehearsal, /UPGRADE_V48_TO_V55_PRESERVES_IDS_AND_XP/);
+  assert.match(rollbackRehearsal, /BACKWARD_RESTORE_V48_AND_ORIGINAL_V09_API_READY/);
+  assert.match(rollbackRehearsal, /trap cleanup EXIT/);
+  assert.doesNotMatch(rollbackRehearsal, /docker compose down/);
+  assert.doesNotMatch(rollbackRehearsal, /restore-postgres\.sh/);
 });
 
 test("proprietary licensing boundary from v0.5 remains explicit", () => {
