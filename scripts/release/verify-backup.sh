@@ -3,7 +3,14 @@
 set -Eeuo pipefail
 
 POSTGRES_IMAGE="${POSTGRES_IMAGE:-postgres:17-alpine}"
-EXPECTED_SCHEMA_VERSION="${ARENA_SCHEMA_VERSION:-38}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# By default verify the checked-out schema, not a stale V38 or V48 from
+# earlier releases. ARENA_SCHEMA_VERSION intentionally supports historical dumps.
+latest_migration="$(find "$PROJECT_ROOT/backend/src/main/resources/db/migration" -maxdepth 1 -name 'V[0-9]*__*.sql' -printf '%f\n' \
+    | sed -nE 's/^V([0-9]+)__.*$/\1/p' | sort -n | tail -n 1)"
+[[ "$latest_migration" =~ ^[0-9]+$ ]] || { echo 'Não foi possível detectar versão Flyway' >&2; exit 1; }
+EXPECTED_SCHEMA_VERSION="${ARENA_SCHEMA_VERSION:-$latest_migration}"
 CONTAINER_NAME="arena-dev-restore-check-$(date -u +%Y%m%d%H%M%S)-$$"
 CHECK_USER="arena_restore_check"
 CHECK_DATABASE="arena_restore_check"
@@ -19,7 +26,8 @@ usage() {
 Uso: scripts/release/verify-backup.sh CAMINHO_DO_DUMP
 
 Restaura o dump em um PostgreSQL 17 temporário e isolado, valida o histórico
-Flyway até ARENA_SCHEMA_VERSION (default V38) e confirma os contratos persistentes críticos.
+Flyway até ARENA_SCHEMA_VERSION (default: versão mais recente do checkout)
+e confirma os contratos persistentes críticos.
 EOF
 }
 
@@ -105,6 +113,29 @@ if (( EXPECTED_SCHEMA_VERSION >= 48 )); then
       --command "select to_regclass('public.$table') is not null")"
     [[ "$exists" == "t" ]] || fail "tabela v0.9 obrigatória ausente após restore: $table"
   done
+fi
+
+if (( EXPECTED_SCHEMA_VERSION >= 55 )); then
+  v010_tables=(
+    learning_intervention_cycles draw_session_settings draw_attempts
+    draw_attempt_score_links learning_error_clinic_notes
+    arena_session_resource_placements learner_confidence
+  )
+  for table in "${v010_tables[@]}"; do
+    exists="$(docker exec "$CONTAINER_NAME" \
+      psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
+      --command "select to_regclass('public.$table') is not null")"
+    [[ "$exists" == "t" ]] || fail "tabela v0.10 obrigatória ausente após restore: $table"
+  done
+  # Latest schema includes intervention strategy, reversal audit, and
+  # self-perception. A checksum alone cannot prove these schema invariants.
+  required_columns="$(docker exec "$CONTAINER_NAME" \
+    psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
+    --command "select count(*) from information_schema.columns where table_schema='public' and \
+      (table_name='learning_intervention_cycles' and column_name='intervention_type' or \
+       table_name='score_events' and column_name='reversal_request_id' or \
+       table_name='learner_confidence' and column_name='level')")"
+  [[ "$required_columns" -eq 3 ]] || fail "restore v0.10 não preserva colunas obrigatórias de intervenção, reversão XP e confiança"
 fi
 
 semantic_columns="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select count(*) from information_schema.columns where table_schema='public' and table_name='learning_resources' and column_name in ('library_visible','revision','archived_at','subject','language','content_sha256','outline_json','outline_parser_version')")"
