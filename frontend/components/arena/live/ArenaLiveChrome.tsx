@@ -199,7 +199,7 @@ export function ArenaSessionHeader({
       </nav>
 
       <div className="topbar-actions arena-session-actions">
-        {nextActions}
+        <div className="arena-session-shortcuts">{nextActions}</div>
         <div className="arena-session-elapsed" aria-label={`Tempo de sessão ${elapsed}`}>
           <span aria-hidden="true">◷</span>
           <div>

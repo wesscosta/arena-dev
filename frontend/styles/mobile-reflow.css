@@ -1,0 +1,250 @@
+/* iOS/mobile reflow for Arena live and teacher overview.
+ * Loaded after the legacy CSS so viewport-specific layout can override desktop tracks.
+ * Do not hide overflowing content at document level: reflow the components instead.
+ */
+.arena-session-shortcuts {
+  display: contents;
+}
+
+@media (max-width: 48rem) {
+  .arena-content-full .arena-live-shell,
+  .arena-content-full .arena-session-workspace,
+  .arena-content-full .arena-cockpit,
+  .arena-content-full .arena-cockpit-main {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  .arena-content-full .arena-cockpit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: .75rem;
+  }
+
+  .arena-content-full .arena-context-rail {
+    position: static;
+    grid-column: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-self: start;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    gap: .75rem;
+    overflow: visible;
+  }
+
+  .arena-content-full .arena-context-rail > * {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .arena-content-full .arena-participants-card {
+    min-height: 0;
+    max-height: 24rem;
+    overflow: hidden;
+  }
+
+  .arena-content-full .arena-participant-list {
+    max-height: 16rem;
+    overflow-y: auto;
+  }
+
+  .arena-content-full .arena-session-code-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto;
+    min-height: 0;
+    padding: .75rem;
+  }
+
+  .arena-content-full .arena-session-code-row {
+    min-width: 0;
+  }
+
+  .arena-content-full .arena-session-code-card img,
+  .arena-content-full .arena-qr-placeholder {
+    width: 4.9rem;
+    height: 4.9rem;
+  }
+
+  .arena-content-full .quick-score-dock {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .75rem;
+  }
+
+  .arena-content-full .quick-score-head {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .6rem;
+  }
+
+  .arena-content-full .quick-score-head > div {
+    min-width: 0;
+  }
+
+  .arena-content-full .quick-score-student {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .arena-content-full .quick-score-presets {
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .arena-content-full .quick-score-presets > button,
+  .arena-content-full .quick-score-custom-trigger {
+    min-width: 0;
+    min-height: 3.3rem;
+  }
+
+  .arena-content-full .quick-score-custom-popover {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: .6rem;
+  }
+
+  .arena-content-full .quick-score-custom-popover .input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .arena-content-full .arena-live-topbar {
+    position: static;
+    display: block;
+    min-width: 0;
+    min-height: 0;
+    padding: .6rem 0;
+  }
+
+  .arena-content-full .arena-session-actions {
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: .5rem;
+  }
+
+  .arena-content-full .arena-session-actions > * {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .arena-content-full .arena-session-shortcuts {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .5rem;
+  }
+
+  .arena-content-full .arena-session-shortcuts > * {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .arena-content-full .arena-session-shortcuts > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .arena-content-full .arena-session-actions > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .arena-content-full .arena-session-elapsed {
+    min-width: 0;
+    align-self: stretch;
+  }
+
+  .arena-content-full .arena-session-elapsed strong {
+    white-space: nowrap;
+  }
+
+  .arena-content-full .arena-cockpit-nav {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .arena-content-full .smart-draw-workspace,
+  .arena-content-full .smart-draw-hero,
+  .arena-content-full .arena-tab-content {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  .arena-content-full .selected-student-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .arena-content-full .selected-student-bar > .selected-student-cta {
+    grid-column: 1;
+    justify-self: stretch;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .arena-content-full .draw-coverage-summary {
+    min-width: 0;
+    width: 100%;
+    padding: .5rem 0 0;
+  }
+}
+
+@media (max-width: 32.5rem) {
+  .overview-page .overview-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .65rem;
+  }
+
+  .overview-page .overview-metrics .metric {
+    min-width: 0;
+    min-height: 0;
+    padding: .8rem;
+  }
+
+  .overview-page .overview-metrics .metric span,
+  .overview-page .overview-metrics .metric small {
+    overflow-wrap: anywhere;
+    line-height: 1.3;
+  }
+
+  .overview-page .overview-metrics .metric strong {
+    font-size: clamp(1.4rem, 5vw, 1.9rem);
+    margin: .4rem 0;
+  }
+
+  .overview-page .overview-toolbar-main .segmented-control {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .overview-page .overview-toolbar-main .segmented-control button {
+    min-width: 0;
+    padding-inline: .15rem;
+    font-size: .75rem;
+    white-space: nowrap;
+  }
+
+  .overview-page .overview-class-card-open {
+    min-height: 9rem;
+    gap: .7rem;
+  }
+}

@@ -3,6 +3,7 @@ import PwaRuntime from "@/components/PwaRuntime";
 import "./globals.css";
 import "../styles/classroom-overview.css";
 import "../styles/timer-panel.css";
+import "../styles/mobile-reflow.css";
 
 export const metadata: Metadata = {
   title: "Arena Dev",
