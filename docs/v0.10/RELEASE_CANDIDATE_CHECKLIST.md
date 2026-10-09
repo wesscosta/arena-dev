@@ -24,7 +24,9 @@
 - [ ] Roteiro docente piloto em turma real: Sorteio, Peer Instruction, Clínica do Erro, Material contextual, Verificar aprendizagem, Antes/Depois e Painel de evidências. Registrar feedback e métrica operacional; **não medir mastery com apenas uma verificação**.
 - [x] **Ensaio técnico isolado** v0.9.0 real / V48 → dump sintético + SHA-256 → backend v0.10 / V55 → restore V48 → reinício v0.9 original, com integridade de IDs, presença, reversão e saldo XP confirmados em **duas execuções exit 0** (`scripts/release/rehearse-v09-v010-rollback.sh`; [ADR-0063](../adr/ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)). Sem tocar a instalação principal.
 - [ ] **Homologação de rollback operacional:** volume representativo, janela de manutenção, cronômetro RTO/RPO, snapshot pré-upgrade validado, dados gravados durante janela, cliente PWA antigo e rede/reconexão; o teste sintético não comprova recuperação real de produção.
-- [ ] Decisão operacional documentada: v0.10 é edição **self-hosted de operador docente único**, conforme ADR-0053, até que propriedade/autorização multi-docente seja implementada; não apresentar como SaaS multi-tenant.
+- [x] Decisão operacional documentada: v0.10 é edição **self-hosted de operador docente único**, conforme ADR-0053 e [roteiro de aceite](OPERATIONAL_ACCEPTANCE.md); não apresentar como SaaS multi-tenant. **Aceite pelo operador e testes em campo ainda pendentes.**
 - [ ] README, docs, Notion, release notes, decisão GO/NO-GO, PR aprovado, plano de suporte e monitoração de erros atualizados.
+
+**Estado atual: NO-GO para publicação ampla.** Consultar [roteiro operacional e evidências ainda faltantes](OPERATIONAL_ACCEPTANCE.md).
 
 **Observação:** experimentos de embed Canva, Meta Coletiva, algoritmo avançado de IA e Mastery longitudinal **não** bloqueiam esta release; devem ser tratados em roadmap/pilotos próprios.
