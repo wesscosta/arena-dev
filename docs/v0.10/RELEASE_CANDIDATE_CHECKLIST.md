@@ -1,6 +1,6 @@
 # Gate de release v0.10 — Checklist GO / NO-GO
 
-**Candidata em andamento:** `0.10.0-rc.1`, branch `feat/v0.10-learning-loop`, PR #35 em rascunho. **Não executar merge, tag nem deploy** antes de aprovar todos os gates abaixo. Evidências devem apontar para o **mesmo SHA** do candidato.
+**Candidata em homologação:** `0.10.0-rc.1`, branch `feat/v0.10-learning-loop`, PR #35 em rascunho. **Não executar merge, tag nem deploy** antes de aprovar todos os gates abaixo. Evidências devem apontar para o **mesmo SHA** do candidato.
 
 ## 1. Gates automatizáveis
 
@@ -8,8 +8,8 @@
 - [x] Contratos históricos v0.6→v0.9 + novo verificador v0.10/V49–V55, licença e scripts com sintaxe validada.
 - [x] Dump consistente + checksum do banco **de desenvolvimento**; restore PostgreSQL 17 isolado V55; rejeição de dump com versão esperada V48. Não equivale ao backup de produção.
 - [x] Bloqueio de `release-gate.sh final` enquanto metadata ainda é `0.10.0-rc.1`.
-- [ ] CI GitHub **três jobs** backend/frontend/Compose+Chromium concluídos com sucesso **no mesmo HEAD**; anexar URL de run (não usar run de commit antigo).
-- [ ] `release-gate.sh local` integral verde no HEAD (backend, frontend, Compose isolado, saúde e E2E), evidência local na pasta ignorada `release-evidence/`. Ensaios parciais passaram em backend/frontend; rebuild Docker frio expôs gargalo Maven e nova imagem deve ser revalidada.
+- [x] CI GitHub **três jobs** backend/frontend/Compose+Chromium **aprovados** no SHA de implementação `7cf22a9684d09bc22bc693014b0fb5319cbb2654`: [run #37864958170](https://github.com/wesscosta/arena-dev/actions/runs/37864958170), `status=completed`, `conclusion=success`. Após novo commit só de documentação, o SHA de publicação final deverá ter CI aprovado novamente.
+- [x] `release-gate.sh local` **exit 0**, no SHA funcional `7cf22a9`: Maven verify **195 Surefire + 122 Failsafe**, frontend **312/312**, auditoria de dependências (`0 vulnerabilities`), lint, typecheck e build, imagens Docker backend/frontend, execução não-root, health liveness/readiness, PostgreSQL isolado e **35/35 E2E Chromium**. Evidência local ignorada pelo Git: `release-evidence/v0.10.0-rc.1-local-20261009T003721Z.log`. A primeira build Docker fria precisou reconstituir cache Maven, mas o **retry** terminou com imagem válida (build exit 0) e gate integral concluído.
 - [ ] Teste de concorrência/reconexão/replay em presença real e rede degradada, inclusive tentativas de sorteio V50, XP reversível V53 e Learning Check.
 - [ ] Auditoria de dependências e segurança sem risco bloqueador, autorização de professor/estudante/projetor e ameaças a sessão/identidade revisadas.
 - [ ] Gate final **na main** no SHA de CI verde, versão estável `0.10.0`, backup restaurável/checksum V55; tag/release apenas depois do gate e autorização consciente.
