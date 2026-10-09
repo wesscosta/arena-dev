@@ -255,3 +255,7 @@ A implementação segue as rotas **reais** do join: `POST /api/join/{code}/learn
 ```
 
 Aceita somente alternativa **incorreta e com votos reais**. Até 1200 caracteres, append-only; reenvio idêntico do `commandId` retorna mesma vista, alteração da mesma chave é `409`. Exige autenticação docente e CSRF; registro no `SessionEvent` guarda run/alternativa, não copia a nota. **Não** altera a resposta original, XP, `LearningEvidence`, a correção nem o palco. Documentação de decisão: [ADR-0055](../adr/ADR-0055-error-clinic-teacher-annotations.md).
+
+### Etapa 10.9 — Read model do painel de aprendizagem
+
+`GET /api/sessions/{sessionId}/learning-overview` (**docente autenticado**, somente sessão solicitada): `sessionId`, `sessionTitle`, `enrolledInSession`, `presentNow`, `absentNow`, `cycles`, `verifiedCycles`, `rows[]` e `disclaimer`. Cada item inclui `cycleId`, `learningTargetId/title`, `status`, `interventionType/note`, `baselineRunId`, `followupRunId`, `comparison` (nula quando a segunda verificação ainda não foi concluída). A comparação é precisamente o mesmo contrato de `LearningCycleService.ComparisonView`: amostras inicial/final, apenas pares CORRECT/INCORRECT, quatro transições e faltantes. Nenhum nome/ID de estudante, XP, classificação de domínio consolidado ou publicação em projector/join. [ADR-0061](../adr/ADR-0061-session-learning-overview-teacher-only.md).

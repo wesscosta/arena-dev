@@ -143,3 +143,11 @@
 
 - `arena-shell.spec.ts` testa o portal no `document.body`, backdrop ocupando toda a viewport, posição do diálogo sem negativos/overflow, centralização horizontal/vertical (tolerância de 2px) e cabeçalho/CTA visíveis em 8 dimensões, inclusive **1792×854** da captura e **320×320** como estresse de altura/zoom.
 - Material Markdown com 70 seções possui preview rolável internamente, sem deslocar rodapé do diálogo. Escape devolve foco ao botão Material no cabeçalho; Grid mantém palco e controles. Cenário anterior da Biblioteca (F5, conteúdo canônico, axe light/dark) permanece íntegro.
+
+### 10.9 — Painel de evidências docente e estabilidade do CI
+
+- `LearningCycleIT`/PostgreSQL17: ausência de ciclos, diagnóstico não verificado, transições reais pós-verificação, nota de intervenção, título do objetivo, amostra comparável e sessão distinta sem vazamento.
+- `IntegrationPersistenceMigrationIT`: V25 → últimas migrações aplicadas, V26 persistida e integração legada Teams com IDs/links preservados, sem asserção fixa de última versão V48.
+- `arena-shell.spec.ts`: vazio e geometria do modal em 8 viewports, portal no body, CTA e Escape/foco; GET anônimo 401.
+- `critical-flows.spec.ts`: após Before & After real, aluno com transição acerto→erro, contagens/revisão/status e nota docente aparecem no painel, sem mudar XP, palco nem intervenção.
+- **Não substituir por testes automatizados:** NVDA/VoiceOver, simulação de ausência real, amostras parciais em campo, p95 de leitura e autorização multi-docente.
