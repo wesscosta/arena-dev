@@ -108,6 +108,12 @@
 - **Gate focado:** 3/3 E2E verdes; frontend `format:check`/`lint` 0 erros, TypeScript, **313/313 unitários** e `build` aprovados. **Gate integral pendente do HEAD:** primeira tentativa local sem credenciais E2E levou a 401 e depois 429 (rate limit correto), não contou como validação. Repetir em stack isolada CI antes de considerar homologado.
 - **PWA v0.9 realmente instalada em Android/iOS e rede móvel real** ainda requer ensaio manual; simulação de cache em Chromium não substitui a validação. Sem certificação WCAG.
 
+## 10.13 — Resiliência do WebSocket docente (08/10/2026)
+
+- Corrigido ciclo de reconexão docente fixo de 1,5 s após fechamento do socket: offline reconhecido pelo navegador **cancela agendamentos e não faz novos GETs/WS**. Ao retornar online, faz nova leitura de Buzzer/Quiz/Verificação/Ranking e restabelece socket sem enviar comandos POST. Se a rede parece disponível, aplica backoff progressivo 1/2/4/8/10 s; ao conectar ou mudar de sessão, reinicia o contador. Listeners/timers não sobrevivem a desmontagem. [ADR-0065](../adr/ADR-0065-teacher-websocket-backoff-and-offline-recovery.md).
+- **Teste direcionado Chromium aprovado 3/3:** perda de ACK após commit/XP, operação bloqueada offline e retorno de consultas WebSocket/GET do professor sem loop de rede. TypeScript e lint aprovados (0 erros; 92 avisos preexistentes). **Regressão Chromium integral 39/39 passou** (`/tmp/arena-v010-ws-backoff-full-e2e.log`) sobre frontend Docker atualizado, incluindo aluno/projetor/Quiz/Peer/Biblioteca/PWA. Frontend `format:check`, lint (0 erros / 92 avisos preexistentes), TypeScript, **313/313 testes** e `npm run build` concluíram com exit 0 (`/tmp/arena-ws-unit-final.log`, `/tmp/arena-ws-build-final.log`). **CI remoto do novo SHA continua exigido após push**.
+- Não reivindica rede móvel real, milhares de participantes, certificação WCAG ou atualização física PWA v0.9→v0.10.
+
 ## Observações arquiteturais e débitos que bloqueiam declarar release concluída
 
 - **Fronteira formal (ADR-0053):** o backend mantém `InMemoryUserDetailsManager` com **uma conta `ROLE_TEACHER` por implantação**. Não existe associação professor↔turma. Testes HTTP confirmam role/CSRF em um único operador; não autorizam alegar multi-tenant. Não publicar SaaS com várias contas docentes independentes antes do domínio de identidade/ownership transversal.

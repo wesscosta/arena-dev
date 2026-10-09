@@ -4,6 +4,8 @@
 
 > **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 >
+> **10.13 — WS docente resiliente:** navegador offline suspende consultas repetidas e espera `online`; o retorno reconstrói somente estados GET e WebSocket, com backoff progressivo quando a conexão cai mas o navegador aparenta estar online ([ADR-0065](docs/adr/ADR-0065-teacher-websocket-backoff-and-offline-recovery.md)). Não valida dispositivos reais nem piloto.
+>
 > **10.12 — rede incerta/PWA simulada:** sorteio e confirmação de XP não repetem comandos após perder resposta HTTP; nova operação fica bloqueada até ler estado do servidor. Cenário PWA com cache simulado v0.9 e resposta ainda digitada validado no Chromium, sem afirmar upgrade físico de app instalada ([ADR-0064](docs/adr/ADR-0064-network-uncertainty-draw-reconciliation-and-pwa-cache.md)).
 >
 > **10.11 — rollback técnico validado:** tag v0.9.0/V48 → dump + SHA-256 sintético → candidata V55 → restore V48 → mesma v0.9 original, em PostgreSQL/Docker **isolados**, com IDs/presença/XP preservados ([ADR-0063](docs/adr/ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)). Isso não substitui RTO/RPO operacional ou upgrade PWA real.

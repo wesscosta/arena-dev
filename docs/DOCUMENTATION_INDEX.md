@@ -122,4 +122,5 @@ Não reescrever documentação histórica para fabricar evidência retroativa. Q
 - [ADR-0062 — Identidade da candidata v0.10 e backup V55](adr/ADR-0062-v010-release-candidate-schema-and-rollback-gate.md)
 - [ADR-0063 — Ensaio isolado de rollback v0.9↔v0.10](adr/ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)
 - [ADR-0064 — Sorteio sob falha de rede e atualização PWA controlada](adr/ADR-0064-network-uncertainty-draw-reconciliation-and-pwa-cache.md)
+- [ADR-0065 — WebSocket docente com backoff e retomada por snapshot](adr/ADR-0065-teacher-websocket-backoff-and-offline-recovery.md)
 - [Gate GO/NO-GO v0.10](v0.10/RELEASE_CANDIDATE_CHECKLIST.md)

@@ -164,3 +164,9 @@
 - Em outro teste, navegador fica totalmente offline antes de sortear: zero POST/attempt; evento `online` dispara GET e desbloqueia a seleção.
 - `pwa-upgrade-recovery.spec.ts`: cache v0.9 simulado, worker da mesma origem substituído via script URL versionada, sem recarregar código ainda digitado; caches antigos deixam de existir **após ativação**, sem HTML autenticado reutilizado offline. O `StudentJoinFlow` expõe label de código para tecnologias assistivas.
 - Testes focados **3/3**, frontend **313/313**. A suíte total de **38** casos deve ser reexecutada em ambiente com credenciais corretas; uma tentativa local sem configurações causou 401/429 e foi **invalidada**. Não usar essa tentativa como prova de regressão funcional.
+
+### 10.13 — WS do professor com backoff e offline sem avalanche de GETs
+
+- `arena-shell.spec.ts` abre sessão docente, força offline por 3,4 s e verifica ausência de novas requisições GET para código de sessão; evento `online` deve restabelecer consultas e snapshot sem gerar DrawAttempt/XP.
+- Casos existentes de resposta HTTP perdida após commit/XP e clique offline sem POST são regressões obrigatórias; nenhum envio automático de comando após voltar a rede.
+- `reconnectDelayMs` centralizado limita backoff em 10 s e tem teste unitário preexistente. Regressão integral e CI remotos devem ser revalidados no novo SHA.

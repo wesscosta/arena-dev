@@ -94,3 +94,4 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0062 — Candidata v0.10, contrato V55 e rollback](ADR-0062-v010-release-candidate-schema-and-rollback-gate.md)
 - [ADR-0063 — Ensaio seguro de rollback binário v0.9↔v0.10](ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)
 - [ADR-0064 — Conciliação de rede e PWA cache](ADR-0064-network-uncertainty-draw-reconciliation-and-pwa-cache.md)
+- [ADR-0065 — WebSocket docente: backoff e recuperação offline](ADR-0065-teacher-websocket-backoff-and-offline-recovery.md)
