@@ -4,6 +4,8 @@
 
 > **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
 >
+> **Candidata v0.10.0-rc.1 — encerramento técnico:** CI backend/frontend/Compose+Chromium aprovado no SHA `38b73ca` ([run #37873486460](https://github.com/wesscosta/arena-dev/actions/runs/37873486460)). **Ainda não publicada:** faltam homologação PWA Android/iOS instalada, rede real/multidispositivo, acessibilidade manual, piloto docente e rollback operacional. Não criar tag estável nem implantar antes de GO documentado. Veja [notas preparatórias](docs/RELEASE_0_10.md), [checklist](docs/v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e [aceite](docs/v0.10/OPERATIONAL_ACCEPTANCE.md).
+>
 > **10.13 — WS docente resiliente:** navegador offline suspende consultas repetidas e espera `online`; o retorno reconstrói somente estados GET e WebSocket, com backoff progressivo quando a conexão cai mas o navegador aparenta estar online ([ADR-0065](docs/adr/ADR-0065-teacher-websocket-backoff-and-offline-recovery.md)). Não valida dispositivos reais nem piloto.
 >
 > **10.12 — rede incerta/PWA simulada:** sorteio e confirmação de XP não repetem comandos após perder resposta HTTP; nova operação fica bloqueada até ler estado do servidor. Cenário PWA com cache simulado v0.9 e resposta ainda digitada validado no Chromium, sem afirmar upgrade físico de app instalada ([ADR-0064](docs/adr/ADR-0064-network-uncertainty-draw-reconciliation-and-pwa-cache.md)).
