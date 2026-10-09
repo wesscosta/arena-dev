@@ -18,6 +18,7 @@ import { useArenaScoring } from "@/components/arena/live/useArenaScoring";
 import { useArenaToolState } from "@/components/arena/live/useArenaToolState";
 import ArenaNextActions from "@/components/arena/live/ArenaNextActions";
 import ArenaContextualMaterial from "@/components/arena/live/ArenaContextualMaterial";
+import TeacherLearningOverview from "@/components/learning/TeacherLearningOverview";
 import WheelParticipantSelector from "@/components/arena/selection/WheelParticipantSelector";
 import {
   presentationToSelectorMode,
@@ -3062,6 +3063,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           nextActions={<>
             <ArenaNextActions dynamic={activeDynamic} onSelectDynamic={selectDynamic}
               onOpenGroups={() => selectTool("groups")} />
+            <TeacherLearningOverview key={currentSession.id} sessionId={currentSession.id}
+              onOpenLearningCheck={() => selectDynamic("learning-check")} />
             <ArenaContextualMaterial sessionId={currentSession.id} notify={notify} />
           </>}
           onGoDashboard={onGoDashboard}

@@ -988,6 +988,29 @@ test("Verificar aprendizagem preserva reconnect, revela correção e gera Eviden
     await expect(page.getByText("Comparáveis", { exact: true })).toBeVisible();
     await expect(page.getByText(/Variação neste instrumento/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Investigar oscilações de resposta" })).toBeVisible();
+    // The consolidated teacher view comes from the same persisted LearningCycle,
+    // without confusing self-confidence, participation or XP with verified evidence.
+    await page.getByRole("button", { name: "Painel pedagógico" }).click();
+    const overviewDialog = page.getByRole("dialog", { name: "Evidências da sessão" });
+    await expect(overviewDialog.getByRole("heading", { name: targetTitle })).toBeVisible();
+    await expect(overviewDialog.getByText("Investigar oscilações de resposta")).toBeVisible();
+    await expect(overviewDialog.getByText("Pares comparáveis")).toBeVisible();
+    await overviewDialog.locator("summary").filter({ hasText: "Consultar registro da intervenção" }).click();
+    await expect(overviewDialog.getByText("Discussão das alternativas e revisão do tema.")).toBeVisible();
+    await expect(overviewDialog.getByText("Acerto → acerto")).toBeVisible();
+    const overviewResponse = await api.get(`/api/sessions/${fixture.session.id}/learning-overview`);
+    await expectOk(overviewResponse, "Painel pedagógico consolidado");
+    const overview = (await overviewResponse.json()) as {
+      cycles: number; verifiedCycles: number; rows: Array<{ learningTargetTitle: string;
+        comparison: { paired: number; transitions: { correctToIncorrect: number } } }>;
+    };
+    expect(overview).toMatchObject({ cycles: 1, verifiedCycles: 1 });
+    expect(overview.rows).toHaveLength(1);
+    expect(overview.rows[0]).toMatchObject({ learningTargetTitle: targetTitle,
+      comparison: { paired: 1, transitions: { correctToIncorrect: 1 } },
+    });
+    await page.keyboard.press("Escape");
+    await expect(overviewDialog).toHaveCount(0);
     const stored = page.waitForResponse((response) =>
       response.url().endsWith(`/api/sessions/${fixture.session.id}/contextual-material`)
       && response.request().method() === "PUT");

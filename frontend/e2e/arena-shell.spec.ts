@@ -806,3 +806,56 @@ test("Material é um modal centralizado no viewport real, sem corte em desktop, 
     await api.dispose();
   }
 });
+
+
+test("Painel pedagógico conserva o cockpit e explica ausência de evidências em oito viewports", async ({ page }) => {
+  test.setTimeout(85_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 2);
+    const anonymous = await request.newContext({ baseURL: apiBaseUrl });
+    try {
+      const denied = await anonymous.get(`/api/sessions/${fixture.session.id}/learning-overview`);
+      expect(denied.status()).toBe(401); // Never expose intervention notes via public join/projector.
+    } finally { await anonymous.dispose(); }
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    await page.getByRole("button", { name: "Painel pedagógico" }).click();
+    const dialog = page.getByRole("dialog", { name: "Evidências da sessão" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText("Sem ciclos de aprendizagem registrados nesta sessão.")).toBeVisible();
+    await expect(dialog.getByText("Presentes marcados")).toBeVisible();
+    await expect(dialog.getByText("0", { exact: true }).first()).toBeVisible();
+    for (const viewport of [
+      { width: 1792, height: 854 }, { width: 1366, height: 768 },
+      { width: 1024, height: 600 }, { width: 800, height: 450 },
+      { width: 390, height: 844 }, { width: 320, height: 568 },
+      { width: 320, height: 400 }, { width: 320, height: 320 },
+    ]) {
+      await page.setViewportSize(viewport);
+      const geometry = await dialog.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return { inBody:element.parentElement?.parentElement===document.body,
+          top:bounds.top,left:bounds.left,bottom:bounds.bottom,right:bounds.right,
+          cx:bounds.left+bounds.width/2,cy:bounds.top+bounds.height/2,
+          w:document.documentElement.clientWidth,h:window.innerHeight };
+      });
+      expect(geometry.inBody).toBe(true);
+      expect(geometry.top).toBeGreaterThanOrEqual(0);
+      expect(geometry.left).toBeGreaterThanOrEqual(0);
+      expect(geometry.right).toBeLessThanOrEqual(geometry.w+1);
+      expect(geometry.bottom).toBeLessThanOrEqual(geometry.h+1);
+      expect(Math.abs(geometry.cx-geometry.w/2)).toBeLessThanOrEqual(2);
+      expect(Math.abs(geometry.cy-geometry.h/2)).toBeLessThanOrEqual(2);
+      await expect(dialog.getByRole("button", { name: "Voltar à Arena" })).toBeInViewport();
+    }
+    await dialog.getByRole("button", { name: "Atualizar dados" }).click();
+    await expect(dialog.getByText("Sem ciclos de aprendizagem registrados nesta sessão.")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Painel pedagógico" })).toBeFocused();
+    await expect(page.getByTestId("participant-selection-experience")).toBeVisible();
+    await page.getByRole("button", { name: "Painel pedagógico" }).click();
+    await dialog.getByRole("button", { name: "Abrir Verificar aprendizagem" }).click();
+    await expect(page.getByRole("heading", { name: "Verificar aprendizagem" })).toBeVisible();
+  } finally { await api.dispose(); }
+});
