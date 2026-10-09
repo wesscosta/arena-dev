@@ -969,7 +969,7 @@ test("professor não repete consultas em loop offline e retoma snapshot ao recon
     const joinCodeApi = `/api/sessions/${fixture.session.id}/join-code`;
     const seenQueries: string[] = [];
     page.on("request", (req) => {
-      if (req.method() === "GET" && req.url().includes(joinCodeApi)) seenQueries.push(req.url());
+      if (req.method() === "GET" && new URL(req.url()).pathname === joinCodeApi) seenQueries.push(req.url());
     });
     await context.setOffline(true);
     await page.waitForTimeout(3400); // Exceeds two of the old fixed 1500ms WS retry cycles.
