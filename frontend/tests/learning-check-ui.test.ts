@@ -15,11 +15,6 @@ const arena = readFileSync(
   resolve(process.cwd(), "components/ArenaApp.tsx"),
   "utf8",
 );
-const chrome = readFileSync(
-  resolve(process.cwd(), "components/arena/live/ArenaLiveChrome.tsx"),
-  "utf8",
-);
-
 test("teacher learning check keeps the explicit evidence lifecycle", () => {
   assert.match(panel, /prepareLearningCheck/);
   assert.match(panel, /openLearningCheck/);
@@ -31,7 +26,7 @@ test("teacher learning check keeps the explicit evidence lifecycle", () => {
 });
 
 test("Arena exposes Learning Check as a distinct primary interaction", () => {
-  assert.match(chrome, /"learning-check", "learning-check", "Verificar aprendizagem"/);
+  assert.match(readFileSync(resolve(process.cwd(), "components/arena/live/arena-navigation.ts"), "utf8"), /id: "learning-check", label: "Verificar aprendizagem"/);
   assert.match(arena, /activeDynamic === "learning-check"/);
   assert.match(arena, /<LearningCheckPanel/);
 });

@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const arena = readFileSync(resolve(process.cwd(), "components/ArenaApp.tsx"), "utf8");
-const liveChrome = readFileSync(resolve(process.cwd(), "components/arena/live/ArenaLiveChrome.tsx"), "utf8");
 const cta = readFileSync(resolve(process.cwd(), "lib/classroom-arena-cta.ts"), "utf8");
 
 test("home does not expose a quick end-session overflow action", () => {
@@ -27,7 +26,7 @@ test("session navigation keeps presence as a contextual Arena tool instead of a 
 });
 
 test("Boss Battle belongs to the primary Arena dynamics", () => {
-  assert.match(liveChrome, /\["boss", "boss", "Boss Battle"\]/);
+  assert.match(readFileSync(resolve(process.cwd(), "components/arena/live/arena-navigation.ts"), "utf8"), /id: "boss", label: "Boss Battle"/);
   assert.match(arena, /activeDynamic === "buzzer"/);
   assert.doesNotMatch(arena, /arenaTab === "boss"/);
   assert.match(arena, /Dano manual nesta versão/);

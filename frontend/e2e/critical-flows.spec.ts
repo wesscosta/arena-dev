@@ -990,7 +990,10 @@ test("Verificar aprendizagem preserva reconnect, revela correção e gera Eviden
     await expect(page.getByRole("heading", { name: "Investigar oscilações de resposta" })).toBeVisible();
     // The consolidated teacher view comes from the same persisted LearningCycle,
     // without confusing self-confidence, participation or XP with verified evidence.
-    await page.getByRole("button", { name: "Painel pedagógico" }).click();
+    if (await page.getByRole("button", { name: "Abrir menu da Arena" }).isVisible()) {
+      await page.getByRole("button", { name: "Abrir menu da Arena" }).click();
+    }
+    await page.getByRole("button", { name: "Evidências da aprendizagem" }).click();
     const overviewDialog = page.getByRole("dialog", { name: "Evidências da sessão" });
     await expect(overviewDialog.getByRole("heading", { name: targetTitle })).toBeVisible();
     await expect(overviewDialog.getByText("Investigar oscilações de resposta")).toBeVisible();

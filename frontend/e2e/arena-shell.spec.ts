@@ -100,6 +100,29 @@ async function openArena(page: Page, classroomName: string, _sessionTitle: strin
   ).toBeVisible();
 }
 
+async function openMobileArenaMenuIfNeeded(page: Page) {
+  const trigger = page.getByRole("button", { name: "Abrir menu da Arena" });
+  if (await trigger.isVisible() && await trigger.getAttribute("aria-expanded") !== "true") {
+    await trigger.click();
+    await expect(page.getByRole("dialog", { name: "Menu da Arena" })).toBeVisible();
+  }
+}
+
+async function selectArenaNavigation(page: Page, label: string) {
+  await openMobileArenaMenuIfNeeded(page);
+  await page.locator(".arena-nav-scroll").getByRole("button", { name: label, exact: true }).click();
+}
+
+async function openArenaMaterial(page: Page) {
+  await openMobileArenaMenuIfNeeded(page);
+  await page.getByRole("button", { name: /Selecionar material|Abrir material/ }).click();
+}
+
+async function openArenaEvidence(page: Page) {
+  await openMobileArenaMenuIfNeeded(page);
+  await page.getByRole("button", { name: "Evidências da aprendizagem" }).click();
+}
+
 test("XP manual: POST idempotente sob resposta perdida, conflito em payload alterado", async () => {
   const { api, csrfHeaders } = await authenticatedApi();
   try {
@@ -736,7 +759,11 @@ test("Biblioteca contextual mantém a mesma referência na Arena e retorna ao pa
     await expect(page.getByRole("button", { name: "Abrir material" })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Abrir material" })).toBeFocused();
+    if (await page.getByRole("button", { name: "Abrir menu da Arena" }).isVisible()) {
+      await expect(page.getByRole("button", { name: "Abrir menu da Arena" })).toBeFocused();
+    } else {
+      await expect(page.getByRole("button", { name: "Abrir material" })).toBeFocused();
+    }
     await expect(page.getByTestId("participant-selection-experience")).toBeVisible();
 
     const linked = await api.get(`/api/sessions/${fixture.session.id}/contextual-material`);
@@ -748,7 +775,7 @@ test("Biblioteca contextual mantém a mesma referência na Arena e retorna ao pa
       .filter({ hasText: fixture.classroomName }).click();
     await page.getByRole("button", { name: "Continuar Arena" }).click();
     await expect(page.getByRole("button", { name: "Abrir material" })).toBeVisible();
-    await page.getByRole("button", { name: "Abrir material" }).click();
+    await openArenaMaterial(page);
     await expect(page.getByRole("dialog", { name: "Biblioteca nesta aula" })
       .getByRole("heading", { name: title })).toBeVisible();
     // No duplication of material body. The same canonical resource also remains usable by a Journey.
@@ -782,7 +809,7 @@ test("Material é um modal centralizado no viewport real, sem corte em desktop, 
     await expectOk(created, "Material extenso do teste de viewport");
     await page.setViewportSize({ width: 1792, height: 854 });
     await openArena(page, fixture.classroomName, fixture.sessionTitle);
-    await page.getByRole("button", { name: "Selecionar material" }).click();
+    await openArenaMaterial(page);
     const dialog = page.getByRole("dialog", { name: "Biblioteca nesta aula" });
     await expect(dialog).toBeVisible();
     await dialog.getByLabel("Encontrar material na Biblioteca").fill(materialTitle);
@@ -839,7 +866,7 @@ test("Material é um modal centralizado no viewport real, sem corte em desktop, 
     await expect(dialog.getByRole("button", { name: "Fechar biblioteca" })).toBeInViewport();
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Abrir material" })).toBeFocused();
+    await expect(page.getByRole("button", { name: "Abrir menu da Arena" })).toBeFocused();
     await expect(page.getByTestId("participant-selection-experience")).toBeVisible();
   } finally {
     await api.dispose();
@@ -858,7 +885,7 @@ test("Painel pedagógico conserva o cockpit e explica ausência de evidências e
       expect(denied.status()).toBe(401); // Never expose intervention notes via public join/projector.
     } finally { await anonymous.dispose(); }
     await openArena(page, fixture.classroomName, fixture.sessionTitle);
-    await page.getByRole("button", { name: "Painel pedagógico" }).click();
+    await openArenaEvidence(page);
     const dialog = page.getByRole("dialog", { name: "Evidências da sessão" });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText("Sem ciclos de aprendizagem registrados nesta sessão.")).toBeVisible();
@@ -893,9 +920,9 @@ test("Painel pedagógico conserva o cockpit e explica ausência de evidências e
     await expect(dialog.getByText("Sem ciclos de aprendizagem registrados nesta sessão.")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Painel pedagógico" })).toBeFocused();
+    await expect(page.getByRole("button", { name: "Abrir menu da Arena" })).toBeFocused();
     await expect(page.getByTestId("participant-selection-experience")).toBeVisible();
-    await page.getByRole("button", { name: "Painel pedagógico" }).click();
+    await openArenaEvidence(page);
     await dialog.getByRole("button", { name: "Abrir verificação" }).click();
     await expect(page.getByRole("heading", { name: "Verificar aprendizagem" })).toBeVisible();
   } finally { await api.dispose(); }
@@ -1029,33 +1056,38 @@ test("professor não repete consultas em loop offline e retoma snapshot ao recon
   }
 });
 
-test("iOS mobile: menu do professor permanece visível e opaco fora da barra horizontal", async ({ page }, testInfo) => {
-  test.setTimeout(65_000);
+test("iOS mobile: a single drawer exposes dynamics, tools, material and evidence", async ({ page }, testInfo) => {
+  test.setTimeout(75_000);
   const { api, csrfHeaders } = await authenticatedApi();
   try {
     const fixture = await createArenaFixture(api, csrfHeaders);
     await openArena(page, fixture.classroomName, fixture.sessionTitle);
-    for (const width of [320, 390, 430]) {
+    for (const width of [320, 375, 390, 430, 768]) {
       await page.setViewportSize({ width, height: 844 });
-      await page.locator('.arena-nav-professor button[aria-label="Abrir menu do professor"]').click();
-      const menu = page.getByRole("menu");
-      await expect(menu).toBeVisible();
-      await expect(menu.getByRole("menuitem", { name: /Configurações/ })).toBeInViewport();
-      await expect(menu.getByRole("menuitem", { name: /Sair/ })).toBeInViewport();
-      const metrics = await menu.evaluate(element => {
-        const rect = element.getBoundingClientRect();
-        const style = getComputedStyle(element);
-        return { x: rect.left, right: rect.right, opacity: style.opacity, background: style.backgroundColor,
-          overflow: document.documentElement.scrollWidth - innerWidth };
-      });
-      expect(metrics.x).toBeGreaterThanOrEqual(0);
-      expect(metrics.right).toBeLessThanOrEqual(width + 1);
-      expect(metrics.opacity).toBe("1");
-      expect(metrics.background).not.toBe("rgba(0, 0, 0, 0)");
-      expect(metrics.overflow).toBeLessThanOrEqual(1);
-      await testInfo.attach(`arena-profile-menu-${width}`, { body: await page.screenshot(), contentType: "image/png" });
+      const trigger = page.getByRole("button", { name: "Abrir menu da Arena" });
+      await expect(trigger).toBeVisible();
+      await expect(trigger).toHaveAttribute("aria-expanded", "false");
+      await trigger.click();
+      const drawer = page.getByRole("dialog", { name: "Menu da Arena" });
+      await expect(drawer).toBeVisible();
+      await expect(trigger).toHaveAttribute("aria-expanded", "true");
+      await expect(drawer.getByRole("button", { name: "Sorteio" })).toBeVisible();
+      await expect(drawer.getByRole("button", { name: "Presença e acesso" })).toBeVisible();
+      await expect(drawer.getByRole("button", { name: "Selecionar material" })).toBeVisible();
+      await expect(drawer.getByRole("button", { name: "Evidências da aprendizagem" })).toBeVisible();
+      await expect(drawer.getByRole("button", { name: "Encerrar sessão da Arena" })).toBeVisible();
+      const bounds = await drawer.boundingBox();
+      expect(bounds).not.toBeNull();
+      expect(bounds!.x).toBeGreaterThanOrEqual(-1);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width + 1);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+      if (width === 390) await testInfo.attach("arena-mobile-drawer", { body: await page.screenshot(), contentType: "image/png" });
       await page.keyboard.press("Escape");
-      await expect(menu).toHaveCount(0);
+      await expect(drawer).toHaveCount(0);
+      await expect(trigger).toBeFocused();
+      await selectArenaNavigation(page, "Quiz");
+      await expect(page.getByRole("heading", { name: "Quiz", exact: true })).toBeVisible();
+      await selectArenaNavigation(page, "Sorteio");
     }
   } finally { await api.dispose(); }
 });
@@ -1068,7 +1100,7 @@ test("iOS mobile: Biblioteca usa apenas o fechamento do cabeçalho", async ({ pa
     await openArena(page, fixture.classroomName, fixture.sessionTitle);
     for (const width of [320, 390, 430]) {
       await page.setViewportSize({ width, height: 844 });
-      await page.getByRole("button", { name: "Selecionar material" }).click();
+      await openArenaMaterial(page);
       const dialog = page.getByRole("dialog", { name: "Biblioteca nesta aula" });
       await expect(dialog).toBeVisible();
       await expect(dialog.getByRole("button", { name: "Fechar biblioteca" })).toHaveCount(1);
@@ -1076,30 +1108,18 @@ test("iOS mobile: Biblioteca usa apenas o fechamento do cabeçalho", async ({ pa
       await expect(dialog.getByRole("button", { name: /Fechar e voltar à Arena/ })).toHaveCount(0);
       await dialog.getByRole("button", { name: "Fechar biblioteca" }).click();
       await expect(dialog).toHaveCount(0);
-      await expect(page.getByRole("button", { name: "Selecionar material" })).toBeFocused();
+      await expect(page.getByRole("button", { name: "Abrir menu da Arena" })).toBeFocused();
     }
   } finally { await api.dispose(); }
 });
 
-test("iOS mobile: Próximas ações abre sem ultrapassar o viewport", async ({ page }) => {
+test("Arena removes static Next Actions from the permanent session header", async ({ page }) => {
   const { api, csrfHeaders } = await authenticatedApi();
   try {
     const fixture = await createArenaFixture(api, csrfHeaders);
     await openArena(page, fixture.classroomName, fixture.sessionTitle);
-    for (const width of [320, 390, 430]) {
-      await page.setViewportSize({ width, height: 844 });
-      const nav = page.getByRole("navigation", { name: "Sugestões para continuar a aula" });
-      await nav.locator("summary").click();
-      const panel = nav.locator('div[class*="menu"]');
-      await expect(panel).toBeVisible();
-      const bounds = await panel.boundingBox();
-      expect(bounds).not.toBeNull();
-      expect(bounds!.x).toBeGreaterThanOrEqual(-1);
-      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width + 1);
-      await expect(nav.getByRole("button", { name: "Aplicar uma verificação" })).toBeInViewport();
-      await nav.locator("summary").click();
-      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
-    }
+    await expect(page.getByRole("navigation", { name: "Sugestões para continuar a aula" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Ativar projetor" })).toHaveCount(1);
   } finally { await api.dispose(); }
 });
 
@@ -1147,7 +1167,7 @@ test("Modal contract: Arena evidence, material and draw settings use one X and n
 
     for (const width of [320, 390, 430, 768]) {
       await page.setViewportSize({ width, height: 844 });
-      await page.getByRole("button", { name: "Painel pedagógico" }).click();
+      await openArenaEvidence(page);
       const evidence = page.getByRole("dialog", { name: "Evidências da sessão" });
       await expect(evidence).toBeVisible();
       await checkClose(evidence, "Fechar painel pedagógico", width);
@@ -1161,7 +1181,7 @@ test("Modal contract: Arena evidence, material and draw settings use one X and n
       await evidence.getByRole("button", { name: "Fechar painel pedagógico" }).click();
       await expect(evidence).toHaveCount(0);
 
-      await page.getByRole("button", { name: "Selecionar material" }).click();
+      await openArenaMaterial(page);
       const material = page.getByRole("dialog", { name: "Biblioteca nesta aula" });
       await checkClose(material, "Fechar biblioteca", width);
       await expect(material.getByRole("button", { name: /Voltar à aula|Voltar à Arena/ })).toHaveCount(0);
@@ -1186,7 +1206,10 @@ test("Modal contract: QR Code ampliado usa o fechamento compartilhado sem perder
     await openArena(page, fixture.classroomName, fixture.sessionTitle);
     for (const width of [320, 390, 430]) {
       await page.setViewportSize({ width, height: 844 });
-      await page.getByRole("button", { name: "Ampliar QR Code da sessão" }).click();
+      await selectArenaNavigation(page, "Presença e acesso");
+      const attendance = page.getByRole("dialog", { name: "Presença e acesso" });
+      await expect(attendance).toBeVisible();
+      await attendance.getByRole("button", { name: "Ampliar QR Code da sessão" }).click();
       const dialog = page.getByRole("dialog", { name: "Escaneie para participar" });
       await expect(dialog).toBeVisible();
       await expect(dialog.locator("img[alt^='QR Code ampliado']")).toBeVisible();
@@ -1197,103 +1220,36 @@ test("Modal contract: QR Code ampliado usa o fechamento compartilhado sem perder
       expect(box?.height).toBeGreaterThanOrEqual(43.9);
       await close.click();
       await expect(dialog).toHaveCount(0);
+      await attendance.getByRole("button", { name: "Fechar ferramenta" }).click();
+      await expect(attendance).toHaveCount(0);
     }
   } finally { await api.dispose(); }
 });
 
-test("Mobile Arena navigation: two-tier header, labeled dynamics, accessible tools and aligned profile", async ({ page }, testInfo) => {
-  test.setTimeout(110_000);
+test("Mobile Arena uses one hamburger; desktop retains the shared persistent sidebar", async ({ page }) => {
   const { api, csrfHeaders } = await authenticatedApi();
   try {
     const fixture = await createArenaFixture(api, csrfHeaders);
     await openArena(page, fixture.classroomName, fixture.sessionTitle);
     for (const width of [320, 375, 390, 430, 768]) {
       await page.setViewportSize({ width, height: 844 });
-      const strip = page.getByRole("navigation", { name: "Dinâmicas da Arena" });
-      const tools = page.getByRole("button", { name: "Ferramentas da Arena" });
-      await expect(strip).toBeVisible();
-      await expect(tools).toBeVisible();
-      const layout = await page.evaluate(() => {
-        const bounds = (selector: string) => document.querySelector<HTMLElement>(selector)!.getBoundingClientRect();
-        const top = bounds(".arena-cockpit-nav");
-        const brand = bounds(".arena-nav-brand");
-        const profile = bounds(".arena-nav-professor");
-        const title = bounds(".arena-nav-mobile-title");
-        const tabs = bounds(".arena-nav-scroll");
-        const tools = bounds(".arena-nav-mobile-tools");
-        const scroll = document.querySelector<HTMLElement>(".arena-nav-scroll")!;
-        return {
-          containerHeight: top.height,
-          brandCenter: brand.top + brand.height / 2,
-          titleCenter: title.top + title.height / 2,
-          profileCenter: profile.top + profile.height / 2,
-          profileGap: top.right - profile.right,
-          toolsTopAligned: Math.abs(brand.top + brand.height / 2 - tools.top - tools.height / 2),
-          navUsesFullWidth: Math.abs(tabs.width - (top.width - 16)),
-          navBelowTop: tabs.top > brand.bottom,
-          tabsVerticalOverflow: scroll.scrollHeight - scroll.clientHeight,
-          tabsOverflowY: getComputedStyle(scroll).overflowY,
-          touchAction: getComputedStyle(scroll).touchAction,
-          docOverflow: document.documentElement.scrollWidth - innerWidth,
-        };
-      });
-      expect(layout.containerHeight, `header too tall at ${width}px`).toBeLessThanOrEqual(140);
-      expect(Math.abs(layout.brandCenter - layout.profileCenter)).toBeLessThanOrEqual(3);
-      expect(Math.abs(layout.brandCenter - layout.titleCenter)).toBeLessThanOrEqual(3);
-      expect(layout.profileGap).toBeGreaterThanOrEqual(-1);
-      expect(layout.profileGap).toBeLessThanOrEqual(18);
-      expect(layout.toolsTopAligned).toBeLessThanOrEqual(4);
-      expect(layout.navUsesFullWidth).toBeLessThanOrEqual(4);
-      expect(layout.navBelowTop).toBe(true);
-      expect(layout.tabsVerticalOverflow).toBeLessThanOrEqual(1);
-      expect(layout.tabsOverflowY).toBe("hidden");
-      expect(layout.touchAction).toBe("pan-x");
-      expect(layout.docOverflow).toBeLessThanOrEqual(1);
-      const quiz = strip.getByRole("button", { name: "Quiz" });
-      await expect(quiz.getByText("Quiz", { exact: true })).toBeVisible();
-      await quiz.click();
-      await expect(quiz).toHaveAttribute("aria-current", "page");
-      await expect(quiz).toBeInViewport();
-      const draw = strip.getByRole("button", { name: "Sorteio" });
-      await draw.click();
-      await expect(draw).toHaveAttribute("aria-current", "page");
-      if (width === 390) await page.screenshot({ path: "/tmp/arena-two-tier-mobile-390.png" });
-      await tools.click();
-      const menu = page.getByRole("menu");
-      for (const label of ["Roteiro da aula", "Timer", "Organizar turma", "Presença", "Ranking", "Pontuação rápida"]) {
-        await expect(menu.getByRole("menuitem", { name: label })).toBeVisible();
-      }
-      const popupBounds = await menu.boundingBox();
-      expect(popupBounds).not.toBeNull();
-      expect(popupBounds!.x).toBeGreaterThanOrEqual(0);
-      expect(popupBounds!.x + popupBounds!.width).toBeLessThanOrEqual(width + 1);
-      await testInfo.attach(`arena-two-tier-mobile-${width}`, { body: await page.screenshot(), contentType: "image/png" });
-      await menu.getByRole("menuitem", { name: "Roteiro da aula" }).click();
-      await expect(tools).toHaveAttribute("data-active", "true");
-      await expect(menu).toHaveCount(0);
-      await draw.click();
-      await expect(tools).not.toHaveAttribute("data-active", "true");
-      await tools.click();
-      await page.getByRole("menuitem", { name: "Timer" }).click();
+      await expect(page.getByRole("button", { name: "Abrir menu da Arena" })).toBeVisible();
+      await expect(page.locator(".arena-nav-scroll")).toBeHidden();
+      await expect(page.getByRole("button", { name: "Ativar projetor" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Encerrar sessão", exact: true })).toBeHidden();
+      await selectArenaNavigation(page, "Timer");
       const timer = page.getByRole("dialog", { name: "Timer" });
       await expect(timer).toBeVisible();
       await timer.getByRole("button", { name: "Fechar ferramenta" }).click();
       await expect(timer).toHaveCount(0);
-      await expect(draw).toHaveAttribute("aria-current", "page");
     }
-  } finally { await api.dispose(); }
-});
-
-test("Desktop Arena keeps its labeled sidebar and does not duplicate the mobile tools menu", async ({ page }) => {
-  const { api, csrfHeaders } = await authenticatedApi();
-  try {
-    const fixture = await createArenaFixture(api, csrfHeaders);
-    await openArena(page, fixture.classroomName, fixture.sessionTitle);
     await page.setViewportSize({ width: 1440, height: 900 });
-    await expect(page.locator(".arena-nav-mobile-title")).toBeHidden();
-    await expect(page.getByRole("button", { name: "Ferramentas da Arena" })).toBeHidden();
-    await expect(page.locator(".arena-nav-scroll .arena-cockpit-nav-group").nth(1)).toBeVisible();
-    await expect(page.locator(".arena-nav-scroll button[aria-label='Timer']")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Abrir menu da Arena" })).toBeHidden();
+    await expect(page.locator(".arena-nav-scroll")).toBeVisible();
+    for (const label of ["Material da aula", "Roteiro da aula", "Sorteio", "Evidências da aprendizagem"]) {
+      await expect(page.locator(".arena-nav-scroll").getByText(label, { exact: true })).toBeVisible();
+    }
+    await expect(page.getByRole("button", { name: "Encerrar sessão", exact: true })).toBeVisible();
   } finally { await api.dispose(); }
 });
 
@@ -1316,6 +1272,7 @@ test("v0.10 dynamic visual contract: seven dynamics share full-width, semantic h
       await page.setViewportSize({ width, height: 844 });
       for (const dynamic of dynamics) {
         const nav = page.locator('.arena-nav-scroll button').filter({ hasText: dynamic.navigation });
+        await openMobileArenaMenuIfNeeded(page);
         await nav.click();
         const header = page.getByTestId("dynamic-header");
         await expect(header).toHaveCount(1);
@@ -1382,7 +1339,7 @@ test("v0.10 cloud/poll composer: compact auto-growing question, binary visibilit
     await openArena(page, fixture.classroomName, fixture.sessionTitle);
     for (const width of [320, 390, 430, 1440]) {
       await page.setViewportSize({ width, height: 844 });
-      await page.locator('.arena-nav-scroll button').filter({ hasText: "Nuvem de Palavras" }).click();
+      await selectArenaNavigation(page, "Nuvem de Palavras");
       const question = page.getByTestId("dynamic-question-input");
       await expect(question).toBeVisible();
       const initialHeight = (await question.boundingBox())!.height;
@@ -1432,7 +1389,7 @@ test("v0.10 cloud/poll composer: compact auto-growing question, binary visibilit
       });
       expect(positions.previewBelow).toBe(true);
       expect(positions.widthMatches).toBe(true);
-      await page.locator('.arena-nav-scroll button').filter({ hasText: "Votação" }).click();
+      await selectArenaNavigation(page, "Votação");
       await expect(page.getByTestId("dynamic-question-input")).toBeVisible();
       const pollToggle = page.getByRole("switch", { name: "Exibir resultados ao vivo" });
       await expect(pollToggle).not.toBeChecked();
@@ -1451,7 +1408,7 @@ test("v0.10 headers: Sorteio has one consolidated header; Votação remains comp
     await openArena(page, fixture.classroomName, fixture.sessionTitle);
     for (const width of [320, 390, 430, 768, 1440]) {
       await page.setViewportSize({ width, height: 844 });
-      await page.locator('.arena-nav-scroll button').filter({ hasText: "Sorteio" }).click();
+      await selectArenaNavigation(page, "Sorteio");
       const drawHeader = page.getByTestId("dynamic-header");
       await expect(drawHeader.getByRole("heading", { name: "Sorteio da turma" })).toBeVisible();
       await expect(drawHeader.getByRole("button", { name: "Sortear participante" })).toHaveCount(1);
@@ -1463,14 +1420,14 @@ test("v0.10 headers: Sorteio has one consolidated header; Votação remains comp
       });
       expect(structure.immediatelyFollowedByGrid, "Sorteio should not introduce a second toolbar card").toBe(true);
       expect(structure.headerHeight, `Sorteio header too tall at ${width}px`).toBeLessThan(225);
-      await page.locator('.arena-nav-scroll button').filter({ hasText: "Votação" }).click();
+      await selectArenaNavigation(page, "Votação");
       const pollHeader = page.getByTestId("dynamic-header");
       const size = await pollHeader.boundingBox();
       expect(size).not.toBeNull();
       expect(size!.height, `Votação header stretched at ${width}px`).toBeLessThan(170);
       await expect(page.getByRole("button", { name: "Ativar projetor" })).toHaveAttribute("aria-pressed", "false");
       await expect(page.getByRole("button", { name: /Projetar ↗/ })).toHaveCount(0);
-      await page.locator('.arena-nav-scroll button').filter({ hasText: "Boss Battle" }).click();
+      await selectArenaNavigation(page, "Boss Battle");
       await expect(page.getByTestId("dynamic-header").getByRole("button", { name: /Projetar/ })).toHaveCount(0);
       await expect(page.getByRole("button", { name: "Ativar projetor" })).toHaveCount(1);
     }
@@ -1492,7 +1449,7 @@ test("v0.10 projector: global toggle tracks a real projector tab and closes it",
     await expect(projector.getByText("Modo Projetor", { exact: true })).toBeVisible();
     const disable = page.getByRole("button", { name: "Desativar projetor" });
     await expect(disable).toHaveAttribute("aria-pressed", "true", { timeout: 9000 });
-    await page.locator('.arena-nav-scroll button').filter({ hasText: "Quiz" }).click();
+    await selectArenaNavigation(page, "Quiz");
     await expect(disable, "projector is global, not bound to a dynamic").toHaveAttribute("aria-pressed", "true");
     await disable.click();
     await expect.poll(() => projector.isClosed(), { timeout: 8000 }).toBe(true);

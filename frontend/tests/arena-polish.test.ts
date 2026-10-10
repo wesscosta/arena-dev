@@ -68,6 +68,9 @@ test("Professor Arena cockpit replaces the old session tabs", () => {
 
 test("Professor Arena cockpit exposes dynamics and transversal tools together", () => {
   const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
+  const registry = read("components/arena/live/arena-navigation.ts");
+  assert.match(chrome, /ARENA_DYNAMICS\.map\(renderEntry\)/);
+  assert.match(chrome, /ARENA_TOOLS\.map\(renderEntry\)/);
 
   for (const label of [
     "Sorteio",
@@ -81,7 +84,7 @@ test("Professor Arena cockpit exposes dynamics and transversal tools together", 
     "Presença",
     "Pontuação rápida",
   ]) {
-    assert.ok(chrome.includes(label), `missing Arena action: ${label}`);
+    assert.ok(registry.includes(label), `missing Arena action: ${label}`);
   }
 });
 
@@ -180,11 +183,11 @@ test("Arena contextual tools open without replacing the primary dynamic", () => 
   const app = read("components/ArenaApp.tsx");
   const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
 
-  assert.match(chrome, /onSelectTool\("timer"\)/);
-  assert.match(chrome, /onSelectTool\("groups"\)/);
-  assert.match(chrome, /onSelectTool\("attendance"\)/);
-  assert.match(chrome, /onSelectTool\("ranking"\)/);
-  assert.match(chrome, /onSelectTool\("score"\)/);
+  assert.match(chrome, /pickTool\(item.target\)/);
+  const registry = read("components/arena/live/arena-navigation.ts");
+  for (const tool of ["timer", "groups", "attendance", "ranking", "score"]) {
+    assert.match(registry, new RegExp(`id: "${tool}"`));
+  }
   assert.match(app, /open=\{activeTool === "timer"\}/);
   assert.match(app, /open=\{activeTool === "attendance"\}/);
   assert.match(app, /open=\{activeTool === "ranking"\}/);
@@ -758,7 +761,7 @@ test("Manual XP stays in the contextual tool, not duplicated below the draw", ()
   assert.match(app, /open=\{activeTool === "score"\}/);
   assert.match(app, /title="Pontuação rápida"/);
   assert.match(app, /className="score-presets arena-tool-score-presets"/);
-  assert.match(navigation, /onSelectTool\("score"\)/);
+  assert.match(navigation, /ARENA_TOOLS\.map\(renderEntry\)/);
 });
 
 test("Live Arena stretches the cockpit to the full dynamic viewport height", () => {
@@ -806,7 +809,7 @@ test("Arena sidebar owns product identity while the session context stays in the
   assert.doesNotMatch(chrome, /className="arena-nav-context"/);
   assert.doesNotMatch(chrome, /Condução ao vivo/);
   assert.match(chrome, /function ArenaGlyph/);
-  assert.match(chrome, /\["draw", "draw", "Sorteio"\]/);
+  assert.match(read("components/arena/live/arena-navigation.ts"), /id: "draw", label: "Sorteio"/);
 });
 
 test("Nuvem de Palavras centralizes reveal policy in its header and question settings inline", () => {

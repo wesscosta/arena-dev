@@ -28,7 +28,7 @@ for (const width of [320, 390, 430, 768]) {
               <nav class="arena-live-context" aria-label="Turma atual"><button class="arena-live-classroom-link">← <strong>Turma E2E</strong></button></nav>
               <div class="arena-session-actions">
                 <div class="arena-session-shortcuts">
-                  <button>Próximas ações</button><button>Painel pedagógico</button><button>Material</button>
+                  <button>Controlar o material e a turma pelo menu</button>
                 </div>
                 <div class="arena-session-elapsed">Tempo da sessão</div>
                 <button>Modo Projetor</button><button>Encerrar sessão</button>
