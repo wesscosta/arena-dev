@@ -1702,10 +1702,11 @@ test("v0.11 / 11.4: CSP, Markdown inerte, modal responsivo e navegação por tec
     const title = `Segurança de Markdown ${fixture.session.id.slice(0,8)}`;
     const body = [
       "# Markdown seguro", "", "<aside>", "**Orientação didática**", "</aside>",
-      "<script>window.__markdownExecuted = true</script>",
-      "<img src='https://observer.invalid/marker.png' onerror='window.__markdownExecuted=true'>",
-      "![Pixel](https://observer.invalid/pixel.png)",
-      "[Link malicioso](javascript:alert(1))", "",
+      "<script>window.__markdownExecuted = true</script>", "",
+      "<img src='https://observer.invalid/marker.png' onerror='window.__markdownExecuted=true'>", "",
+      "![Pixel](https://observer.invalid/pixel.png)", "",
+      "[Link malicioso](javascript:alert(1))",
+      "[Fonte confiável](https://example.org/aula)", "",
       "```html", "<script>alert('exemplo')</script>", "<img src='exemplo.png'>", "```",
     ].join("\n");
     const saved = await api.post("/api/library/resources", {
@@ -1722,6 +1723,8 @@ test("v0.11 / 11.4: CSP, Markdown inerte, modal responsivo e navegação por tec
     await expect(dialog.getByText("Orientação didática")).toBeVisible();
     await expect(dialog.locator("img,iframe,script,input[type=checkbox],a[href^='javascript:']")).toHaveCount(0);
     await expect(dialog.locator("a[href*='observer.invalid'],img[src*='observer.invalid']")).toHaveCount(0);
+    await expect(dialog.getByRole("link", { name: "Fonte confiável" }))
+      .toHaveAttribute("rel", "noopener noreferrer");
     await expect(dialog.locator("pre code").filter({ hasText: "<script>" })).toBeVisible();
     expect(await page.evaluate(() => (window as Window & { __markdownExecuted?: boolean }).__markdownExecuted)).toBeUndefined();
 

@@ -18,7 +18,7 @@ export function SafePresentationBody({ body, format }: Pick<PublicPresentedMater
   const segments = splitNotionAsides(body);
   return <div className={styles.markdown}>
     {segments.map((segment, index) => {
-      const content = <SafeMarkdown>
+      const content = <SafeMarkdown linkMode="disabled">
         {segment.content}
       </SafeMarkdown>;
       return segment.kind === "aside"

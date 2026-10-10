@@ -24,6 +24,8 @@ test("11.4 all content preview surfaces use the same safe Markdown renderer", ()
   assert.match(policy, /img:\s*\(\)\s*=>\s*null/);
   assert.match(policy, /input:\s*\(\)\s*=>\s*null/);
   assert.match(policy, /a:\s*\(\{/);
+  assert.match(policy, /noopener noreferrer/);
+  assert.match(policy, /linkMode/);
   assert.doesNotMatch(policy, /rehypeRaw|dangerouslySetInnerHTML/);
 });
 
