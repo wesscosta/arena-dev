@@ -23,6 +23,13 @@ public class MaterialPublicationController {
         return service.withdraw(sessionId, request);
     }
 
+    @PutMapping("/api/sessions/{sessionId}/material-presentation/section")
+    public br.com.arenadev.stage.LiveStageService.StateView section(
+            @PathVariable UUID sessionId,
+            @RequestBody MaterialPublicationService.SectionCommand request) {
+        return service.navigate(sessionId, request);
+    }
+
     @GetMapping("/api/sessions/{sessionId}/material-presentation")
     public MaterialPublicationService.PublicationView current(@PathVariable UUID sessionId) {
         return service.current(sessionId);

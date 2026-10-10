@@ -14,6 +14,7 @@ export type MaterialPublication = {
   withdrawRequestId: string | null;
   createdAt: string;
   revokedAt: string | null;
+  outline: ContentOutlineNode[];
 };
 
 export type PublicPresentedMaterial = {
@@ -47,6 +48,19 @@ export function withdrawMaterial(sessionId: string, publicationId: string, expec
     method: "DELETE",
     body: JSON.stringify({ publicationId, expectedVersion, requestId }),
   });
+}
+
+/**
+ * Changes only the live presentation position. A distinct requestId and
+ * expectedVersion ensure stale or repeated commands cannot hijack the projector.
+ * Null anchor returns to the beginning of the immutable snapshot.
+ */
+export function navigateMaterialSection(sessionId: string, publicationId: string,
+  anchor: string | null, expectedVersion: number, requestId: string) {
+  return apiRequest<import("./live-stage-api").LiveStageState>(
+    `${sessionPath(sessionId)}/section`,
+    { method: "PUT", body: JSON.stringify({ publicationId, anchor, expectedVersion, requestId }) },
+  );
 }
 
 /** Code-based, read-only, no credentials or browser cache. Never use Library APIs in projector. */

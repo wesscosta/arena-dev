@@ -1,9 +1,9 @@
 # Arena Dev v0.11 — roadmap e execução incremental
 
-**Estado:** 11.0, 11.1 e **11.2 integradas à `main`**; PR #40 aprovado em backend, frontend e Compose/Playwright no SHA `ceb60cd`, com merge `863c83c`. 11.3–11.6 ainda não implementadas ou homologadas.
+**Estado:** 11.0, 11.1 e **11.2 integradas à `main`**; PR #40 aprovado em backend, frontend e Compose/Playwright no SHA `ceb60cd`, com merge `863c83c`. 11.3 em implementação/testes na branch da navegação; 11.4–11.6 ainda não implementadas ou homologadas.
 **Baseline confirmada:** v0.10.0 publicada em 10/10/2026 (PR #35, tag e GitHub Release). Seus limites de campo e de implantação continuam registrados na própria release.
 **Artefatos 11.0:** [índice e evidências](v0.11/README.md), [ADR-0067](adr/ADR-0067-material-presentation-v011.md).
-**11.1 integrada:** backend V57 e testes [execução e limites](v0.11/11.1_EXECUTION_STATUS.md). **11.2 validada e integrada** (leitor seguro e apresentação docente): [status 11.2](v0.11/11.2_EXECUTION_STATUS.md). **11.3 ainda não implementada.**
+**11.1 integrada:** backend V57 e testes [execução e limites](v0.11/11.1_EXECUTION_STATUS.md). **11.2 validada e integrada** (leitor seguro e apresentação docente): [status 11.2](v0.11/11.2_EXECUTION_STATUS.md). **11.3 em revisão de implementação:** [execução](v0.11/11.3_EXECUTION_STATUS.md).
 **Referências:** [ROADMAP_V0_10.md](ROADMAP_V0_10.md), [Projeção de materiais da Arena](ux/arena-material-projector-proposal.md), ADR-0045/0046/0052/0059.
 
 ## Objetivo geral

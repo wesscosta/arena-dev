@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { normalizeJoinCode } from "@/lib/app-state";
+import { reconcileStageVersion } from "@/lib/material-section-sync";
 import ProjectedMaterialReader from "@/components/ProjectedMaterialReader";
 import {
   fetchPublicPresentedMaterial, type PublicPresentedMaterial,
@@ -181,7 +182,8 @@ export default function ProjectorView() {
           serverOccurredAt: next.serverTime,
           receivedAtMs: Date.now(),
         });
-        setLiveStage(next.runtime.stage ?? emptyLiveStageState(next.sessionId));
+        setLiveStage((previous) => reconcileStageVersion(previous,
+          next.runtime.stage ?? emptyLiveStageState(next.sessionId)));
         setBuzzerState(next.runtime.buzzer ?? { status: "IDLE", presses: [] });
         setWordCloudState(next.runtime.wordCloud ?? { round: null });
         setPollState(next.runtime.poll ?? { round: null });
@@ -227,7 +229,7 @@ export default function ProjectorView() {
 
         if (event.type === "RUNTIME_SNAPSHOT") {
           const runtime = event.payload as PublicRuntimeSnapshot;
-          setLiveStage(runtime.stage);
+          setLiveStage((previous) => reconcileStageVersion(previous, runtime.stage));
           setBuzzerState(runtime.buzzer);
           setTimerState({
             ...runtime.timer,
@@ -243,7 +245,7 @@ export default function ProjectorView() {
         }
 
         if (event.type === "LIVE_STAGE_STATE") {
-          setLiveStage(event.payload as LiveStageState);
+          setLiveStage((previous) => reconcileStageVersion(previous, event.payload as LiveStageState));
           return;
         }
 
@@ -368,7 +370,7 @@ export default function ProjectorView() {
 
     return () => { active = false; controller.abort(); };
   }, [code, snapshot?.sessionId, liveStage.primary.type, liveStage.primary.sourceId,
-    liveStage.stageVersion, connection, sessionFinished, realtimeVersion]);
+    connection, sessionFinished, realtimeVersion]);
 
   useEffect(() => {
     if (timerState.timer?.status !== "RUNNING") return;
@@ -532,7 +534,9 @@ export default function ProjectorView() {
           </div>
         ) : showMaterial ? (
           materialReady && presentedMaterial ? (
-            <ProjectedMaterialReader material={presentedMaterial} />
+            <ProjectedMaterialReader material={presentedMaterial}
+              anchor={liveStage.primary.sectionAnchor ?? null}
+              stageVersion={liveStage.stageVersion ?? 0} />
           ) : (
             <div className={styles.waiting} role="status" aria-live="polite"
               data-testid="projector-material-unavailable">
