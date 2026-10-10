@@ -1705,7 +1705,7 @@ test("v0.11 / 11.4: CSP, Markdown inerte, modal responsivo e navegação por tec
       "<script>window.__markdownExecuted = true</script>",
       "<img src='https://observer.invalid/marker.png' onerror='window.__markdownExecuted=true'>",
       "![Pixel](https://observer.invalid/pixel.png)",
-      "[Link malicioso](javascript:alert(1))",
+      "[Link malicioso](javascript:alert(1))", "",
       "```html", "<script>alert('exemplo')</script>", "<img src='exemplo.png'>", "```",
     ].join("\n");
     const saved = await api.post("/api/library/resources", {
