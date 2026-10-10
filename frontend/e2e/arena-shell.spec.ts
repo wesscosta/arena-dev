@@ -1568,6 +1568,8 @@ test("v0.11 / 11.2: professor publica leitura segura e o projetor recebe somente
       "[Fonte de leitura](https://example.org/referencia) para estudo posterior.", "",
       "## Prática", "", "| Comando | Finalidade |", "| --- | --- |", "| SELECT | Consulta |",
       "", "```sql", "SELECT * FROM produtos;", "```", "",
+      "```html", "<img src=\"{{ produto.imagem.url }}\" alt=\"Foto de exemplo\">",
+      "<script>console.log('exemplo didático');</script>", "```", "",
       ...Array.from({ length: 38 }, (_, index) => `### Exemplo ${index + 1}\nRevisão contextualizada do comando.`),
     ].join("\n");
     const create = await api.post("/api/library/resources", {
@@ -1614,6 +1616,8 @@ test("v0.11 / 11.2: professor publica leitura segura e o projetor recebe somente
     await expect(reader.getByRole("table")).toContainText("Consulta");
     await expect(reader.getByText("SELECT * FROM produtos;")).toBeVisible();
     await expect(reader.locator("iframe,script,img,form,a[href]")).toHaveCount(0);
+    await expect(reader.locator("pre code").filter({ hasText: "<script>" })).toBeVisible();
+    await expect(reader.locator("pre code").filter({ hasText: "<img src=" })).toBeVisible();
     await expect(reader.getByText("Fonte de leitura")).toBeVisible();
 
     const snapshotResponse = await anonymous.request.get(`${apiBaseUrl}${publicPath}`);

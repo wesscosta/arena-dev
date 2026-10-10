@@ -71,15 +71,25 @@ public class MaterialPublicationService {
             throw notFound();
         }
         if (resource.getFormat() == LearningResourceFormat.LINK) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "LINK não é apresentável.");
+            throw new MaterialPresentationValidationException(
+                    "Links externos não podem ser apresentados. Selecione Markdown ou texto.");
         }
         String body = resource.getBody();
-        if (body == null || body.isBlank() || body.length() > MAX_BODY_LENGTH) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Material vazio ou extenso demais.");
+        if (body == null || body.isBlank()) {
+            throw new MaterialPresentationValidationException(
+                    "Este material está vazio. Adicione conteúdo antes de apresentá-lo.");
         }
-        // Until the safe projector reader (11.2), refuse active markup and external images.
-        if (body.matches("(?is).*(<\\s*(script|iframe|object|embed|svg|img|video|audio)\\b|javascript\\s*:|data\\s*:|!\\s*\\[[^]]*]\\s*\\().*")) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Conteúdo ativo ou imagem não autorizada.");
+        if (body.length() > MAX_BODY_LENGTH) {
+            throw new MaterialPresentationValidationException(
+                    "O conteúdo excede 120.000 caracteres. Divida-o em materiais menores.");
+        }
+        // HTML and JS examples in Markdown fences are harmless pedagogical code.
+        // Outside code blocks, active markup is still refused in depth, even
+        // though the projector renderer already ignores raw HTML and images.
+        if (MaterialPresentationSafetyPolicy.containsUnsafeContent(body, resource.getFormat())) {
+            throw new MaterialPresentationValidationException(
+                    "Há HTML ativo ou imagem fora de um bloco de código. "
+                    + "Coloque exemplos entre três crases ou remova a mídia incorporada.");
         }
         CanonicalDocument document = canonicalizer.canonicalize(
                 resource.getTitle(), body, resource.getFormat(), resource.getSourceUrl(),

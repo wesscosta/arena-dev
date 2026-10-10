@@ -2,6 +2,7 @@ package br.com.arenadev.shared;
 
 import br.com.arenadev.auth.LoginRateLimitExceededException;
 import br.com.arenadev.content.LearningResourceInUseException;
+import br.com.arenadev.learning.presentation.MaterialPresentationValidationException;
 import br.com.arenadev.draw.DrawConflictException;
 import br.com.arenadev.scoring.ScoreConflictException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -29,6 +30,14 @@ public class ApiExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<Map<String, Object>> unauthorized(AuthenticationException exception) {
         return response(HttpStatus.UNAUTHORIZED, "Usuário ou senha inválidos.");
+    }
+
+    @ExceptionHandler(MaterialPresentationValidationException.class)
+    public ResponseEntity<Map<String, Object>> materialPresentation(
+            MaterialPresentationValidationException exception) {
+        // Show a meaningful rule to teachers without exposing source HTML,
+        // SQL statements or internal exception details.
+        return response(HttpStatus.UNPROCESSABLE_ENTITY, exception.getReason());
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
