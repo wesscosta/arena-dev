@@ -119,6 +119,38 @@ class MaterialPublicationIT {
     }
 
     @Test
+    void djangoTutorialWithHtmlExamplesInFencesCanBePresented() {
+        String code = """
+                # Controle de Estoque com Django
+
+                <aside>
+                **Versão de referência:** material para construção do sistema.
+                </aside>
+
+                ```html
+                <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}">
+                <script>
+                    const form = document.querySelector('#form-movimentacao');
+                </script>
+                ```
+
+                ## Criar movimentações
+                """;
+        String body = code + ("Exemplo de operação e validação do estoque.\n").repeat(2250);
+        assertThat(body.length()).isBetween(95_000, 120_000);
+        Scenario s = scenario(body);
+        var publication = publish(s, 0L, UUID.randomUUID());
+        assertThat(publication.status()).isEqualTo("ACTIVE");
+        var presented = publications.publicMaterial(s.code());
+        assertThat(presented.body()).isEqualTo(body.strip());
+        assertThat(presented.body()).contains("<script>", "<img src");
+        assertThat(stage.projectorState(s.sessionId()).primary().type())
+                .isEqualTo(LiveStageType.MATERIAL);
+        assertThat(stage.participantState(s.sessionId()).primary().type())
+                .isEqualTo(LiveStageType.IDLE);
+    }
+
+    @Test
     void withdrawAndSwitchStageRevokeWithoutResurrection() {
         Scenario s = scenario("# SQL\nPrimeiro");
         UUID id = UUID.randomUUID();
@@ -317,5 +349,18 @@ class MaterialPublicationIT {
         var navigation=authenticated.send(navigateRequest,HttpResponse.BodyHandlers.ofString());
         assertThat(navigation.statusCode()).isEqualTo(200);
         assertThat(navigation.body()).contains("\"stageVersion\":2");
+
+        Scenario unsafe = scenario("<script>alert('inseguro')</script>");
+        String unsafeBody="{\"resourceId\":\""+unsafe.resourceId()+"\",\"expectedVersion\":0,"
+                +"\"requestId\":\""+UUID.randomUUID()+"\"}";
+        var rejectedRequest=HttpRequest.newBuilder(URI.create(
+                "http://localhost:"+port+"/api/sessions/"+unsafe.sessionId()+"/material-presentation"))
+                .header("Content-Type","application/json").header("X-XSRF-TOKEN",token)
+                .POST(HttpRequest.BodyPublishers.ofString(unsafeBody)).build();
+        var rejected=authenticated.send(rejectedRequest,HttpResponse.BodyHandlers.ofString());
+        assertThat(rejected.statusCode()).isEqualTo(422);
+        assertThat(rejected.body()).contains("HTML ativo ou imagem fora de um bloco de código")
+                .doesNotContain("inseguro");
+
     }
 }
