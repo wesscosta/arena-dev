@@ -495,3 +495,11 @@
   font-size: var(--font-size-xs);
   line-height: var(--line-normal);
 }
+
+/* High-contrast profile actions on dark and light themes. */
+.menuPopover { opacity: 1; isolation: isolate; background: #10231c; border-color: #496c5b; color: #f4fff9; box-shadow: 0 16px 42px rgba(0,0,0,.55); }
+.menuItem { opacity: 1; color: #f4fff9; }
+.menuItem:hover:not(:disabled), .menuItem:focus-visible { background: #254a3a; }
+.menuItemCopy small { color: #d2e7dc; }
+.menuItemDanger, .menuItemDanger .menuItemIcon { color: #ffb7bc; }
+@media (max-width: 48rem) { .menuPopover { width: min(19rem, calc(100vw - 2rem)); min-width: 0; max-width: calc(100vw - 2rem); } }

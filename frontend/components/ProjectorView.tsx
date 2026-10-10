@@ -23,6 +23,7 @@ import {
   timerStatusLabel,
 } from "@/lib/timer-clock";
 import styles from "./ProjectorView.module.css";
+import { projectorCommandKey, projectorPresenceKey, PROJECTOR_HEARTBEAT_MS, type ProjectorCloseCommand, type ProjectorPresence } from "@/lib/projector-window-control";
 
 function errorMessage(error: unknown) {
   return error instanceof Error
@@ -94,6 +95,55 @@ export default function ProjectorView() {
     setCode(initial);
     setDraftCode(initial);
   }, []);
+
+  // Only the actual projector tab may acknowledge activation. The teacher
+  // receives presence updates through same-origin storage events (HTTP LAN-safe).
+  useEffect(() => {
+    if (!code) return;
+    const instanceId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const launchTime = Date.now();
+    const presenceKey = projectorPresenceKey(code);
+    const commandKey = projectorCommandKey(code);
+    let closingByCommand = false;
+    const heartbeat = () => {
+      try {
+        window.localStorage.setItem(presenceKey, JSON.stringify({ instanceId, observedAt: Date.now() } satisfies ProjectorPresence));
+      } catch { /* Storage blocked: teacher will keep projection inactive rather than inventing state. */ }
+    };
+    const release = () => {
+      try {
+        const existing = window.localStorage.getItem(presenceKey);
+        if (existing && (JSON.parse(existing) as ProjectorPresence).instanceId === instanceId) {
+          window.localStorage.removeItem(presenceKey);
+        }
+      } catch { /* The heartbeat will expire if storage is unavailable during unload. */ }
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== commandKey || !event.newValue || closingByCommand) return;
+      try {
+        const command = JSON.parse(event.newValue) as ProjectorCloseCommand;
+        if (command.kind !== "close" || command.issuedAt < launchTime) return;
+        closingByCommand = true;
+        window.close();
+        window.setTimeout(() => {
+          if (!window.closed) {
+            closingByCommand = false;
+            setError("O navegador impediu o fechamento automático. Feche esta aba para desativar o projetor.");
+          }
+        }, 300);
+      } catch { /* Ignore invalid messages from stale storage. */ }
+    };
+    heartbeat();
+    const interval = window.setInterval(heartbeat, PROJECTOR_HEARTBEAT_MS);
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("pagehide", release);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("pagehide", release);
+      release();
+    };
+  }, [code]);
 
   useEffect(() => {
     if (!code) {

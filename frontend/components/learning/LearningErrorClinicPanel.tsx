@@ -1,5 +1,7 @@
 "use client";
 
+import { secureId } from "@/lib/secure-id";
+
 import { useEffect, useState } from "react";
 import { annotateErrorClinic, fetchErrorClinic, type ErrorClinicView } from "@/lib/learning-error-clinic-api";
 import styles from "./LearningErrorClinicPanel.module.css";
@@ -14,7 +16,7 @@ export default function LearningErrorClinicPanel({ sessionId, runId, notify }: P
   const [clinic, setClinic] = useState<ErrorClinicView | null>(null);
   const [option, setOption] = useState("");
   const [note, setNote] = useState("");
-  const [commandId, setCommandId] = useState(() => crypto.randomUUID());
+  const [commandId, setCommandId] = useState(() => secureId());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +25,7 @@ export default function LearningErrorClinicPanel({ sessionId, runId, notify }: P
     setClinic(null);
     setOption("");
     setNote("");
-    setCommandId(crypto.randomUUID());
+    setCommandId(secureId());
     setError(null);
     void fetchErrorClinic(sessionId, runId)
       .then((next) => { if (active) setClinic(next); })
@@ -41,7 +43,7 @@ export default function LearningErrorClinicPanel({ sessionId, runId, notify }: P
       const next = await annotateErrorClinic(sessionId, runId, commandId, option, note.trim());
       setClinic(next);
       setNote("");
-      setCommandId(crypto.randomUUID());
+      setCommandId(secureId());
       notify("Análise docente registrada. O histórico anterior foi preservado.");
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "Não foi possível registrar a análise.";

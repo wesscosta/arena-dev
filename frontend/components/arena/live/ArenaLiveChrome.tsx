@@ -99,7 +99,12 @@ export function ArenaSidebar({
         </span>
       </button>
 
-      <div className="arena-nav-scroll">
+      <span className="arena-nav-mobile-title" aria-hidden="true">
+        <strong>Arena</strong>
+        <small>Ao vivo</small>
+      </span>
+
+      <div className="arena-nav-scroll" role="navigation" aria-label="Dinâmicas da Arena">
         <div className="arena-cockpit-nav-group">
           <span className="arena-cockpit-nav-label">DINÂMICAS</span>
           {DYNAMICS.map(([id, icon, label]) => (
@@ -141,6 +146,32 @@ export function ArenaSidebar({
         </div>
       </div>
 
+      <div className="arena-nav-mobile-tools">
+        <Menu
+          trigger={(triggerProps) => (
+            <button
+              {...triggerProps}
+              type="button"
+              className="arena-nav-tools-trigger"
+              aria-label="Ferramentas da Arena"
+              data-active={activeDynamic === "runbook" || activeTool !== null ? "true" : undefined}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+              <strong>Ferramentas</strong>
+            </button>
+          )}
+        >
+          <MenuItem icon={<ArenaGlyph name="runbook" />} onSelect={() => onSelectDynamic("runbook")}>Roteiro da aula</MenuItem>
+          <MenuItem icon={<ArenaGlyph name="timer" />} onSelect={() => onSelectTool("timer")}>Timer</MenuItem>
+          <MenuItem icon={<ArenaGlyph name="groups" />} onSelect={() => onSelectTool("groups")}>Organizar turma</MenuItem>
+          <MenuItem icon={<ArenaGlyph name="attendance" />} onSelect={() => onSelectTool("attendance")}>Presença</MenuItem>
+          <MenuItem icon={<ArenaGlyph name="ranking" />} onSelect={() => onSelectTool("ranking")}>Ranking</MenuItem>
+          <MenuItem icon={<ArenaGlyph name="score" />} onSelect={() => onSelectTool("score")}>Pontuação rápida</MenuItem>
+        </Menu>
+      </div>
+
       <div className="arena-nav-professor">
         <Menu
           trigger={(triggerProps) => (
@@ -171,7 +202,9 @@ type ArenaSessionHeaderProps = {
   nextActions?: ReactNode;
   onGoDashboard: () => void;
   onBack: () => void;
-  onOpenProjector: () => void;
+  onToggleProjector: () => void;
+  projectorActive: boolean;
+  projectorPending: boolean;
   onEndSession: () => void;
 };
 
@@ -184,7 +217,9 @@ export function ArenaSessionHeader({
   nextActions,
   onGoDashboard,
   onBack,
-  onOpenProjector,
+  onToggleProjector,
+  projectorActive,
+  projectorPending,
   onEndSession,
 }: ArenaSessionHeaderProps) {
   return (
@@ -207,9 +242,19 @@ export function ArenaSessionHeader({
             <small>Tempo de sessão</small>
           </div>
         </div>
-        <Button variant="secondary" onClick={onOpenProjector} disabled={!canProject}>
-          Modo Projetor ↗
-        </Button>
+        <button
+          type="button"
+          className="arena-projector-toggle"
+          aria-pressed={projectorActive}
+          aria-label={projectorActive ? "Desativar projetor" : "Ativar projetor"}
+          title={projectorActive ? "Fechar a janela de projeção deste navegador" : "Abrir uma janela de projeção"}
+          data-active={projectorActive ? "true" : "false"}
+          onClick={onToggleProjector}
+          disabled={!canProject || projectorPending}
+        >
+          <span aria-hidden="true" className="arena-projector-toggle-indicator" />
+          {projectorPending ? "Conectando..." : projectorActive ? "Projetando" : "Projetar"}
+        </button>
         <Button
           variant="danger"
           loading={sessionBusy}

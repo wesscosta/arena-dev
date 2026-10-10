@@ -1,0 +1,33 @@
+.field {
+  display: flex;
+  gap: .7rem;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 0;
+  padding: .7rem .85rem;
+  position: relative;
+  cursor: pointer;
+  border: 1px solid var(--ds-border, var(--border));
+  border-radius: .75rem;
+  background: var(--ds-surface-control, var(--surface));
+}
+.copy { display: grid; gap: .15rem; min-width: 0; flex: 1 1 auto; }
+.copy strong { color: var(--ds-text-primary, var(--text)); font-size: .84rem; }
+.copy small { color: var(--ds-text-secondary, var(--muted)); font-size: .74rem; line-height: 1.4; }
+.input { position: absolute; right: .85rem; width: 2.8rem; height: 2rem; margin: 0; opacity: 0; cursor: pointer; }
+.track {
+  display: flex; flex: 0 0 2.8rem; width: 2.8rem; height: 1.6rem;
+  align-items: center;
+  padding: .2rem;
+  background: var(--ds-surface-subtle, var(--surface-2));
+  border: 1px solid var(--ds-border-strong, var(--border));
+  border-radius: 999px;
+  pointer-events: none;
+}
+.track > span { width: 1.05rem; height: 1.05rem; background: var(--ds-text-tertiary, var(--muted)); border-radius: 50%; transition: transform .15s ease; }
+.input:checked + .track { border-color: var(--ds-accent, var(--accent)); background: color-mix(in srgb, var(--accent) 25%, var(--surface)); }
+.input:checked + .track > span { transform: translateX(1.1rem); background: var(--ds-accent, var(--accent)); }
+.input:focus-visible + .track { outline: 3px solid var(--ds-accent, var(--accent)); outline-offset: 3px; }
+.input:disabled { cursor: not-allowed; }
+.field:has(.input:disabled) { opacity: .55; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { .track > span { transition: none; } }

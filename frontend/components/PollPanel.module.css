@@ -241,3 +241,22 @@
     transition:none;
   }
 }
+
+/* v0.10 — compact choice preparation; do not turn votes into a quiz. */
+.prepareShell, .liveShell { display: grid; gap: .85rem; min-width: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.prepareGrid { grid-template-columns: minmax(0, 1fr) minmax(15rem, 20rem); }
+.composeCard, .modeCard, .voteStage, .resultsCard { min-width: 0; border-radius: 1rem; background: var(--ds-surface-raised, var(--surface)); }
+.modeCard { align-content: start; }
+.modeCard .primary { min-height: 44px; }
+@media (max-width: 860px) { .prepareGrid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) { .optionRow .remove { min-width: 44px; min-height: 44px; } }
+
+/* Dynamics header contract: content-driven height, no stretched empty hero track. */
+.prepareShell, .liveShell { min-height: 0; height: auto; grid-template-rows: max-content max-content; align-content: start; align-items: start; }
+.prepareGrid { align-items: start; min-height: 0; }
+
+/* Common compact header: the preparation grid never stretches its parent track. */
+.prepareShell, .liveShell { grid-auto-rows: max-content; align-content: start; align-items: start; }
+.prepareShell > header:first-child, .liveShell > header:first-child { height: auto; min-height: 0; align-self: start; }
+.prepareGrid { height: auto; min-height: 0; align-self: start; }
+.modeCard { height: fit-content; min-height: 0; align-self: start; }

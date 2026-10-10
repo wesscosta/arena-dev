@@ -65,6 +65,9 @@ public class ScoreEvent {
     @Column(name = "reversal_request_id")
     private UUID reversalRequestId;
 
+    @Column(name = "create_request_id")
+    private UUID createRequestId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
 
@@ -106,6 +109,13 @@ public class ScoreEvent {
     public String getActivityRef() { return activityRef; }
     public String getQuestionRef() { return questionRef; }
     public ScoreEvent getReversalOf() { return reversalOf; }
+    public UUID getCreateRequestId() { return createRequestId; }
+    public void setCreateRequestId(UUID requestId) {
+        if (reversalOf != null || requestId == null) {
+            throw new IllegalArgumentException("A chave de criação exige um lançamento original válido.");
+        }
+        createRequestId = requestId;
+    }
     public UUID getReversalRequestId() { return reversalRequestId; }
     public void setReversalRequestId(UUID requestId) {
         if (reversalOf == null || requestId == null) {

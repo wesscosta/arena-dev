@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { materializeContentDraft, type ContentDraft } from "@/lib/content-ingestion-api";
 import { fetchContentLibrary, type LearningResource } from "@/lib/learning-resource-api";
 import JourneyCreationWizard from "@/components/JourneyCreationWizard";
@@ -20,6 +20,9 @@ import {
   type JourneyStageInput,
 } from "@/lib/journey-api";
 import styles from "./JourneyManager.module.css";
+import { DialogCloseButton } from "@/components/ui";
+import { useModalKeyboard } from "@/lib/use-modal-keyboard";
+import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 
 type Props = {
   classroomId: string;
@@ -79,6 +82,10 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
   const [moreOpen, setMoreOpen] = useState(false);
   const [redemption, setRedemption] = useState<JourneyRedemptionCode | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const libraryDialogRef = useRef<HTMLElement>(null);
+  const libraryCloseRef = useRef<HTMLButtonElement>(null);
+  useBodyScrollLock(libraryOpen);
+  useModalKeyboard(libraryOpen, () => setLibraryOpen(false), libraryDialogRef, libraryCloseRef);
   const [libraryResources, setLibraryResources] = useState<LearningResource[]>([]);
   const [libraryQuery, setLibraryQuery] = useState("");
   const [libraryTargetModule, setLibraryTargetModule] = useState<string | undefined>();
@@ -468,8 +475,8 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
       </div>
       {libraryOpen && (
         <div className={styles.libraryBackdrop}>
-          <section className={styles.libraryPicker} role="dialog" aria-modal="true" aria-labelledby="library-picker-title">
-            <header><div><span>BIBLIOTECA</span><h3 id="library-picker-title">Adicionar material</h3><p>Escolha um material reutilizável. A Journey receberá um snapshot ao ser salva.</p></div><button type="button" aria-label="Fechar Biblioteca" onClick={()=>setLibraryOpen(false)}>×</button></header>
+          <section ref={libraryDialogRef} tabIndex={-1} className={styles.libraryPicker} role="dialog" aria-modal="true" aria-labelledby="library-picker-title">
+            <header><div><span>BIBLIOTECA</span><h3 id="library-picker-title">Adicionar material</h3><p>Escolha um material reutilizável. A Journey receberá um snapshot ao ser salva.</p></div><DialogCloseButton ref={libraryCloseRef} label="Fechar biblioteca" onClick={() => setLibraryOpen(false)} /></header>
             <input className={styles.librarySearch} value={libraryQuery} onChange={(event)=>setLibraryQuery(event.target.value)} placeholder="Buscar materiais..." aria-label="Buscar materiais na Biblioteca"/>
             <div className={styles.libraryResults}>
               {libraryResources.filter((resource)=>[resource.title,resource.summary??""].join(" ").toLowerCase().includes(libraryQuery.toLowerCase())).map((resource)=>(

@@ -76,3 +76,8 @@
   border-radius: 0.55rem;
   cursor: pointer;
 }
+
+@media (max-width: 48rem) {
+  .panel, .details { min-width: 0; width: 100%; }
+  .menu { position: static; width: 100%; max-width: 100%; margin-top: .5rem; box-sizing: border-box; max-height: none; overflow: visible; }
+}

@@ -9,7 +9,7 @@ const overviewStyles = readFileSync(resolve(process.cwd(), "styles/classroom-ove
 const mobileStyles = readFileSync(resolve(process.cwd(), "styles/mobile-reflow.css"), "utf8");
 
 for (const width of [320, 390, 430, 768]) {
-  test(`Arena reflows context rail and score presets at ${width}px`, async ({ page }) => {
+  test(`Arena reflows context rail without redundant score dock at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.setContent(`
       <style>
@@ -35,10 +35,7 @@ for (const width of [320, 390, 430, 768]) {
             </header>
             <div class="arena-cockpit">
               <main class="arena-cockpit-main">
-                <section class="quick-score-dock">
-                  <div class="quick-score-head"><div>Pontuação avulsa</div><label class="quick-score-student"><span>—</span><select><option>Selecionar aluno</option></select></label></div>
-                  <div class="quick-score-presets"><button>+5</button><button>+10</button><button>+15</button><button>+20</button><button>Personalizar</button></div>
-                </section>
+                <div class="smart-draw-workspace" style="min-width:0">Sorteio da turma</div>
               </main>
               <aside class="arena-context-rail">
                 <section class="arena-participants-card" style="min-height:160px">Participantes</section>
@@ -58,7 +55,6 @@ for (const width of [320, 390, 430, 768]) {
       return {
         cockpitTracks: grid(".arena-cockpit"),
         railTracks: grid(".arena-context-rail"),
-        scoreTracks: grid(".quick-score-presets"),
         panelWithinViewport: [context, roster, qr].every((r) => r.left >= -1 && r.right <= innerWidth + 1),
         stacked: qr.top >= roster.bottom - 1,
         overflow: document.documentElement.scrollWidth - innerWidth,
@@ -66,7 +62,6 @@ for (const width of [320, 390, 430, 768]) {
     });
     expect(measurement.cockpitTracks).toBe(1);
     expect(measurement.railTracks).toBe(1);
-    expect(measurement.scoreTracks).toBe(2);
     expect(measurement.panelWithinViewport).toBe(true);
     expect(measurement.stacked).toBe(true);
     expect(measurement.overflow).toBeLessThanOrEqual(1);

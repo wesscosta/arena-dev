@@ -1,5 +1,7 @@
 "use client";
 
+import { secureId } from "@/lib/secure-id";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getDrawState,
@@ -106,13 +108,13 @@ export function useDrawSession(sessionId?: string) {
     error,
     needsReconciliation,
     refresh,
-    draw: () => mutate((id) => selectDrawParticipant(id, crypto.randomUUID())),
+    draw: () => mutate((id) => selectDrawParticipant(id, secureId())),
     resolve: (attemptId: string, outcome: "CONFIRMED" | "PASSED" | "VOIDED", points?: number) =>
       mutate((id) => resolveDrawParticipant(
-        id, attemptId, crypto.randomUUID(), outcome,
+        id, attemptId, secureId(), outcome,
         points == null ? undefined : { points, category: "COLLABORATION", reason: "Participação" },
       )),
     changePolicy: (policy: DrawPolicy) => mutate((id) => updateDrawPolicy(id, policy)),
-    nextRound: () => mutate((id) => startNextDrawRound(id, crypto.randomUUID())),
+    nextRound: () => mutate((id) => startNextDrawRound(id, secureId())),
   };
 }

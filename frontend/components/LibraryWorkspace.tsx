@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   archiveLibraryResource,
   createLibraryResource,
@@ -27,6 +27,9 @@ import type { Classroom } from "@/lib/types";
 import { AnchoredMarkdown, ContentMapView, ContentOutlineView } from "./LibraryContentViews";
 import LibraryImportPanel from "./LibraryImportPanel";
 import styles from "./LibraryWorkspace.module.css";
+import { DialogCloseButton } from "@/components/ui";
+import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
+import { useModalKeyboard } from "@/lib/use-modal-keyboard";
 
 type Props = { classrooms: Classroom[]; notify: (message: string) => void };
 type ViewMode = "reading" | "structure" | "map";
@@ -103,6 +106,10 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
   const [importOpen, setImportOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("reading");
   const [reuseOpen, setReuseOpen] = useState(false);
+  const reuseCloseRef = useRef<HTMLButtonElement>(null);
+  useBodyScrollLock(reuseOpen);
+  const reuseDialogRef = useRef<HTMLElement>(null);
+  useModalKeyboard(reuseOpen, () => setReuseOpen(false), reuseDialogRef, reuseCloseRef);
   const [journeys, setJourneys] = useState<Array<Journey & { classroomName: string }>>([]);
   const [targetJourneyId, setTargetJourneyId] = useState("");
   const [targetModule, setTargetModule] = useState("");
@@ -455,8 +462,11 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
         </section>
 
         {reuseOpen && <div className={styles.modalBackdrop} role="presentation">
-          <section className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="reuse-title">
-            <div><span>REUTILIZAR MATERIAL</span><h3 id="reuse-title">Adicionar a uma Jornada</h3><p>Somente Jornadas em rascunho podem receber novos conteúdos.</p></div>
+          <section ref={reuseDialogRef} tabIndex={-1} className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="reuse-title">
+            <header className={styles.modalHeading}>
+              <div><span>REUTILIZAR MATERIAL</span><h3 id="reuse-title">Adicionar a uma Jornada</h3><p>Somente Jornadas em rascunho podem receber novos conteúdos.</p></div>
+              <DialogCloseButton ref={reuseCloseRef} label="Fechar reutilização de material" onClick={() => setReuseOpen(false)} />
+            </header>
             <label><span>Jornada</span><select value={targetJourneyId} onChange={(e) => { setTargetJourneyId(e.target.value); setTargetModule(""); }}>
               <option value="">Selecionar Jornada...</option>
               {classrooms.map((classroom) => <optgroup key={classroom.id} label={classroom.name}>{journeys.filter((journey) => journey.classroomId === classroom.id).map((journey) => <option key={journey.id} value={journey.id}>{journey.title}</option>)}</optgroup>)}

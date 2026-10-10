@@ -36,7 +36,6 @@
 .dialogHeader h3 { margin: .2rem 0 .22rem; font-size: 1.45rem; }
 .dialogHeader p { margin: 0; max-width: 46rem; color: var(--muted); font-size: .84rem; }
 .eyebrow { color: var(--accent); font-size: .66rem; font-weight: 850; letter-spacing: .1em; }
-.close { width: 2.3rem; height: 2.3rem; border: 1px solid var(--border); border-radius: .7rem; background: transparent; color: var(--text); font-size: 1.2rem; cursor: pointer; }
 .choiceGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

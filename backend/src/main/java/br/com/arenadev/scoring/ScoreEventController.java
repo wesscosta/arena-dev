@@ -59,7 +59,8 @@ public class ScoreEventController {
             String description,
             ScoreSource source,
             String activityId,
-            String questionId
+            String questionId,
+            UUID requestId
     ) {
         ScoreEventService.CreateScoreEvent toCommand() {
             return new ScoreEventService.CreateScoreEvent(
@@ -71,7 +72,8 @@ public class ScoreEventController {
                     description,
                     source,
                     activityId,
-                    questionId
+                    questionId,
+                    requestId
             );
         }
     }

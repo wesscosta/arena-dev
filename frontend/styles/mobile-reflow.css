@@ -73,53 +73,6 @@
     height: 4.9rem;
   }
 
-  .arena-content-full .quick-score-dock {
-    width: 100%;
-    min-width: 0;
-    grid-template-columns: minmax(0, 1fr);
-    gap: .75rem;
-  }
-
-  .arena-content-full .quick-score-head {
-    min-width: 0;
-    grid-template-columns: minmax(0, 1fr);
-    gap: .6rem;
-  }
-
-  .arena-content-full .quick-score-head > div {
-    min-width: 0;
-  }
-
-  .arena-content-full .quick-score-student {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .arena-content-full .quick-score-presets {
-    min-width: 0;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    overflow: visible;
-  }
-
-  .arena-content-full .quick-score-presets > button,
-  .arena-content-full .quick-score-custom-trigger {
-    min-width: 0;
-    min-height: 3.3rem;
-  }
-
-  .arena-content-full .quick-score-custom-popover {
-    position: static;
-    width: 100%;
-    max-width: 100%;
-    grid-template-columns: minmax(0, 1fr);
-    margin-top: .6rem;
-  }
-
-  .arena-content-full .quick-score-custom-popover .input {
-    min-width: 0;
-    width: 100%;
-  }
-
   .arena-content-full .arena-live-topbar {
     position: static;
     display: block;
@@ -246,5 +199,144 @@
   .overview-page .overview-class-card-open {
     min-height: 9rem;
     gap: .7rem;
+  }
+}
+
+/* iOS: fixed-height navigation, compact profile and single-column session rail. */
+@media (max-width: 48rem) {
+  .arena-content-full .arena-context-rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .arena-content-full .arena-session-code-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* Classroom: one-line tabs, no vertical pan, fully visible selected state. */
+@media (max-width: 48rem) {
+  .contextual-topbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    width: 100%;
+  }
+  .contextual-topbar .app-topbar-actions {
+    grid-column: 3;
+    justify-self: end;
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+  .contextual-topbar .topbar-profile {
+    width: 3rem;
+    min-width: 3rem;
+    height: 3rem;
+    padding: .25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+  .contextual-topbar .topbar-profile-copy,
+  .contextual-topbar .topbar-profile-chevron { display: none; }
+  .classroom-section-nav {
+    height: 4rem;
+    min-height: 4rem;
+    max-height: 4rem;
+    overflow: hidden;
+    padding: 0;
+  }
+  .classroom-section-tabs {
+    height: 4rem;
+    min-height: 4rem;
+    max-height: 4rem;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scroll-padding-inline: .5rem;
+  }
+  .classroom-section-tab {
+    flex: 0 0 auto;
+    min-width: max-content;
+    min-height: 3rem;
+    height: 3rem;
+    max-height: 3rem;
+    padding: .35rem .75rem;
+    box-sizing: border-box;
+    white-space: nowrap;
+    align-self: center;
+  }
+  .classroom-section-tab > strong { white-space: nowrap; overflow-wrap: normal; }
+  .classroom-section-tab.active::after { bottom: 0; }
+}
+
+/* Dashboard mobile: the hidden breadcrumb must not create an implicit grid row.
+ * The same three-column topbar layout is shared by Turmas and classroom pages. */
+@media (max-width: 48rem) {
+  .contextual-topbar .context-trail-spacer,
+  .contextual-topbar .context-trail {
+    display: none;
+  }
+  .contextual-topbar .topbar-brand {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .contextual-topbar .topbar-global-nav {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    min-width: 0;
+  }
+  .contextual-topbar .app-topbar-actions {
+    grid-column: 3;
+    grid-row: 1;
+    width: auto;
+    min-width: 3rem;
+    margin: 0;
+    justify-self: end;
+  }
+
+  /* Keep all three status filters on one line at narrow phone widths. */
+  .overview-page .overview-toolbar-main .segmented-control {
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .overview-page .overview-toolbar-main .segmented-control button:first-child {
+    grid-column: auto;
+  }
+
+  /* Cards should be content-sized rather than enforcing desktop-height whitespace. */
+  .overview-page .overview-class-card {
+    min-height: 0;
+  }
+  .overview-page .overview-class-card-open {
+    min-height: 0;
+    gap: .6rem;
+    padding: .8rem 3.2rem .8rem .85rem;
+  }
+  .overview-page .overview-class-meta {
+    margin-top: .25rem;
+  }
+  .overview-page .overview-class-card-foot {
+    min-height: 2rem;
+    padding-top: .45rem;
+  }
+}
+
+/* On touch screens, the card context menu is an actual 44px target. */
+@media (max-width: 48rem) {
+  .overview-page .overview-class-card-open {
+    padding-right: 3.8rem;
+  }
+  .overview-page .overview-card-actions .classroom-card-menu-trigger {
+    width: 2.75rem;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    min-height: 2.75rem;
   }
 }

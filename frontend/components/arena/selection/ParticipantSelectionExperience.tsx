@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type { Student } from "@/lib/types";
-import { ArenaGlyph } from "@/components/arena/live/ArenaLiveChrome";
 import type { ParticipantSelectionPhase } from "./selection.types";
 import styles from "./ParticipantSelectionExperience.module.css";
+import DynamicHeader from "@/components/arena/dynamics/DynamicHeader";
 import DrawOutcomeActions from "./DrawOutcomeActions";
 
 type ParticipantSelectionExperienceProps = {
@@ -87,60 +88,83 @@ export default function ParticipantSelectionExperience({
     }
   }, [phase, selectedStudentId]);
 
+  useEffect(() => {
+    if (phase !== "revealed" || !selectedStudentId) return;
+    const oldOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeys = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const card = spotlightRef.current;
+      if (!card) return;
+      const focusable = Array.from(card.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]',
+      ));
+      if (!focusable.length) {
+        event.preventDefault();
+        card.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === card)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (!card.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeys);
+    return () => {
+      document.body.style.overflow = oldOverflow;
+      document.removeEventListener("keydown", handleKeys);
+    };
+  }, [phase, selectedStudentId]);
+
   return (
     <section
       className={styles.experience}
       aria-label="Seleção de participante"
       aria-busy={phase === "selecting"}
+      data-phase={phase}
       data-testid="participant-selection-experience"
     >
-      <header className={styles.header}>
-        <div className={styles.heading}>
-          <span className={styles.headingIcon} aria-hidden="true">
-            <ArenaGlyph name="draw" />
-          </span>
-          <div>
-            <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
-            <h2>Sorteio da turma</h2>
-            <p>Seleção equilibrada entre os participantes presentes.</p>
-          </div>
-        </div>
-
-        <div className={styles.headerActions}>
-          <div
-            className={styles.progress}
-            aria-label={`${drawnIds.size} de ${presentStudentIds.length} participantes já sorteados`}
-          >
-            <strong>{drawnIds.size} de {presentStudentIds.length}</strong>
-            <span>já sorteados</span>
+      <DynamicHeader dynamic="draw"
+        title="Sorteio da turma"
+        description="Seleção equilibrada entre os participantes presentes."
+        status={phase === "selecting" ? "SORTEANDO" : phase === "revealed" ? "RESULTADO" : undefined}
+        summary={(
+          <div className={styles.progress} aria-label={`${drawnIds.size} de ${presentStudentIds.length} participantes já sorteados`}>
+            <strong>{drawnIds.size} de {presentStudentIds.length} já sorteados</strong>
             <div className={styles.progressTrack} aria-hidden="true">
               <span style={{ width: `${progress}%` }} />
             </div>
           </div>
-          <button
-            type="button"
-            className={styles.settings}
-            onClick={onOpenSettings}
-          >
+        )}
+        secondaryActions={(
+          <button type="button" className={styles.settings} onClick={onOpenSettings}>
             ⚙ Ajustes
           </button>
+        )}
+        primaryAction={canStartNextRound ? (
+          <button type="button" className={styles.drawButton} disabled={busy} onClick={onNextRound}>
+            Iniciar próxima rodada
+          </button>
+        ) : (
           <button
             ref={drawButtonRef}
             type="button"
             className={styles.drawButton}
             onClick={onDraw}
-            disabled={busy || canStartNextRound || phase === "revealed" || presentStudentIds.length === 0}
+            disabled={busy || phase === "revealed" || presentStudentIds.length === 0}
           >
             {phase === "selecting" ? "Selecionando..." : "Sortear participante"}
           </button>
-        </div>
-      </header>
-
-      {canStartNextRound && (
-        <button type="button" className={styles.drawButton} disabled={busy} onClick={onNextRound}>
-          Iniciar próxima rodada
-        </button>
-      )}
+        )}
+      />
 
       <div className={styles.gridViewport} data-testid="participant-grid-viewport">
         {gridStudents.length === 0 ? (
@@ -210,11 +234,11 @@ export default function ParticipantSelectionExperience({
         </div>
       )}
 
-      {phase === "revealed" && selected && (
+      {phase === "revealed" && selected && typeof document !== "undefined" && createPortal(
         <div
           className={styles.spotlightLayer}
           role="dialog"
-          aria-modal="false"
+          aria-modal="true"
           aria-labelledby="spotlight-participant-name"
           aria-describedby="spotlight-participant-guidance"
           data-testid="spotlight-reveal"
@@ -231,11 +255,8 @@ export default function ParticipantSelectionExperience({
             {selected.nickname && selected.nickname !== selected.name && (
               <p>{selected.name}</p>
             )}
-            <span className={styles.spotlightMeta}>
-              Vezes chamado na sessão: {drawCounts[selected.id] ?? 0}
-            </span>
             <p id="spotlight-participant-guidance" className={styles.spotlightGuidance}>
-              Registre o desfecho antes de realizar um novo sorteio.
+              Registre o resultado desta chamada.
             </p>
             <div className={styles.spotlightActions}>
               <DrawOutcomeActions busy={busy} onResolve={onResolve} />
@@ -244,7 +265,8 @@ export default function ParticipantSelectionExperience({
           <div className={styles.liveAnnouncement} aria-live="assertive">
             {participantLabel(selected)} foi selecionado.
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </section>
   );

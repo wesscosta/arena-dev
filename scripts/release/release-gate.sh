@@ -99,7 +99,10 @@ node_line="$(node --version)"
 [[ "$node_line" == v22.* ]] || fail "Node.js 22 é obrigatório; encontrado: $node_line"
 
 "$SCRIPT_DIR/check-metadata.sh"
-if [[ -f backend/src/main/resources/db/migration/V55__learner_confidence_opt_in.sql ]]; then
+if [[ -f backend/src/main/resources/db/migration/V56__manual_score_create_idempotency.sql ]]; then
+  "$SCRIPT_DIR/verify-v0.10-contract.sh"
+  expected_schema_version=56
+elif [[ -f backend/src/main/resources/db/migration/V55__learner_confidence_opt_in.sql ]]; then
   "$SCRIPT_DIR/verify-v0.10-contract.sh"
   expected_schema_version=55
 elif [[ -f backend/src/main/resources/db/migration/V48__learning_core_release_gate.sql ]]; then

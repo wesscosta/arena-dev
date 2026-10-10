@@ -14,6 +14,8 @@ import {
   type QuizState,
 } from "@/lib/quiz-api";
 import styles from "./QuizPanel.module.css";
+import DynamicHeader from "@/components/arena/dynamics/DynamicHeader";
+import DynamicSection from "@/components/arena/dynamics/DynamicSection";
 
 type Props = {
   sessionId: string;
@@ -190,25 +192,18 @@ export default function QuizPanel({
 
     return (
       <section className={`${styles.shell} ${styles.prepareShell}`}>
-        <div className={styles.heroHeader}>
-          <div>
-            <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
-            <h2>Quiz</h2>
-            <p>Prepare uma questão e transforme a resposta da turma em feedback imediato.</p>
-          </div>
-          <div className={styles.headerActions}>
-            <span className={styles.modeBadge}>PREPARAR</span>
-            {round?.status === "CLOSED" && (
-              <button className={styles.secondary} onClick={() => setCreating(false)}>
-                Ver resultado anterior
-              </button>
-            )}
-          </div>
-        </div>
+        <DynamicHeader dynamic="quiz"
+          title="Quiz"
+          description="Prepare uma questão e transforme a resposta da turma em feedback imediato."
+          status="PREPARAR"
+          actions={round?.status === "CLOSED" ? (
+            <button className={styles.secondary} onClick={() => setCreating(false)}>Ver resultado anterior</button>
+          ) : undefined}
+        />
 
         {supported.length ? (
           <div className={styles.prepareGrid}>
-            <section className={styles.questionPickerCard}>
+            <DynamicSection className={styles.questionPickerCard}>
               <span className={styles.cardLabel}>QUESTÃO DA RODADA</span>
               <label className={styles.field}>
                 <span>Selecione uma questão</span>
@@ -240,7 +235,7 @@ export default function QuizPanel({
                   )}
                 </div>
               )}
-            </section>
+            </DynamicSection>
 
             <aside className={styles.prepareSideCard}>
               <span className={styles.cardLabel}>PRONTO PARA ENTRAR NO PALCO</span>
@@ -276,16 +271,11 @@ export default function QuizPanel({
 
   return (
     <section className={`${styles.shell} ${styles.liveShell}`}>
-      <div className={styles.heroHeader}>
-        <div>
-          <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
-          <h2>Quiz</h2>
-          <p>{question?.statement ?? "Questão preparada"}</p>
-        </div>
-        <span className={`${styles.status} ${styles[round.status.toLowerCase()]}`}>
-          {statusLabel(round.status)}
-        </span>
-      </div>
+      <DynamicHeader dynamic="quiz"
+        title="Quiz"
+        description="Acompanhe as respostas da turma e revele a correção no momento adequado."
+        status={statusLabel(round.status)}
+      />
 
       <div className={styles.liveStage}>
         <section className={styles.questionStage}>

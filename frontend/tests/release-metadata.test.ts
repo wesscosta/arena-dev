@@ -56,9 +56,9 @@ test("release manifests and version derivation stay aligned", () => {
   assert.match(gate, /artifactId>arena-dev-api/);
 });
 
-test("release gate uses v0.10/V55 without dropping v0.9/V48 and v0.8/V38 checks", () => {
+test("release gate uses v0.10/V56 without dropping v0.9/V48 and v0.8/V38 checks", () => {
   assert.match(gate, /verify-v0\.10-contract\.sh/);
-  assert.match(gate, /expected_schema_version=55/);
+  assert.match(gate, /expected_schema_version=56/);
   assert.match(gate, /verify-v0\.9-contract\.sh/);
   assert.match(gate, /expected_schema_version=48/);
   assert.match(gate, /verify-v0\.8-contract\.sh/);
@@ -71,7 +71,7 @@ test("release gate uses v0.10/V55 without dropping v0.9/V48 and v0.8/V38 checks"
   assert.match(verifier, /reversal_request_id/);
   assert.match(verifier, /interaction_shadow_observations/);
   assert.match(v010Contract, /verify-v0\.9-contract\.sh/);
-  assert.match(v010Contract, /\{49\.\.55\}/);
+  assert.match(v010Contract, /\{49\.\.56\}/);
   assert.match(v010Contract, /learner_confidence/);
   assert.match(v09Contract, /V48__learning_core_release_gate\.sql/);
   assert.match(v09Contract, /physicalLegacyRemovalReady/);
@@ -90,7 +90,7 @@ test("v0.9-to-v0.10 rollback uses immutable tag, synthetic fixtures and isolated
   assert.match(rollbackRehearsal, /docker network create/);
   assert.match(rollbackRehearsal, /CANDIDATE_IMAGE_FROM_CURRENT_SOURCE=ok/);
   assert.match(rollbackRehearsal, /sha256sum --check v48\.dump\.sha256/);
-  assert.match(rollbackRehearsal, /UPGRADE_V48_TO_V55_PRESERVES_IDS_AND_XP/);
+  assert.match(rollbackRehearsal, /UPGRADE_V48_TO_V56_PRESERVES_IDS_AND_XP/);
   assert.match(rollbackRehearsal, /BACKWARD_RESTORE_V48_AND_ORIGINAL_V09_API_READY/);
   assert.match(rollbackRehearsal, /trap cleanup EXIT/);
   assert.doesNotMatch(rollbackRehearsal, /docker compose down/);

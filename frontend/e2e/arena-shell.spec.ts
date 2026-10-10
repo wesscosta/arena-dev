@@ -78,7 +78,7 @@ async function createArenaFixture(
   await expectOk(sessionResponse, "Criação da sessão");
   const session = (await sessionResponse.json()) as SessionView;
 
-  return { classroomName, sessionTitle, session };
+  return { classroomName, sessionTitle, classroomId: classroom.id, studentIds: presentStudentIds, session };
 }
 
 async function openArena(page: Page, classroomName: string, sessionTitle: string) {
@@ -99,6 +99,40 @@ async function openArena(page: Page, classroomName: string, sessionTitle: string
       .getByText(sessionTitle, { exact: true }),
   ).toBeVisible();
 }
+
+test("XP manual: POST idempotente sob resposta perdida, conflito em payload alterado", async () => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    const key = crypto.randomUUID();
+    const command = {
+      classroomId: fixture.classroomId,
+      studentId: fixture.studentIds[0],
+      sessionId: fixture.session.id,
+      points: 10,
+      category: "BONUS",
+      description: "Participação em aula",
+      source: "ARENA",
+      requestId: key,
+    };
+    const first = await api.post("/api/score-events", { data: command, headers: csrfHeaders });
+    await expectOk(first, "XP manual inicial");
+    const firstEvent = await first.json() as { id: string };
+    // Simulate the teacher not receiving/using the first response: replay exact command UUID.
+    const repeated = await api.post("/api/score-events", { data: command, headers: csrfHeaders });
+    await expectOk(repeated, "Retomada do XP manual");
+    expect((await repeated.json() as { id: string }).id).toBe(firstEvent.id);
+    const conflict = await api.post("/api/score-events", { data: { ...command, points: 20 }, headers: csrfHeaders });
+    expect(conflict.status()).toBe(409);
+    const events = await api.get(`/api/score-events?classroomId=${fixture.classroomId}`);
+    await expectOk(events, "Histórico idempotente");
+    const ledger = await events.json() as { id: string; points: number }[];
+    expect(ledger.filter((event) => event.id === firstEvent.id)).toHaveLength(1);
+    expect(ledger.reduce((sum, event) => sum + event.points, 0)).toBe(10);
+  } finally {
+    await api.dispose();
+  }
+});
 
 for (const viewport of [
   { width: 1366, height: 768 },
@@ -125,8 +159,7 @@ for (const viewport of [
       const rail = page.locator(".arena-context-rail");
       const selectionExperience = page.getByTestId("participant-selection-experience");
       const drawRail = page.getByTestId("draw-session-rail");
-      const quickScore = page.locator(".quick-score-dock");
-      const sessionCode = page.locator(".arena-session-code-card");
+        const sessionCode = page.locator(".arena-session-code-card");
       const professor = page.locator(".arena-nav-professor");
 
       await expect(shell).toBeVisible();
@@ -138,7 +171,7 @@ for (const viewport of [
       await expect(rail).toBeVisible();
       await expect(selectionExperience).toBeVisible();
       await expect(drawRail).toBeVisible();
-      await expect(quickScore).toBeVisible();
+      await expect(page.locator(".quick-score-dock")).toHaveCount(0);
       await expect(sessionCode).toBeVisible();
       await expect(professor).toBeVisible();
 
@@ -175,7 +208,6 @@ for (const viewport of [
         railBox,
         selectionBox,
         drawRailBox,
-        quickScoreBox,
         sessionCodeBox,
         professorBox,
       ] = await Promise.all([
@@ -187,7 +219,6 @@ for (const viewport of [
         rail.boundingBox(),
         selectionExperience.boundingBox(),
         drawRail.boundingBox(),
-        quickScore.boundingBox(),
         sessionCode.boundingBox(),
         professor.boundingBox(),
       ]);
@@ -200,7 +231,6 @@ for (const viewport of [
       expect(railBox).not.toBeNull();
       expect(selectionBox).not.toBeNull();
       expect(drawRailBox).not.toBeNull();
-      expect(quickScoreBox).not.toBeNull();
       expect(sessionCodeBox).not.toBeNull();
       expect(professorBox).not.toBeNull();
 
@@ -213,7 +243,6 @@ for (const viewport of [
         || !railBox
         || !selectionBox
         || !drawRailBox
-        || !quickScoreBox
         || !sessionCodeBox
         || !professorBox
       ) {
@@ -230,7 +259,6 @@ for (const viewport of [
       expect(mainBox.width).toBeGreaterThan(railBox.width);
       expect(selectionBox.y + selectionBox.height).toBeLessThanOrEqual(mainBox.y + mainBox.height + 1);
       expect(drawRailBox.y + drawRailBox.height).toBeLessThanOrEqual(railBox.y + railBox.height + 1);
-      expect(quickScoreBox.y + quickScoreBox.height).toBeLessThanOrEqual(viewport.height + 1);
       expect(sessionCodeBox.y + sessionCodeBox.height).toBeLessThanOrEqual(viewport.height + 1);
       expect(professorBox.y + professorBox.height).toBeLessThanOrEqual(viewport.height + 1);
 
@@ -297,28 +325,36 @@ test("Arena com 22 participantes mantém controles e código visíveis em 1821x8
 
     const participantCards = page.getByTestId("participant-card");
     const drawRail = page.getByTestId("draw-session-rail");
-    const quickScore = page.locator(".quick-score-dock");
     const sessionCode = page.locator(".arena-session-code-card");
 
     await expect(participantCards).toHaveCount(22);
     await expect(drawRail).toBeVisible();
     await expect(page.getByText("22", { exact: true }).first()).toBeVisible();
-    await expect(quickScore).toBeVisible();
+    // Manual XP remains accessible via the Arena's persistent tool navigation.
+    const manualXpTool = page.locator('.arena-nav-scroll').getByRole('button', { name: 'Pontuação rápida' });
+    await expect(manualXpTool).toBeVisible();
+    await expect(page.locator(".quick-score-dock")).toHaveCount(0);
+    await manualXpTool.click();
+    const xpDrawer = page.locator('.arena-tool-score');
+    await expect(xpDrawer).toBeVisible();
+    const xpStudent = xpDrawer.getByRole('combobox');
+    await xpStudent.selectOption({ index: 1 });
+    const manualPoints = xpDrawer.getByRole('spinbutton', { name: 'Quantidade de XP (diferente de zero)' });
+    const applyXp = xpDrawer.getByRole('button', { name: 'Aplicar', exact: true });
+    await manualPoints.fill('0');
+    await expect(applyXp).toBeDisabled();
+    await manualPoints.fill('1.5');
+    await expect(applyXp).toBeDisabled();
+    await manualPoints.fill('10');
+    await expect(applyXp).toBeEnabled();
+    // The tool remains separate from the draw outcome; no score is sent in this layout test.
+    await page.keyboard.press('Escape');
+    await expect(xpDrawer).toBeHidden();
     await expect(sessionCode).toBeVisible();
 
-    const [quickScoreBox, sessionCodeBox] = await Promise.all([
-      quickScore.boundingBox(),
-      sessionCode.boundingBox(),
-    ]);
-
-    expect(quickScoreBox).not.toBeNull();
+    const sessionCodeBox = await sessionCode.boundingBox();
     expect(sessionCodeBox).not.toBeNull();
-
-    if (!quickScoreBox || !sessionCodeBox) {
-      return;
-    }
-
-    expect(quickScoreBox.y + quickScoreBox.height).toBeLessThanOrEqual(viewport.height + 1);
+    if (!sessionCodeBox) return;
     expect(sessionCodeBox.y + sessionCodeBox.height).toBeLessThanOrEqual(viewport.height + 1);
 
     const geometry = await page.evaluate(() => {
@@ -363,7 +399,7 @@ test("Grid + Spotlight revela a seleção e devolve o participante ao grid como 
     await expect(spotlight.getByText("Shell 1", { exact: true })).toBeVisible();
     await expect(participantCard).toHaveAttribute("data-status", "selected");
 
-    await spotlight.getByRole("button", { name: "Confirmar participação", exact: true }).click();
+    await spotlight.getByRole("button", { name: "Confirmar sem XP", exact: true }).click();
 
     await expect(spotlight).toBeHidden();
     await expect(participantCard).toHaveAttribute("data-status", "drawn");
@@ -483,7 +519,8 @@ test("v0.10 sorteio registra confirmação, passagem e anulação sem repetir na
     const first = (await readState()).currentAttempt?.studentId;
     expect(first).toBeTruthy();
     await expect(drawButton).toBeDisabled();
-    await spotlight.getByRole("button", { name: "Confirmar e pontuar" }).click();
+    await spotlight.getByRole("checkbox", { name: /Conceder XP/ }).check();
+    await spotlight.getByRole("button", { name: "Confirmar +5 XP" }).click();
     await expect(spotlight).toBeHidden();
     await expect.poll(async () => (await readState()).confirmedCount).toBe(1);
 
@@ -505,7 +542,7 @@ test("v0.10 sorteio registra confirmação, passagem e anulação sem repetir na
     await drawButton.click();
     await expect(spotlight).toBeVisible();
     expect((await readState()).currentAttempt?.studentId).toBe(third);
-    await spotlight.getByRole("button", { name: "Confirmar participação", exact: true }).click();
+    await spotlight.getByRole("button", { name: "Confirmar sem XP", exact: true }).click();
     await expect.poll(async () => (await readState()).canStartNextRound).toBe(true);
     await page.getByRole("button", { name: "Iniciar próxima rodada" }).click();
     await expect.poll(async () => (await readState()).roundNumber).toBe(2);
@@ -536,8 +573,10 @@ test("Spotlight move o foco para o resultado e devolve ao comando após resolver
     await expect(spotlightCard).toBeFocused();
 
     await page.keyboard.press("Tab");
+    await expect(page.getByTestId("spotlight-reveal").getByRole("checkbox", { name: /Conceder XP/ })).toBeFocused();
+    await page.keyboard.press("Tab");
     const confirm = page.getByTestId("spotlight-reveal")
-      .getByRole("button", { name: "Confirmar participação", exact: true });
+      .getByRole("button", { name: "Confirmar sem XP", exact: true });
     await expect(confirm).toBeFocused();
     await page.keyboard.press("Enter");
 
@@ -788,7 +827,7 @@ test("Material é um modal centralizado no viewport real, sem corte em desktop, 
       expect(Math.abs(geometry.modal.centerX - geometry.innerWidth / 2)).toBeLessThanOrEqual(2);
       expect(Math.abs(geometry.modal.centerY - geometry.innerHeight / 2)).toBeLessThanOrEqual(2);
       await expect(dialog.getByRole("heading", { name: "Biblioteca nesta aula" })).toBeInViewport();
-      await expect(dialog.getByRole("button", { name: "Voltar à aula" })).toBeInViewport();
+      await expect(dialog.getByRole("button", { name: "Fechar biblioteca" })).toBeInViewport();
     }
     await page.setViewportSize({ width: 390, height: 844 });
     const preview = dialog.locator('div[class*="preview"]');
@@ -797,7 +836,7 @@ test("Material é um modal centralizado no viewport real, sem corte em desktop, 
     }));
     expect(scrolling.scrollHeight).toBeGreaterThan(scrolling.clientHeight);
     await preview.evaluate((element) => { element.scrollTop = element.scrollHeight; });
-    await expect(dialog.getByRole("button", { name: "Voltar à aula" })).toBeInViewport();
+    await expect(dialog.getByRole("button", { name: "Fechar biblioteca" })).toBeInViewport();
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Abrir material" })).toBeFocused();
@@ -846,7 +885,9 @@ test("Painel pedagógico conserva o cockpit e explica ausência de evidências e
       expect(geometry.bottom).toBeLessThanOrEqual(geometry.h+1);
       expect(Math.abs(geometry.cx-geometry.w/2)).toBeLessThanOrEqual(2);
       expect(Math.abs(geometry.cy-geometry.h/2)).toBeLessThanOrEqual(2);
-      await expect(dialog.getByRole("button", { name: "Voltar à Arena" })).toBeInViewport();
+      await expect(dialog.getByRole("button", { name: "Fechar painel pedagógico" })).toBeInViewport();
+      await expect(dialog.getByRole("button", { name: "Abrir verificação" })).toBeInViewport();
+      await expect(dialog.getByRole("button", { name: "Voltar à Arena" })).toHaveCount(0);
     }
     await dialog.getByRole("button", { name: "Atualizar dados" }).click();
     await expect(dialog.getByText("Sem ciclos de aprendizagem registrados nesta sessão.")).toBeVisible();
@@ -855,7 +896,7 @@ test("Painel pedagógico conserva o cockpit e explica ausência de evidências e
     await expect(page.getByRole("button", { name: "Painel pedagógico" })).toBeFocused();
     await expect(page.getByTestId("participant-selection-experience")).toBeVisible();
     await page.getByRole("button", { name: "Painel pedagógico" }).click();
-    await dialog.getByRole("button", { name: "Abrir Verificar aprendizagem" }).click();
+    await dialog.getByRole("button", { name: "Abrir verificação" }).click();
     await expect(page.getByRole("heading", { name: "Verificar aprendizagem" })).toBeVisible();
   } finally { await api.dispose(); }
 });
@@ -912,7 +953,8 @@ test("perda da resposta HTTP depois do commit do sorteio exige reconciliação e
       expect(committed.ok()).toBe(true);
       await route.abort("failed");
     });
-    await spotlight.getByRole("button", { name: "Confirmar e pontuar" }).click();
+    await spotlight.getByRole("checkbox", { name: /Conceder XP/ }).check();
+    await spotlight.getByRole("button", { name: "Confirmar +5 XP" }).click();
     await expect(warning).toBeVisible();
     await expect.poll(async () => (await stateFromServer()).confirmedCount).toBe(1);
     await warning.getByRole("button", { name: "Sincronizar sorteio" }).click();
@@ -985,4 +1027,548 @@ test("professor não repete consultas em loop offline e retoma snapshot ao recon
     await context.close();
     await api.dispose();
   }
+});
+
+test("iOS mobile: menu do professor permanece visível e opaco fora da barra horizontal", async ({ page }, testInfo) => {
+  test.setTimeout(65_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    for (const width of [320, 390, 430]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.locator('.arena-nav-professor button[aria-label="Abrir menu do professor"]').click();
+      const menu = page.getByRole("menu");
+      await expect(menu).toBeVisible();
+      await expect(menu.getByRole("menuitem", { name: /Configurações/ })).toBeInViewport();
+      await expect(menu.getByRole("menuitem", { name: /Sair/ })).toBeInViewport();
+      const metrics = await menu.evaluate(element => {
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return { x: rect.left, right: rect.right, opacity: style.opacity, background: style.backgroundColor,
+          overflow: document.documentElement.scrollWidth - innerWidth };
+      });
+      expect(metrics.x).toBeGreaterThanOrEqual(0);
+      expect(metrics.right).toBeLessThanOrEqual(width + 1);
+      expect(metrics.opacity).toBe("1");
+      expect(metrics.background).not.toBe("rgba(0, 0, 0, 0)");
+      expect(metrics.overflow).toBeLessThanOrEqual(1);
+      await testInfo.attach(`arena-profile-menu-${width}`, { body: await page.screenshot(), contentType: "image/png" });
+      await page.keyboard.press("Escape");
+      await expect(menu).toHaveCount(0);
+    }
+  } finally { await api.dispose(); }
+});
+
+test("iOS mobile: Biblioteca usa apenas o fechamento do cabeçalho", async ({ page }) => {
+  test.setTimeout(65_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    for (const width of [320, 390, 430]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.getByRole("button", { name: "Selecionar material" }).click();
+      const dialog = page.getByRole("dialog", { name: "Biblioteca nesta aula" });
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByRole("button", { name: "Fechar biblioteca" })).toHaveCount(1);
+      await expect(dialog.getByRole("button", { name: "Voltar à aula" })).toHaveCount(0);
+      await expect(dialog.getByRole("button", { name: /Fechar e voltar à Arena/ })).toHaveCount(0);
+      await dialog.getByRole("button", { name: "Fechar biblioteca" }).click();
+      await expect(dialog).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Selecionar material" })).toBeFocused();
+    }
+  } finally { await api.dispose(); }
+});
+
+test("iOS mobile: Próximas ações abre sem ultrapassar o viewport", async ({ page }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    for (const width of [320, 390, 430]) {
+      await page.setViewportSize({ width, height: 844 });
+      const nav = page.getByRole("navigation", { name: "Sugestões para continuar a aula" });
+      await nav.locator("summary").click();
+      const panel = nav.locator('div[class*="menu"]');
+      await expect(panel).toBeVisible();
+      const bounds = await panel.boundingBox();
+      expect(bounds).not.toBeNull();
+      expect(bounds!.x).toBeGreaterThanOrEqual(-1);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width + 1);
+      await expect(nav.getByRole("button", { name: "Aplicar uma verificação" })).toBeInViewport();
+      await nav.locator("summary").click();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+    }
+  } finally { await api.dispose(); }
+});
+
+test("iOS LAN: sorteio funciona sem crypto.randomUUID no navegador", async ({ page }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    await page.addInitScript(() => {
+      Object.defineProperty(window.crypto, "randomUUID", { configurable: true, value: undefined });
+    });
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    await page.setViewportSize({ width: 390, height: 844 });
+    const support = await page.evaluate(() => ({
+      randomUUID: typeof crypto.randomUUID,
+      getRandomValues: typeof crypto.getRandomValues,
+    }));
+    expect(support.randomUUID).toBe("undefined");
+    expect(support.getRandomValues).toBe("function");
+    await page.getByRole("button", { name: "Sortear participante" }).click();
+    await expect(page.getByTestId("spotlight-reveal")).toBeVisible();
+    await expect(page.getByTestId("draw-reconciliation-warning")).toHaveCount(0);
+  } finally { await api.dispose(); }
+});
+
+test("Modal contract: Arena evidence, material and draw settings use one X and nonredundant actions", async ({ page }, testInfo) => {
+  test.setTimeout(95_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 2);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+
+    const checkClose = async (dialog: ReturnType<typeof page.getByRole>, label: string, width: number) => {
+      const close = dialog.getByRole("button", { name: label });
+      await expect(close).toHaveCount(1);
+      await expect(close).toBeInViewport();
+      const box = await close.boundingBox();
+      expect(box, `${label} at ${width}px`).not.toBeNull();
+      // Browser geometry has subpixel rounding (43.99998 for a declared 44px).
+      expect(box!.width).toBeGreaterThanOrEqual(43.9);
+      expect(box!.height).toBeGreaterThanOrEqual(43.9);
+      expect(box!.x).toBeGreaterThanOrEqual(-1);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(width + 1);
+      await expect(close.locator("svg[aria-hidden=true]")).toHaveCount(1);
+    };
+
+    for (const width of [320, 390, 430, 768]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.getByRole("button", { name: "Painel pedagógico" }).click();
+      const evidence = page.getByRole("dialog", { name: "Evidências da sessão" });
+      await expect(evidence).toBeVisible();
+      await checkClose(evidence, "Fechar painel pedagógico", width);
+      await expect(evidence.getByRole("button", { name: "Voltar à Arena" })).toHaveCount(0);
+      await expect(evidence.getByRole("button", { name: "Atualizar dados" })).toBeInViewport();
+      const primary = evidence.getByRole("button", { name: "Abrir verificação" });
+      await expect(primary).toBeInViewport();
+      const primaryBackground = await primary.evaluate(el => getComputedStyle(el).backgroundColor);
+      expect(primaryBackground).not.toBe("rgba(0, 0, 0, 0)");
+      await testInfo.attach(`modal-evidence-${width}`, { body: await page.screenshot(), contentType: "image/png" });
+      await evidence.getByRole("button", { name: "Fechar painel pedagógico" }).click();
+      await expect(evidence).toHaveCount(0);
+
+      await page.getByRole("button", { name: "Selecionar material" }).click();
+      const material = page.getByRole("dialog", { name: "Biblioteca nesta aula" });
+      await checkClose(material, "Fechar biblioteca", width);
+      await expect(material.getByRole("button", { name: /Voltar à aula|Voltar à Arena/ })).toHaveCount(0);
+      await testInfo.attach(`modal-library-${width}`, { body: await page.screenshot(), contentType: "image/png" });
+      await page.keyboard.press("Escape");
+      await expect(material).toHaveCount(0);
+
+      await page.getByRole("button", { name: /Ajustes/ }).click();
+      const drawSettings = page.getByRole("dialog", { name: "Configurações do Sorteio" });
+      await checkClose(drawSettings, "Fechar ferramenta", width);
+      await drawSettings.getByRole("button", { name: "Fechar ferramenta" }).click();
+      await expect(drawSettings).toHaveCount(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+    }
+  } finally { await api.dispose(); }
+});
+
+test("Modal contract: QR Code ampliado usa o fechamento compartilhado sem perder o conteúdo", async ({ page }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    for (const width of [320, 390, 430]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.getByRole("button", { name: "Ampliar QR Code da sessão" }).click();
+      const dialog = page.getByRole("dialog", { name: "Escaneie para participar" });
+      await expect(dialog).toBeVisible();
+      await expect(dialog.locator("img[alt^='QR Code ampliado']")).toBeVisible();
+      const close = dialog.getByRole("button", { name: "Fechar QR Code ampliado" });
+      await expect(close.locator('svg[aria-hidden="true"]')).toHaveCount(1);
+      const box = await close.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(43.9);
+      expect(box?.height).toBeGreaterThanOrEqual(43.9);
+      await close.click();
+      await expect(dialog).toHaveCount(0);
+    }
+  } finally { await api.dispose(); }
+});
+
+test("Mobile Arena navigation: two-tier header, labeled dynamics, accessible tools and aligned profile", async ({ page }, testInfo) => {
+  test.setTimeout(110_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    for (const width of [320, 375, 390, 430, 768]) {
+      await page.setViewportSize({ width, height: 844 });
+      const strip = page.getByRole("navigation", { name: "Dinâmicas da Arena" });
+      const tools = page.getByRole("button", { name: "Ferramentas da Arena" });
+      await expect(strip).toBeVisible();
+      await expect(tools).toBeVisible();
+      const layout = await page.evaluate(() => {
+        const bounds = (selector: string) => document.querySelector<HTMLElement>(selector)!.getBoundingClientRect();
+        const top = bounds(".arena-cockpit-nav");
+        const brand = bounds(".arena-nav-brand");
+        const profile = bounds(".arena-nav-professor");
+        const title = bounds(".arena-nav-mobile-title");
+        const tabs = bounds(".arena-nav-scroll");
+        const tools = bounds(".arena-nav-mobile-tools");
+        const scroll = document.querySelector<HTMLElement>(".arena-nav-scroll")!;
+        return {
+          containerHeight: top.height,
+          brandCenter: brand.top + brand.height / 2,
+          titleCenter: title.top + title.height / 2,
+          profileCenter: profile.top + profile.height / 2,
+          profileGap: top.right - profile.right,
+          toolsTopAligned: Math.abs(brand.top + brand.height / 2 - tools.top - tools.height / 2),
+          navUsesFullWidth: Math.abs(tabs.width - (top.width - 16)),
+          navBelowTop: tabs.top > brand.bottom,
+          tabsVerticalOverflow: scroll.scrollHeight - scroll.clientHeight,
+          tabsOverflowY: getComputedStyle(scroll).overflowY,
+          touchAction: getComputedStyle(scroll).touchAction,
+          docOverflow: document.documentElement.scrollWidth - innerWidth,
+        };
+      });
+      expect(layout.containerHeight, `header too tall at ${width}px`).toBeLessThanOrEqual(140);
+      expect(Math.abs(layout.brandCenter - layout.profileCenter)).toBeLessThanOrEqual(3);
+      expect(Math.abs(layout.brandCenter - layout.titleCenter)).toBeLessThanOrEqual(3);
+      expect(layout.profileGap).toBeGreaterThanOrEqual(-1);
+      expect(layout.profileGap).toBeLessThanOrEqual(18);
+      expect(layout.toolsTopAligned).toBeLessThanOrEqual(4);
+      expect(layout.navUsesFullWidth).toBeLessThanOrEqual(4);
+      expect(layout.navBelowTop).toBe(true);
+      expect(layout.tabsVerticalOverflow).toBeLessThanOrEqual(1);
+      expect(layout.tabsOverflowY).toBe("hidden");
+      expect(layout.touchAction).toBe("pan-x");
+      expect(layout.docOverflow).toBeLessThanOrEqual(1);
+      const quiz = strip.getByRole("button", { name: "Quiz" });
+      await expect(quiz.getByText("Quiz", { exact: true })).toBeVisible();
+      await quiz.click();
+      await expect(quiz).toHaveAttribute("aria-current", "page");
+      await expect(quiz).toBeInViewport();
+      const draw = strip.getByRole("button", { name: "Sorteio" });
+      await draw.click();
+      await expect(draw).toHaveAttribute("aria-current", "page");
+      if (width === 390) await page.screenshot({ path: "/tmp/arena-two-tier-mobile-390.png" });
+      await tools.click();
+      const menu = page.getByRole("menu");
+      for (const label of ["Roteiro da aula", "Timer", "Organizar turma", "Presença", "Ranking", "Pontuação rápida"]) {
+        await expect(menu.getByRole("menuitem", { name: label })).toBeVisible();
+      }
+      const popupBounds = await menu.boundingBox();
+      expect(popupBounds).not.toBeNull();
+      expect(popupBounds!.x).toBeGreaterThanOrEqual(0);
+      expect(popupBounds!.x + popupBounds!.width).toBeLessThanOrEqual(width + 1);
+      await testInfo.attach(`arena-two-tier-mobile-${width}`, { body: await page.screenshot(), contentType: "image/png" });
+      await menu.getByRole("menuitem", { name: "Roteiro da aula" }).click();
+      await expect(tools).toHaveAttribute("data-active", "true");
+      await expect(menu).toHaveCount(0);
+      await draw.click();
+      await expect(tools).not.toHaveAttribute("data-active", "true");
+      await tools.click();
+      await page.getByRole("menuitem", { name: "Timer" }).click();
+      const timer = page.getByRole("dialog", { name: "Timer" });
+      await expect(timer).toBeVisible();
+      await timer.getByRole("button", { name: "Fechar ferramenta" }).click();
+      await expect(timer).toHaveCount(0);
+      await expect(draw).toHaveAttribute("aria-current", "page");
+    }
+  } finally { await api.dispose(); }
+});
+
+test("Desktop Arena keeps its labeled sidebar and does not duplicate the mobile tools menu", async ({ page }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(page.locator(".arena-nav-mobile-title")).toBeHidden();
+    await expect(page.getByRole("button", { name: "Ferramentas da Arena" })).toBeHidden();
+    await expect(page.locator(".arena-nav-scroll .arena-cockpit-nav-group").nth(1)).toBeVisible();
+    await expect(page.locator(".arena-nav-scroll button[aria-label='Timer']")).toBeVisible();
+  } finally { await api.dispose(); }
+});
+
+test("v0.10 dynamic visual contract: seven dynamics share full-width, semantic heading without horizontal overflow", async ({ page }, testInfo) => {
+  test.setTimeout(125_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    const dynamics = [
+      { navigation: "Sorteio", title: "Sorteio da turma", icon: "draw" },
+      { navigation: "Quiz", title: "Quiz", icon: "quiz" },
+      { navigation: "Verificar aprendizagem", title: "Verificar aprendizagem", icon: "learning-check" },
+      { navigation: "Votação", title: "Votação", icon: "poll" },
+      { navigation: "Nuvem de Palavras", title: "Nuvem de Palavras", icon: "wordcloud" },
+      { navigation: "Buzzer", title: "Buzzer", icon: "buzzer" },
+      { navigation: "Boss Battle", title: "Boss Battle", icon: "boss" },
+    ];
+    for (const width of [320, 390, 430, 768, 1440]) {
+      await page.setViewportSize({ width, height: 844 });
+      for (const dynamic of dynamics) {
+        const nav = page.locator('.arena-nav-scroll button').filter({ hasText: dynamic.navigation });
+        await nav.click();
+        const header = page.getByTestId("dynamic-header");
+        await expect(header).toHaveCount(1);
+        await expect(header.getByRole("heading", { name: dynamic.title, exact: true })).toBeVisible();
+        await expect(header).toHaveAttribute("data-dynamic", dynamic.icon);
+        const headerGlyph = header.getByTestId("dynamic-header-icon");
+        await expect(headerGlyph).toBeVisible();
+        const iconConsistency = await page.evaluate((navigation) => {
+          const nav = Array.from(document.querySelectorAll<HTMLElement>('.arena-nav-scroll button'))
+            .find((button) => button.getAttribute('aria-label') === navigation);
+          const svg = document.querySelector<SVGElement>('[data-testid="dynamic-header-icon"] svg');
+          const navSvg = nav?.querySelector<SVGElement>('svg');
+          if (!svg || !navSvg) return { matches: false, iconCentered: false };
+          const icon = svg.closest<HTMLElement>('[data-testid="dynamic-header-icon"]')!.getBoundingClientRect();
+          const copy = document.querySelector<HTMLElement>('[data-testid="dynamic-header"] [class*="copy"]')!.getBoundingClientRect();
+          return {
+            matches: svg.innerHTML === navSvg.innerHTML,
+            iconCentered: Math.abs(icon.top + icon.height / 2 - (copy.top + copy.height / 2)) <= 3,
+          };
+        }, dynamic.navigation);
+        expect(iconConsistency.matches, `${dynamic.navigation}: header glyph differs from navigation glyph`).toBe(true);
+        expect(iconConsistency.iconCentered, `${dynamic.navigation}: icon not aligned with identity`).toBe(true);
+        const geometry = await page.evaluate(() => {
+          const header = document.querySelector<HTMLElement>('[data-testid="dynamic-header"]')!.getBoundingClientRect();
+          const main = document.querySelector<HTMLElement>(".arena-cockpit-main")!.getBoundingClientRect();
+          return {
+            headerX: header.x, headerRight: header.right,
+            headerWidth: header.width,
+            mainX: main.x, mainRight: main.right,
+            docOverflow: document.documentElement.scrollWidth - window.innerWidth,
+          };
+        });
+        expect(geometry.headerX).toBeGreaterThanOrEqual(geometry.mainX - 1);
+        expect(geometry.headerRight).toBeLessThanOrEqual(geometry.mainRight + 1);
+        expect(geometry.headerWidth, `${dynamic.title} excessively narrow at ${width}`).toBeGreaterThan(geometry.mainRight - geometry.mainX - 95);
+        expect(geometry.docOverflow, `${dynamic.title} overflows at ${width}`).toBeLessThanOrEqual(1);
+        if (dynamic.navigation === "Boss Battle" && width <= 430) {
+          const titleWidth = await header.getByRole("heading", { name: "Boss Battle" }).evaluate(el => el.getBoundingClientRect().width);
+          expect(titleWidth, "Boss Battle text must not be squeezed by status/projector").toBeGreaterThan(160);
+        }
+        if (dynamic.navigation === "Sorteio" && width <= 430) {
+          const cardHeight = await page.getByTestId("participant-grid-viewport").evaluate(el => el.getBoundingClientRect().height);
+          expect(cardHeight, "One student must not create an enormous empty stage").toBeLessThan(260);
+        }
+        if (width === 390) {
+          await page.screenshot({ path: `/tmp/arena-dynamic-${dynamic.navigation.replaceAll(" ", "-").toLowerCase()}.png` });
+          await testInfo.attach(`dynamic-${dynamic.navigation}`, { body: await page.screenshot(), contentType: "image/png" });
+          if (dynamic.navigation === "Boss Battle" || dynamic.navigation === "Nuvem de Palavras") {
+            await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
+            await page.screenshot({ path: `/tmp/arena-dynamic-${dynamic.navigation.replaceAll(" ", "-").toLowerCase()}-dark.png` });
+            await page.evaluate(() => { document.documentElement.dataset.theme = "light"; });
+          }
+        }
+      }
+    }
+  } finally { await api.dispose(); }
+});
+
+test("v0.10 cloud/poll composer: compact auto-growing question, binary visibility and preview below settings", async ({ page }) => {
+  test.setTimeout(90_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    for (const width of [320, 390, 430, 1440]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.locator('.arena-nav-scroll button').filter({ hasText: "Nuvem de Palavras" }).click();
+      const question = page.getByTestId("dynamic-question-input");
+      await expect(question).toBeVisible();
+      const initialHeight = (await question.boundingBox())!.height;
+      expect(initialHeight).toBeLessThan(130);
+      await question.fill("Qual palavra sintetiza o assunto?");
+      const beforeExpansion = (await question.boundingBox())!.height;
+      await question.fill("Explique a relação entre os conceitos:\n" + Array.from({ length: 8 }, (_, i) => `Linha ${i + 1}`).join("\n"));
+      const afterExpansion = (await question.boundingBox())!.height;
+      expect(afterExpansion, "question grows only as content requires").toBeGreaterThan(beforeExpansion);
+      expect(afterExpansion).toBeLessThanOrEqual(241);
+      await question.fill("Qual palavra melhor representa esta aula?");
+      const amount = page.getByRole("combobox", { name: "Respostas por aluno" });
+      await amount.selectOption("2");
+      const toggle = page.getByRole("switch", { name: "Exibir resultados ao vivo" });
+      await expect(toggle).not.toBeChecked();
+      await toggle.check();
+      await expect(toggle).toBeChecked();
+      await toggle.uncheck();
+      await expect(toggle).not.toBeChecked();
+      const positions = await page.evaluate(() => {
+        const prep = document.querySelector<HTMLElement>('[class*="prepareGrid"]')!;
+        const questionCard = prep.querySelector<HTMLElement>('[class*="composeCard"]')!;
+        const preview = prep.querySelector<HTMLElement>('[aria-label="Prévia da Nuvem de Palavras"]')!;
+        const a = questionCard.getBoundingClientRect();
+        const b = preview.getBoundingClientRect();
+        return { previewBelow: b.top >= a.bottom - 1, widthMatches: Math.abs(a.width - b.width) < 2 };
+      });
+      expect(positions.previewBelow).toBe(true);
+      expect(positions.widthMatches).toBe(true);
+      await page.locator('.arena-nav-scroll button').filter({ hasText: "Votação" }).click();
+      await expect(page.getByTestId("dynamic-question-input")).toBeVisible();
+      const pollToggle = page.getByRole("switch", { name: "Exibir resultados ao vivo" });
+      await expect(pollToggle).not.toBeChecked();
+      await pollToggle.check();
+      await expect(pollToggle).toBeChecked();
+    }
+  } finally { await api.dispose(); }
+});
+
+
+test("v0.10 headers: Sorteio has one consolidated header; Votação remains compact", async ({ page }) => {
+  test.setTimeout(90_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    for (const width of [320, 390, 430, 768, 1440]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.locator('.arena-nav-scroll button').filter({ hasText: "Sorteio" }).click();
+      const drawHeader = page.getByTestId("dynamic-header");
+      await expect(drawHeader.getByRole("heading", { name: "Sorteio da turma" })).toBeVisible();
+      await expect(drawHeader.getByRole("button", { name: "Sortear participante" })).toHaveCount(1);
+      await expect(drawHeader.getByRole("button", { name: /Ajustes/ })).toHaveCount(1);
+      await expect(drawHeader.getByLabel(/participantes já sorteados/)).toHaveCount(1);
+      const structure = await drawHeader.evaluate((element) => {
+        const grid = element.parentElement?.querySelector('[data-testid="participant-grid-viewport"]');
+        return { immediatelyFollowedByGrid: element.nextElementSibling === grid, headerHeight: element.getBoundingClientRect().height };
+      });
+      expect(structure.immediatelyFollowedByGrid, "Sorteio should not introduce a second toolbar card").toBe(true);
+      expect(structure.headerHeight, `Sorteio header too tall at ${width}px`).toBeLessThan(225);
+      await page.locator('.arena-nav-scroll button').filter({ hasText: "Votação" }).click();
+      const pollHeader = page.getByTestId("dynamic-header");
+      const size = await pollHeader.boundingBox();
+      expect(size).not.toBeNull();
+      expect(size!.height, `Votação header stretched at ${width}px`).toBeLessThan(170);
+      await expect(page.getByRole("button", { name: "Ativar projetor" })).toHaveAttribute("aria-pressed", "false");
+      await expect(page.getByRole("button", { name: /Projetar ↗/ })).toHaveCount(0);
+      await page.locator('.arena-nav-scroll button').filter({ hasText: "Boss Battle" }).click();
+      await expect(page.getByTestId("dynamic-header").getByRole("button", { name: /Projetar/ })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Ativar projetor" })).toHaveCount(1);
+    }
+  } finally { await api.dispose(); }
+});
+
+test("v0.10 projector: global toggle tracks a real projector tab and closes it", async ({ page }) => {
+  test.setTimeout(85_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    const enable = page.getByRole("button", { name: "Ativar projetor" });
+    await expect(enable).toHaveAttribute("aria-pressed", "false");
+    const opened = page.context().waitForEvent("page");
+    await enable.click();
+    const projector = await opened;
+    await projector.waitForLoadState("domcontentloaded");
+    await expect(projector.getByText("Modo Projetor", { exact: true })).toBeVisible();
+    const disable = page.getByRole("button", { name: "Desativar projetor" });
+    await expect(disable).toHaveAttribute("aria-pressed", "true", { timeout: 9000 });
+    await page.locator('.arena-nav-scroll button').filter({ hasText: "Quiz" }).click();
+    await expect(disable, "projector is global, not bound to a dynamic").toHaveAttribute("aria-pressed", "true");
+    await disable.click();
+    await expect.poll(() => projector.isClosed(), { timeout: 8000 }).toBe(true);
+    await expect(page.getByRole("button", { name: "Ativar projetor" })).toHaveAttribute("aria-pressed", "false", { timeout: 9000 });
+  } finally { await api.dispose(); }
+});
+
+test("v0.10 Spotlight: uma ação primária confirma sem XP ou com XP explicitamente habilitado", async ({ page }, testInfo) => {
+  test.setTimeout(95_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    const statePath = `/api/sessions/${fixture.session.id}/draw-attempts/state`;
+    const state = async () => {
+      const response = await api.get(statePath);
+      await expectOk(response, "Estado autoritativo do desfecho");
+      return response.json() as Promise<{
+        confirmedCount: number;
+        history: Array<{ status: string; scoreEventId: string | null }>;
+      }>;
+    };
+
+    for (const viewport of [
+      { width: 320, height: 568 },
+      { width: 390, height: 844 },
+      { width: 768, height: 1024 },
+      { width: 1440, height: 900 },
+    ]) {
+      await page.setViewportSize(viewport);
+      if (viewport.width !== 320) continue;
+      await page.getByRole("button", { name: "Sortear participante" }).click();
+      const dialog = page.getByTestId("spotlight-reveal");
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByTestId("spotlight-card")).toHaveCSS("opacity", "1");
+      await expect(dialog.getByRole("button")).toHaveCount(3);
+      const award = dialog.getByRole("checkbox", { name: /Conceder XP/ });
+      const confirm = dialog.getByTestId("draw-confirm-outcome");
+      await expect(award).not.toBeChecked();
+      await expect(confirm).toHaveText("Confirmar sem XP");
+      await expect(dialog.getByTestId("draw-xp-points")).toHaveCount(0);
+      await expect(dialog.getByText("Conta como chamado nesta rodada.")).toBeVisible();
+      await expect(dialog.getByText("Desfaz a chamada; poderá ser sorteado novamente.")).toBeVisible();
+      await expect(dialog).toHaveAttribute("aria-modal", "true");
+      const geometry = await dialog.evaluate((element) => {
+        const card = element.querySelector<HTMLElement>('[data-testid="spotlight-card"]')!;
+        const bounds = card.getBoundingClientRect();
+        const middle = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + Math.min(bounds.height / 2, 80));
+        return {
+          x: bounds.x, right: bounds.right, top: bounds.top, bottom: bounds.bottom,
+          height: bounds.height, viewportWidth: window.innerWidth, viewportHeight: window.innerHeight,
+          modalOnTop: Boolean(middle && card.contains(middle)),
+          position: getComputedStyle(element).position,
+          documentOverflow: document.documentElement.scrollWidth - window.innerWidth,
+        };
+      });
+      expect(geometry.x).toBeGreaterThanOrEqual(0);
+      expect(geometry.right).toBeLessThanOrEqual(geometry.viewportWidth + 1);
+      expect(geometry.top).toBeGreaterThanOrEqual(0);
+      expect(geometry.bottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
+      expect(geometry.position).toBe("fixed");
+      expect(geometry.modalOnTop).toBe(true);
+      expect(geometry.documentOverflow).toBeLessThanOrEqual(1);
+      await page.screenshot({ path: "/tmp/arena-spotlight-mobile-320.png" });
+      await testInfo.attach("spotlight-mobile-no-xp", { body: await page.screenshot(), contentType: "image/png" });
+      await award.check();
+      await expect(dialog.getByTestId("draw-xp-points")).toBeVisible();
+      const points = dialog.getByTestId("draw-xp-points");
+      await points.fill("101");
+      await expect(confirm).toBeDisabled();
+      await points.fill("0");
+      await expect(confirm).toBeDisabled();
+      await points.fill("5");
+      await expect(confirm).toHaveText("Confirmar +5 XP");
+      await expect(confirm).toBeEnabled();
+      await testInfo.attach("spotlight-mobile-with-xp", { body: await page.screenshot(), contentType: "image/png" });
+      await award.uncheck();
+      await expect(dialog.getByTestId("draw-xp-points")).toHaveCount(0);
+      await expect(confirm).toHaveText("Confirmar sem XP");
+      await confirm.click();
+      await expect(dialog).toBeHidden();
+      expect((await state()).history[0].scoreEventId).toBeNull();
+    }
+
+    await page.getByRole("button", { name: "Iniciar próxima rodada" }).click();
+    await page.getByRole("button", { name: "Sortear participante" }).click();
+    const dialog = page.getByTestId("spotlight-reveal");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByTestId("spotlight-card")).toHaveCSS("opacity", "1");
+    await page.screenshot({ path: "/tmp/arena-spotlight-desktop-1440.png" });
+    await dialog.getByRole("checkbox", { name: /Conceder XP/ }).check();
+    await dialog.getByTestId("draw-xp-points").fill("10");
+    await dialog.getByRole("button", { name: "Confirmar +10 XP" }).click();
+    await expect(dialog).toBeHidden();
+    const updated = await state();
+    expect(updated.confirmedCount).toBe(2);
+    expect(updated.history.filter((event) => event.scoreEventId != null)).toHaveLength(1);
+  } finally { await api.dispose(); }
 });

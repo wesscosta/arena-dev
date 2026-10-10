@@ -1,296 +1,49 @@
 # Estado atual — Arena Dev
 
-**Última sincronização documental:** 8 de outubro de 2026
+**Atualizado em 09/10/2026.** Este é o resumo operacional, não o diário histórico das implementações.
 
-**Baseline publicada:** `v0.9.0 — Arena Learning Core`.
+| Linha | Estado | Fonte de verdade |
+| --- | --- | --- |
+| `v0.9.0` | Publicada, congelada; Flyway V48 | [`RELEASE_0_9.md`](RELEASE_0_9.md) |
+| `v0.10.0-rc.1` | Candidata em homologação; **NO-GO para release estável**; Flyway V56 | [`v0.10/RELEASE_CANDIDATE_CHECKLIST.md`](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) |
+| `main` | Branch de publicação da baseline | Tag v0.9.0 e GitHub Release |
+| `feat/v0.10-learning-loop` | Branch de trabalho com mudanças locais ainda não versionadas | PR [#35](https://github.com/wesscosta/arena-dev/pull/35), em rascunho |
 
-**Linha em desenvolvimento:** `v0.10 — Learning Loop`, branch `feat/v0.10-learning-loop`. [Roadmap](ROADMAP_V0_10.md).
+## Capacidades efetivamente implementadas na candidata v0.10
 
-**Estado corrente:** v0.9.0 publicada e congelada; v0.10 em implementação e homologação isoladas (LearningCycle, DrawAttempt/V50, UI do sorteio e Before & After), ainda não publicada. A v0.10 foi revisada para priorizar coerência do fluxo da Arena, sorteio com confirmação e uso contextual de materiais; iframe/Canva apenas após piloto de valor ([auditoria](AVALIACAO_V0_10_ARENA_MATERIAIS.md) e [plano técnico executável](v0.10/IMPLEMENTATION_PLAN.md)).
+- `LearningCycle` e comparação antes/depois **apenas para respostas pareáveis**; não atestar mastery longitudinal com uma medição.
+- **XP manual/avulso V56:** `requestId` único no ledger, replay seguro do mesmo comando e 409 para divergência, sem alterar importações antigas. [ADR-0066](adr/ADR-0066-manual-score-creation-idempotency.md). A reconciliação após F5 ainda precisa de conferência do histórico.
+- Sorteio com `DrawAttempt` persistido, desfecho explícito (participação, passar, anular), XP opcional e idempotência/reconciliação quando a rede é incerta.
+- Peer Instruction, Clínica do Erro, painel de evidências docentes e intervenções contextualizadas.
+- Biblioteca canônica reutilizada dentro da Arena, sem cópias e sem exigir embed de Canva.
+- Autoconfiança voluntária separada de pontuação/evidência; sugestões de recuperação que dependem da decisão docente.
+- PWA com fallback offline seguro e reconexão por snapshot; validação física de upgrade ainda pendente.
+- Design system compartilhado das dinâmicas, responsividade mobile e um único comando de projetor no cabeçalho da sessão.
 
-**Branch de release:** `main`.
+**Não incluir como capacidades estáveis:** Mastery v1, SaaS multi-docente isolado, RAG/LLM de domínio, embed Canva em iframe, comprovação de aprendizagem longitudinal, ou qualquer funcionalidade experimental sem piloto.
 
-**Handoff histórico da linha:** [`HANDOFF_V0_9.md`](HANDOFF_V0_9.md).
+## Evidências disponíveis e o que elas não demonstram
 
-## Estado resumido
+- Último CI GitHub verificado antes desta auditoria: [#37935122578](https://github.com/wesscosta/arena-dev/actions/runs/37935122578), sucesso no commit `cce0758` (09/10). **Não cobre alterações locais posteriores.**
+- A última regressão local de navegador antes desta auditoria registrou **62/62 E2E Chromium** em stack isolada. Deve ser repetida sobre o código consolidado; não equivale a Safari iOS real.
+- Build/health de desenvolvimento são verificações técnicas, **não** autorização de lançamento.
+- Em 09/10, havia 44 arquivos modificados e 19 não rastreados; a auditoria amplia esse diff. Antes da publicação é obrigatório revisar, versionar e executar gates no mesmo SHA.
 
-A v0.9.0 consolida o Learning Core até Flyway V48: LearningTarget, Interaction Core, Evaluation/Result, LearningEvidence, fluxo **Verificar aprendizagem**, trace AI-ready e shadow/cutover gate para Quiz, Poll e Word Cloud. A linha v0.9 está em feature freeze; novas capacidades seguem para v0.10.
+## Bloqueadores de homologação
 
-A publicação da v0.9.0 não executa cutover automático. O legado continua autoritativo até que a amostra operacional real aprove `/api/learning-core/gate/cutover`; a remoção física permanece bloqueada até uma release posterior à janela de rollback.
+1. Upgrade de PWA v0.9 instalada em Android/Chrome e iOS/Safari reais.
+2. Rede degradada real, respostas HTTP incertas, professor/aluno/projetor concorrentes.
+3. Leitor de tela, teclado, foco, contraste, zoom 200–400% e acessibilidade manual.
+4. Piloto docente com turma real, com evidência pedagógica e feedback.
+5. Backup/restore e rollback operacional com RTO/RPO aceitos, segurança e aprovação do PR.
 
-A Journey já possui Study API própria, `/learn`, Reader, progresso e retomada, prévia do professor na mesma experiência, Builder reduzido a módulos + conteúdos e Progression UX com estados `COMPLETED`, `CURRENT` e `LOCKED`.
+**Decisão atual: NO-GO para `v0.10.0` estável.** [Aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md), [matriz de testes](v0.10/TEST_MATRIX.md) e [auditoria de consolidação](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md).
 
-A frente de ingestão `16.3.8` cobre contrato normalizado, adapters Markdown/Text/Notion, Review UX, proveniência, fallback AI-ready, OAuth autorizado do Notion e seleção/importação de páginas pelo Journey Builder. O `16.4` consolidou o shell do aluno, separou matrícula de exposição persistente, integrou Live multi-turma e adicionou resgate de Journey por código.
+## Onde encontrar detalhes sem duplicar o README
 
-## Baselines
+- [Roadmap e limites](ROADMAP_V0_10.md) · [Plano técnico](v0.10/IMPLEMENTATION_PLAN.md)
+- [Diário de implementação](v0.10/EXECUTION_STATUS.md) · [Contratos de API](v0.10/API_CONTRACTS.md)
+- [Arquitetura e decisões](adr/README.md) · [UX e desenho das dinâmicas](ux/arena-dynamics-visual-system-v010.md)
+- [Índice documental e versões anteriores](DOCUMENTATION_INDEX.md)
 
-```text
-baseline publicada        v0.9.0 · Arena Learning Core
-próxima linha             v0.10 · Learning Loop
-estado                     feature freeze
-branch                     main
-schema                     Flyway V1–V48
-cutover                    pendente de evidência operacional real
-legado                     autoritativo durante a janela de rollback
-providers                  Microsoft Teams + Notion OAuth
-Google Classroom           standby
-```
-
-## Journey Study Experience — implementação atual
-
-- `/learn` e Study API independentes da sessão ao vivo;
-- Reader de `LearningResource` com Markdown/GFM e texto simples;
-- progresso persistente e retomada do conteúdo `CURRENT`;
-- estados `COMPLETED`, `CURRENT` e `LOCKED` como fonte de verdade da progressão;
-- CTA **Continue de onde parou** derivado do estado real, sem progresso inventado;
-- mesma experiência de estudo para aluno e professor, com modo de prévia sem registrar progresso;
-- Journey Builder simplificado para módulos/capítulos + conteúdos;
-- UI convergida com a referência visual e timeline com semântica de progresso;
-- atividades, Quiz e dinâmicas permanecem fora da estrutura da Journey.
-
-## Content Ingestion & Structured Import — 16.3.8
-
-- fontes convergem para `Draft → módulos → conteúdos → revisão humana → materialização`;
-- Markdown possui entrada explícita no wizard;
-- `H1` sugere o título, `H2` vira módulo e `H3` vira conteúdo;
-- `H4–H6` permanecem dentro do corpo do conteúdo;
-- headings dentro de code fences não alteram a estrutura;
-- `H2` sem `H3` e com corpo vira um único conteúdo, sem hierarquia inventada;
-- Markdown estruturado não chama IA para reinterpretar estrutura explícita;
-- PDF/Office/texto continuam suportados pelo pipeline do 16.2;
-- Notion possui adapter nativo, provider via API oficial, OAuth e seleção de páginas autorizadas no Journey Builder;
-- credenciais OAuth ficam no backend; token manual permanece apenas como fallback técnico;
-- MVP de importação é snapshot, sem sincronização contínua/bidirecional;
-- IA permanece opcional para material ambíguo e sem autoridade de publicação.
-
-
-## Student Experience Shell — 16.4
-
-- `/learn` prioriza retomada e jornadas em andamento; concluídas deixam de poluir a Home;
-- `/learn/journeys` é a biblioteca pessoal de percursos, com busca, filtro por turma/estado e agrupamento multi-turma;
-- `/learn/live` integra a entrada ao vivo ao shell autenticado reutilizando o mesmo `StudentJoinFlow` de `/join`;
-- `/join` permanece porta pública para QR/código e não depende do espaço persistente de estudo;
-- `/learn/achievements` possui Achievements Foundation persistente baseada em marcos reais de progresso, sem XP automático, moedas ou streaks;
-- `16.4A — Student Workspace Visibility`: `studentStudyAccessEnabled` controla exposição persistente sem afetar Live e sem apagar progresso;
-- `16.4B — Live dentro do Student Shell`: Live Hub descobre sessões ativas em todas as matrículas do aluno, oferece CTA contextual na Home e reutiliza `StudentJoinFlow`;
-- `16.4C — Journey Discovery & Redemption`: professor gera/regenera/desativa código de Journey; aluno reconhecido resgata uma vez e mantém material/progresso no perfil, sem matrícula artificial;
-- `16.4D — Achievements Foundation`: implementado tecnicamente; conquistas persistentes, avaliação idempotente e integração ao Student Experience.
-- `Student Shell Style Guide v1`: referência visual/acessível criada; alvo AAA onde aplicável, com auditoria formal ainda pendente.
-
-## 16.5 Content Library & Reuse — estado atual
-
-- `LearningResource` foi evoluído como unidade reutilizável, sem criar um modelo paralelo de biblioteca;
-- Library Core, workspace/reuse, refinamento editorial e snapshot hardening estão implementados até `16.5B.2`;
-- materiais continuam preparados para nascer de Markdown, Notion, arquivo ou IA sem exposição automática ao aluno;
-- `16.5C — Semantic Content Foundation & Ingestion → Library`: **concluído tecnicamente** com metadata editorial, V38, CanonicalDocument transitório, canonicalizer determinístico, outline H1–H6, ingestão revisável e Leitura/Estrutura/Mapa;
-- `16.5D — Organization & Discovery`: **fechado no escopo v0.8** com busca, filtros combináveis, facets e ordenação; paginação só entra com necessidade real;
-- `16.5E — Revision Awareness`: **concluído** com revisão corrente x snapshot e refresh explícito somente para Journey em rascunho;
-- `16.5F — Library Closure`: **fechado no escopo v0.8** com exportação Markdown, archive/restore e reuso sem duplicar a fonte canônica.
-
-## Semantic Library — implementação corrente
-
-- V38 adiciona `subject`, `language`, `content_sha256`, outline derivado/versionado e tags em relação própria;
-- metadata editorial não é Knowledge Taxonomy e mudanças apenas em assunto/tags/idioma não avançam a revisão de conteúdo;
-- `CanonicalDocument` é transitório; `LearningResource` continua fonte durável depois da materialização;
-- `ContentCanonicalizer` normaliza entrada, calcula hash SHA-256 e produz árvore H1–H6 determinística ignorando headings em code fences;
-- ingestão global da Biblioteca suporta Markdown, texto, arquivo, Notion e URL com preview/review antes da persistência;
-- fontes sem estrutura confiável são sinalizadas para revisão; IA permanece fallback opcional, não requisito;
-- cada recurso oferece **Leitura | Estrutura | Mapa** sobre a mesma revisão, sem entidade `MindMap` paralela;
-- busca/filtros incluem assunto, tags e idioma;
-- uso em Journey mostra snapshot x revisão corrente e só permite refresh explícito em Journey `DRAFT`;
-- exportação `.md` inicia a garantia de portabilidade;
-- edição do nome do aluno reutiliza `Enrollment.preferredName`: a UI agora explicita **Nome na turma · Editar**, sem alterar `Student.fullName`.
-
-Contrato: [`CONTENT_CANONICAL_MARKDOWN.md`](CONTENT_CANONICAL_MARKDOWN.md). Plano/registro: [`INCREMENT_16_5C_PLAN.md`](INCREMENT_16_5C_PLAN.md).
-
-## UX transversal — shell e participantes
-
-- páginas administrativas voltaram a crescer conforme o conteúdo, com scroll natural do documento;
-- confinamento `100dvh`/`overflow: hidden` ficou restrito à Arena ao vivo via `arena-fullscreen-shell`;
-- scroll lock de overlays centralizado e seguro para locks simultâneos;
-- tela de participantes simplificada com busca, nome de exibição sob demanda e ações por ícones;
-- polish final da Arena: scrollbar visual da sidebar oculto sem perder rolagem, roster escasso alinhado ao topo e card de perfil com contenção de texto sem colisão com avatar;
-- baseline atual: Next.js 16.3.8; `npm audit --omit=dev --audit-level=high` com 0 vulnerabilidades de produção; frontend 300/300, lint/format/typecheck/build verdes; backend 163 testes unitários + 109 integrações;
-- transporte HTTP frontend consolidado em `lib/http/client.ts`; módulos de domínio não implementam mais parsing/CSRF/credentials de forma independente;
-- direção de dependência CSS corrigida: componentes não importam mais módulos de estilo privados de `app/`; Projector, Student Join e Study possuem ownership de feature em `components/`;
-
-## Turmas — consolidação MVP
-
-- o shell do professor continua sem sidebar; `Turmas` é o nível global do sistema e substitui o rótulo ambíguo `Visão geral`;
-- `Biblioteca` passou a destino explícito da navegação global no topbar, em vez de CTA isolado da página;
-- a página `Suas turmas` mantém busca por nome/código, filtros Ativas/Inativas e ordenação por MRU/nome/código;
-- grid de turmas consolidado em até cinco colunas fluidas no desktop/ultrawide, preenchendo a largura útil sem criar uma sexta coluna; cards mantêm hierarquia interna à esquerda e seleção com barra vertical estável; sem carrossel, categorias, tags ou progresso inventado;
-- XP saiu do card de descoberta; o card mostra somente código, alunos, atividades e estado operacional;
-- light/dark usam os tokens semânticos existentes e a matriz E2E cobre reload em 390, 768, 1024, 1440, 1920 e 2560 px;
-- categorias, shelves estilo Netflix, favoritos e taxonomias adicionais continuam fora do MVP até existir necessidade observada.
-
-Documento: [`CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md).
-
-## Professor Arena Experience — implementado
-
-- shell estrutural extraído em `ArenaLiveShell`, `ArenaSidebar` e `ArenaSessionHeader`;
-- `ArenaContextRail`, configurações do sorteio e realtime da Arena possuem boundaries próprios; `useArenaRealtime` concentra Join Code + WebSocket + estados Buzzer/Timer/Word Cloud/Poll/Quiz/Ranking;
-- header restrito ao workspace, sem compensações negativas de largura/margem;
-- E2E do shell verde em 1366×768, 1440×900, 1536×864 e 1920×1080, mais cenário com 22 participantes em 1821×831; sem overflow horizontal/vertical estrutural, com Ações rápidas e código/QR dentro da viewport;
-- seleção balanceada extraída para `ParticipantSelectionService`, mantendo o backend como autoridade;
-- Grid + Spotlight transitório implementado como experiência padrão do Sorteio;
-- `useParticipantSelection` concentra a orquestração da seleção no frontend sem escolher vencedor;
-- Grid representa disponível, ausente, já sorteado e selecionado agora;
-- Spotlight aparece apenas no reveal, sem simulação de nomes, roleta falsa ou slot-machine;
-- rail do Sorteio mostra resumo da sessão e histórico persistido em vez de duplicar o roster;
-- `DRAW_COMPLETED` registra `method=BALANCED` e `drawCount`;
-- Grid + Spotlight continua como apresentação padrão, mas a Roleta agora é uma apresentação alternativa real em `WheelParticipantSelector`;
-- a apresentação (`GRID_SPOTLIGHT` ou `WHEEL`) é persistida por sessão no estado `QUICK_DRAW`, sem nova migration e sem alterar o algoritmo balanceado;
-- drawer separa explicitamente Critério de Seleção, Apresentação e Regras da Seleção;
-- Grid limita os cards a 13.5rem no desktop, evitando expansão excessiva em turmas pequenas;
-- `NEXT_PUBLIC_ARENA_SELECTOR_MODE` permanece somente como fallback de compatibilidade/default frontend;
-- E2E do selector: 8/8, incluindo reveal → retorno ao Grid, alternância Grid ↔ Roleta, persistência da apresentação, cards compactos, 22 participantes e quatro viewports do shell;
-- tabs antigas removidas da Arena;
-- sidebar persistente por ação;
-- Dinâmicas e Ferramentas separadas;
-- header operacional de sessão;
-- Arena full-width em desktop;
-- QR/código de sessão preservado no rail;
-- Timer, Organização e Presença como ferramentas contextuais;
-- Timer refinado para uma única superfície de configuração: títulos auxiliares redundantes removidos, oito presets em uma linha sem scroll horizontal, Exibição/Alertas compactados e baseline 1366×768 validada sem scroll vertical obrigatório;
-- Pontuação Rápida transversal;
-- Ranking da sessão implementado como ferramenta contextual, derivado exclusivamente de `ScoreEvent` com `sessionId`, com competition ranking para empates e sem score paralelo;
-- Ranking permanece privado por padrão; `Top 5`/`Todos`, projeção explícita, anonimização no backend e atualização realtime estão disponíveis;
-- estado público do Ranking é separado do estado privado do professor e não é exposto ao participante; ocultar a projeção restaura o `LiveStage` que já estava ativo;
-- o Ranking é feedback operacional da aula e não representa Mastery, desempenho acadêmico global ou leaderboard persistente;
-- navegação compacta mobile da Arena recebeu contenção horizontal e nomes acessíveis explícitos durante a matriz responsiva do Ranking;
-- Configurações exibem apenas regras reais e permitem trocar a apresentação sem alterar o critério de seleção;
-- QR ampliável em Presença e acesso;
-- indicadores de online e presença consolidados no roster;
-- selects nativos com contraste dark consistente;
-- Quiz, Votação, Nuvem de Palavras, Buzzer e Boss Battle em workspace de altura integral no desktop;
-- handshake WebSocket público serializado: participante/projetor recebem o `RUNTIME_SNAPSHOT` inicial de forma ordenada antes do `AUTH_OK`, protegendo a hidratação contra eventos concorrentes logo após o registro.
-
-## Fechamentos anteriores
-
-- `16.0` concluído e mergeado no PR #21;
-- `16.1` concluído e mergeado no PR #22.
-
-## Validação corrente
-
-```text
-backend unit         OK · 163/163
-backend integration  OK · 109/109
-frontend tests       OK · 300/300
-frontend lint/format OK
-frontend typecheck   OK
-frontend build       OK
-Compose isolado      OK
-Chromium E2E         OK · 23/23
-backup/restore       OK · PostgreSQL 17
-Flyway               V1–V48
-```
-
-## Gate atual — v0.9.0 congelada
-
-O release hardening da v0.9.0 foi concluído com gate local completo, backup/restore V48 e CI verde no mesmo SHA antes da tag. A linha está em **feature freeze**.
-
-O único gate ainda aberto é operacional e posterior à publicação: coletar a amostra real de shadow validation para autorizar o cutover lógico. Até lá, o legado permanece autoritativo e removível apenas após uma release posterior atravessar a janela de rollback.
-
-Detalhes:
-- [`ROADMAP_0_8.md`](ROADMAP_0_8.md)
-- [`INCREMENT_16_4A.md`](INCREMENT_16_4A.md)
-- [`INCREMENT_16_4B.md`](INCREMENT_16_4B.md)
-- [`INCREMENT_16_4C.md`](INCREMENT_16_4C.md)
-- [`INCREMENT_16_3.md`](INCREMENT_16_3.md)
-- [`INCREMENT_16_2.md`](INCREMENT_16_2.md)
-- [`INCREMENT_16_1.md`](INCREMENT_16_1.md)
-- [`INCREMENT_16_0.md`](INCREMENT_16_0.md)
-
-## Checkpoint de fechamento — Student Experience 16.4
-
-**28/09/2026:** o ciclo funcional/visual `16.4A–16.4C` foi fechado como checkpoint. O Student Shell agora consolida Home, Jornadas, Reader e Live; Journey usa timeline/progresso sequencial, retomada e capítulos recolhíveis; o zoom global da área de estudos vai de 80% a 200% e não escala o chrome da aplicação; iconografia funcional foi normalizada em SVG; descrições técnicas de ingestão são filtradas da experiência do aluno.
-
-No gate histórico desse fechamento, a suíte backend completa, **271/271 testes frontend**, typecheck, build de produção e `git diff --check` passaram. O fechamento não declara conformidade WCAG AAA nem release v0.8. Desde então, 16.4D e a base de 16.5 até 16.5B.2 foram implementados. Permanecem para o release hardening a auditoria manual de acessibilidade, validação visual final mobile/ultrawide, consolidação de `study.module.css`, E2E e gates de release/restore.
-
-Documento de fechamento: [`CLOSURE_16_4_STUDENT_EXPERIENCE.md`](CLOSURE_16_4_STUDENT_EXPERIENCE.md).
-
-## 16.4D — Achievements Foundation concluído
-
-**28/09/2026:** a área Conquistas deixou de ser placeholder. O backend persiste marcos no Student com V36 e AchievementService; o catálogo inicial reconhece primeiro conteúdo, primeiro capítulo materializado e primeira Journey. A avaliação cobre progresso por matrícula e redemption, é idempotente e reconcilia progresso preexistente. O frontend /learn/achievements usa lista editorial e o Reader comunica novos unlocks de forma não bloqueante.
-
-Com **16.4A–16.4D implementados, 16.4 — Student Experience Shell & Workspace Visibility está tecnicamente concluído**. Permanecem fora do fechamento funcional: auditoria manual de acessibilidade, E2E/hardening de release e consolidação posterior do CSS. A próxima linha funcional é **16.5 — Content Library & Reuse**.
-
-## 16.5.0 — Architecture Audit concluído
-
-**28/09/2026:** o 16.5 foi cruzado com o código real antes de qualquer migration. LearningResource já é a entidade de conteúdo e será a base da Biblioteca. Hoje, porém, ele é obrigatório por turma e é referenciado de forma viva por JourneyStage; editar o recurso pode alterar a Journey. A autenticação do professor ainda não fornece identidade persistente para ownerTeacherId.
-
-Decisão: nenhuma V37 será criada antes de definir o desacoplamento Library Resource → Journey Snapshot e uma estratégia de ownership/migração que preserve os dados V29–V32. Documento: docs/INCREMENT_16_5_0_ARCHITECTURE_AUDIT.md.
-
-## 16.5A — Library Core implementado
-
-**28/09/2026:** V37 e o núcleo de Biblioteca foram implementados. LearningResource continua como entidade canônica; recursos da Biblioteca podem ser reutilizados entre turmas e JourneyStage passa a manter snapshot de conteúdo/revisão. Atualizações posteriores na Biblioteca não alteram a Journey já materializada. UI completa, tags/busca e ingestão direta para Biblioteca permanecem fora deste incremento.
-
-## 16.5B — Library Workspace & Reuse implementado
-
-**28/09/2026:** o professor já possui Biblioteca global utilizável: criar, buscar, abrir, editar, arquivar/restaurar e adicionar materiais a Journeys em rascunho. O Journey Builder também seleciona materiais da Biblioteca. O snapshot continua centralizado no domínio da Journey. Próxima linha: **16.5C — Ingestion → Library**.
-
-## 16.5B.1 — refinamento da Biblioteca
-
-**28/09/2026:** autoria Markdown passou a aproveitar a largura útil e ganhou preview renderizado; desktop usa edição + preview lado a lado e telas menores alternam as superfícies. O plano semântico/RAG permanece documentado para 16.5C e não foi implementado.
-
-## Fechamento corrente da v0.8
-
-O Gate de Estabilização Arquitetural foi integrado e `16.5C–F` estão tecnicamente fechados. A linha corrente é **Release Hardening**; qualquer capacidade funcional nova deve ser movida para a próxima versão.
-
-`16.6 — Knowledge & Retrieval Foundation` é evolução pós-v0.8/opcional para chunks derivados, lexical/vector retrieval, embeddings, avaliação e futuro RAG/LLM. Não faz parte do gate de release v0.8.
-
-O plano pedagógico seguinte foi renumerado para evitar colisão com 16.6: `17.0` audita o modelo de evidência; `17.1` cria Knowledge Taxonomy; `17.2` roadmaps/editais; `17.3` Question Bank & Provenance; `17.4` Assessment Blueprint & Mastery; `17.5` Review & Retention; `17.6` dashboard docente; `17.7` progressão/avatar; `17.8` recomendações adaptativas. A regra é explícita: progresso de leitura, clique em Próximo e uma questão isolada não validam domínio. Documento: [`LEARNING_VALIDATION_ROADMAP.md`](LEARNING_VALIDATION_ROADMAP.md).
-
-### 16.5B.2 — Journey Snapshot Integrity Hardening — implementado
-
-A materialização Biblioteca → Journey agora é explícita: updates comuns preservam a revisão já copiada, inclusive quando a origem foi posteriormente editada ou arquivada. `JourneyStage.updateConfiguration()` não toca no snapshot; `materializeResource()` é a fronteira de escrita. O 16.5E concluiu a atualização explícita entre revisões apenas em Journey `DRAFT`.
-
-
-**Homologação parcial v0.10 — 08/10/2026:** seleção legada/atual isolada por sessão, auditoria de sorteios, validações HTTP/CSRF e **24 cenários Playwright Chromium aprovados**. Interface de continuidade movida ao cabeçalho para preservar altura útil da Arena. Consulte [registro da execução](v0.10/EXECUTION_STATUS.md). A aplicação mantém **uma conta docente por instalação** (ADR-0053) até evolução explícita do domínio de identidades e autorizações. **Não há release v0.10.0.**
-
-**Incremento P1-A — 08/10/2026:** Peer Instruction usa V51 e duas execuções nativas de `LearningCheck`, com requisito de duas respostas iniciais e ausência de revelação prévia. Cobertura PG17 e Playwright para dois estudantes incluída; consulta [ADR-0054](adr/ADR-0054-peer-instruction-through-learning-cycle.md). Clínica do Erro, Biblioteca contextual, Confidence e Recovery permanecem pendentes.
-
-**Qualidade após P1-A (08/10/2026):** Flyway V51, backend unitário+integração sem erros, frontend typecheck/build/300 testes e **25/25 testes E2E Chromium** com docente e dois estudantes. A suite incluiu revisão do cenário de 12 recargas de tema/responsividade com timeout proporcional à matriz, sem remover verificações. A v0.10 continua **não publicada**, PR #35 em rascunho.
-
-**Incremento P1-B — 08/10/2026:** Clínica do Erro implementada com notas docentes append-only por alternativa incorreta realmente escolhida, Flyway V52, validações JPA/PG17, autenticação/CSRF, painel expansível, sem diagnóstico por IA nem XP. O carregamento em dataset de 353 turmas / 343 sessões revelou fan-out `/mechanics` e `ERR_INSUFFICIENT_RESOURCES`, **bloqueio real de escala do Dashboard para a v0.10**. Testes E2E da Clínica são executados em banco/container isolado e não representam correção desse problema. [ADR-0055](adr/ADR-0055-error-clinic-teacher-annotations.md).
-
-**Gate funcional P1-B (08/10/2026):** backend Surefire **183 casos sem falhas**, frontend **302 testes**, build/typecheck e **27/27 Playwright em stack isolada**; preservadas as alterações paralelas de acessibilidade em andamento no diretório de trabalho. O incidente de escala do bootstrap ([issue #36](https://github.com/wesscosta/arena-dev/issues/36)) continua **aberto e bloqueador** da publicação.
-
-**Correção P0-G — 08/10/2026:** bootstrap docente passou para `/api/dashboard/bootstrap` em lote, com sessão detalhada apenas quando a Arena é aberta. PostgreSQL 17 `DashboardBootstrapIT` validou 350 turmas/340 sessões e HTTP/auth, e Chromium voltou a carregar o ambiente previamente problemático, agora com 374 turmas/389 sessões, sem erro de recursos. [ADR-0056](adr/ADR-0056-dashboard-batch-bootstrap-and-lazy-mechanics.md). A issue #36 acompanha a entrega até o merge; isso não encerra os gates restantes da v0.10.
-
-**Regressão final P0-G (08/10/2026):** backend unitário + testes integrados PostgreSQL 17 com **184 casos**, frontend com **303 testes unitários**, typecheck/build aprovados, e Chromium **28/28 E2E aprovados no dataset volumoso**, repetidos após normalização de campos opcionais. Bootstrap em uma só chamada, sem fan-out das mecânicas na Home. PR #35 ainda rascunho, release não publicada.
-
-**P0-H — reversão segura de XP (08/10/2026):** V53 adiciona chave idempotente e bloqueio concorrente; reversão gera um ledger negativo e auditoria docente por sessão, mantendo `DrawOutcome.CONFIRMED` com `scoreReversed=true`. PG17/HTTP/Playwright verificam replay, 409 de segundo comando e F5 com dados preservados. [ADR-0057](adr/ADR-0057-xp-reversal-idempotency-and-participation-independence.md). PWA/rede instável e validação manual continuam gates separados.
-
-**Gate P0-H (08/10/2026):** Flyway V53, reversão de XP serializada/idempotente, auditoria de sessão e participação independente da pontuação. Backend **190 casos**, frontend **303 testes**, typecheck/build, Chromium **29/29 E2E**, sem erros; docs em [ADR-0057](adr/ADR-0057-xp-reversal-idempotency-and-participation-independence.md). Persistem PWA/CSRF em cliente legado, rede instável, acessibilidade manual e piloto docente.
-
-**P0-I — PWA/reconexão (08/10/2026):** diagnosticado `/sw.js` e recursos PWA HTTP 404 na imagem Docker (Next standalone sem cópia do `public/`); corrigido build. SW com shell v0.10 cacheado em escopo próprio, nunca API/WS nem HTML do join; offline fallback neutro e banner de atualização sem reload forçado. Aluno sinaliza offline e recebe snapshot após reconexão. [ADR-0058](adr/ADR-0058-pwa-versioned-offline-shell-and-connection-recovery.md). Atualização real de PWA v0.9 em dispositivo instalado segue pendente; **sem anúncio de release**.
-
-**Gate P0-I funcional (08/10/2026):** frontend **308/308 testes**, TypeScript/build Docker de produção aprovados, **31/31 E2E Chromium**. A imagem não servia `/sw.js` nem `/offline.html` (404); corrigida, agora recursos HTTP 200. Worker não reutiliza HTML antigo nem dados da API offline, e estudante reconecta sem duplicar presença/XP. **PWA antiga instalada em Android/iOS e auditoria manual não homologadas**; release v0.10 continua sem merge/tag.
-
-**P1-C — Biblioteca contextual (08/10/2026):** implementado vínculo canônico de material publicado na sessão Arena via V54, abertura de Markdown/LINK HTTPS e retorno com Escape/foco sem mudar a dinâmica ou projetar material privado. IT PG17 e Playwright de F5 e desvinculação; axe-core automatizado aplicado ao novo diálogo, sem declarar conformidade AAA. [ADR-0059](adr/ADR-0059-canonical-library-context-in-arena.md). P1-D/confiança, recuperação, autorização multi-docente e homologação manual ainda pendentes.
-
-**Gate P1-C (08/10/2026):** Flyway V54 + API docente de material canônico para Arena, backend **191 testes PG17/Surefire sem erros**, frontend **308/308 testes** e build/typecheck, Chromium **33/33 E2E aprovados**. O novo acesso inicialmente reduziu altura útil do cockpit; foi movido para o cabeçalho e retestados breakpoints, inclusive 22 estudantes. Axe-core login e diálogo de material light/dark sem achados A/AA automatizados; **WCAG AAA/leitor de tela ainda pendentes**. ADR-0059, PR #35 draft, release v0.10 sem publicação.
-
-**P1-D/R — Confidence e Recovery (08/10/2026):** V55 com autopercepção voluntária token-scoped LOW/MEDIUM/HIGH/SKIPPED; não modifica evidência ou XP. Agregado docente só após lock e 3+ declarações. Recuperação mostra sinal observável a partir da comparação pareada do LearningCycle e permite associação **manual** ao mesmo acervo da Biblioteca via V54, sem gerar mastery. [ADR-0060](adr/ADR-0060-student-self-confidence-and-evidence-based-recovery.md). Conformidade manual e piloto pedagógico permanecem pendentes; PR #35 em draft.
-
-**Gate P1-D/R validado automaticamente (08/10/2026):** migração V55, confiança declarada opcional/privada, distribuição docente suprimida com menos de 3 pessoas, recuperação determinística apoiada em pares do LearningCycle e seleção manual de material V54. **194 casos Surefire (0 falhas), 311/311 frontend, typecheck + build e 33/33 E2E Chromium**. E2E adicional confirma F5, 0 XP, material vinculado pelo professor e manutenção do Quiz/Peer. Não equivale a WCAG AAA, domínio consolidado ou validação em sala. [ADR-0060](adr/ADR-0060-student-self-confidence-and-evidence-based-recovery.md). PR #35 draft.
-
-**Correção visual P1-C (08/10/2026):** overlay de Material cortado/descentralizado na Arena foi isolado do cabeçalho por portal no `body`, com limites de viewport e rolagem própria de Biblioteca/prévia. Novo E2E verifica 8 geometrias (desktop/mobile/zoom), foco, Escape, scroll e manutenção do Grid. [ADR-0059](adr/ADR-0059-canonical-library-context-in-arena.md). Validação manual de acessibilidade/AAA segue obrigatória; PR #35 continua draft.
-
-**Gate da correção do modal P1-C:** Chromium completo **34/34 (exit 0)** incluindo 8 geometrias, foco/rolagem, axe-core A/AA contextual nos temas claro/escuro e demais fluxos. Frontend typecheck + lint 0 erros; imagem Docker atualizada sem migração backend. A correção está na branch v0.10 e não equivale a publicação da release.
-
-**10.9 — Painel pedagógico docente (08/10/2026):** read model de presença marcada/ciclos de aprendizagem por objetivo com comparação real, intervenção registrada e próxima ação, sem XP ou mastery; GET restrito ao docente, UI em modal sem deslocar Grid. Falha de CI da migração histórica resolvida ao abandonar expectativa fixa V48, preservando V26/legado Teams. [ADR-0061](adr/ADR-0061-session-learning-overview-teacher-only.md). CI final/automação e homologação manual são gates separados; PR #35 draft.
-
-**Gate 10.9 aprovado automaticamente (08/10/2026):** backend `mvn verify` com **195 Surefire + 122 Failsafe, 0 falhas/erros** (migre V25→V55), frontend format/lint 0 erros, typecheck, **311 testes** e build, Docker reconstruído, **Chromium 35/35 E2E**. O novo painel docente de sessão preserva Grid, sem inferir mastery. [ADR-0061](adr/ADR-0061-session-learning-overview-teacher-only.md). CI do PR deverá ser acompanhado; não considerar v0.10 publicada.
-
-**10.10 — Pré-release v0.10 (08/10/2026):** metadados de branch alinhados a `0.10.0-rc.1`, novo `verify-v0.10-contract.sh` exige V49–V55, gate seleciona restore V55 e recusa publicar candidata, mantendo lógica v0.9 para checkout legado. Backup de desenvolvimento e checksum efetivamente restaurados em PG17 V55; teste negativo V48 falhou como esperado. Sem tag, merge ou publicação. [ADR-0062](adr/ADR-0062-v010-release-candidate-schema-and-rollback-gate.md) · [Checklist de homologação](v0.10/RELEASE_CANDIDATE_CHECKLIST.md).
-
-**Retry de gate v0.10 RC (09/10/2026 UTC):** compilação Docker do backend `0.10.0-rc.1` aprovada e **`release-gate.sh local` exit 0** no SHA `7cf22a9`. Backend 195 Surefire + 122 Failsafe, frontend 312/312 + build/lint/typecheck/audit, PostgreSQL/backend/frontend Docker isolados saudáveis, **35/35 E2E Chromium**. [GitHub Actions #37864958170](https://github.com/wesscosta/arena-dev/actions/runs/37864958170) também aprovado integralmente no SHA `7cf22a9`. Checklist/ADR-0062 atualizados; **não equivale a aprovação de rollback, PWA em dispositivo real, acessibilidade manual ou piloto docente**. PR #35 permanece draft; sem merge/tag.
-
-**10.11 — Ensaio de rollback v0.9↔v0.10 (08/10/2026; 09/10 UTC):** script isolado compila tag `v0.9.0` e RC a partir de fontes, inicializa V48, cria turma/aluno/sessão/ledger sintéticos, tira backup com checksum, sobe V55, restaura V48 e reinicia a v0.9 original, comprovando preservação de IDs, presença e XP em **duas execuções com exit 0**. Sem tocar o Compose da aplicação. Atenção: rollback para backup V48 perde alterações feitas em V55 após a cópia, e ensaio não mede RTO de produção. [ADR-0063](adr/ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md).
-
-**10.12 — Rede incerta + atualização PWA simulada (08/10/2026):** cliente docente não repete sorteio/XP após perda do ACK do POST, exige `GET` autoritativo antes de novo comando; offline bloqueia escrita e reconexão sincroniza por GET. Simulação Chromium de ativação de novo SW elimina cache v0.9 e preserva rascunho não enviado; input do Join tem label acessível. **3/3 E2E focados**, frontend **313/313** testes + typecheck/lint/build aprovados. Suíte integral do novo HEAD depende de CI isolado; testes com credenciais locais ausentes produziram 401 e rate limit 429 esperado. [ADR-0064](adr/ADR-0064-network-uncertainty-draw-reconciliation-and-pwa-cache.md). PWA instalada real, rede móvel, WCAG manual e piloto docente permanecem gates.
-
-**10.13 — Recuperação WebSocket docente (08/10/2026):** reconexão deixou de repetir GET/WS em loop de 1,5 s durante offline; alternância de conectividade reconstrói somente snapshots GET, e perda com conectividade aparente usa backoff 1/2/4/8/10 s. Testes focados 3/3 Chromium passaram sem duplicar seleção/XP. [ADR-0065](adr/ADR-0065-teacher-websocket-backoff-and-offline-recovery.md). Sem alegar simulação de redes LTE/iOS/Android ou estabilidade de produção.
+Os documentos dos incrementos 14.x/16.x permanecem acessíveis no Git e no índice, mas não determinam o estado de release da v0.10.

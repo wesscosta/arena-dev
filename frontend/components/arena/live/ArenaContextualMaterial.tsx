@@ -12,6 +12,7 @@ import {
   type ArenaContextMaterial,
 } from "@/lib/arena-context-material-api";
 import styles from "./ArenaContextualMaterial.module.css";
+import { DialogCloseButton } from "@/components/ui";
 
 type Props = { sessionId: string; notify: (message: string) => void };
 
@@ -149,8 +150,7 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
                 <h2 id={headingId}>Biblioteca nesta aula</h2>
                 <p>Use o mesmo material da Biblioteca e da Jornada, sem duplicar conteúdo nem alterar o palco.</p>
               </div>
-              <button type="button" className={styles.close} onClick={() => setOpen(false)}
-                aria-label="Fechar material e voltar à Arena">Fechar e voltar à Arena</button>
+              <DialogCloseButton onClick={() => setOpen(false)} label="Fechar biblioteca" />
             </header>
             {error && <p role="alert" className={styles.error}>{error}</p>}
             <div className={styles.content}>
@@ -193,9 +193,6 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
                 ) : <p>Selecione um material publicado. O acesso aqui é apenas do professor; não o publica automaticamente para estudantes ou projetor.</p>}
               </div>
             </div>
-            <footer className={styles.footer}>
-              <button type="button" className={styles.action} onClick={() => setOpen(false)}>Voltar à aula</button>
-            </footer>
           </section>
         </div>,
         document.body,

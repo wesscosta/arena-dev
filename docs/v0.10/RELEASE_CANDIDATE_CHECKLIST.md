@@ -2,30 +2,38 @@
 
 **Candidata em homologação:** `0.10.0-rc.1`, branch `feat/v0.10-learning-loop`, PR #35 em rascunho. **Não executar merge, tag nem deploy** antes de aprovar todos os gates abaixo. Evidências devem apontar para o **mesmo SHA** do candidato.
 
+**Migração aditiva V56 em andamento de consolidação:** proteção contra duplicação em criação de XP manual [ADR-0066](../adr/ADR-0066-manual-score-creation-idempotency.md). O último CI verde citado abaixo é **histórico, anterior a V56**; exigir novos backend/frontend/E2E e rollback sobre a nova SHA.
+
+**Auditoria de 09/10:** última CI verificada de código versionado [#37935122578](https://github.com/wesscosta/arena-dev/actions/runs/37935122578) verde no SHA `cce0758`, **anterior às refatorações locais de UI/UX e desta auditoria**. Testes Chromium locais (62/62 antes da consolidação) são evidência limitada e não substituem CI no SHA final ou gates em dispositivos reais. [Registro das decisões de remoção/retenção](AUDITORIA_CONSOLIDACAO_2026-10-09.md).
+
 ## 1. Gates automatizáveis
 
 - [x] Código da candidata identificado de modo diferente da v0.9 publicada (Java + npm + lockfile em `0.10.0-rc.1`).
-- [x] Contratos históricos v0.6→v0.9 + novo verificador v0.10/V49–V55, licença e scripts com sintaxe validada.
+- [x] Contratos históricos v0.6→v0.9 + novo verificador v0.10/V49–V56, licença e scripts com sintaxe validada.
 - [x] Dump consistente + checksum do banco **de desenvolvimento**; restore PostgreSQL 17 isolado V55; rejeição de dump com versão esperada V48. Não equivale ao backup de produção.
 - [x] Bloqueio de `release-gate.sh final` enquanto metadata ainda é `0.10.0-rc.1`.
 - [x] CI GitHub **três jobs** backend/frontend/Compose+Chromium **aprovados** no SHA de implementação `7cf22a9684d09bc22bc693014b0fb5319cbb2654`: [run #37864958170](https://github.com/wesscosta/arena-dev/actions/runs/37864958170), `status=completed`, `conclusion=success`. O CI do último SHA de código `38b73ca829e7f57b24fc97ec2a29dc73ba5ec0f1` passou em [run #37873486460](https://github.com/wesscosta/arena-dev/actions/runs/37873486460), com os três jobs (backend, frontend, Compose+E2E) concluídos em `success`. Após qualquer novo commit, exigir CI do novo SHA antes de publicar.
 - [x] `release-gate.sh local` **exit 0**, no SHA funcional `7cf22a9`: Maven verify **195 Surefire + 122 Failsafe**, frontend **312/312**, auditoria de dependências (`0 vulnerabilities`), lint, typecheck e build, imagens Docker backend/frontend, execução não-root, health liveness/readiness, PostgreSQL isolado e **35/35 E2E Chromium**. Evidência local ignorada pelo Git: `release-evidence/v0.10.0-rc.1-local-20261009T003721Z.log`. A primeira build Docker fria precisou reconstituir cache Maven, mas o **retry** terminou com imagem válida (build exit 0) e gate integral concluído.
 - [x] **Sorteio: falha HTTP ambígua / offline simulado** em Chromium. Após commit de seleção ou pontuação com resposta perdida, UI exige GET de sincronização sem refazer POST; ledger permanece com 1 attempt/1 ScoreEvent. Sem rede antes de clicar, não há POST. [ADR-0064](../adr/ADR-0064-network-uncertainty-draw-reconciliation-and-pwa-cache.md). Testes focados 3/3 aprovados.
 - [x] **Reconexão docente WebSocket simulada:** desligar navegador por 3,4 s, nenhuma nova consulta enquanto offline, GET de snapshots no retorno, sem POST nem alteração do sorteio; queda com navegador online usa backoff progressivo 1/2/4/8/10s ([ADR-0065](../adr/ADR-0065-teacher-websocket-backoff-and-offline-recovery.md)).
+- [x] **XP manual V56 (isolado):** integração Testcontainers PostgreSQL 17 com reenvio idêntico, concorrência serializada, 409 para payload divergente e compatibilidade retroativa (4/4); backend focalizado (migração + V56) 10/10; contrato HTTP E2E de replay, 409 e saldo incluído nos **63/63 testes Chromium** sobre backend/frontend Docker V56 em stack isolada. A CI no SHA definitivo e a homologação em dispositivos físicos continuam pendentes.
 - [ ] **Rede degradada em condições reais:** latência/perda, PWA instalada, múltiplos navegadores simultâneos, reprise/idempotência do Learning Check e validação de XP com desconexão no meio da confirmação. Ainda não equivale à simulação Chromium.
 - [x] Regressão **local** do Chromium **39/39 no mesmo código** após WS docente; 3/3 testes focados e Docker frontend reconstruído. `format:check`, lint 0 erros, TypeScript, **313/313 testes frontend** e build aprovados. **CI remoto de `38b73ca` aprovado**, com correção do filtro de requisição QR em `arena-shell.spec.ts`, evitando confundir `/join-code/qr` com o snapshot `/join-code`. Veja run #37873486460.
 - [ ] Auditoria de dependências e segurança sem risco bloqueador, autorização de professor/estudante/projetor e ameaças a sessão/identidade revisadas.
-- [ ] Gate final **na main** no SHA de CI verde, versão estável `0.10.0`, backup restaurável/checksum V55; tag/release apenas depois do gate e autorização consciente.
+- [ ] Gate final **na main** no SHA de CI verde, versão estável `0.10.0`, backup restaurável/checksum V56; tag/release apenas depois do gate e autorização consciente.
 
 ## 2. Gates operacionais/manuais
 
 - [ ] Upgrade de PWA **previamente instalada em v0.9** para v0.10 em Android/Chrome e iOS/Safari, com atividade em andamento e cache/service worker antigo; perda de rede, retomada, gabarito e tokens.
 - [ ] Navegação por teclado, ordem/foco, NVDA/VoiceOver, zoom 200–400%, contraste claro/escuro, tamanhos mobile/tablet/desktop e modo projetor. Testes axe-core **não certificam WCAG AAA**.
 - [ ] Roteiro docente piloto em turma real: Sorteio, Peer Instruction, Clínica do Erro, Material contextual, Verificar aprendizagem, Antes/Depois e Painel de evidências. Registrar feedback e métrica operacional; **não medir mastery com apenas uma verificação**.
-- [x] **Ensaio técnico isolado** v0.9.0 real / V48 → dump sintético + SHA-256 → backend v0.10 / V55 → restore V48 → reinício v0.9 original, com integridade de IDs, presença, reversão e saldo XP confirmados em **duas execuções exit 0** (`scripts/release/rehearse-v09-v010-rollback.sh`; [ADR-0063](../adr/ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)). Sem tocar a instalação principal.
+- [x] **Ensaio técnico isolado histórico, V55 (não valida V56):** v0.9.0 real / V48 → dump sintético + SHA-256 → backend v0.10 / V55 → restore V48 → reinício v0.9 original, com integridade de IDs, presença, reversão e saldo XP confirmados em **duas execuções exit 0** (`scripts/release/rehearse-v09-v010-rollback.sh`; [ADR-0063](../adr/ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)). Sem tocar a instalação principal.
+- [ ] **Reexecutar o ensaio sintético V48 → V56 → V48**, após a atualização do script, além de homologar o rollback em operação.
 - [ ] **Homologação de rollback operacional:** volume representativo, janela de manutenção, cronômetro RTO/RPO, snapshot pré-upgrade validado, dados gravados durante janela, cliente PWA antigo e rede/reconexão; o teste sintético não comprova recuperação real de produção.
 - [x] Decisão operacional documentada: v0.10 é edição **self-hosted de operador docente único**, conforme ADR-0053 e [roteiro de aceite](OPERATIONAL_ACCEPTANCE.md); não apresentar como SaaS multi-tenant. **Aceite pelo operador e testes em campo ainda pendentes.**
 - [ ] README, docs, Notion, release notes, decisão GO/NO-GO, PR aprovado, plano de suporte e monitoração de erros atualizados.
+
+**Resultado local de 09/10, após V56:** frontend `npm test` 313/313, TypeScript, lint (zero erros, 94 avisos), build, `npm audit --omit=dev` sem vulnerabilidades; integração backend V56 + migração 10/10; Docker + E2E Chromium 63/63. A primeira execução E2E em stack isolada teve falhas de autenticação por URL de teste incorreta (não da aplicação), e o rerun com `E2E_BROWSER_API_URL` correto passou integralmente. O primeiro backend verify completo teve uma asserção antiga de migração V55, corrigida e validada na suíte focada; **novo verify integral precisa passar no CI do SHA atualizado**. Essas evidências não representam o GO operacional.
 
 **Decisão técnica registrada: implementação concluída como candidata; NO-GO para publicação ampla até completar e aprovar os gates operacionais.** Consultar [roteiro operacional e evidências ainda faltantes](OPERATIONAL_ACCEPTANCE.md).
 

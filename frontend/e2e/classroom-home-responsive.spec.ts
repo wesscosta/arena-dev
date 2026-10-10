@@ -335,4 +335,50 @@ test.describe.serial("Classroom Home responsive contract", () => {
       await context.close();
     }
   });
+
+  test("iOS: profile aligned right and tabs only scroll horizontally", async ({ browser }, testInfo) => {
+    test.setTimeout(80_000);
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const page = await context.newPage();
+    try {
+      await loginAndOpenClassroom(page, fixture.classroom.name);
+      for (const width of [320, 375, 390, 430]) {
+        await page.setViewportSize({ width, height: 844 });
+        for (const tabName of ["Home", "Alunos", "Atividades", "Jornadas"]) {
+          await page.locator(".classroom-section-tab").filter({ hasText: tabName }).click();
+          const state = await page.evaluate(() => {
+            const nav = document.querySelector<HTMLElement>(".classroom-section-nav")!;
+            const strip = document.querySelector<HTMLElement>(".classroom-section-tabs")!;
+            const selected = document.querySelector<HTMLElement>('.classroom-section-tab[aria-selected="true"]')!;
+            const header = document.querySelector<HTMLElement>(".contextual-topbar")!;
+            const profile = header.querySelector<HTMLElement>(".topbar-profile")!;
+            const activeBounds = selected.getBoundingClientRect();
+            const stripBounds = strip.getBoundingClientRect();
+            return {
+              navHeight: nav.getBoundingClientRect().height,
+              verticalOverflow: strip.scrollHeight - strip.clientHeight,
+              overflowY: getComputedStyle(strip).overflowY,
+              touchAction: getComputedStyle(strip).touchAction,
+              activeVisible: activeBounds.left >= stripBounds.left - 1 && activeBounds.right <= stripBounds.right + 1,
+              textWrap: getComputedStyle(selected.querySelector("strong")!).whiteSpace,
+              profileGap: header.getBoundingClientRect().right - profile.getBoundingClientRect().right,
+              pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
+            };
+          });
+          expect(state.navHeight).toBeCloseTo(64, 0);
+          expect(state.verticalOverflow, `tabs have vertical scroll at ${width}px`).toBeLessThanOrEqual(1);
+          expect(state.overflowY).toBe("hidden");
+          expect(state.touchAction).toBe("pan-x");
+          expect(state.activeVisible, `${tabName} clipped at ${width}px`).toBe(true);
+          expect(state.textWrap).toBe("nowrap");
+          expect(state.profileGap, `profile inset at ${width}px`).toBeGreaterThanOrEqual(-1);
+          expect(state.profileGap).toBeLessThanOrEqual(18);
+          expect(state.pageOverflow).toBeLessThanOrEqual(1);
+        }
+        await testInfo.attach(`ios-classroom-${width}`, { body: await page.screenshot(), contentType: "image/png" });
+      }
+    } finally {
+      await context.close();
+    }
+  });
 });

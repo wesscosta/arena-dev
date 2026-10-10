@@ -11,6 +11,10 @@ import {
   type WordCloudState,
 } from "@/lib/word-cloud-api";
 import styles from "./WordCloudPanel.module.css";
+import DynamicHeader from "@/components/arena/dynamics/DynamicHeader";
+import QuestionComposer from "@/components/arena/dynamics/QuestionComposer";
+import ToggleField from "@/components/arena/dynamics/ToggleField";
+import DynamicSection from "@/components/arena/dynamics/DynamicSection";
 
 type Props = {
   sessionId: string;
@@ -96,47 +100,6 @@ export default function WordCloudPanel({
     }
   }
 
-  function projectWordCloud() {
-    if (!joinCode) {
-      notify("Aguarde a geração do código da sessão.");
-      return;
-    }
-
-    window.open(
-      `/projector?code=${encodeURIComponent(joinCode.code)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-  }
-
-  async function close() {
-    if (!round || busy) return;
-
-    if (
-      round.status === "COLLECTING"
-      && participation.presentCount > 0
-      && participation.pendingCount > 0
-    ) {
-      const confirmed = window.confirm(
-        `${participation.answeredCount} de ${participation.presentCount} aluno(s) presente(s) responderam. `
-          + `${participation.pendingCount} ainda não participaram.\n\n`
-          + "Deseja encerrar a rodada mesmo assim?",
-      );
-      if (!confirmed) return;
-    }
-
-    setBusy(true);
-    try {
-      const next = await closeWordCloud(sessionId, round.id);
-      onStateChange(next);
-      notify("Rodada de Nuvem de Palavras encerrada.");
-    } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível encerrar a rodada.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   const accessCard = showAccessCard ? (
     <SessionAccessCard
       sessionId={sessionId}
@@ -156,69 +119,59 @@ export default function WordCloudPanel({
       <div>
         {accessCard}
         <section className={`${styles.shell} ${styles.prepareShell}`}>
-          <div className={styles.heroHeader}>
-            <div>
-              <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
-              <h2>Nuvem de Palavras</h2>
-              <p>Transforme respostas curtas da turma em um painel visual coletivo.</p>
-            </div>
-            <div className={styles.headerActions}>
-              <span className={styles.modeBadge}>PREPARAR</span>
-              {round?.status === "CLOSED" && (
-                <button className={styles.secondary} onClick={() => setCreating(false)}>
-                  Ver rodada anterior
-                </button>
-              )}
-            </div>
-          </div>
+          <DynamicHeader dynamic="wordcloud"
+            title="Nuvem de Palavras"
+            description="Transforme respostas curtas da turma em um painel visual coletivo."
+            status="PREPARAR"
+            actions={round?.status === "CLOSED" ? (
+              <button className={styles.secondary} onClick={() => setCreating(false)}>Ver rodada anterior</button>
+            ) : undefined}
+          />
 
           <div className={styles.prepareGrid}>
-            <section className={styles.composeCard}>
+            <DynamicSection className={styles.composeCard}>
               <span className={styles.cardLabel}>PERGUNTA DA RODADA</span>
-              <label className={styles.field}>
-                <span>Pergunta para a turma</span>
-                <textarea
-                  value={prompt}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  maxLength={280}
-                  rows={4}
-                  placeholder="Ex.: Qual palavra melhor resume o conceito de API?"
-                />
-                <small>{prompt.length}/280</small>
-              </label>
+              <QuestionComposer
+                label="Pergunta para a turma"
+                value={prompt}
+                onChange={setPrompt}
+                maxLength={280}
+                placeholder="Ex.: Qual palavra melhor resume o conceito de API?"
+              />
 
               <div className={styles.configGrid}>
-                <div className={styles.field}>
+                <label className={styles.field}>
                   <span>Respostas por aluno</span>
                   <select value={maxWords} onChange={(event) => setMaxWords(Number(event.target.value))}>
                     {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}
                   </select>
-                </div>
+                </label>
 
-                <div className={styles.modeGroup}>
-                  <span>Como exibir</span>
-                  <button type="button" className={!liveReveal ? styles.modeActive : styles.mode} onClick={() => setLiveReveal(false)}>
-                    <b>Coletar e revelar</b>
-                    <small>As respostas ficam ocultas até você liberar.</small>
-                  </button>
-                  <button type="button" className={liveReveal ? styles.modeActive : styles.mode} onClick={() => setLiveReveal(true)}>
-                    <b>Ao vivo</b>
-                    <small>A frequência aparece conforme a turma responde.</small>
-                  </button>
+                <ToggleField
+                  label="Exibir resultados ao vivo"
+                  checked={liveReveal}
+                  onChange={setLiveReveal}
+                  description={liveReveal
+                    ? "A nuvem será atualizada durante a coleta."
+                    : "As palavras ficam ocultas até você revelar."}
+                />
+              </div>
+            </DynamicSection>
+
+            <DynamicSection className={styles.stagePreviewCard} ariaLabel="Prévia da Nuvem de Palavras">
+              <div className={styles.stagePreviewCopy}>
+                <div className={styles.previewCloudOrb} aria-hidden="true">
+                  <span>API</span>
+                  <b>REST</b>
+                  <em>JSON</em>
+                  <small>HTTP</small>
+                </div>
+                <div>
+                  <span className={styles.cardLabel}>PRÉVIA DO PALCO</span>
+                  <strong>{presentCount} aluno(s) presente(s)</strong>
+                  <p>As palavras ganham destaque conforme a frequência aumenta.</p>
                 </div>
               </div>
-            </section>
-
-            <aside className={styles.stagePreviewCard}>
-              <span className={styles.cardLabel}>PALCO DA TURMA</span>
-              <div className={styles.previewCloudOrb} aria-hidden="true">
-                <span>API</span>
-                <b>REST</b>
-                <em>JSON</em>
-                <small>HTTP</small>
-              </div>
-              <strong>{presentCount} aluno(s) presente(s)</strong>
-              <p>As palavras ganham destaque conforme a frequência aumenta.</p>
               <button
                 className={styles.primary}
                 disabled={busy || !prompt.trim()}
@@ -226,7 +179,7 @@ export default function WordCloudPanel({
               >
                 {busy ? "Criando..." : "Abrir Nuvem"}
               </button>
-            </aside>
+            </DynamicSection>
           </div>
         </section>
       </div>
@@ -239,16 +192,11 @@ export default function WordCloudPanel({
     <div>
       {accessCard}
       <section className={`${styles.shell} ${styles.liveShell}`}>
-        <div className={styles.heroHeader}>
-          <div>
-            <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
-            <h2>Nuvem de Palavras</h2>
-            <p>{round.prompt}</p>
-          </div>
-          <span className={`${styles.status} ${styles[round.status.toLowerCase()]}`}>
-            {statusLabel(round.status)}
-          </span>
-        </div>
+        <DynamicHeader dynamic="wordcloud"
+          title="Nuvem de Palavras"
+          description={round.prompt}
+          status={statusLabel(round.status)}
+        />
 
         <div className={styles.liveGrid}>
           <section className={styles.participationCard}>
@@ -317,9 +265,6 @@ export default function WordCloudPanel({
         </div>
 
         <div className={styles.actions}>
-          <button className={styles.secondary} disabled={!joinCode} onClick={projectWordCloud}>
-            Projetar ↗
-          </button>
           {round.status === "COLLECTING" && !round.liveReveal && (
             <button className={styles.primary} disabled={busy} onClick={() => void reveal()}>
               Revelar respostas

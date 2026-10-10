@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import TeacherLogin from "@/components/TeacherLogin";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import ActivityStepEditor from "@/components/ActivityStepEditor";
@@ -14,6 +14,7 @@ import DrawSettingsDrawer from "@/components/arena/selection/DrawSettingsDrawer"
 import RankingPanel from "@/components/arena/ranking/RankingPanel";
 import ArenaContextRail from "@/components/arena/live/ArenaContextRail";
 import { useArenaRealtime } from "@/components/arena/live/useArenaRealtime";
+import { useProjectorControl } from "@/components/arena/live/useProjectorControl";
 import { useArenaScoring } from "@/components/arena/live/useArenaScoring";
 import { useArenaToolState } from "@/components/arena/live/useArenaToolState";
 import ArenaNextActions from "@/components/arena/live/ArenaNextActions";
@@ -34,6 +35,7 @@ import {
   ArenaSidebar,
 } from "@/components/arena/live/ArenaLiveChrome";
 import WordCloudPanel from "@/components/WordCloudPanel";
+import DynamicHeader from "@/components/arena/dynamics/DynamicHeader";
 import PollPanel from "@/components/PollPanel";
 import QuizPanel from "@/components/QuizPanel";
 import LearningCheckPanel from "@/components/LearningCheckPanel";
@@ -50,6 +52,7 @@ import {
   Badge,
   Breadcrumb,
   Button,
+  DialogCloseButton,
   Menu,
   MenuItem,
   LiveRegion,
@@ -60,6 +63,7 @@ import {
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
+import { useModalKeyboard } from "@/lib/use-modal-keyboard";
 import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName } from "@/lib/classroom-api";
 import { createSession as createSessionApi, fetchSessionParticipants, finishSession as finishSessionApi, releaseParticipantDevice, setParticipantPresence } from "@/lib/session-api";
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
@@ -890,9 +894,9 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
       <div className="overview-toolbar">
         <div className="overview-toolbar-main">
           <div className="segmented-control" aria-label="Filtrar turmas">
-            <button className={filter === "ALL" ? "active" : ""} onClick={() => setFilter("ALL")}>Todas <span>{data.classrooms.length}</span></button>
-            <button className={filter === "ACTIVE" ? "active" : ""} onClick={() => setFilter("ACTIVE")}>Ativas <span>{activeCount}</span></button>
-            <button className={filter === "INACTIVE" ? "active" : ""} onClick={() => setFilter("INACTIVE")}>Inativas <span>{inactiveCount}</span></button>
+            <button className={filter === "ALL" ? "active" : ""} aria-pressed={filter === "ALL"} onClick={() => setFilter("ALL")}>Todas <span>{data.classrooms.length}</span></button>
+            <button className={filter === "ACTIVE" ? "active" : ""} aria-pressed={filter === "ACTIVE"} onClick={() => setFilter("ACTIVE")}>Ativas <span>{activeCount}</span></button>
+            <button className={filter === "INACTIVE" ? "active" : ""} aria-pressed={filter === "INACTIVE"} onClick={() => setFilter("INACTIVE")}>Inativas <span>{inactiveCount}</span></button>
           </div>
 
           <label className="overview-search">
@@ -1817,7 +1821,7 @@ function ClassroomCreateModal({ data, onClose, onCreated, notify, refreshClassro
         <div className="modal-section-stack">
           <div className="context-lock"><span>Turma criada</span><strong>{classroom.name}</strong><small>{classroom.code || "Sem código"}</small></div>
           <StudentManager data={data} classroomId={createdId} notify={notify} refreshClassroomDomain={refreshClassroomDomain} />
-          <div className="modal-footer"><button className="button ghost" onClick={() => onCreated(createdId)}>Concluir por enquanto</button><button className="button primary" onClick={() => onCreated(createdId)}>Abrir turma</button></div>
+          <div className="modal-footer"><button className="button primary" onClick={() => onCreated(createdId)}>Abrir turma</button></div>
         </div>
       ) : (
         <MiniEmpty text="Atualizando dados da turma..." />
@@ -2247,7 +2251,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     activeTool,
     drawSettingsOpen,
     sessionQrOpen,
-    customScoreOpen,
     selectDynamic,
     selectTool,
     closeTool,
@@ -2256,8 +2259,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     closeDrawSettings,
     openSessionQr,
     closeSessionQr,
-    toggleCustomScore,
-    closeCustomScore,
   } = useArenaToolState();
   const [groups, setGroups] = useState<string[][]>(currentSession?.groups ?? []);
   const [groupSize, setGroupSize] = useState(currentSession?.groupSize ?? 2);
@@ -2298,6 +2299,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     setCustomPoints,
     addScore,
     addBuzzerScore,
+    scoreBusy,
   } = useArenaScoring({
     classroomId,
     sessionId: currentSession?.id,
@@ -2307,7 +2309,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     onScoreEvent: (event) => {
       patch((current) => ({
         ...current,
-        scoreEvents: [...current.scoreEvents, event],
+        scoreEvents: [...current.scoreEvents.filter((existing) => existing.id !== event.id), event],
       }));
     },
     notify,
@@ -2337,6 +2339,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     onSelectedStudent: setSelectedId,
     onParticipantsChanged: refreshRealtimeParticipants,
   });
+
+  const projectorControl = useProjectorControl(joinCode?.code, notify);
 
   useEffect(() => {
     if (typeof window !== "undefined") setPublicBaseUrl(window.location.origin);
@@ -2927,15 +2931,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     }
   }
 
-  function openProjector() {
-    if (!joinCode) {
-      notify("Aguarde a geração do código da sessão.");
-      return;
-    }
-    const projectorUrl = `/projector?code=${encodeURIComponent(joinCode.code)}`;
-    window.open(projectorUrl, "_blank", "noopener,noreferrer");
-  }
-
   const selected = students.find((student) => student.id === (currentDrawAttempt?.studentId ?? selectedId));
   const selectedXp = selected ? xpForStudent(data.scoreEvents, classroomId, selected.id) : 0;
   const activeActivity = data.activities.find((activity) => activity.id === (currentSession?.activityId ?? activityId));
@@ -3069,7 +3064,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           </>}
           onGoDashboard={onGoDashboard}
           onBack={onBack}
-          onOpenProjector={openProjector}
+          onToggleProjector={projectorControl.toggle}
+          projectorActive={projectorControl.projecting}
+          projectorPending={projectorControl.pending}
           onEndSession={() => { void endSession(); }}
         />
       }
@@ -3193,23 +3190,21 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               />
             ) : (
             <div className="smart-draw-hero">
-              {drawSession.state?.canStartNextRound && (
-                <button className="button primary" disabled={drawBusy} type="button"
-                  onClick={() => { void startNextDrawRound(); }}>Iniciar próxima rodada</button>
-              )}
-              <div className="smart-draw-titlebar">
-                <div className="smart-draw-title-copy">
-                  <span className="smart-draw-title-icon" aria-hidden="true"><ArenaGlyph name="draw" /></span>
-                  <div>
-                    <span className="eyebrow accent">DINÂMICA AO VIVO</span>
-                    <h2>Sorteio Inteligente</h2>
-                    <p>Escolha um aluno de forma justa e dinâmica, mantendo toda a turma em jogo.</p>
-                  </div>
-                </div>
-                <button type="button" className="smart-draw-settings" onClick={openDrawSettings}>
-                  ⚙ Ajustes
-                </button>
-              </div>
+              <DynamicHeader dynamic="draw"
+                title="Sorteio Inteligente"
+                description="Escolha um aluno de forma justa e dinâmica, mantendo toda a turma em jogo."
+                actions={(
+                  <>
+                    <button type="button" className="smart-draw-settings" onClick={openDrawSettings}>
+                      ⚙ Ajustes
+                    </button>
+                    {drawSession.state?.canStartNextRound && (
+                      <button className="button primary" disabled={drawBusy} type="button"
+                        onClick={() => { void startNextDrawRound(); }}>Iniciar próxima rodada</button>
+                    )}
+                  </>
+                )}
+              />
 
               <WheelParticipantSelector
                 participants={students.filter((student) => currentSession.presentStudentIds.includes(student.id))}
@@ -3233,7 +3228,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                           <p>
                             Vezes chamado nesta sessão: {drawAttemptCounts[selected.id] ?? 0}
                             <b>·</b>
-                            <em>+{selectedXp} XP</em>
+                            <em>{selectedXp} XP acumulados na turma</em>
                           </p>
                         </div>
                       </>
@@ -3249,7 +3244,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                           ) : (
                             <>
                               <h3>Aguardando o próximo sorteio</h3>
-                              <p>O resultado aparecerá aqui e poderá ser pontuado imediatamente.</p>
+                              <p>O professor registra a participação e decide separadamente se haverá XP.</p>
                             </>
                           )}
                         </div>
@@ -3301,71 +3296,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
 
             )}
 
-            <section className="quick-score-dock" aria-label="Ações rápidas de pontuação">
-              <div className="quick-score-head">
-                <div>
-                  <strong>Pontuação avulsa</strong>
-                  <small>XP manual separado da confirmação do sorteio.</small>
-                </div>
-                <label className="quick-score-student">
-                  <span className="sr-only">Aluno para pontuação</span>
-                  {selected ? <Avatar student={selected} /> : <span className="quick-score-student-placeholder" aria-hidden="true">—</span>}
-                  <select
-                    className="select"
-                    aria-label="Aluno para pontuação"
-                    value={selectedId ?? ""}
-                    onChange={(e) => setSelectedId(e.target.value || undefined)}
-                  >
-                    <option value="">Selecionar aluno</option>
-                    {students.filter((student) => currentSession.presentStudentIds.includes(student.id)).map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
-                  </select>
-                </label>
-              </div>
-
-              <div className="quick-score-presets">
-                {SCORE_PRESETS.map((preset) => (
-                  <button key={`${preset.points}-${preset.label}`} disabled={!selected} onClick={() => { setReason(preset.label); void addScore(preset.points, preset.category, preset.label); }}>
-                    <b>+{preset.points}</b><span>{preset.points === 5 ? "Participação" : preset.label}</span>
-                  </button>
-                ))}
-                <div className="quick-score-custom-wrap">
-                  <button
-                    type="button"
-                    className={customScoreOpen ? "quick-score-custom-trigger active" : "quick-score-custom-trigger"}
-                    disabled={!selected}
-                    aria-expanded={customScoreOpen}
-                    onClick={() => {
-                      setReason("Outra pontuação");
-                      toggleCustomScore();
-                    }}
-                  >
-                    <b>✎</b><span>Personalizar</span>
-                  </button>
-                  {customScoreOpen && (
-                    <div className="quick-score-custom-popover">
-                      <label>
-                        <span>Pontos</span>
-                        <input className="input compact" type="number" value={customPoints} onChange={(e) => setCustomPoints(Number(e.target.value))} />
-                      </label>
-                      <label>
-                        <span>Motivo ou observação</span>
-                        <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ex.: colaboração excepcional" />
-                      </label>
-                      <button
-                        className="button primary"
-                        disabled={!selected || !reason.trim()}
-                        onClick={() => {
-                          void addScore(customPoints, "ADJUSTMENT", reason);
-                          closeCustomScore();
-                        }}
-                      >
-                        Aplicar
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
+            {/* Manual XP lives in Tools → Pontuação rápida. Draw outcome XP is separate. */}
           </div>
           ) : activeDynamic === "wordcloud" ? (
             <div className="arena-dynamic-workspace">
@@ -3424,18 +3355,12 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             </div>
           ) : activeDynamic === "buzzer" ? (
             <div className="arena-dynamic-workspace buzzer-workspace">
+                <DynamicHeader dynamic="buzzer"
+                  title="Buzzer"
+                  description="Velocidade com ordem oficial definida pelo servidor."
+                  status={buzzerState.status === "OPEN" ? "AO VIVO" : buzzerState.status === "CLOSED" ? "ENCERRADO" : "PREPARAR"}
+                  />
               <section className="buzzer-hero">
-                <div className="buzzer-titlebar">
-                  <div>
-                    <span className="eyebrow accent">DINÂMICA AO VIVO</span>
-                    <h2>Buzzer</h2>
-                    <p>Velocidade com ordem oficial definida pelo servidor.</p>
-                  </div>
-                  <span className={`buzzer-status-badge ${buzzerState.status.toLowerCase()}`}>
-                    {buzzerState.status === "OPEN" ? "● AO VIVO" : buzzerState.status === "CLOSED" ? "ENCERRADO" : "PREPARAR"}
-                  </span>
-                </div>
-
                 <div className="buzzer-stage">
                   <div className={`buzzer-orb ${buzzerState.status.toLowerCase()}`}>
                     <span className="buzzer-orb-icon" aria-hidden="true">⚡</span>
@@ -3535,23 +3460,12 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             </div>
           ) : (
             <div className="arena-dynamic-workspace boss-workspace">
+                <DynamicHeader dynamic="boss"
+                  title="Boss Battle"
+                  description="Transforme desafios da aula em dano coletivo contra um objetivo compartilhado."
+                  status={bossLifecycle}
+                  />
               <section className="boss-hero">
-                <div className="boss-titlebar">
-                  <div>
-                    <span className="eyebrow accent">DINÂMICA AO VIVO</span>
-                    <h2>Boss Battle</h2>
-                    <p>Transforme desafios da aula em dano coletivo contra um objetivo compartilhado.</p>
-                  </div>
-                  <div className="boss-title-actions">
-                    <span className={`boss-phase-badge ${currentSession.boss?.currentHp === 0 ? "defeated" : currentSession.boss ? "active" : "idle"}`}>
-                      {bossLifecycle}
-                    </span>
-                    <button type="button" className="smart-draw-settings" onClick={openProjector} disabled={!joinCode}>
-                      Projetar ↗
-                    </button>
-                  </div>
-                </div>
-
                 {currentSession.boss ? (
                   <div className="boss-live-grid">
                     <section className="boss-stage" aria-label={`Boss ${currentSession.boss.name}`}>
@@ -3725,14 +3639,11 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             aria-labelledby="arena-session-qr-title"
             onClick={(event) => event.stopPropagation()}
           >
-            <button
-              type="button"
+            <DialogCloseButton
               className="arena-session-qr-close"
               onClick={closeSessionQr}
-              aria-label="Fechar QR Code ampliado"
-            >
-              ×
-            </button>
+              label="Fechar QR Code ampliado"
+            />
             <span className="arena-session-qr-eyebrow">ENTRE NA ARENA</span>
             <h2 id="arena-session-qr-title">Escaneie para participar</h2>
             <div className="arena-session-qr-large">
@@ -3941,8 +3852,8 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         onClose={closeTool}
       >
         <div className="arena-tool-score">
-          <label className="field-label">Aluno</label>
-          <select className="select full" value={selectedId ?? ""} onChange={(event) => setSelectedId(event.target.value || undefined)}>
+          <label className="field-label" htmlFor="arena-quick-score-student">Aluno</label>
+          <select id="arena-quick-score-student" className="select full" value={selectedId ?? ""} onChange={(event) => setSelectedId(event.target.value || undefined)}>
             <option value="">Selecione um aluno</option>
             {students
               .filter((student) => currentSession.presentStudentIds.includes(student.id))
@@ -3953,7 +3864,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             {SCORE_PRESETS.map((preset) => (
               <button
                 key={`${preset.points}-${preset.label}`}
-                disabled={!selected}
+                disabled={!selected || scoreBusy}
                 onClick={() => { setReason(preset.label); void addScore(preset.points, preset.category, preset.label); }}
               >
                 <b>+{preset.points}</b>
@@ -3963,9 +3874,9 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           </div>
 
           <div className="custom-score arena-tool-score-custom">
-            <input className="input compact" type="number" value={customPoints} onChange={(event) => setCustomPoints(Number(event.target.value))} />
-            <input className="input" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Motivo ou observação" />
-            <button className="button primary" disabled={!selected || !reason.trim()} onClick={() => addScore(customPoints, "ADJUSTMENT", reason)}>
+            <input className="input compact" type="number" aria-label="Quantidade de XP (diferente de zero)" step={1} value={Number.isFinite(customPoints) ? customPoints : ""} onChange={(event) => setCustomPoints(event.target.value === "" ? NaN : Number(event.target.value))} />
+            <input className="input" aria-label="Motivo da pontuação" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Motivo ou observação" />
+            <button type="button" className="button primary" disabled={!selected || scoreBusy || !reason.trim() || !Number.isSafeInteger(customPoints) || customPoints === 0} onClick={() => { void addScore(customPoints, "ADJUSTMENT", reason); }}>
               Aplicar
             </button>
           </div>
@@ -4593,25 +4504,19 @@ function Modal({ open, title, subtitle, size = "medium", bodyClassName, onClose,
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  const modalRef = useRef<HTMLElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
   useBodyScrollLock(open);
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, onClose]);
+  useModalKeyboard(open, onClose, modalRef, closeRef);
 
   if (!open) return null;
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
-      <section className={`modal-card ${size}`} role="dialog" aria-modal="true" aria-labelledby="arena-modal-title">
+      <section ref={modalRef} className={`modal-card ${size}`} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
         <header className="modal-header">
-          <div><h2 id="arena-modal-title">{title}</h2>{subtitle && <p>{subtitle}</p>}</div>
-          <button className="modal-close" type="button" aria-label="Fechar" onClick={onClose}>×</button>
+          <div><h2 id={titleId}>{title}</h2>{subtitle && <p>{subtitle}</p>}</div>
+          <DialogCloseButton ref={closeRef} label={`Fechar ${title.toLocaleLowerCase("pt-BR")}`} onClick={onClose} />
         </header>
         <div className={bodyClassName ? `modal-body ${bodyClassName}` : "modal-body"}>{children}</div>
       </section>

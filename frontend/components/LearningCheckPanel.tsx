@@ -1,5 +1,7 @@
 "use client";
 
+import { secureId } from "@/lib/secure-id";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   closeLearningCheck,
@@ -14,6 +16,8 @@ import {
   type LearningTarget,
 } from "@/lib/learning-check-api";
 import styles from "./LearningCheckPanel.module.css";
+import DynamicHeader from "@/components/arena/dynamics/DynamicHeader";
+import QuestionComposer from "@/components/arena/dynamics/QuestionComposer";
 import LearningCyclePanel from "./learning/LearningCyclePanel";
 import LearningErrorClinicPanel from "./learning/LearningErrorClinicPanel";
 
@@ -192,7 +196,7 @@ export default function LearningCheckPanel({
 
   function addOption() {
     if (options.length >= 6) return;
-    setOptions((current) => [...current, { id: crypto.randomUUID(), label: "" }]);
+    setOptions((current) => [...current, { id: secureId(), label: "" }]);
   }
 
   function removeOption(index: number) {
@@ -214,14 +218,12 @@ export default function LearningCheckPanel({
   if (!state.run || creating) {
     return (
       <section className={styles.shell}>
-        <header className={styles.header}>
-          <div>
-            <span className={styles.eyebrow}>EVIDÊNCIA DE APRENDIZAGEM</span>
-            <h2>Verificar aprendizagem</h2>
-            <p>Faça uma checagem objetiva vinculada ao que você quer observar na aprendizagem da turma.</p>
-          </div>
-          <span className={styles.status}>PREPARAR</span>
-        </header>
+        <DynamicHeader dynamic="learning-check"
+          category="EVIDÊNCIA DE APRENDIZAGEM"
+          title="Verificar aprendizagem"
+          description="Faça uma checagem objetiva vinculada ao que você quer observar na aprendizagem da turma."
+          status="PREPARAR"
+        />
 
         <div className={styles.prepareGrid}>
           <section className={styles.builderCard}>
@@ -256,15 +258,15 @@ export default function LearningCheckPanel({
               </div>
             </details>
 
-            <label className={styles.field}>
-              <span>Pergunta</span>
-              <textarea
-                value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
-                maxLength={1200}
-                placeholder="Ex.: Qual JOIN preserva todas as linhas da tabela da esquerda?"
-              />
-            </label>
+            <QuestionComposer
+              className={styles.questionField}
+              label="Pergunta"
+              value={prompt}
+              onChange={setPrompt}
+              maxLength={1200}
+              placeholder="Ex.: Qual JOIN preserva todas as linhas da tabela da esquerda?"
+              hint="Escreva uma pergunta observável e marque a alternativa correta abaixo."
+            />
 
             <div className={styles.field}>
               <span>Alternativas · marque a correta</span>
@@ -349,14 +351,12 @@ export default function LearningCheckPanel({
 
   return (
     <section className={styles.shell}>
-      <header className={styles.header}>
-        <div>
-          <span className={styles.eyebrow}>EVIDÊNCIA DE APRENDIZAGEM</span>
-          <h2>Verificar aprendizagem</h2>
-          <p>{definition.learningTargetTitle}</p>
-        </div>
-        <span className={styles.status}>{statusLabel(state)}</span>
-      </header>
+      <DynamicHeader dynamic="learning-check"
+        category="EVIDÊNCIA DE APRENDIZAGEM"
+        title="Verificar aprendizagem"
+        description={definition.learningTargetTitle}
+        status={statusLabel(state)}
+      />
 
       <div className={styles.liveGrid}>
         <section className={styles.questionCard}>

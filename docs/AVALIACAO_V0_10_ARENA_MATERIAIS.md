@@ -1,5 +1,7 @@
 # Auditoria de produto — fluxo da Arena, sorteio, Canva e HTML
 
+> **Registro de descoberta, 08/10/2026 (histórico).** A tabela abaixo descreve o código anterior aos refactors do sorteio; não corresponde à interface atual em 09/10. Consulte [estado corrente](STATUS_ATUAL.md), [contrato do sorteio](ux/arena-draw-outcome-contract-v010.md) e [auditoria de consolidação](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md). **Não implementar novamente** itens já resolvidos na candidata.
+
 **Data:** 08/10/2026 | **Base verificada:** branch `feat/v0.10-learning-loop` (v0.9 como baseline de produção). **Natureza:** auditoria de código/fluxos + pesquisa documental; não substitui teste com docentes em aula nem teste E2E.
 
 ## 1. Tese

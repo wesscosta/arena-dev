@@ -1,0 +1,220 @@
+/* Two-tier Arena mobile navigation. Loaded after the legacy responsive rules. */
+/* v0.10 mobile IA: a global header is not a strip of anonymous dynamics.
+ * Top: brand / context / tools / account. Bottom: full-width named dynamics.
+ * Tools no longer consume the horizontal tab viewport. Desktop unchanged. */
+.arena-nav-mobile-title,
+.arena-nav-mobile-tools { display: none; }
+
+@media (max-width: 48rem) {
+  .arena-content-full .arena-cockpit-nav {
+    display: grid;
+    grid-template-areas: "brand context tools profile" "dynamics dynamics dynamics dynamics";
+    grid-template-columns: 3rem minmax(0, 1fr) auto 3rem;
+    grid-template-rows: 3rem 3.5rem;
+    align-items: center;
+    column-gap: .45rem;
+    row-gap: .35rem;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    padding: .5rem;
+    margin-bottom: .65rem;
+    position: relative;
+    overflow: visible;
+    border-radius: .75rem;
+    z-index: 60;
+  }
+
+  .arena-content-full .arena-nav-brand {
+    grid-area: brand;
+    width: 3rem;
+    height: 3rem;
+    min-height: 3rem !important;
+    margin: 0;
+    padding: 0 !important;
+    border: 0 !important;
+    justify-items: center;
+  }
+  .arena-content-full .arena-nav-brand .topbar-brand-mark {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  .arena-content-full .arena-nav-mobile-title {
+    grid-area: context;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    min-width: 0;
+    color: var(--text);
+  }
+  .arena-content-full .arena-nav-mobile-title strong { font-size: .92rem; }
+  .arena-content-full .arena-nav-mobile-title small {
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+    border-radius: 999px;
+    padding: .13rem .45rem;
+    font-size: .68rem;
+    font-weight: 700;
+  }
+  .arena-content-full .arena-nav-professor {
+    grid-area: profile;
+    z-index: 65;
+    width: 3rem;
+    flex: none;
+    justify-self: end;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .arena-content-full .arena-nav-professor .arena-live-profile {
+    width: 3rem;
+    height: 3rem;
+    min-width: 3rem;
+    min-height: 3rem;
+    padding: .2rem;
+  }
+
+  .arena-content-full .arena-nav-scroll {
+    grid-area: dynamics;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    height: 3.5rem;
+    max-height: 3.5rem;
+    padding: 0;
+    gap: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scroll-padding-inline: .25rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    border-bottom: 1px solid var(--border);
+  }
+  .arena-content-full .arena-nav-scroll::-webkit-scrollbar { display: none; }
+  .arena-content-full .arena-nav-scroll .arena-cockpit-nav-group:first-child {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: .3rem;
+    height: 100%;
+    padding: 0 .15rem;
+    border: 0;
+  }
+  .arena-content-full .arena-nav-scroll .arena-cockpit-nav-group + .arena-cockpit-nav-group {
+    display: none;
+  }
+  .arena-content-full .arena-nav-scroll .arena-cockpit-nav-label { display: none; }
+  .arena-content-full .arena-nav-scroll .arena-cockpit-nav-group > button {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 0;
+    height: 3rem;
+    min-height: 3rem;
+    max-height: 3rem;
+    gap: .35rem;
+    padding: .3rem .65rem;
+    border: 1px solid transparent;
+    border-radius: .65rem;
+    box-shadow: none;
+    color: var(--ds-text-secondary);
+    background: transparent;
+    white-space: nowrap;
+    touch-action: manipulation;
+  }
+  .arena-content-full .arena-nav-scroll .arena-cockpit-nav-group > button > span {
+    display: grid;
+    width: 1.75rem;
+    height: 1.75rem;
+    flex: 0 0 auto;
+    background: color-mix(in srgb, var(--surface-2) 75%, transparent);
+  }
+  .arena-content-full .arena-nav-scroll .arena-cockpit-nav-group > button strong {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    clip: auto;
+    overflow: visible;
+    font-size: .8rem;
+    font-weight: 750;
+    white-space: nowrap;
+    color: inherit;
+  }
+  .arena-content-full .arena-nav-scroll .arena-cockpit-nav-group > button.active {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+    box-shadow: none;
+  }
+  .arena-content-full .arena-nav-scroll .arena-cockpit-nav-group > button.active::after {
+    content: "";
+    position: absolute;
+    height: 2px;
+    bottom: -2px;
+    left: .55rem;
+    right: .55rem;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .arena-content-full .arena-nav-mobile-tools {
+    grid-area: tools;
+    display: block;
+    min-width: 0;
+    justify-self: end;
+    align-self: center;
+    z-index: 64;
+  }
+  .arena-content-full .arena-nav-tools-trigger {
+    min-height: 3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    padding: .4rem .6rem;
+    border: 1px solid var(--ds-border, var(--border));
+    border-radius: .65rem;
+    background: var(--ds-surface-subtle, var(--surface-2));
+    color: var(--ds-text-primary, var(--text));
+    cursor: pointer;
+  }
+  .arena-content-full .arena-nav-tools-trigger strong { font-size: .76rem; }
+  .arena-content-full .arena-nav-tools-trigger[data-active="true"],
+  .arena-content-full .arena-nav-tools-trigger[aria-expanded="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  }
+  .arena-content-full .arena-nav-tools-trigger:focus-visible,
+  .arena-content-full .arena-nav-scroll button:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .arena-content-full .arena-nav-mobile-tools [role="menu"] {
+    min-width: min(16.5rem, calc(100vw - 2rem));
+    max-width: calc(100vw - 1.5rem);
+    max-height: min(26rem, 65dvh);
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 5.25rem);
+    right: .75rem;
+    left: .75rem;
+    width: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* At the narrowest supported width, preserve the tool action but shorten its copy. */
+@media (max-width: 360px) {
+  .arena-content-full .arena-nav-tools-trigger { width: 2.75rem; min-width: 2.75rem; padding: .4rem; }
+  .arena-content-full .arena-nav-tools-trigger strong { display: none; }
+  .arena-content-full .arena-nav-mobile-title small { font-size: .62rem; padding-inline: .3rem; }
+}

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Non-destructive rehearsal: v0.9.0 tagged binary and Flyway V48 -> backup ->
-# v0.10 candidate/Flyway V55 -> restore original V48 -> restart tagged v0.9.
+# v0.10 candidate/Flyway V56 -> restore original V48 -> restart tagged v0.9.
 # Uses synthetic records and standalone disposable Docker containers ONLY.
 set -Eeuo pipefail
 
@@ -109,13 +109,15 @@ docker exec "$db" pg_dump -U arena -d arena_rollback -Fc --no-owner --no-privile
 printf 'PRE_UPGRADE_BACKUP_SHA256=ok\n'
 docker stop "$old" >/dev/null
 start_api "$candidate" "$candidateimage"
-[[ "$(psql_sql "select max(version::int) from flyway_schema_history where success and version~'^[0-9]+$'")" == 55 ]] || fail "Flyway upgrade V55 não finalizado"
-[[ "$(psql_sql "select count(*) from flyway_schema_history where success and version~'^[0-9]+$'")" == 55 ]] || fail "histórico Flyway após upgrade inconsistente"
+[[ "$(psql_sql "select max(version::int) from flyway_schema_history where success and version~'^[0-9]+$'")" == 56 ]] || fail "Flyway upgrade V56 não finalizado"
+[[ "$(psql_sql "select count(*) from flyway_schema_history where success and version~'^[0-9]+$'")" == 56 ]] || fail "histórico Flyway após upgrade inconsistente"
 [[ "$(psql_sql "select to_regclass('public.learning_intervention_cycles') is not null and to_regclass('public.learner_confidence') is not null")" == 't' ]] || fail "novas tabelas V55 ausentes"
+[[ "$(psql_sql "select count(*) from information_schema.columns where table_schema='public' and table_name='score_events' and column_name='create_request_id'")" == 1 ]] || fail "coluna V56 de idempotência de XP ausente"
+[[ "$(psql_sql "select count(*) from pg_indexes where schemaname='public' and tablename='score_events' and indexname='uk_score_events_create_request_id'")" == 1 ]] || fail "unicidade de comando XP V56 ausente"
 [[ "$(psql_sql "$fingerprint_sql")" == "$original" ]] || fail "registros/XP foram alterados pelo upgrade"
-printf 'UPGRADE_V48_TO_V55_PRESERVES_IDS_AND_XP=ok\n'
+printf 'UPGRADE_V48_TO_V56_PRESERVES_IDS_AND_XP=ok\n'
 docker stop "$candidate" >/dev/null
-# Never run the older binary against V55: restore V48 BEFORE starting v0.9.
+# Never run the older binary against V56: restore V48 BEFORE starting v0.9.
 (cd "$scratch" && sha256sum --check v48.dump.sha256 >/dev/null)
 docker exec "$db" psql -X -v ON_ERROR_STOP=1 -U arena -d postgres -c 'drop database arena_rollback with (force)' >/dev/null
 docker exec "$db" psql -X -v ON_ERROR_STOP=1 -U arena -d postgres -c 'create database arena_rollback owner arena' >/dev/null

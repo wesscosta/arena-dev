@@ -138,6 +138,13 @@ if (( EXPECTED_SCHEMA_VERSION >= 55 )); then
   [[ "$required_columns" -eq 3 ]] || fail "restore v0.10 não preserva colunas obrigatórias de intervenção, reversão XP e confiança"
 fi
 
+if (( EXPECTED_SCHEMA_VERSION >= 56 )); then
+  idempotency_column="$(docker exec "$CONTAINER_NAME" \
+    psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
+    --command "select count(*) from information_schema.columns where table_schema='public' and table_name='score_events' and column_name='create_request_id'")"
+  [[ "$idempotency_column" -eq 1 ]] || fail "restore V56 perdeu a chave de idempotência de XP"
+fi
+
 semantic_columns="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select count(*) from information_schema.columns where table_schema='public' and table_name='learning_resources' and column_name in ('library_visible','revision','archived_at','subject','language','content_sha256','outline_json','outline_parser_version')")"
 [[ "$semantic_columns" -eq 8 ]] || fail "LearningResource não contém o contrato completo da Biblioteca semântica"
 

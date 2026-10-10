@@ -9,7 +9,7 @@ cd "$PROJECT_ROOT"
 fail() { printf 'ERRO: %s\n' "$*" >&2; exit 1; }
 "$SCRIPT_DIR/verify-v0.9-contract.sh"
 
-for n in {49..55}; do
+for n in {49..56}; do
   migrations=(backend/src/main/resources/db/migration/V${n}__*.sql)
   [[ -f "${migrations[0]}" && ${#migrations[@]} -eq 1 ]] || \
     fail "migration V${n} ausente ou duplicada"
@@ -37,6 +37,8 @@ grep -q 'arena_session_resource_placements' backend/src/main/resources/db/migrat
   fail "vínculo canônico da Biblioteca não persistido"
 grep -q 'learner_confidence' backend/src/main/resources/db/migration/V55__*.sql || \
   fail "autopercepção voluntária não persistida"
+grep -q 'create_request_id' backend/src/main/resources/db/migration/V56__*.sql || \
+  fail "idempotência na criação de XP não persistida"
 grep -q 'DrawProtocolGuard' backend/src/main/java/br/com/arenadev/draw/DrawService.java || \
   fail "proteção contra mistura de sorteios ausente"
 grep -q 'createPortal' frontend/components/arena/live/ArenaContextualMaterial.tsx || \
@@ -49,5 +51,5 @@ grep -q 'createPortal' frontend/components/learning/TeacherLearningOverview.tsx 
 node -e 'const v=require("./frontend/package.json").version; if(!/^0\.10\.0(?:-(?:rc|beta)\.[0-9]+)?$/.test(v)) process.exit(1)' || \
   fail "artefatos v0.10 devem identificar 0.10.0 ou uma candidata 0.10.0-rc.N"
 
-printf 'Contrato mínimo v0.10 verificado: baseline v0.9 + Flyway V49–V55, %s.\n' \
+printf 'Contrato mínimo v0.10 verificado: baseline v0.9 + Flyway V49–V56, %s.\n' \
   "$(node -p 'require("./frontend/package.json").version')"

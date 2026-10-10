@@ -110,8 +110,9 @@ test("Grid + Spotlight keeps scoring and draw evidence visible without duplicati
 
   assert.match(selection, /drawCounts/);
   assert.match(selection, /<DrawOutcomeActions/);
-  assert.match(outcome, /Confirmar participação/);
-  assert.match(outcome, /Confirmar e pontuar/);
+  assert.match(outcome, /Confirmar sem XP/);
+  assert.match(outcome, /Conceder XP/);
+  assert.match(outcome, /onResolve\("CONFIRMED", awardXp \? points : undefined\)/);
   assert.match(outcome, /Passar a vez/);
   assert.match(outcome, /Anular sorteio/);
   assert.match(selection, /Já sorteado/);
@@ -150,7 +151,7 @@ test("Smart Draw workspace uses a participant Grid, transient Spotlight and cont
   assert.match(selection, /className=\{styles\.grid\}/);
   assert.match(selection, /className=\{styles\.spotlightLayer\}/);
   assert.match(rail, /Últimos sorteados/);
-  assert.match(app, /className="quick-score-dock"/);
+  assert.doesNotMatch(app, /className="quick-score-dock"/);
 });
 
 test("Draw history comes from persisted session events instead of a frontend-only array", () => {
@@ -231,7 +232,7 @@ test("Quiz 2.0 uses a gamified prepare and live workspace", () => {
   const quiz = read("components/QuizPanel.tsx");
   const css = read("components/QuizPanel.module.css");
 
-  assert.match(quiz, /DINÂMICA AO VIVO/);
+  assert.match(quiz, /<DynamicHeader dynamic="quiz"/);
   assert.match(quiz, /className=\{styles\.prepareGrid\}/);
   assert.match(quiz, /className=\{styles\.liveStage\}/);
   assert.match(quiz, /QUESTÃO ATUAL/);
@@ -255,7 +256,7 @@ test("Votação 2.0 uses a gamified prepare and live workspace", () => {
   const poll = read("components/PollPanel.tsx");
   const css = read("components/PollPanel.module.css");
 
-  assert.match(poll, /DINÂMICA AO VIVO/);
+  assert.match(poll, /<DynamicHeader dynamic="poll"/);
   assert.match(poll, /className=\{styles\.prepareGrid\}/);
   assert.match(poll, /className=\{styles\.liveGrid\}/);
   assert.match(poll, /PARTICIPAÇÃO DA TURMA/);
@@ -279,10 +280,10 @@ test("Nuvem de Palavras 2.0 uses a gamified prepare and live stage", () => {
   const cloud = read("components/WordCloudPanel.tsx");
   const css = read("components/WordCloudPanel.module.css");
 
-  assert.match(cloud, /DINÂMICA AO VIVO/);
+  assert.match(cloud, /<DynamicHeader dynamic="wordcloud"/);
   assert.match(cloud, /className=\{styles\.prepareGrid\}/);
   assert.match(cloud, /className=\{styles\.liveGrid\}/);
-  assert.match(cloud, /PALCO DA TURMA/);
+  assert.match(cloud, /PRÉVIA DO PALCO/);
   assert.match(cloud, /NUVEM DA TURMA/);
   assert.match(cloud, /participationProgress/);
   assert.match(css, /\.previewCloudOrb\s*\{/);
@@ -293,9 +294,11 @@ test("Nuvem de Palavras 2.0 preserves reveal, projector and close controls", () 
   const cloud = read("components/WordCloudPanel.tsx");
 
   assert.match(cloud, /Revelar respostas/);
-  assert.match(cloud, /Projetar ↗/);
+  const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
+  assert.match(chrome, /onToggleProjector/);
+  assert.match(chrome, /projectorActive/);
   assert.match(cloud, /Encerrar rodada/);
-  assert.match(cloud, /window\.confirm/);
+  assert.match(cloud, /onClick=\{\(\) => void close\(\)\}/);
   assert.match(cloud, /Coleta protegida/);
 });
 
@@ -305,7 +308,7 @@ test("Boss Battle 2.0 uses a gamified collective challenge workspace", () => {
   const css = read("styles/arena-polish.css");
 
   assert.match(app, /className="arena-dynamic-workspace boss-workspace"/);
-  assert.match(app, /DINÂMICA AO VIVO[\s\S]*?<h2>Boss Battle<\/h2>/);
+  assert.match(app, /<DynamicHeader dynamic="boss"[\s\S]*?title="Boss Battle"/);
   assert.match(app, /CONTROLE DE COMBATE/);
   assert.match(app, /HP DO BOSS/);
   assert.match(app, /BOSS DERROTADO/);
@@ -461,7 +464,8 @@ test("Arena responsive polish keeps labels at 1366 and collapses them only near 
 
   assert.match(css, /@media \(max-width: 90rem\)[\s\S]*?grid-template-columns:\s*10\.5rem minmax\(0, 1fr\) 14\.5rem/);
   assert.match(css, /@media \(max-width: 74rem\)[\s\S]*?grid-template-columns:\s*4\.65rem minmax\(0, 1fr\)/);
-  assert.match(css, /@media \(max-width: 54rem\)[\s\S]*?\.quick-score-actions/);
+  assert.match(css, /@media \(max-width: 54rem\)/);
+  assert.doesNotMatch(css, /\.quick-score-actions/);
 });
 
 
@@ -478,7 +482,7 @@ test("Draw hero uses an integrated target icon and semicircular command hub", ()
   const app = read("components/ArenaApp.tsx");
   const css = read("components/arena/draw/DrawWheel.module.css");
 
-  assert.match(app, /className="smart-draw-title-icon"/);
+  assert.match(app, /<DynamicHeader dynamic="draw"/);
   assert.match(css, /\.commandHub\s*\{/);
   assert.match(css, /width:\s*clamp\(14\.5rem, 24%, 18\.5rem\)/);
   assert.match(css, /height:\s*clamp\(7\.25rem, 23%, 9\.25rem\)/);
@@ -677,16 +681,16 @@ test("Prepare-state dynamics share the same header badge and title scale", () =>
   const quiz = read("components/QuizPanel.tsx");
   const poll = read("components/PollPanel.tsx");
   const wordCloud = read("components/WordCloudPanel.tsx");
-  const quizCss = read("components/QuizPanel.module.css");
-  const pollCss = read("components/PollPanel.module.css");
-  const wordCloudCss = read("components/WordCloudPanel.module.css");
+  const header = read("components/arena/dynamics/DynamicHeader.tsx");
+  const headerCss = read("components/arena/dynamics/DynamicHeader.module.css");
 
-  assert.match(quiz, /className=\{styles\.modeBadge\}>PREPARAR/);
-  assert.match(poll, /className=\{styles\.modeBadge\}>PREPARAR/);
-  assert.match(wordCloud, /className=\{styles\.modeBadge\}>PREPARAR/);
-  assert.match(quizCss, /line-height:1\.02/);
-  assert.match(pollCss, /line-height:1\.02/);
-  assert.match(wordCloudCss, /line-height:1\.02/);
+  for (const source of [quiz, poll, wordCloud]) {
+    assert.match(source, /status="PREPARAR"/);
+  }
+  assert.match(header, /DINÂMICA AO VIVO/);
+  assert.match(header, /data-testid="dynamic-header"/);
+  assert.match(headerCss, /\.copy h2/);
+  assert.match(headerCss, /align-items: center/);
 });
 
 test("Arena dynamics use a shared lifecycle vocabulary without erasing domain-specific state", () => {
@@ -701,11 +705,11 @@ test("Arena dynamics use a shared lifecycle vocabulary without erasing domain-sp
     assert.match(source, /ENCERRADO/);
   }
 
-  assert.match(app, /buzzerState\.status === "OPEN" \? "● AO VIVO"/);
+  assert.match(app, /buzzerState\.status === "OPEN" \? "AO VIVO"/);
   assert.match(app, /buzzerState\.status === "CLOSED" \? "ENCERRADO" : "PREPARAR"/);
   assert.match(app, /const bossLifecycle = !currentSession\?\.boss[\s\S]*?"PREPARAR"[\s\S]*?"RESULTADO"[\s\S]*?"AO VIVO"/);
   assert.match(app, /<small>\{bossPhase\}<\/small>/);
-  assert.match(app, /DINÂMICA AO VIVO[\s\S]*?<h2>Boss Battle<\/h2>/);
+  assert.match(app, /<DynamicHeader dynamic="boss"[\s\S]*?title="Boss Battle"/);
 });
 
 test("Quiz workspace fills the Arena cockpit height on desktop and returns to natural flow responsively", () => {
@@ -741,19 +745,17 @@ test("Smart Draw folds history and coverage into the single result HUD without l
   assert.match(css, /\.draw-coverage-summary > \.draw-coverage-ring\s*\{[\s\S]*?height:\s*100%/);
 });
 
-test("Quick score keeps the selected-student context and presets compact while custom scoring opens on demand", () => {
+test("Manual XP stays in the contextual tool, not duplicated below the draw", () => {
   const app = read("components/ArenaApp.tsx");
-  const css = read("styles/arena-polish.css");
+  const navigation = read("components/arena/live/ArenaLiveChrome.tsx");
+  const shell = read("components/arena/live/ArenaLiveChrome.module.css");
 
-  assert.match(app, /className="quick-score-student"/);
-  assert.match(app, /className="sr-only">Aluno para pontuação<\/span>/);
-  assert.match(app, /aria-label="Aluno para pontuação"/);
-  assert.match(app, /XP manual separado da confirmação do sorteio/);
-  assert.match(app, /className="quick-score-presets"/);
-  assert.match(app, /quick-score-custom-popover/);
-  assert.match(app, /aria-expanded=\{customScoreOpen\}/);
-  assert.match(css, /\.quick-score-custom-popover\s*\{[\s\S]*?position:\s*absolute/);
-  assert.match(css, /@media \(min-width: 90\.01rem\)[\s\S]*?\.quick-score-dock/);
+  assert.doesNotMatch(app, /className="quick-score-dock"/);
+  assert.doesNotMatch(shell, /quick-score-dock/);
+  assert.match(app, /open=\{activeTool === "score"\}/);
+  assert.match(app, /title="Pontuação rápida"/);
+  assert.match(app, /className="score-presets arena-tool-score-presets"/);
+  assert.match(navigation, /onSelectTool\("score"\)/);
 });
 
 test("Live Arena stretches the cockpit to the full dynamic viewport height", () => {
@@ -783,7 +785,7 @@ test("Live Arena replaces the duplicated root header with one operational topbar
 
   assert.match(app, /arena-root-topbar-hidden/);
   assert.match(chrome, /className="topbar app-topbar arena-live-topbar"/);
-  assert.match(chrome, /Modo Projetor ↗/);
+  assert.match(chrome, /projectorActive \? "Projetando" : "Projetar"/);
   assert.match(chrome, /Encerrar sessão/);
   assert.doesNotMatch(app, /arena-desktop-session-header/);
   assert.match(css, /\.topbar\.arena-root-topbar-hidden\s*\{\s*display:\s*none/);

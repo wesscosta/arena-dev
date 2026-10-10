@@ -1,0 +1,126 @@
+/* Shared visual contract for all seven Arena dynamics.
+ * Identity stays vertically centered, while height follows real content. */
+.header {
+  width: 100%;
+  min-width: 0;
+  min-height: 6rem;
+  height: auto;
+  display: flex;
+  flex: 0 0 auto;
+  align-self: start;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: clamp(.95rem, 1.2vw, 1.15rem);
+  background: var(--ds-surface-raised, var(--surface));
+  border: 1px solid var(--ds-border-subtle, var(--border));
+  border-radius: var(--radius-lg, 1rem);
+}
+
+.identity {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: .9rem;
+  min-width: 0;
+}
+.copy { min-width: 0; max-width: 80ch; }
+.category {
+  display: block;
+  color: var(--ds-accent, var(--accent));
+  font-size: .73rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.copy h2 {
+  margin: .28rem 0 .26rem;
+  font-size: clamp(1.5rem, 1.8vw, 2rem);
+  line-height: 1.18;
+  letter-spacing: -.025em;
+  color: var(--ds-text-primary, var(--text));
+  overflow-wrap: anywhere;
+}
+.copy p {
+  margin: 0;
+  font-size: clamp(.84rem, .9vw, .98rem);
+  line-height: 1.45;
+  color: var(--ds-text-secondary, var(--muted));
+}
+.icon {
+  flex: 0 0 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  color: var(--ds-accent, var(--accent));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: 50%;
+}
+.icon svg { width: 1.35rem; height: 1.35rem; }
+
+.meta {
+  flex: 0 0 auto;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: .6rem;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  border: 1px solid var(--ds-border, var(--border));
+  border-radius: 999px;
+  padding: .25rem .7rem;
+  color: var(--ds-text-secondary, var(--muted));
+  font-size: .73rem;
+  letter-spacing: .04em;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.summary { min-width: 0; }
+.actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.actions button { min-height: 2.75rem; }
+
+@media (max-width: 860px) {
+  .header[data-has-actions="true"] { flex-wrap: wrap; }
+  .header[data-has-actions="true"] .meta { width: 100%; }
+  .header[data-has-actions="true"] .summary { margin-right: auto; }
+}
+@media (max-width: 560px) {
+  .header { min-height: 0; gap: .4rem; padding: .65rem .8rem; }
+  .identity { gap: .65rem; }
+  .copy h2 { font-size: 1.48rem; margin: .19rem 0 .15rem; }
+  .copy p { font-size: .83rem; }
+  .icon { flex-basis: 2.4rem; width: 2.4rem; height: 2.4rem; }
+  .icon svg { width: 1.25rem; height: 1.25rem; }
+  .header[data-has-actions="true"] .meta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .55rem;
+  }
+  .header[data-has-actions="true"] .status { grid-column: 1 / -1; justify-self: end; }
+  .header[data-has-actions="true"] .summary { grid-column: 1 / -1; }
+  .header[data-has-actions="true"] .actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .header[data-has-actions="true"] .actions > button { width: 100%; min-width: 0; }
+}
+@media (max-width: 360px) {
+  .header { flex-wrap: wrap; }
+  .meta { margin-left: auto; }
+}

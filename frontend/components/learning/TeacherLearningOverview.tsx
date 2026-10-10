@@ -6,6 +6,7 @@ import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { fetchSessionLearningOverview, type SessionLearningOverview } from "@/lib/session-learning-overview-api";
 import { recoveryGuidance } from "@/lib/learning-recovery";
 import styles from "./TeacherLearningOverview.module.css";
+import { DialogCloseButton } from "@/components/ui";
 
 export default function TeacherLearningOverview({ sessionId, onOpenLearningCheck }: {
   sessionId: string;
@@ -84,7 +85,7 @@ export default function TeacherLearningOverview({ sessionId, onOpenLearningCheck
               <h2 id={titleId}>Evidências da sessão</h2>
               <p>Decisões pedagógicas a partir de respostas avaliadas, não de XP.</p>
             </div>
-            <button type="button" onClick={()=>setOpen(false)} aria-label="Fechar painel pedagógico">Fechar</button>
+            <DialogCloseButton onClick={() => setOpen(false)} label="Fechar painel pedagógico" />
           </header>
           <div className={styles.content}>
             {loading && <p role="status">Atualizando evidências…</p>}
@@ -135,9 +136,8 @@ export default function TeacherLearningOverview({ sessionId, onOpenLearningCheck
             </>}
           </div>
           <footer className={styles.footer}>
-            <button type="button" onClick={()=>{void refresh();}} disabled={loading}>Atualizar dados</button>
-            <button type="button" onClick={()=>{setOpen(false);onOpenLearningCheck();}}>Abrir Verificar aprendizagem</button>
-            <button type="button" onClick={()=>setOpen(false)}>Voltar à Arena</button>
+            <button type="button" className={styles.secondaryAction} onClick={() => { void refresh(); }} disabled={loading}>Atualizar dados</button>
+            <button type="button" className={styles.primaryAction} onClick={() => { setOpen(false); onOpenLearningCheck(); }}>Abrir verificação</button>
           </footer>
         </section>
       </div>,document.body)}

@@ -2,8 +2,8 @@
 .caption { color:var(--ds-text-secondary); font-size:.85rem; }
 .title { flex:1; min-width:9rem; overflow-wrap:anywhere; font-weight:750; }
 .warning { color:var(--ds-danger); }
-.action,.close { border:1px solid var(--ds-border); border-radius:.6rem; background:var(--ds-surface-subtle); color:var(--ds-text-primary); padding:.7rem 1rem; min-height:2.75rem; cursor:pointer; text-decoration:none; font:inherit; font-weight:700; }
-.action:focus-visible,.close:focus-visible,.catalog button:focus-visible,.catalog input:focus-visible,.remove:focus-visible { outline:3px solid var(--ds-accent); outline-offset:2px; }
+.action { border:1px solid var(--ds-border); border-radius:.6rem; background:var(--ds-surface-subtle); color:var(--ds-text-primary); padding:.7rem 1rem; min-height:2.75rem; cursor:pointer; text-decoration:none; font:inherit; font-weight:700; }
+.action:focus-visible,.catalog button:focus-visible,.catalog input:focus-visible,.remove:focus-visible { outline:3px solid var(--ds-accent); outline-offset:2px; }
 .backdrop {
   position:fixed; inset:0; z-index:11000;
   display:flex; align-items:center; justify-content:center;
@@ -35,7 +35,6 @@
 .preview h3 { margin:0; }
 .plain { white-space:pre-wrap; overflow-wrap:anywhere; }
 .remove { align-self:start; border:1px solid var(--ds-border); border-radius:.55rem; background:transparent; color:var(--ds-text-primary); cursor:pointer; padding:.6rem; }
-.footer { display:flex; flex:0 0 auto; justify-content:flex-end; margin-top:1rem; }
 .error { color:var(--ds-danger); }
 @media(max-width:700px) {
   .backdrop { padding:.5rem; }
@@ -49,10 +48,12 @@
   .dialog { height:calc(100dvh - 1rem); max-height:calc(100dvh - 1rem); }
   .header { gap:.5rem; }
   .content { margin-top:.5rem; }
-  .footer { margin-top:.5rem; }
 }
 
 /* Keep the live cockpit height stable. Library is a header action, not another row in the stage. */
 .strip { padding:0; margin:0; border:0; background:transparent; gap:0; width:auto; }
 .strip .caption,.strip .title,.strip .warning { display:none; }
 .strip .action { font-size:.82rem; min-height:2.75rem; padding:.6rem .75rem; white-space:nowrap; }
+
+/* Only the header X dismisses this read-only library dialog. */
+@media(max-width:700px) { .header { flex-wrap:nowrap; } .header > div { min-width:0; flex:1; } }
