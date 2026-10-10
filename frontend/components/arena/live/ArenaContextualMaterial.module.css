@@ -109,3 +109,32 @@
 }
 .sectionSteps button:disabled { opacity: .5; cursor: not-allowed; }
 .sectionNavigator select:focus-visible,.sectionSteps button:focus-visible { outline: 3px solid var(--ds-accent); outline-offset: 2px; }
+
+/* 11.4: compact viewports and Safari safe areas. No nested body scroll lock
+   without a keyboard reachable overflow region. */
+.backdrop { padding:
+  max(.5rem, env(safe-area-inset-top))
+  max(.5rem, env(safe-area-inset-right))
+  max(.5rem, env(safe-area-inset-bottom))
+  max(.5rem, env(safe-area-inset-left)); }
+.dialog { min-width:0; }
+.content { min-width:0; }
+.catalog,.preview { scrollbar-gutter: stable; }
+.preview:focus-visible,.list:focus-visible { outline:3px solid var(--ds-accent); outline-offset:-3px; }
+.header h2 { line-height:1.24; overflow-wrap:anywhere; }
+.error { flex:0 0 auto; margin:.65rem 0 0; line-height:1.5; overflow-wrap:anywhere; }
+.list button, .preview, .presentationBar { overflow-wrap:anywhere; }
+@media (max-width:700px) {
+  .content { grid-template-rows:minmax(9.25rem,.72fr) minmax(12rem,1.28fr); }
+  .catalog,.preview { min-height:0; }
+  .header h2 { font-size:clamp(1.15rem,4vw,1.4rem); }
+}
+@media (max-width:700px) and (max-height:560px) {
+  .dialog { overflow:auto; height:calc(100dvh - 1rem); }
+  .content { flex:0 0 auto; min-height:27rem; grid-template-rows:minmax(9rem,10rem) minmax(16rem,1fr); }
+  .catalog { min-height:0; }
+  .preview { min-height:16rem; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .dialog,.preview,.list { scroll-behavior:auto; }
+}

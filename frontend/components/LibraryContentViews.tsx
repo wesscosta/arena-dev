@@ -1,8 +1,7 @@
 "use client";
 
 import type { JSX, ReactNode } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { SafeMarkdown } from "@/components/SafeMarkdown";
 import type { ContentOutlineNode } from "@/lib/learning-resource-api";
 import { splitNotionAsides } from "@/lib/notion-callout";
 import styles from "./LibraryWorkspace.module.css";
@@ -49,9 +48,9 @@ export function AnchoredMarkdown({ children }: { children: string }) {
     <div className={styles.markdown}>
       {segments.map((segment, index) => {
         const formatted = (
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          <SafeMarkdown components={markdownComponents}>
             {segment.content}
-          </ReactMarkdown>
+          </SafeMarkdown>
         );
         return segment.kind === "aside"
           ? <aside className={styles.notionCallout} aria-label="Destaque do conteúdo" key={index}>{formatted}</aside>

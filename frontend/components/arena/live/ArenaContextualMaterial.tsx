@@ -252,7 +252,7 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
               </div>
               <DialogCloseButton onClick={() => setOpen(false)} label="Fechar biblioteca" />
             </header>
-            {error && <p role="alert" className={styles.error}>{error}</p>}
+            {error && <p role="alert" aria-live="assertive" className={styles.error}>{error}</p>}
             <div className={styles.content}>
               <div className={styles.catalog}>
                 <label htmlFor={`${headingId}-search`}>Encontrar material na Biblioteca</label>

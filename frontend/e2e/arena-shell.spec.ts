@@ -1684,3 +1684,69 @@ test("v0.11 / 11.2: professor publica leitura segura e o projetor recebe somente
     await api.dispose();
   }
 });
+
+test("v0.11 / 11.4: CSP, Markdown inerte, modal responsivo e navegação por teclado", async ({ page }) => {
+  test.setTimeout(100_000);
+  const response = await page.goto("/");
+  const headers = response?.headers() ?? {};
+  const policy = headers["content-security-policy"] ?? "";
+  expect(policy).toContain("object-src 'none'");
+  expect(policy).toContain("frame-ancestors 'none'");
+  expect(policy).toContain("img-src 'self' data: blob:");
+  expect(headers["x-content-type-options"]).toBe("nosniff");
+  expect(headers["x-frame-options"]).toBe("DENY");
+
+  const { api, csrfHeaders } = await authenticatedApi();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 0);
+    const title = `Segurança de Markdown ${fixture.session.id.slice(0,8)}`;
+    const body = [
+      "# Markdown seguro", "", "<aside>", "**Orientação didática**", "</aside>",
+      "<script>window.__markdownExecuted = true</script>",
+      "<img src='https://observer.invalid/marker.png' onerror='window.__markdownExecuted=true'>",
+      "![Pixel](https://observer.invalid/pixel.png)",
+      "[Link malicioso](javascript:alert(1))",
+      "```html", "<script>alert('exemplo')</script>", "<img src='exemplo.png'>", "```",
+    ].join("\n");
+    const saved = await api.post("/api/library/resources", {
+      headers: csrfHeaders,
+      data: { title, body, format: "MARKDOWN", sourceType: "MANUAL", language: "pt-BR" },
+    });
+    await expectOk(saved, "Criar material não confiável para validar leitores");
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    await openArenaMaterial(page);
+    const dialog = page.getByRole("dialog", { name: "Biblioteca nesta aula" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel("Encontrar material na Biblioteca").fill(title);
+    await dialog.getByRole("button", { name: new RegExp(title) }).click();
+    await expect(dialog.getByText("Orientação didática")).toBeVisible();
+    await expect(dialog.locator("img,iframe,script,input[type=checkbox],a[href^='javascript:']")).toHaveCount(0);
+    await expect(dialog.locator("a[href*='observer.invalid'],img[src*='observer.invalid']")).toHaveCount(0);
+    await expect(dialog.locator("pre code").filter({ hasText: "<script>" })).toBeVisible();
+    expect(await page.evaluate(() => (window as Window & { __markdownExecuted?: boolean }).__markdownExecuted)).toBeUndefined();
+
+    for (const viewport of [
+      { width: 320, height: 568 },
+      { width: 390, height: 700 },
+      { width: 768, height: 820 },
+      { width: 1440, height: 900 },
+    ]) {
+      await page.setViewportSize(viewport);
+      const bounds = await dialog.boundingBox();
+      expect(bounds).not.toBeNull();
+      expect(bounds!.x).toBeGreaterThanOrEqual(0);
+      expect(bounds!.y).toBeGreaterThanOrEqual(0);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + 2);
+      expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + 2);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      expect(overflow).toBeLessThanOrEqual(2);
+    }
+    await page.keyboard.press("Tab");
+    const focusedInside = await dialog.evaluate((node) => node.contains(document.activeElement));
+    expect(focusedInside).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+  } finally {
+    await api.dispose();
+  }
+});

@@ -1,6 +1,6 @@
 # Arena Dev v0.11 — execução e evidências
 
-**Base de trabalho:** `v0.10.0` publicada; branch `feat/v0.11-audit-contract-freeze`. **Estado:** etapa **11.0 em auditoria/contratos**. Nenhuma funcionalidade de apresentação de material da v0.11 foi implementada nesta etapa.
+**Baseline publicada:** `v0.10.0`. **Estado do desenvolvimento:** 11.0–11.3 integradas à `main`; **11.4 em branch para revisão/CI**, incluindo acessibilidade, responsividade, segurança do Markdown e CSP. Não há release v0.11.
 
 ## 11.0 — itens entregues para revisão
 
@@ -25,6 +25,11 @@
 
 - [Execução 11.3](11.3_EXECUTION_STATUS.md): V58 para idempotência, âncora validada contra snapshot, comando docente CAS, estágio versionado e reconciliação de eventos/reload.
 - **Estado:** [PR #42](https://github.com/wesscosta/arena-dev/pull/42) aprovado em três jobs no SHA `f5526ba` e integrado à `main` (merge `7ffe27b`). [Validação e limites](11.3_VALIDATION_CLOSURE_2026-10-10.md). A release v0.11 ainda não está homologada.
+
+## 11.4 — UI/UX, acessibilidade e Security Hardening
+
+- [Auditoria, implementação, evidências e limites](11.4_SECURITY_UX_EXECUTION.md): renderer único de Markdown, CSP, foco/rolagem segura, breakpoints móveis e testes Chromium/WebKit.
+- **Status:** em revisão de CI; testes WebKit com emulação de iPhone **não substituem** homologação de Safari/iOS físico, VoiceOver ou AAA.
 
 ## Disciplina de status
 

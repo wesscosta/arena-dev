@@ -110,9 +110,9 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Install Chromium
+      - name: Install Chromium and WebKit
         working-directory: frontend
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Validate Compose model
         run: docker compose config --quiet
@@ -138,9 +138,13 @@ jobs:
           test "$(docker compose exec -T backend id -un)" = "arena"
           test "$(docker compose exec -T frontend id -un)" = "arena"
 
-      - name: Run browser critical flows
+      - name: Run Chromium critical flows
         working-directory: frontend
-        run: npm run test:e2e
+        run: npm run test:e2e -- --project=chromium
+
+      - name: Validate iOS-like WebKit mobile presentation and security
+        working-directory: frontend
+        run: npm run test:e2e -- --project=webkit-mobile --grep 'v0.11 / 11.[24]'
 
       - name: Upload Playwright evidence
         if: always()
