@@ -4,6 +4,7 @@ import type { JSX, ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ContentOutlineNode } from "@/lib/learning-resource-api";
+import { splitNotionAsides } from "@/lib/notion-callout";
 import styles from "./LibraryWorkspace.module.css";
 
 type Navigate = (anchor: string) => void;
@@ -39,14 +40,23 @@ export function AnchoredMarkdown({ children }: { children: string }) {
       return <Tag id={id}>{headingChildren}</Tag>;
     };
 
+  const segments = splitNotionAsides(children);
+  const markdownComponents = {
+    h1: heading(1), h2: heading(2), h3: heading(3),
+    h4: heading(4), h5: heading(5), h6: heading(6),
+  };
   return (
     <div className={styles.markdown}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{ h1: heading(1), h2: heading(2), h3: heading(3), h4: heading(4), h5: heading(5), h6: heading(6) }}
-      >
-        {children}
-      </ReactMarkdown>
+      {segments.map((segment, index) => {
+        const formatted = (
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {segment.content}
+          </ReactMarkdown>
+        );
+        return segment.kind === "aside"
+          ? <aside className={styles.notionCallout} aria-label="Destaque do conteúdo" key={index}>{formatted}</aside>
+          : <div key={index} className={styles.markdownSection}>{formatted}</div>;
+      })}
     </div>
   );
 }

@@ -373,6 +373,19 @@
   overflow-wrap: anywhere;
 }
 
+.markdownSection > :first-child, .notionCallout > :first-child { margin-top: 0; }
+.markdownSection > :last-child, .notionCallout > :last-child { margin-bottom: 0; }
+.markdownSection + .markdownSection { margin-top: 1em; }
+.notionCallout {
+  margin: 1.2rem 0;
+  padding: .9rem 1.15rem;
+  border: 1px solid var(--ds-border, var(--border));
+  border-left: 4px solid var(--ds-accent, var(--accent));
+  border-radius: .75rem;
+  background: var(--ds-surface-subtle, var(--surface-2));
+  color: var(--ds-text-primary, var(--text));
+  overflow-wrap: anywhere;
+}
 .markdown > :first-child { margin-top: 0; }
 .markdown > :last-child { margin-bottom: 0; }
 .markdown h1 { font-size: 2rem; line-height: 1.2; margin: 1.6em 0 .65em; scroll-margin-top: 6rem; }
