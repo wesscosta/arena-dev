@@ -4,6 +4,11 @@ import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnchoredMarkdown } from "@/components/LibraryContentViews";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
+import { fetchLiveStageState } from "@/lib/live-stage-api";
+import {
+  getMaterialPresentation, publishMaterial, withdrawMaterial, materialRequestId,
+  type MaterialPublication,
+} from "@/lib/material-presentation-api";
 import {
   fetchContentLibrary, fetchLibraryResource, type LearningResource,
 } from "@/lib/learning-resource-api";
@@ -20,6 +25,7 @@ type Props = { sessionId: string; notify: (message: string) => void };
 /** Teacher-only placement. Does not publish material to student/projector or advance steps. */
 export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
   const [placement, setPlacement] = useState<ArenaContextMaterial | null>(null);
+  const [presentation, setPresentation] = useState<MaterialPublication | null>(null);
   const [resources, setResources] = useState<LearningResource[]>([]);
   const [selected, setSelected] = useState<LearningResource | null>(null);
   const [query, setQuery] = useState("");
@@ -35,11 +41,15 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
   useEffect(() => {
     let active = true;
     setPlacement(null);
+    setPresentation(null);
     setSelected(null);
     setOpen(false);
     void fetchArenaContextMaterial(sessionId)
       .then((value) => { if (active) setPlacement(value); })
       .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "Falha ao buscar material."); });
+    void getMaterialPresentation(sessionId)
+      .then((value) => { if (active) setPresentation(value); })
+      .catch(() => { if (active) setPresentation(null); });
     return () => { active = false; };
   }, [sessionId]);
 
@@ -53,6 +63,15 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
     window.addEventListener("arena-context-material-updated", onMaterialUpdated);
     return () => window.removeEventListener("arena-context-material-updated", onMaterialUpdated);
   }, [sessionId]);
+
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    void getMaterialPresentation(sessionId)
+      .then((value) => { if (active) setPresentation(value); })
+      .catch(() => { if (active) setPresentation(null); });
+    return () => { active = false; };
+  }, [open, sessionId]);
 
   useEffect(() => {
     if (!open) return;
@@ -105,6 +124,7 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
     setBusy(true); setError(null);
     try {
       const saved = await linkArenaContextMaterial(sessionId, resourceId);
+      if (placement?.resourceId !== resourceId) setPresentation(null);
       setPlacement(saved);
       const resource = resources.find((item) => item.id === resourceId);
       if (resource) setSelected(resource);
@@ -119,12 +139,46 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
     setBusy(true); setError(null);
     try {
       await unlinkArenaContextMaterial(sessionId);
-      setPlacement(null); setSelected(null);
+      setPlacement(null); setSelected(null); setPresentation(null);
       notify("Vínculo removido. O material original permanece na Biblioteca e na Jornada.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Falha ao desvincular material.");
     } finally { setBusy(false); }
   }
+
+  async function present() {
+    if (busy || !placement?.available || !selected || placement.resourceId !== selected.id
+        || selected.format === "LINK" || !selected.body?.trim()) return;
+    setBusy(true); setError(null);
+    try {
+      const stage = await fetchLiveStageState(sessionId);
+      const result = await publishMaterial(sessionId, selected.id, stage.stageVersion ?? 0, materialRequestId());
+      setPresentation(result);
+      notify("Material publicado no palco. O projetor conectado receberá a leitura da aula.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível apresentar o material.");
+      void getMaterialPresentation(sessionId).then(setPresentation).catch(() => setPresentation(null));
+    } finally { setBusy(false); }
+  }
+
+  async function withdraw() {
+    if (busy || !presentation || presentation.status !== "ACTIVE") return;
+    setBusy(true); setError(null);
+    try {
+      const stage = await fetchLiveStageState(sessionId);
+      await withdrawMaterial(sessionId, presentation.id, stage.stageVersion ?? 0, materialRequestId());
+      setPresentation(null);
+      notify("Material retirado do projetor. A fonte permanece vinculada à sessão.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível retirar o material.");
+      void getMaterialPresentation(sessionId).then(setPresentation).catch(() => setPresentation(null));
+    } finally { setBusy(false); }
+  }
+
+  const isPresented = presentation?.status === "ACTIVE"
+    && presentation.resourceId === placement?.resourceId;
+  const hasNewRevision = Boolean(isPresented && selected && presentation
+    && selected.revision > presentation.resourceRevision);
 
   const visible = resources.filter((item) =>
     `${item.title} ${item.subject ?? ""} ${item.tags.join(" ")}`
@@ -143,7 +197,7 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
           title={placement?.title ?? "Selecionar material da Biblioteca"}
           aria-label={placement ? "Abrir material" : "Selecionar material"}
           onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open}>
-          <ArenaGlyph name="material" /> Material da aula
+          <ArenaGlyph name="material" /> Material da aula{isPresented ? " · No palco" : ""}
         </button>
       </div>
       {open && typeof document !== "undefined" && createPortal(
@@ -152,7 +206,7 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
             <header className={styles.header}>
               <div>
                 <h2 id={headingId}>Biblioteca nesta aula</h2>
-                <p>Use o mesmo material da Biblioteca e da Jornada, sem duplicar conteúdo nem alterar o palco.</p>
+                <p>Vincule um material da Biblioteca. A apresentação no projetor só acontece quando você confirmar.</p>
               </div>
               <DialogCloseButton onClick={() => setOpen(false)} label="Fechar biblioteca" />
             </header>
@@ -180,6 +234,38 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
                 {selected && placement?.available ? (
                   <>
                     <h3>{selected.title}</h3>
+                    <div className={styles.presentationBar} role="group" aria-label="Apresentação do material">
+                      <p className={styles.presentationStatus} role="status" aria-live="polite">
+                        {isPresented ? `Publicado no palco · revisão ${presentation?.resourceRevision}`
+                          : "Material vinculado · ainda não apresentado"}
+                        {hasNewRevision ? " · Há uma revisão mais recente na Biblioteca" : ""}
+                      </p>
+                      <div className={styles.presentationActions}>
+                        {isPresented ? (
+                          <>
+                            <button className={styles.withdrawAction} type="button"
+                              disabled={busy} onClick={() => { void withdraw(); }}>
+                              {busy ? "Processando…" : "Retirar do projetor"}
+                            </button>
+                            {hasNewRevision && (
+                              <button type="button" className={styles.presentAction}
+                                disabled={busy} onClick={() => { void present(); }}>
+                                Publicar revisão atual
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <button type="button" className={styles.presentAction}
+                            disabled={busy || selected.format === "LINK" || !selected.body?.trim()}
+                            onClick={() => { void present(); }}>
+                            {busy ? "Publicando…" : "Apresentar no projetor"}
+                          </button>
+                        )}
+                      </div>
+                      {selected.format === "LINK"
+                        ? <p className={styles.explanation}>Links externos não são publicados. Use Markdown ou texto da Biblioteca.</p>
+                        : <p className={styles.explanation}>A apresentação substituirá o palco atual. Não registra XP ou progresso de estudo.</p>}
+                    </div>
                     {selected.summary && <p>{selected.summary}</p>}
                     <p className={styles.meta}>Origem: Biblioteca canônica · revisão {selected.revision}</p>
                     {selected.format === "LINK" ? (

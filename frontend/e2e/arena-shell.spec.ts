@@ -1551,3 +1551,105 @@ test("v0.10 Spotlight: uma ação primária confirma sem XP ou com XP explicitam
     expect(updated.history.filter((event) => event.scoreEventId != null)).toHaveLength(1);
   } finally { await api.dispose(); }
 });
+
+test("v0.11 / 11.2: professor publica leitura segura e o projetor recebe somente snapshot ativo", async ({ page, browser }) => {
+  test.setTimeout(110_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  const anonymous = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+  const projector = await anonymous.newPage();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 0);
+    const title = `Leitura SQL ${fixture.session.id.slice(0,8)}`;
+    const publishedText = "Conteúdo preservado da revisão publicada";
+    const body = [
+      "# Banco de Dados", "", "## SELECT", "", publishedText,
+      "", "<aside>", "### Atenção à cláusula WHERE", "",
+      "O professor conduz a análise do filtro.", "</aside>", "",
+      "[Fonte de leitura](https://example.org/referencia) para estudo posterior.", "",
+      "## Prática", "", "| Comando | Finalidade |", "| --- | --- |", "| SELECT | Consulta |",
+      "", "```sql", "SELECT * FROM produtos;", "```", "",
+      ...Array.from({ length: 38 }, (_, index) => `### Exemplo ${index + 1}\nRevisão contextualizada do comando.`),
+    ].join("\n");
+    const create = await api.post("/api/library/resources", {
+      headers: csrfHeaders,
+      data: { title, summary: "Exposição orientada", body,
+        format: "MARKDOWN", sourceType: "MANUAL", subject: "Banco de Dados",
+        tags: ["SQL"], language: "pt-BR" },
+    });
+    await expectOk(create, "Material canônico para apresentação");
+    const resource = await create.json() as { id: string };
+    const codeResponse = await api.get(`/api/sessions/${fixture.session.id}/join-code`);
+    await expectOk(codeResponse, "Código de sessão");
+    const { code } = await codeResponse.json() as { code: string };
+
+    const publicPath = `/api/projector/${code}/material`;
+    const before = await anonymous.request.get(`${apiBaseUrl}${publicPath}`);
+    expect(before.status()).toBe(404);
+    expect(before.headers()["cache-control"] ?? "").toContain("no-store");
+
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    await openArenaMaterial(page);
+    const dialog = page.getByRole("dialog", { name: "Biblioteca nesta aula" });
+    await dialog.getByLabel("Encontrar material na Biblioteca").fill(title);
+    await dialog.getByRole("button", { name: new RegExp(title) }).click();
+    const placed = await api.get(`/api/sessions/${fixture.session.id}/contextual-material`);
+    await expectOk(placed, "Vínculo de material");
+    expect((await placed.json() as { resourceId: string }).resourceId).toBe(resource.id);
+    await expect(dialog.getByRole("button", { name: "Apresentar no projetor" })).toBeVisible();
+    await expect(dialog.getByText("Material vinculado · ainda não apresentado")).toBeVisible();
+
+    await dialog.getByRole("button", { name: "Apresentar no projetor" }).click();
+    await expect(dialog.getByText(/Publicado no palco · revisão 1/)).toBeVisible();
+    const stage = await api.get(`/api/sessions/${fixture.session.id}/stage`);
+    await expectOk(stage, "Palco após publicação");
+    expect((await stage.json() as { primary: { type: string } }).primary.type).toBe("MATERIAL");
+
+    await projector.goto(`/projector?code=${code}`);
+    await expect(projector.getByTestId("projector-material-stage")).toBeVisible({ timeout: 15_000 });
+    const reader = projector.getByTestId("projector-material-stage");
+    await expect(reader.getByRole("heading", { name: title })).toBeVisible();
+    await expect(reader.getByRole("region", { name: "Conteúdo publicado para o projetor" })).toHaveAttribute("tabindex", "0");
+    await expect(reader.getByText(publishedText)).toBeVisible();
+    await expect(reader.getByRole("complementary", { name: "Destaque do material" })).toContainText("WHERE");
+    await expect(reader.getByRole("table")).toContainText("Consulta");
+    await expect(reader.getByText("SELECT * FROM produtos;")).toBeVisible();
+    await expect(reader.locator("iframe,script,img,form,a[href]")).toHaveCount(0);
+    await expect(reader.getByText("Fonte de leitura")).toBeVisible();
+
+    const snapshotResponse = await anonymous.request.get(`${apiBaseUrl}${publicPath}`);
+    expect(snapshotResponse.status()).toBe(200);
+    expect(snapshotResponse.headers()["cache-control"]).toContain("no-store");
+    const snapshotJson = await snapshotResponse.text();
+    expect(snapshotJson).toContain(publishedText);
+    expect(snapshotJson).not.toMatch(/sourceUrl|sourceReference|resourceId|requestId|classroomId/);
+
+    // Overflow stays inside the reader at smaller breakpoints and ultrawide.
+    for (const viewport of [{ width: 390, height: 700 }, { width: 2560, height: 1440 }]) {
+      await projector.setViewportSize(viewport);
+      await expect(reader).toBeVisible();
+      const dimensions = await projector.evaluate(() => {
+        const section = document.querySelector('[aria-label="Conteúdo publicado para o projetor"]') as HTMLElement;
+        return {
+          contentScrollable: section.scrollHeight > section.clientHeight,
+          viewportOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        };
+      });
+      expect(dimensions.contentScrollable).toBe(true);
+      expect(dimensions.viewportOverflow).toBeLessThanOrEqual(1);
+    }
+
+    await dialog.getByRole("button", { name: "Retirar do projetor" }).click();
+    await expect(dialog.getByText("Material vinculado · ainda não apresentado")).toBeVisible();
+    await expect(projector.getByTestId("projector-material-stage")).toHaveCount(0, { timeout: 12_000 });
+    await expect(projector.getByRole("heading", { name: "Aguardando próxima dinâmica" })).toBeVisible();
+    await expect(projector.getByText(publishedText)).toHaveCount(0);
+    const revoked = await anonymous.request.get(`${apiBaseUrl}${publicPath}`);
+    expect(revoked.status()).toBe(404);
+    expect(revoked.headers()["cache-control"]).toContain("no-store");
+    await projector.reload();
+    await expect(projector.getByTestId("projector-material-stage")).toHaveCount(0);
+  } finally {
+    await anonymous.close();
+    await api.dispose();
+  }
+});

@@ -1046,3 +1046,21 @@
     grid-column: 2;
   }
 }
+
+/* v0.11 / 11.2: the reader takes the available stage and scrolls internally.
+   Other dynamics retain their original viewport and composition. */
+.materialProjector { height: 100dvh; min-height: 0; grid-template-rows: auto minmax(0,1fr) auto; }
+.materialFocus {
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: clamp(.7rem, 2.2vw, 2rem);
+  align-items: stretch;
+}
+.materialFocus > * { min-width: 0; min-height: 0; }
+@media (max-width: 48rem) {
+  .materialFocus { padding: .65rem; }
+}
+
+.materialFooterTimer { flex: 0 1 auto; white-space: nowrap; color: #f3f7f5; font-variant-numeric: tabular-nums; font-size: clamp(.95rem,1.4vw,1.25rem); }
+@media(max-width:48rem) { .materialFooterTimer { white-space: normal; overflow-wrap: anywhere; } }

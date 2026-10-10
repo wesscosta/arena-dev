@@ -9,12 +9,17 @@
 - [Contrato proposto do projetor v1](11.0_CONTRATOS_PROJECAO.md): snapshot imutável, palco único, eventos versionados, HTTP, WebSocket, sincronização e retorno seguro.
 - [Plano de execução e gates](11.0_PLANO_GATES.md): sequência 11.1–11.6, condições de aceite e riscos residuais.
 - [Evidências verificadas da etapa](11.0_EVIDENCIAS.md): comandos e resultados, limites do teste e pendências.
-- [ADR-0067](../adr/ADR-0067-material-presentation-v011.md): escolha arquitetural proposta, ainda sujeita à revisão.
+- [ADR-0067](../adr/ADR-0067-material-presentation-v011.md): contrato arquitetural aceito para o backend 11.1; decisões de sincronização futura ainda sujeitas à 11.3.
 
 ## 11.1 — backend de publicação segura
 
 - [Execução 11.1](11.1_EXECUTION_STATUS.md): Flyway V57, snapshot por publicação, endpoints docentes/publicação projetor, LiveStage versionado, revogação e testes de segurança/concorrência.
-- **Status:** código implementado em branch filha e aguardando CI/revisão; nenhuma interface nova de projetor foi entregue.
+- **Status:** PR #39 integrado à \`main\` após três jobs de CI aprovados. O snapshot e a revogação são baseline para 11.2.
+
+## 11.2 — leitura pública segura e controles de apresentação
+
+- [Execução 11.2](11.2_EXECUTION_STATUS.md): comando explícito no modal docente, renderização segura de Markdown/Notion no projetor, leitura por código de sessão e rolagem responsiva.
+- **Status:** implementação em \`feat/v0.11-material-reader-stage\`; revisão e CI do SHA final antes de integração. Navegação sincronizada por \`anchorId\` continua pertencendo à 11.3.
 
 ## Disciplina de status
 
