@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { SafeMarkdown } from "@/components/SafeMarkdown";
 import { splitNotionAsides } from "@/lib/notion-callout";
 import type { PublicPresentedMaterial } from "@/lib/material-presentation-api";
 import styles from "./ProjectedMaterialReader.module.css";
@@ -17,16 +16,11 @@ export function SafePresentationBody({ body, format }: Pick<PublicPresentedMater
   if (format === "PLAIN_TEXT") return <pre className={styles.plain}>{body}</pre>;
 
   const segments = splitNotionAsides(body);
-  const components = {
-    a: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
-    img: () => null,
-    input: () => null,
-  };
   return <div className={styles.markdown}>
     {segments.map((segment, index) => {
-      const content = <ReactMarkdown skipHtml remarkPlugins={[remarkGfm]} components={components}>
+      const content = <SafeMarkdown linkMode="disabled">
         {segment.content}
-      </ReactMarkdown>;
+      </SafeMarkdown>;
       return segment.kind === "aside"
         ? <aside key={index} className={styles.callout} aria-label="Destaque do material">{content}</aside>
         : <div key={index} className={styles.segment}>{content}</div>;

@@ -96,7 +96,7 @@ test("16.3.8.4 reviews large drafts through master-detail navigation", () => {
   assert.match(review, /EMPTY_CONTENT_TITLE/);
   assert.match(review, /DUPLICATE_TITLE/);
   assert.match(review, /LONG_CONTENT/);
-  assert.match(review, /ReactMarkdown/);
+  assert.match(review, /SafeMarkdown/);
   assert.match(review, /Visualizar/);
   assert.match(review, /Adicionar módulo/);
   assert.match(review, /Adicionar conteúdo/);
@@ -137,8 +137,8 @@ test("content reader supports study formats and explicit completion", () => {
   assert.match(page, /startStudyContent/);
   assert.match(page, /completeStudyContent/);
   assert.match(page, /Concluir e continuar/);
-  assert.match(reader, /ReactMarkdown/);
-  assert.match(reader, /remarkGfm/);
+  assert.match(reader, /SafeMarkdown/);
+  assert.doesNotMatch(reader, /rehypeRaw|dangerouslySetInnerHTML/);
   assert.match(reader, /noopener noreferrer/);
   assert.match(reader, /PLAIN_TEXT/);
 });

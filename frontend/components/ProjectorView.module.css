@@ -1064,3 +1064,15 @@
 
 .materialFooterTimer { flex: 0 1 auto; white-space: nowrap; color: #f3f7f5; font-variant-numeric: tabular-nums; font-size: clamp(.95rem,1.4vw,1.25rem); }
 @media(max-width:48rem) { .materialFooterTimer { white-space: normal; overflow-wrap: anywhere; } }
+
+/* 11.4: dynamic Safari viewport / safe-area protections when reading. */
+.materialProjector {
+  box-sizing:border-box;
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+.materialFocus { overscroll-behavior:contain; }
+@media (max-width:48rem) and (max-height:34rem) {
+  .materialFocus { padding:.35rem; }
+}

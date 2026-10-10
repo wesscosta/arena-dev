@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { SafeMarkdown } from "@/components/SafeMarkdown";
 import type { JourneyContentDetailView } from "@/lib/study-api";
 import styles from "./study.module.css";
 
@@ -20,12 +19,7 @@ export default function JourneyContentReader({ content }: { content: JourneyCont
   return <article className={styles.readerArticle}>
     {content.body ? (isPlainText
       ? <div className={styles.readerPlainText}>{content.body}</div>
-      : <div className={styles.readerMarkdown}><ReactMarkdown remarkPlugins={[remarkGfm]} components={{
-          a: ({ href, children }) => {
-            const safe = safeExternalUrl(href || null);
-            return safe ? <a href={safe} target="_blank" rel="noopener noreferrer">{children}</a> : <span>{children}</span>;
-          },
-        }}>{content.body}</ReactMarkdown></div>)
+      : <div className={styles.readerMarkdown}><SafeMarkdown>{content.body}</SafeMarkdown></div>)
       : <div className={styles.readerEmpty}>Este conteúdo não possui texto incorporado.</div>}
 
     {externalUrl && <aside className={styles.readerSource}>

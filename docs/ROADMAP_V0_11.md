@@ -1,6 +1,6 @@
 # Arena Dev v0.11 — roadmap e execução incremental
 
-**Estado:** 11.0, 11.1 e **11.2 integradas à `main`**; PR #40 aprovado em backend, frontend e Compose/Playwright no SHA `ceb60cd`, com merge `863c83c`. 11.3 integrada em 10/10/2026 pelo PR #42 após backend, frontend e Compose/Playwright aprovados; 11.4–11.6 ainda não implementadas/homologadas.
+**Estado:** 11.0, 11.1 e **11.2 integradas à `main`**; PR #40 aprovado em backend, frontend e Compose/Playwright no SHA `ceb60cd`, com merge `863c83c`. 11.3 integrada em 10/10/2026 pelo PR #42 após backend, frontend e Compose/Playwright aprovados; 11.4 implementada em branch para revisão/CI ([execução](v0.11/11.4_SECURITY_UX_EXECUTION.md)); 11.5–11.6 não implementadas/homologadas.
 **Baseline confirmada:** v0.10.0 publicada em 10/10/2026 (PR #35, tag e GitHub Release). Seus limites de campo e de implantação continuam registrados na própria release.
 **Artefatos 11.0:** [índice e evidências](v0.11/README.md), [ADR-0067](adr/ADR-0067-material-presentation-v011.md).
 **11.1 integrada:** backend V57 e testes [execução e limites](v0.11/11.1_EXECUTION_STATUS.md). **11.2 validada e integrada** (leitor seguro e apresentação docente): [status 11.2](v0.11/11.2_EXECUTION_STATUS.md). **11.3 concluída e integrada:** [execução](v0.11/11.3_EXECUTION_STATUS.md) e [validação de fechamento](v0.11/11.3_VALIDATION_CLOSURE_2026-10-10.md).

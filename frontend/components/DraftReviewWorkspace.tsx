@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { SafeMarkdown } from "@/components/SafeMarkdown";
 import type { ContentDraft, ContentDraftItem, ContentDraftSection } from "@/lib/content-ingestion-api";
 import styles from "./DraftReviewWorkspace.module.css";
 
@@ -94,7 +93,7 @@ export default function DraftReviewWorkspace({ draft, busy, onChange, onBack, on
         </> : selectedItem ? <>
           <div className={styles.editorHeader}><div><button className={styles.backModule} type="button" onClick={()=>select({type:"module",section:selection.section})}>← {selectedSection.title}</button><h4>{selectedItem.title || "Sem título"}</h4></div><div className={styles.actions}><button disabled={selection.item===0} onClick={()=>moveItem(selection.section,selection.item,-1)}>↑</button><button disabled={selection.item===selectedSection.items.length-1} onClick={()=>moveItem(selection.section,selection.item,1)}>↓</button><button className={styles.danger} onClick={()=>removeItem(selection.section,selection.item)}>Excluir</button></div></div>
           <label><span>Título do conteúdo</span><input value={selectedItem.title} onChange={(e)=>patchItem(selection.section,selection.item,{title:e.target.value})}/></label><label><span>Descrição opcional</span><input value={selectedItem.description??""} onChange={(e)=>patchItem(selection.section,selection.item,{description:e.target.value||null})}/></label>{selectedItem.sourceUrl && <label><span>URL do recurso</span><input type="url" value={selectedItem.sourceUrl} onChange={(e)=>patchItem(selection.section,selection.item,{sourceUrl:e.target.value||null})}/></label>}
-          <div className={styles.bodyTabs}><button type="button" className={!preview?styles.active:""} onClick={()=>setPreview(false)}>Editar</button><button type="button" className={preview?styles.active:""} onClick={()=>setPreview(true)}>Visualizar</button></div>{preview?<div className={styles.markdownPreview}>{selectedItem.body?<ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedItem.body}</ReactMarkdown>:<p>Este conteúdo ainda não possui corpo.</p>}</div>:<textarea className={styles.bodyEditor} value={selectedItem.body??""} onChange={(e)=>patchItem(selection.section,selection.item,{body:e.target.value||null})} placeholder="Revise o Markdown deste conteúdo."/>}
+          <div className={styles.bodyTabs}><button type="button" className={!preview?styles.active:""} onClick={()=>setPreview(false)}>Editar</button><button type="button" className={preview?styles.active:""} onClick={()=>setPreview(true)}>Visualizar</button></div>{preview?<div className={styles.markdownPreview}>{selectedItem.body?<SafeMarkdown>{selectedItem.body}</SafeMarkdown>:<p>Este conteúdo ainda não possui corpo.</p>}</div>:<textarea className={styles.bodyEditor} value={selectedItem.body??""} onChange={(e)=>patchItem(selection.section,selection.item,{body:e.target.value||null})} placeholder="Revise o Markdown deste conteúdo."/>}
           {issues.filter((issue)=>issue.section===selection.section&&issue.item===selection.item).map((issue)=><div key={issue.code+issue.message} className={issue.severity==="ERROR"?styles.error:styles.warning}>{issue.message}</div>)}
         </> : null}
       </main>
