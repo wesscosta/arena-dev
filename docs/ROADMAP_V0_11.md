@@ -1,6 +1,6 @@
 # Arena Dev v0.11 — roadmap e execução incremental
 
-**Estado:** 11.0, 11.1 e **11.2 integradas à `main`**; PR #40 aprovado em backend, frontend e Compose/Playwright no SHA `ceb60cd`, com merge `863c83c`. 11.3 integrada em 10/10/2026 pelo PR #42 após backend, frontend e Compose/Playwright aprovados; 11.4 implementada em branch para revisão/CI ([execução](v0.11/11.4_SECURITY_UX_EXECUTION.md)); 11.5–11.6 não implementadas/homologadas.
+**Estado:** 11.0–11.4 integradas à `main`, incluindo [PR #45](https://github.com/wesscosta/arena-dev/pull/45) (CI 3/3, merge `1e3645e`). **11.5 em discovery**, sem DDL/API: [inventário](v0.11/11.5_EDITORIAL_PROVENANCE_AUDIT.md), [blueprint](v0.11/11.5_TAXONOMY_ASSESSMENT_BLUEPRINT.md), [backlog](v0.11/11.5_DECISIONS_AND_BACKLOG.md). **11.6 não iniciada:** homologação e GO/NO-GO.
 **Baseline confirmada:** v0.10.0 publicada em 10/10/2026 (PR #35, tag e GitHub Release). Seus limites de campo e de implantação continuam registrados na própria release.
 **Artefatos 11.0:** [índice e evidências](v0.11/README.md), [ADR-0067](adr/ADR-0067-material-presentation-v011.md).
 **11.1 integrada:** backend V57 e testes [execução e limites](v0.11/11.1_EXECUTION_STATUS.md). **11.2 validada e integrada** (leitor seguro e apresentação docente): [status 11.2](v0.11/11.2_EXECUTION_STATUS.md). **11.3 concluída e integrada:** [execução](v0.11/11.3_EXECUTION_STATUS.md) e [validação de fechamento](v0.11/11.3_VALIDATION_CLOSURE_2026-10-10.md).
@@ -67,4 +67,4 @@ Nenhum item autoriza geração de conteúdo/questões por IA ou publicação aut
 
 ## Próxima decisão de planejamento
 
-Etapa 11.0 documentou o inventário e propôs o contrato de projeção. Antes de implementar M1/11.1, revisar e aceitar ADR-0067, matriz de autorização, limites do snapshot e gatilhos de revogação; não extrapolar essa aprovação para liberar a release v0.11. [Gates técnicos](v0.11/11.0_PLANO_GATES.md).
+As 11.0–11.4 estão integradas; a 11.5 só propõe governança/blueprint com ADR-0068 ainda não aceita. A 11.6 exige evidências físicas Safari/iOS/VoiceOver, rede incerta, piloto docente, backup/rollback e GO/NO-GO por SHA. CI não equivale a publicação. [Gates técnicos](v0.11/11.0_PLANO_GATES.md).

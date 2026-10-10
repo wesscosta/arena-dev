@@ -99,3 +99,4 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 ### Decisões propostas para v0.11
 
 - [ADR-0067 — Publicação segura e versionada de materiais](ADR-0067-material-presentation-v011.md) — **Aceito para backend 11.1**; revisão do PR e extensões futuras ainda pendentes.
+- [ADR-0068 — Governança editorial e taxonomia](ADR-0068-editorial-provenance-taxonomy-proposal.md) — **Proposto; não aceito juridicamente/pedagogicamente e não implementado na 11.5**.
