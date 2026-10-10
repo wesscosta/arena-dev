@@ -1246,8 +1246,10 @@ test("Mobile Arena uses one hamburger; desktop retains the shared persistent sid
     await page.setViewportSize({ width: 1440, height: 900 });
     await expect(page.getByRole("button", { name: "Abrir menu da Arena" })).toBeHidden();
     await expect(page.locator(".arena-nav-scroll")).toBeVisible();
-    for (const label of ["Material da aula", "Roteiro da aula", "Sorteio", "Evidências da aprendizagem"]) {
-      await expect(page.locator(".arena-nav-scroll").getByText(label, { exact: true })).toBeVisible();
+    const desktopNav = page.locator(".arena-nav-scroll");
+    await expect(desktopNav.getByRole("button", { name: "Selecionar material" })).toBeVisible();
+    for (const label of ["Roteiro da aula", "Sorteio", "Evidências da aprendizagem"]) {
+      await expect(desktopNav.getByRole("button", { name: label, exact: true })).toBeVisible();
     }
     await expect(page.getByRole("button", { name: "Encerrar sessão", exact: true })).toBeVisible();
   } finally { await api.dispose(); }

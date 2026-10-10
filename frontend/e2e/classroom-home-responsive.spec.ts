@@ -295,13 +295,9 @@ test.describe.serial("Classroom Home responsive contract", () => {
         const overflow = await timerDialog.evaluate((element) => element.scrollWidth - element.clientWidth);
         expect(overflow, `Timer sem overflow em ${viewport.width}px`).toBeLessThanOrEqual(1);
 
-        if (viewport.width === 1366) {
-          const drawerContent = timerDialog.getByTestId("arena-tool-drawer-content");
-          const verticalOverflow = await drawerContent.evaluate(
-            (element) => element.scrollHeight - element.clientHeight,
-          );
-          expect(verticalOverflow, "Timer cabe integralmente em 1366x768").toBeLessThanOrEqual(1);
-        }
+        const drawerContent = timerDialog.getByTestId("arena-tool-drawer-content");
+        await expect(drawerContent).toHaveCSS("overflow-y", "scroll");
+        await expect(drawerContent).toHaveCSS("scrollbar-width", "none");
 
         const segments = timerDialog.locator(".timer-duration-segment");
         await expect(segments).toHaveCount(3);
@@ -325,11 +321,13 @@ test.describe.serial("Classroom Home responsive contract", () => {
           if (box && firstPresetY !== undefined) expect(Math.abs(box.y - firstPresetY)).toBeLessThanOrEqual(5);
         }
 
-        if (viewport.width === 390) {
-          const startButton = timerDialog.getByRole("button", { name: "Iniciar agora" });
-          await startButton.scrollIntoViewIfNeeded();
-          await expect(startButton).toBeVisible();
-        }
+        const startButton = timerDialog.getByRole("button", { name: "Iniciar agora" });
+        await startButton.scrollIntoViewIfNeeded();
+        await expect(startButton).toBeInViewport();
+        await drawerContent.focus();
+        await page.keyboard.press("Home");
+        await page.keyboard.press("End");
+        await expect(startButton).toBeInViewport();
       }
     } finally {
       await context.close();
