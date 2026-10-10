@@ -142,7 +142,6 @@ export default function WordCloudPanel({
           <DynamicHeader dynamic="wordcloud"
             title="Nuvem de Palavras"
             description="Transforme respostas curtas da turma em um painel visual coletivo."
-            status="PREPARAR"
             secondaryActions={(
               <div className={styles.headerRevealControl}>
                 <ToggleField
@@ -201,7 +200,7 @@ export default function WordCloudPanel({
                 disabled={busy || !prompt.trim()}
                 onClick={() => void create()}
               >
-                {busy ? "Criando..." : "Abrir Nuvem"}
+                {busy ? "Criando..." : "Iniciar coleta"}
               </button>
             </DynamicSection>
           </div>

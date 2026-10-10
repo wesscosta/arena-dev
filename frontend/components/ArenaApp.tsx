@@ -3051,7 +3051,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       header={
         <ArenaSessionHeader
           classroomName={classroom?.name ?? "Turma"}
-          sessionTitle={currentSession.title}
           elapsed={formatSessionElapsed(currentSession.startedAt, sessionNow)}
           sessionBusy={sessionBusy}
           canProject={Boolean(joinCode)}
@@ -3062,7 +3061,6 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
               onOpenLearningCheck={() => selectDynamic("learning-check")} />
             <ArenaContextualMaterial sessionId={currentSession.id} notify={notify} />
           </>}
-          onGoDashboard={onGoDashboard}
           onBack={onBack}
           onToggleProjector={projectorControl.toggle}
           projectorActive={projectorControl.projecting}
@@ -3358,7 +3356,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 <DynamicHeader dynamic="buzzer"
                   title="Buzzer"
                   description="Velocidade com ordem oficial definida pelo servidor."
-                  status={buzzerState.status === "OPEN" ? "AO VIVO" : buzzerState.status === "CLOSED" ? "ENCERRADO" : "PREPARAR"}
+                  status={buzzerState.status === "OPEN" ? "AO VIVO" : buzzerState.status === "CLOSED" ? "ENCERRADO" : undefined}
                   />
               <section className="buzzer-hero">
                 <div className="buzzer-stage">
@@ -3463,7 +3461,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 <DynamicHeader dynamic="boss"
                   title="Boss Battle"
                   description="Transforme desafios da aula em dano coletivo contra um objetivo compartilhado."
-                  status={bossLifecycle}
+                  status={bossLifecycle === "PREPARAR" ? undefined : bossLifecycle}
                   />
               <section className="boss-hero">
                 {currentSession.boss ? (

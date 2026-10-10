@@ -202,8 +202,8 @@ test("professor entra na Arena e participante reconecta à sessão", async ({
       page.locator("aside.arena-cockpit-nav").getByText("ARENA DEV", { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("navigation", { name: "Contexto da sessão" })
-        .getByText(fixture.sessionTitle, { exact: true }),
+      page.getByRole("navigation", { name: "Turma atual" })
+        .getByRole("button", { name: `Voltar para a turma ${fixture.classroomName}` }),
     ).toBeVisible();
 
     const participantContext = await browser.newContext();

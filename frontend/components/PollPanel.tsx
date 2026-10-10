@@ -94,7 +94,6 @@ export default function PollPanel({ sessionId, state, onStateChange, notify, joi
           <DynamicHeader dynamic="poll"
             title="Votação"
             description="Crie uma decisão rápida da turma com leitura visual imediata."
-            status="PREPARAR"
             actions={round?.status === "CLOSED" ? (
               <button className={styles.secondary} onClick={() => setCreating(false)}>Ver rodada anterior</button>
             ) : undefined}

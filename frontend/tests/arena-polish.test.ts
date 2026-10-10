@@ -680,7 +680,7 @@ test("Arena exposes explicit empty states for the roster and draw when nobody is
   assert.match(css, /\.arena-participant-empty\s*\{/);
 });
 
-test("Prepare-state dynamics share the same header badge and title scale", () => {
+test("Unstarted dynamics omit redundant prepare badge but share the same header title scale", () => {
   const quiz = read("components/QuizPanel.tsx");
   const poll = read("components/PollPanel.tsx");
   const wordCloud = read("components/WordCloudPanel.tsx");
@@ -688,7 +688,7 @@ test("Prepare-state dynamics share the same header badge and title scale", () =>
   const headerCss = read("components/arena/dynamics/DynamicHeader.module.css");
 
   for (const source of [quiz, poll, wordCloud]) {
-    assert.match(source, /status="PREPARAR"/);
+    assert.doesNotMatch(source, /status="PREPARAR"/);
   }
   assert.match(header, /DINÂMICA AO VIVO/);
   assert.match(header, /data-testid="dynamic-header"/);
@@ -709,7 +709,7 @@ test("Arena dynamics use a shared lifecycle vocabulary without erasing domain-sp
   }
 
   assert.match(app, /buzzerState\.status === "OPEN" \? "AO VIVO"/);
-  assert.match(app, /buzzerState\.status === "CLOSED" \? "ENCERRADO" : "PREPARAR"/);
+  assert.match(app, /buzzerState\.status === "CLOSED" \? "ENCERRADO" : undefined/);
   assert.match(app, /const bossLifecycle = !currentSession\?\.boss[\s\S]*?"PREPARAR"[\s\S]*?"RESULTADO"[\s\S]*?"AO VIVO"/);
   assert.match(app, /<small>\{bossPhase\}<\/small>/);
   assert.match(app, /<DynamicHeader dynamic="boss"[\s\S]*?title="Boss Battle"/);

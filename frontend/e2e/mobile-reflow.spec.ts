@@ -9,7 +9,7 @@ const overviewStyles = readFileSync(resolve(process.cwd(), "styles/classroom-ove
 const mobileStyles = readFileSync(resolve(process.cwd(), "styles/mobile-reflow.css"), "utf8");
 
 for (const width of [320, 390, 430, 768]) {
-  test(`Arena reflows context rail without redundant score dock at ${width}px`, async ({ page }) => {
+  test(`Arena hides duplicated participant/QR rail in mobile at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.setContent(`
       <style>
@@ -25,6 +25,7 @@ for (const width of [320, 390, 430, 768]) {
           <aside class="arena-cockpit-nav">Menu</aside>
           <div class="arena-session-workspace">
             <header class="arena-live-topbar">
+              <nav class="arena-live-context" aria-label="Turma atual"><button class="arena-live-classroom-link">← <strong>Turma E2E</strong></button></nav>
               <div class="arena-session-actions">
                 <div class="arena-session-shortcuts">
                   <button>Próximas ações</button><button>Painel pedagógico</button><button>Material</button>
@@ -49,21 +50,27 @@ for (const width of [320, 390, 430, 768]) {
     const measurement = await page.evaluate(() => {
       const grid = (selector: string) => getComputedStyle(document.querySelector(selector)!).gridTemplateColumns.split(" ").length;
       const rect = (selector: string) => document.querySelector(selector)!.getBoundingClientRect();
-      const context = rect(".arena-context-rail");
       const roster = rect(".arena-participants-card");
       const qr = rect(".arena-session-code-card");
+      const main = rect(".arena-cockpit-main");
+      const nav = document.querySelector<HTMLElement>(".arena-live-context")!;
       return {
         cockpitTracks: grid(".arena-cockpit"),
-        railTracks: grid(".arena-context-rail"),
-        panelWithinViewport: [context, roster, qr].every((r) => r.left >= -1 && r.right <= innerWidth + 1),
-        stacked: qr.top >= roster.bottom - 1,
+        railHidden: getComputedStyle(document.querySelector(".arena-context-rail")!).display === "none",
+        participantHidden: roster.width === 0 && roster.height === 0,
+        qrHidden: qr.width === 0 && qr.height === 0,
+        mainInside: main.left >= -1 && main.right <= innerWidth + 1,
+        backVisible: nav.getBoundingClientRect().width > 0 &&
+          getComputedStyle(nav).display !== "none",
         overflow: document.documentElement.scrollWidth - innerWidth,
       };
     });
     expect(measurement.cockpitTracks).toBe(1);
-    expect(measurement.railTracks).toBe(1);
-    expect(measurement.panelWithinViewport).toBe(true);
-    expect(measurement.stacked).toBe(true);
+    expect(measurement.railHidden).toBe(true);
+    expect(measurement.participantHidden).toBe(true);
+    expect(measurement.qrHidden).toBe(true);
+    expect(measurement.mainInside).toBe(true);
+    expect(measurement.backVisible).toBe(true);
     expect(measurement.overflow).toBeLessThanOrEqual(1);
   });
 }

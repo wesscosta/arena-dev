@@ -222,7 +222,6 @@ export default function LearningCheckPanel({
           category="EVIDÊNCIA DE APRENDIZAGEM"
           title="Verificar aprendizagem"
           description="Faça uma checagem objetiva vinculada ao que você quer observar na aprendizagem da turma."
-          status="PREPARAR"
         />
 
         <div className={styles.prepareGrid}>

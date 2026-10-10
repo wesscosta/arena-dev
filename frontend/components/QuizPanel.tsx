@@ -195,7 +195,6 @@ export default function QuizPanel({
         <DynamicHeader dynamic="quiz"
           title="Quiz"
           description="Prepare uma questão e transforme a resposta da turma em feedback imediato."
-          status="PREPARAR"
           actions={round?.status === "CLOSED" ? (
             <button className={styles.secondary} onClick={() => setCreating(false)}>Ver resultado anterior</button>
           ) : undefined}

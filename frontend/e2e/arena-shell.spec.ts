@@ -81,7 +81,7 @@ async function createArenaFixture(
   return { classroomName, sessionTitle, classroomId: classroom.id, studentIds: presentStudentIds, session };
 }
 
-async function openArena(page: Page, classroomName: string, sessionTitle: string) {
+async function openArena(page: Page, classroomName: string, _sessionTitle: string) {
   await page.goto("/");
   await page.getByLabel("Usuário").fill(teacherUsername);
   await page.getByLabel("Senha").fill(teacherPassword);
@@ -95,8 +95,8 @@ async function openArena(page: Page, classroomName: string, sessionTitle: string
   await page.getByRole("button", { name: "Continuar Arena" }).click();
 
   await expect(
-    page.getByRole("navigation", { name: "Contexto da sessão" })
-      .getByText(sessionTitle, { exact: true }),
+    page.getByRole("navigation", { name: "Turma atual" })
+      .getByRole("button", { name: `Voltar para a turma ${classroomName}` }),
   ).toBeVisible();
 }
 
@@ -670,8 +670,8 @@ test("reverter XP de sorteio mantém participação e histórico sem duplicar le
     await page.locator("article.overview-class-card")
       .filter({ hasText: fixture.classroomName }).click();
     await page.getByRole("button", { name: "Continuar Arena" }).click();
-    await expect(page.getByRole("navigation", { name: "Contexto da sessão" })
-      .getByText(fixture.sessionTitle, { exact: true })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Turma atual" })
+      .getByRole("button", { name: `Voltar para a turma ${fixture.classroomName}` })).toBeVisible();
     const persisted = await api.get(`/api/sessions/${sessionId}/draw-attempts/state`);
     await expectOk(persisted, "Histórico após F5");
     expect((await persisted.json()) as { history: Array<{ scoreReversed: boolean }> })

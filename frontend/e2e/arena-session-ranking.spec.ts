@@ -103,7 +103,7 @@ async function createFixture(api: APIRequestContext, csrfHeaders: Record<string,
   return { classroom, classroomName, session, joinCode, students, anaScore, score };
 }
 
-async function loginAndOpenArena(page: Page, classroomName: string, sessionTitle: string) {
+async function loginAndOpenArena(page: Page, classroomName: string, _sessionTitle: string) {
   const csrfResponse = await page.request.get(`${browserApiBaseUrl}/api/auth/csrf`);
   await expectOk(csrfResponse, "Token CSRF do navegador");
   const { token } = (await csrfResponse.json()) as { token: string };
@@ -119,7 +119,7 @@ async function loginAndOpenArena(page: Page, classroomName: string, sessionTitle
   await card.getByRole("button", { name: new RegExp(`Abrir turma ${classroomName}`) }).click();
   await page.getByRole("button", { name: "Continuar Arena" }).click();
   await expect(page.locator("aside.arena-cockpit-nav")).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Contexto da sessão" }).getByText(sessionTitle, { exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Turma atual" }).getByRole("button", { name: `Voltar para a turma ${classroomName}` })).toBeVisible();
 }
 
 async function openProjector(browser: Browser, code: string) {

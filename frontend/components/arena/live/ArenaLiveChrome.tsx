@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Badge, Button, Menu, MenuItem } from "@/components/ui";
+import { Button, Menu, MenuItem } from "@/components/ui";
 import styles from "./ArenaLiveChrome.module.css";
 
 export type ArenaDynamic = "runbook" | "draw" | "wordcloud" | "poll" | "quiz" | "learning-check" | "buzzer" | "boss";
@@ -195,12 +195,10 @@ export function ArenaSidebar({
 
 type ArenaSessionHeaderProps = {
   classroomName: string;
-  sessionTitle: string;
   elapsed: string;
   sessionBusy: boolean;
   canProject: boolean;
   nextActions?: ReactNode;
-  onGoDashboard: () => void;
   onBack: () => void;
   onToggleProjector: () => void;
   projectorActive: boolean;
@@ -210,12 +208,10 @@ type ArenaSessionHeaderProps = {
 
 export function ArenaSessionHeader({
   classroomName,
-  sessionTitle,
   elapsed,
   sessionBusy,
   canProject,
   nextActions,
-  onGoDashboard,
   onBack,
   onToggleProjector,
   projectorActive,
@@ -224,13 +220,17 @@ export function ArenaSessionHeader({
 }: ArenaSessionHeaderProps) {
   return (
     <header className="topbar app-topbar arena-live-topbar">
-      <nav className="arena-live-context" aria-label="Contexto da sessão">
-        <button type="button" onClick={onGoDashboard}>Turmas</button>
-        <span aria-hidden="true">›</span>
-        <button type="button" onClick={onBack}>{classroomName}</button>
-        <span aria-hidden="true">›</span>
-        <strong>{sessionTitle}</strong>
-        <Badge variant="live" dot>AO VIVO</Badge>
+      <nav className="arena-live-context" aria-label="Turma atual">
+        <button
+          type="button"
+          className="arena-live-classroom-link"
+          onClick={onBack}
+          aria-label={`Voltar para a turma ${classroomName}`}
+          title={`Voltar para a turma ${classroomName}`}
+        >
+          <span aria-hidden="true">←</span>
+          <strong>{classroomName}</strong>
+        </button>
       </nav>
 
       <div className="topbar-actions arena-session-actions">
