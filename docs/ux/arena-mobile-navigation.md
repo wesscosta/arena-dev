@@ -13,7 +13,7 @@ Ordem dos grupos: **Aula** (Material da aula, Roteiro), **Dinâmicas** (Sorteio,
 
 ## Contrato operacional
 
-- **Projetar** fica acessível diretamente no cabeçalho e apenas controla a janela de projeção; não publica nem inicia dinâmicas.
+- **Projetar** fica acessível diretamente à esquerda do hambúrguer na barra mobile e no cabeçalho operacional do desktop; apenas controla a janela de projeção, não publica materiais nem inicia dinâmicas. O plano de projeção de conteúdos está em [`arena-material-projector-proposal.md`](arena-material-projector-proposal.md).
 - **Material da aula** é o vínculo professor–Biblioteca do contexto da sessão. **Não publica** conteúdo automaticamente a alunos/projetor. Há uma única instância do modal por sessão; trocar de dinâmica não deve duplicar seu estado.
 - **Evidências da aprendizagem** substitui o nome genérico Painel pedagógico. Exibe respostas avaliadas, diagnósticos, intervenções e comparações; o menu de sugestões fixas `Próximas ações` foi retirado. Não se deve inferir recomendação personalizada sem evidência suficiente.
 - **Presença e acesso** conserva participantes, código e QR ampliado; o painel redundante permanece oculto no mobile.
