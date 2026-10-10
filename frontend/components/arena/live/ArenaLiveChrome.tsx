@@ -66,6 +66,7 @@ type ArenaSidebarProps = {
   sessionBusy: boolean;
   materialAction: ReactNode;
   evidenceAction: ReactNode;
+  projectorAction: ReactNode;
   onGoDashboard: () => void;
   onOpenSettings: () => void;
   onLogout: () => void;
@@ -76,7 +77,7 @@ type ArenaSidebarProps = {
 
 export function ArenaSidebar({
   activeDynamic, activeTool, teacherUsername, sessionElapsed, sessionBusy,
-  materialAction, evidenceAction,
+  materialAction, evidenceAction, projectorAction,
   onGoDashboard, onOpenSettings, onLogout, onEndSession,
   onSelectDynamic, onSelectTool,
 }: ArenaSidebarProps) {
@@ -136,6 +137,7 @@ export function ArenaSidebar({
         <span className="arena-nav-brand-copy"><strong>ARENA DEV</strong><small>Classroom Edition</small></span>
       </button>
       <span className="arena-nav-mobile-title" aria-hidden="true"><strong>Arena</strong></span>
+      <div className="arena-nav-mobile-projector">{projectorAction}</div>
       <button ref={triggerRef} type="button" className="arena-nav-menu-trigger"
         aria-label="Abrir menu da Arena" aria-expanded={menuOpen} aria-controls="arena-navigation-panel"
         onClick={() => setMenuOpen((value) => !value)}>
@@ -219,6 +221,34 @@ type ArenaSessionHeaderProps = {
   onEndSession: () => void;
 };
 
+type ArenaProjectorButtonProps = {
+  canProject: boolean;
+  onToggleProjector: () => void;
+  projectorActive: boolean;
+  projectorPending: boolean;
+};
+
+/** One action contract, mounted in the mobile navigation or desktop session bar. */
+export function ArenaProjectorButton({
+  canProject, onToggleProjector, projectorActive, projectorPending,
+}: ArenaProjectorButtonProps) {
+  return (
+    <button
+      type="button"
+      className="arena-projector-toggle"
+      aria-pressed={projectorActive}
+      aria-label={projectorActive ? "Desativar projetor" : "Ativar projetor"}
+      title={projectorActive ? "Fechar a janela de projeção deste navegador" : "Abrir uma janela de projeção"}
+      data-active={projectorActive ? "true" : "false"}
+      onClick={onToggleProjector}
+      disabled={!canProject || projectorPending}
+    >
+      <span aria-hidden="true" className="arena-projector-toggle-indicator" />
+      {projectorPending ? "Conectando..." : projectorActive ? "Projetando" : "Projetar"}
+    </button>
+  );
+}
+
 export function ArenaSessionHeader({
   classroomName,
   elapsed,
@@ -253,19 +283,12 @@ export function ArenaSessionHeader({
             <small>Tempo de sessão</small>
           </div>
         </div>
-        <button
-          type="button"
-          className="arena-projector-toggle"
-          aria-pressed={projectorActive}
-          aria-label={projectorActive ? "Desativar projetor" : "Ativar projetor"}
-          title={projectorActive ? "Fechar a janela de projeção deste navegador" : "Abrir uma janela de projeção"}
-          data-active={projectorActive ? "true" : "false"}
-          onClick={onToggleProjector}
-          disabled={!canProject || projectorPending}
-        >
-          <span aria-hidden="true" className="arena-projector-toggle-indicator" />
-          {projectorPending ? "Conectando..." : projectorActive ? "Projetando" : "Projetar"}
-        </button>
+        <ArenaProjectorButton
+          canProject={canProject}
+          onToggleProjector={onToggleProjector}
+          projectorActive={projectorActive}
+          projectorPending={projectorPending}
+        />
         <Button
           variant="danger"
           loading={sessionBusy}

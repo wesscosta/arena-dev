@@ -30,6 +30,7 @@ import DrawOutcomeActions from "@/components/arena/selection/DrawOutcomeActions"
 import {
   ArenaGlyph,
   ArenaLiveShell,
+  ArenaProjectorButton,
   ArenaSessionHeader,
   ArenaSidebar,
 } from "@/components/arena/live/ArenaLiveChrome";
@@ -3043,6 +3044,12 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           materialAction={<ArenaContextualMaterial sessionId={currentSession.id} notify={notify} />}
           evidenceAction={<TeacherLearningOverview key={currentSession.id} sessionId={currentSession.id}
             onOpenLearningCheck={() => selectDynamic("learning-check")} />}
+          projectorAction={<ArenaProjectorButton
+            canProject={Boolean(joinCode)}
+            onToggleProjector={projectorControl.toggle}
+            projectorActive={projectorControl.projecting}
+            projectorPending={projectorControl.pending}
+          />}
           onEndSession={() => { void endSession(); }}
           onGoDashboard={onGoDashboard}
           onOpenSettings={onOpenSettings}

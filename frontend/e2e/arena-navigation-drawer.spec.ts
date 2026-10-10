@@ -24,6 +24,7 @@ for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
           <aside class="arena-cockpit-nav">
             <button class="arena-nav-brand">A</button>
             <span class="arena-nav-mobile-title">Arena</span>
+            <div class="arena-nav-mobile-projector"><button class="arena-projector-toggle" aria-label="Ativar projetor">Projetar</button></div>
             <button class="arena-nav-menu-trigger" aria-label="Abrir menu da Arena">☰</button>
             <button class="arena-nav-menu-backdrop" aria-label="Fechar menu da Arena"></button>
             <div class="arena-nav-panel" data-open="true">
@@ -46,8 +47,14 @@ for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
       const menu = document.querySelector<HTMLElement>(".arena-nav-panel")!;
       const items = Array.from(menu.querySelectorAll<HTMLElement>(".arena-cockpit-nav-group:not(.arena-nav-mobile-session)"));
       const menuRect = rect(".arena-nav-panel");
+      const projectorRect = rect(".arena-nav-mobile-projector");
+      const triggerRect = rect(".arena-nav-menu-trigger");
       return {
         triggerVisible: getComputedStyle(document.querySelector(".arena-nav-menu-trigger")!).display !== "none",
+        projectorVisible: getComputedStyle(document.querySelector(".arena-nav-mobile-projector")!).display !== "none",
+        projectorBeforeMenu: projectorRect.right <= triggerRect.left + 1 && projectorRect.width >= 106,
+        sameHeaderRow: Math.abs(projectorRect.top + projectorRect.height / 2 - triggerRect.top - triggerRect.height / 2) <= 2,
+        projectorInside: projectorRect.left >= -1 && projectorRect.right <= innerWidth + 1,
         menuVisible: getComputedStyle(menu).display !== "none",
         within: menuRect.x >= -1 && menuRect.right <= innerWidth + 1,
         groupVisible: items.every((el) => getComputedStyle(el).display !== "none" && el.getBoundingClientRect().width > 0),
@@ -61,9 +68,14 @@ for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
     expect(m.overflow).toBeLessThanOrEqual(1);
     if (width <= 768) {
       expect(m.triggerVisible).toBe(true);
+      expect(m.projectorVisible).toBe(true);
+      expect(m.projectorBeforeMenu).toBe(true);
+      expect(m.sameHeaderRow).toBe(true);
+      expect(m.projectorInside).toBe(true);
       expect(m.menuVisible).toBe(true);
     } else {
       expect(m.triggerVisible).toBe(false);
+      expect(m.projectorVisible).toBe(false);
     }
   });
 }

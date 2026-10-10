@@ -396,6 +396,7 @@
 
 /* Arena navigation v0.10: a single command registry, desktop rail + mobile drawer. */
 .arena-nav-panel { display: contents; }
+.arena-nav-mobile-projector,
 .arena-nav-menu-trigger,
 .arena-nav-menu-backdrop,
 .arena-nav-panel-head,
@@ -473,6 +474,24 @@
     color: var(--ds-text-primary, var(--text));
     font-size: 1rem;
   }
+  .arena-content-full .arena-nav-mobile-projector {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    min-width: 0;
+    margin-left: auto;
+  }
+  .arena-content-full .arena-nav-mobile-projector .arena-projector-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    width: auto;
+    min-width: 6.7rem;
+    max-width: 8rem;
+    padding-inline: .55rem;
+    font-size: .85rem;
+  }
   .arena-nav-menu-trigger {
     display: inline-flex;
     flex: 0 0 2.75rem;
@@ -480,7 +499,7 @@
     height: 2.75rem;
     min-width: 2.75rem;
     min-height: 2.75rem;
-    margin-left: auto;
+    margin-left: 0;
     align-items: center;
     justify-content: center;
     border: 1px solid var(--ds-border, var(--border));
@@ -620,15 +639,8 @@
     padding: .55rem .7rem;
     font-size: .9rem;
   }
-  /* Keep the projector as the one direct operational control in the mobile header. */
-  .arena-content-full .arena-session-actions { display: flex; justify-content: flex-end; gap: .5rem; }
-  .arena-content-full .arena-session-actions > .arena-session-elapsed,
-  .arena-content-full .arena-session-actions > button:last-child { display: none; }
-  .arena-content-full .arena-session-actions > .arena-projector-toggle {
-    display: inline-flex;
-    min-width: 7.25rem;
-    width: auto;
-    max-width: 100%;
-    min-height: 2.75rem;
-  }
+  /* The projector command moves next to the hamburger, leaving the session header one line. */
+  .arena-content-full .arena-session-actions { display: none; }
+  .arena-content-full .arena-live-topbar { margin-top: 0; padding: .2rem 0 .4rem; }
+  .arena-content-full .arena-live-topbar .arena-live-context { margin-bottom: 0; }
 }
