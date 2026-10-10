@@ -13,6 +13,7 @@ import {
 } from "@/lib/arena-context-material-api";
 import styles from "./ArenaContextualMaterial.module.css";
 import { DialogCloseButton } from "@/components/ui";
+import { ArenaGlyph } from "@/components/arena/live/ArenaLiveChrome";
 
 type Props = { sessionId: string; notify: (message: string) => void };
 
@@ -92,7 +93,10 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      (triggerRef.current ?? previousFocus)?.focus();
+      const trigger = triggerRef.current;
+      const mobileMenu = document.querySelector<HTMLButtonElement>('.arena-nav-menu-trigger');
+      const visibleTrigger = trigger && trigger.getClientRects().length > 0 ? trigger : null;
+      (visibleTrigger ?? (mobileMenu && mobileMenu.getClientRects().length > 0 ? mobileMenu : null) ?? previousFocus)?.focus();
     };
   }, [open]);
 
@@ -139,7 +143,7 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
           title={placement?.title ?? "Selecionar material da Biblioteca"}
           aria-label={placement ? "Abrir material" : "Selecionar material"}
           onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open}>
-          Material
+          <ArenaGlyph name="material" /> Material da aula
         </button>
       </div>
       {open && typeof document !== "undefined" && createPortal(

@@ -17,7 +17,6 @@ import { useArenaRealtime } from "@/components/arena/live/useArenaRealtime";
 import { useProjectorControl } from "@/components/arena/live/useProjectorControl";
 import { useArenaScoring } from "@/components/arena/live/useArenaScoring";
 import { useArenaToolState } from "@/components/arena/live/useArenaToolState";
-import ArenaNextActions from "@/components/arena/live/ArenaNextActions";
 import ArenaContextualMaterial from "@/components/arena/live/ArenaContextualMaterial";
 import TeacherLearningOverview from "@/components/learning/TeacherLearningOverview";
 import WheelParticipantSelector from "@/components/arena/selection/WheelParticipantSelector";
@@ -3039,6 +3038,12 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           activeDynamic={activeDynamic}
           activeTool={activeTool}
           teacherUsername={teacherUsername}
+          sessionElapsed={formatSessionElapsed(currentSession.startedAt, sessionNow)}
+          sessionBusy={sessionBusy}
+          materialAction={<ArenaContextualMaterial sessionId={currentSession.id} notify={notify} />}
+          evidenceAction={<TeacherLearningOverview key={currentSession.id} sessionId={currentSession.id}
+            onOpenLearningCheck={() => selectDynamic("learning-check")} />}
+          onEndSession={() => { void endSession(); }}
           onGoDashboard={onGoDashboard}
           onOpenSettings={onOpenSettings}
           onLogout={onLogout}
@@ -3054,13 +3059,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           elapsed={formatSessionElapsed(currentSession.startedAt, sessionNow)}
           sessionBusy={sessionBusy}
           canProject={Boolean(joinCode)}
-          nextActions={<>
-            <ArenaNextActions dynamic={activeDynamic} onSelectDynamic={selectDynamic}
-              onOpenGroups={() => selectTool("groups")} />
-            <TeacherLearningOverview key={currentSession.id} sessionId={currentSession.id}
-              onOpenLearningCheck={() => selectDynamic("learning-check")} />
-            <ArenaContextualMaterial sessionId={currentSession.id} notify={notify} />
-          </>}
+
           onBack={onBack}
           onToggleProjector={projectorControl.toggle}
           projectorActive={projectorControl.projecting}

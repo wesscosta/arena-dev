@@ -7,6 +7,7 @@ import { fetchSessionLearningOverview, type SessionLearningOverview } from "@/li
 import { recoveryGuidance } from "@/lib/learning-recovery";
 import styles from "./TeacherLearningOverview.module.css";
 import { DialogCloseButton } from "@/components/ui";
+import { ArenaGlyph } from "@/components/arena/live/ArenaLiveChrome";
 
 export default function TeacherLearningOverview({ sessionId, onOpenLearningCheck }: {
   sessionId: string;
@@ -42,7 +43,9 @@ export default function TeacherLearningOverview({ sessionId, onOpenLearningCheck
     document.addEventListener("keydown",handleKey);
     return () => {
       document.removeEventListener("keydown",handleKey);
-      (trigger??previous)?.focus();
+      const mobileMenu = document.querySelector<HTMLButtonElement>('.arena-nav-menu-trigger');
+      const visibleTrigger = trigger && trigger.getClientRects().length > 0 ? trigger : null;
+      (visibleTrigger ?? (mobileMenu && mobileMenu.getClientRects().length > 0 ? mobileMenu : null) ?? previous)?.focus();
     };
   }, [open]);
 
@@ -75,7 +78,7 @@ export default function TeacherLearningOverview({ sessionId, onOpenLearningCheck
   return <>
     <button type="button" ref={triggerRef} className={styles.trigger}
       aria-haspopup="dialog" aria-expanded={open} onClick={show}>
-      Painel pedagógico
+      <ArenaGlyph name="evidence" /> Evidências da aprendizagem
     </button>
     {open && typeof document !== "undefined" && createPortal(
       <div className={styles.overlay}>
