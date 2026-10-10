@@ -54,6 +54,10 @@ test("Timer drawer keeps a focusable scroll region and lets the teacher collapse
   assert.match(css, /\.content\s*\{[^}]*overflow-y:\s*scroll/s);
   assert.match(css, /\.drawer \.content :global\(\.timer-workspace\)\s*\{[^}]*height:\s*auto/s);
   assert.match(css, /\.content\s*\{[^}]*scrollbar-width:\s*thin/s);
+  assert.match(drawer, /hideScrollbar \? styles\.scrollbarHidden/);
+  assert.match(css, /\.content\.scrollbarHidden\s*\{[^}]*scrollbar-width:\s*none/s);
+  assert.match(css, /\.content\.scrollbarHidden::-webkit-scrollbar\s*\{[^}]*display:\s*none/s);
+  assert.match(read("components/ArenaApp.tsx"), /title="Timer"[\s\S]*?hideScrollbar[\s\S]*?onClose=\{closeTool\}/);
   assert.match(panel, /previewChoice.*setPreviewChoice/);
   assert.match(panel, /const previewCollapsed =/);
   assert.match(panel, /aria-expanded=\{!previewCollapsed\}/);

@@ -3678,6 +3678,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         title="Timer"
         subtitle="Controle o tempo sem sair da dinâmica atual."
         size="wide"
+        hideScrollbar
         onClose={closeTool}
       >
         <TimerPanel

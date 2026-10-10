@@ -36,7 +36,7 @@ for (const viewport of [{ width: 390, height: 700 }, { width: 1440, height: 720 
       <div class="backdrop">
         <aside class="drawer wide" role="dialog" aria-label="Timer">
           <header class="header"><h2>Timer</h2><button>Fechar</button></header>
-          <div class="content" role="region" aria-label="Configurações e controles de Timer" tabindex="0">
+          <div class="content scrollbarHidden" role="region" aria-label="Configurações e controles de Timer" tabindex="0">
             <div class="stack-lg arena-tab-content timer-workspace">
               <section class="timer-active-card">
                 <div class="timer-active-toolbar">
@@ -65,12 +65,16 @@ for (const viewport of [{ width: 390, height: 700 }, { width: 1440, height: 720 
         clientHeight: el.clientHeight,
         scrollHeight: el.scrollHeight,
         visibleOverflow: getComputedStyle(el).overflowY,
+        scrollbarWidth: getComputedStyle(el).scrollbarWidth,
+        scrollbarGutter: getComputedStyle(el).scrollbarGutter,
         workspaceHeight: workspace.getBoundingClientRect().height,
         workspaceStyle: css.height,
         workspaceOverflow: css.overflowY,
       };
     });
     expect(geometry.visibleOverflow).toBe("scroll");
+    expect(geometry.scrollbarWidth).toBe("none");
+    expect(geometry.scrollbarGutter).toBe("auto");
     expect(geometry.scrollHeight).toBeGreaterThan(geometry.clientHeight + 120);
     expect(geometry.workspaceHeight).toBeGreaterThan(geometry.clientHeight + 120);
     await scroll.hover();

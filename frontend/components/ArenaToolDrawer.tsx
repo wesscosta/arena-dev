@@ -9,11 +9,12 @@ type Props = {
   title: string;
   subtitle?: string;
   size?: "default" | "wide";
+  hideScrollbar?: boolean;
   onClose: () => void;
   children: ReactNode;
 };
 
-export default function ArenaToolDrawer({ open, title, subtitle, size = "default", onClose, children }: Props) {
+export default function ArenaToolDrawer({ open, title, subtitle, size = "default", hideScrollbar = false, onClose, children }: Props) {
   const drawerRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -90,7 +91,7 @@ export default function ArenaToolDrawer({ open, title, subtitle, size = "default
           <DialogCloseButton ref={closeButtonRef} onClick={onClose} label="Fechar ferramenta" />
         </header>
         <div
-          className={styles.content}
+          className={`${styles.content} ${hideScrollbar ? styles.scrollbarHidden : ""}`}
           data-testid="arena-tool-drawer-content"
           role="region"
           aria-label={`Configurações e controles de ${title}`}
