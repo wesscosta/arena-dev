@@ -13,7 +13,7 @@
 
 ## Linha de evolução ativa: v0.11
 
-A v0.11 iniciou com a etapa **11.0** (PR #38, integrada), seguida do backend de publicação segura **11.1** (PR #39, integrado, Flyway V57). A interface **11.2** de apresentação docente e leitura pública está implementada na branch `feat/v0.11-material-reader-stage`, com revisão/CI ainda necessários antes de merge. **Navegação sincronizada por seção 11.3 não está implementada**. Consulte [documentação](v0.11/README.md), [execução 11.1](v0.11/11.1_EXECUTION_STATUS.md), [11.2](v0.11/11.2_EXECUTION_STATUS.md) e [roadmap](ROADMAP_V0_11.md). A v0.10 permanece baseline estável.
+A v0.11 iniciou com a etapa **11.0** (PR #38, integrada), seguida do backend de publicação segura **11.1** (PR #39, integrado, Flyway V57). A interface **11.2** de apresentação docente e leitura pública foi **integrada à `main`** pelo [PR #40](https://github.com/wesscosta/arena-dev/pull/40), após os três jobs aprovados no SHA `ceb60cd` (merge `863c83c`). **Navegação sincronizada por seção 11.3 não está implementada**. Consulte [documentação](v0.11/README.md), [execução 11.1](v0.11/11.1_EXECUTION_STATUS.md), [11.2](v0.11/11.2_EXECUTION_STATUS.md) e [roadmap](ROADMAP_V0_11.md). A v0.10 permanece baseline estável.
 
 ## Capacidades efetivamente implementadas na v0.10
 

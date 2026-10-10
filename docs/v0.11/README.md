@@ -14,12 +14,12 @@
 ## 11.1 — backend de publicação segura
 
 - [Execução 11.1](11.1_EXECUTION_STATUS.md): Flyway V57, snapshot por publicação, endpoints docentes/publicação projetor, LiveStage versionado, revogação e testes de segurança/concorrência.
-- **Status:** PR #39 integrado à \`main\` após três jobs de CI aprovados. O snapshot e a revogação são baseline para 11.2.
+- **Status:** PR #39 integrado à `main` após três jobs de CI aprovados. O snapshot e a revogação são baseline para 11.2.
 
 ## 11.2 — leitura pública segura e controles de apresentação
 
 - [Execução 11.2](11.2_EXECUTION_STATUS.md): comando explícito no modal docente, renderização segura de Markdown/Notion no projetor, leitura por código de sessão e rolagem responsiva.
-- **Status:** implementação em \`feat/v0.11-material-reader-stage\`; revisão e CI do SHA final antes de integração. Navegação sincronizada por \`anchorId\` continua pertencendo à 11.3.
+- **Status:** [PR #40](https://github.com/wesscosta/arena-dev/pull/40) integrado à main, com três jobs de CI aprovados no SHA ceb60cd. [Validação e limites](11.2_VALIDATION_CLOSURE_2026-10-10.md). A navegação sincronizada por anchorId pertence à 11.3.
 
 ## Disciplina de status
 
