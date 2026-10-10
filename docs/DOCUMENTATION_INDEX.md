@@ -20,6 +20,7 @@ Este índice separa **fontes operacionais vigentes**, **propostas**, **diários 
 - [Design System](DESIGN_SYSTEM.md), [UI Style Guide](STYLE_GUIDE_UI.md), [Acessibilidade](ACCESSIBILITY.md).
 - [Student Shell](STUDENT_SHELL_STYLE_GUIDE.md), [Biblioteca/Markdown canônico](CONTENT_CANONICAL_MARKDOWN.md).
 - [Seleção e XP no Sorteio](ux/arena-draw-outcome-contract-v010.md), [Modais](ux/dialog-interaction-contract.md), [Navegação móvel](ux/arena-mobile-navigation.md).
+- [Rollback técnico sintético V48→V56→V48 (10/10)](v0.10/ROLLBACK_V56_SYNTHETIC_2026-10-10.md) — não substitui rollback operacional.
 - [Matriz técnica de testes](v0.10/TEST_MATRIX.md), [notas preparatórias da release](RELEASE_0_10.md), [navegação móvel](ux/arena-mobile-navigation.md) e [planejamento v0.11 de projeção de materiais](ROADMAP_V0_11.md).
 
 ## Linha de evolução anterior (histórico, não tarefas abertas da v0.10)

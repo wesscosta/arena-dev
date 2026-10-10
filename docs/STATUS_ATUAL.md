@@ -27,6 +27,7 @@
 - CI remoto do SHA `d876325`: [run #38019345190](https://github.com/wesscosta/arena-dev/actions/runs/38019345190), **em execução no momento da revisão documental**; não considerá-lo aprovado sem conclusão `success`. Qualquer commit de documentação gera novo SHA e exige novo CI.
 - Em 10/10, os testes locais mais recentes do frontend tiveram **319/319 unitários**, TypeScript, build, lint sem erros e 2/2 E2E direcionados de rolagem. Não equivalem à regressão integrada completa (backend + frontend + projeto) no SHA final.
 - Build/health de desenvolvimento são verificações técnicas, **não** autorização de lançamento.
+- **Rollback técnico isolado V48→V56→V48 aprovado em 10/10 (exit 0):** [evidência](v0.10/ROLLBACK_V56_SYNTHETIC_2026-10-10.md), dados sintéticos e sem alteração do banco principal; RTO/RPO operacional segue pendente.
 - **Declaração do operador em 10/10:** experiência em Safari/iOS concluída e validada. Não foram informados versão de iOS, aparelhos, instalação prévia de PWA v0.9, execução de upgrade, checklist assistivo nem logs. Registrar como aceite visual/funcional relatado, **não** como prova dos demais gates.
 
 ## Bloqueadores de homologação

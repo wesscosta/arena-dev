@@ -26,6 +26,7 @@
 ## Evidências e limites
 
 - CI histórico no SHA `38b73ca829e7f57b24fc97ec2a29dc73ba5ec0f1`: [GitHub Actions #37873486460](https://github.com/wesscosta/arena-dev/actions/runs/37873486460), três jobs aprovados; **não valida o HEAD atual**. CI SHA `d876325`: [run #38019345190](https://github.com/wesscosta/arena-dev/actions/runs/38019345190), em andamento quando registrada esta revisão.
+- Ensaio isolado de rollback V48→V56→V48 **aprovado em 10/10/2026** (`exit 0`) no SHA `f03f813`, com backup/checksum e preservação de IDs/XP. [Registro](v0.10/ROLLBACK_V56_SYNTHETIC_2026-10-10.md). Não comprova rollback operacional.
 - Testes locais mais recentes: frontend 319/319 unitários, 2/2 testes direcionados de rolagem Timer em Chromium, typecheck e build aprovados, lint sem erros. O operador declarou Safari/iOS validado, mas não apresentou roteiro formal de instalação/atualização v0.9→v0.10. Outros gates estão abertos. [EXECUTION_STATUS](v0.10/EXECUTION_STATUS.md).
 - Correção do E2E de WebSocket: distinguir GET `/join-code` de GET de imagem `/join-code/qr`, sem alterar comportamento da API.
 

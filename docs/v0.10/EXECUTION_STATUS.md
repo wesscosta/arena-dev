@@ -11,6 +11,11 @@
 - **Aceite declarado em chat pelo operador em 10/10:** Safari/iOS foi testado e considerado válido. Sem evidências formais de aparelhos, instalação anterior de PWA v0.9, upgrade, rede instável, auditoria assistiva, aula piloto e rollback operacional; os gates correspondentes permanecem abertos.
 - PR [#35](https://github.com/wesscosta/arena-dev/pull/35) segue em rascunho até resolução de gates. Release estável, merge e tag **não realizados**.
 
+## Evidência técnica adicional de 10/10 — rollback V56
+
+- `scripts/release/rehearse-v09-v010-rollback.sh` foi executado sobre SHA `f03f813` e retornou **exit 0**: V48 → backup sintético verificado → Flyway V56 → restore V48 → API tag original v0.9 pronta, com fingerprint de IDs/presença/XP inalterado. [Registro](ROLLBACK_V56_SYNTHETIC_2026-10-10.md).
+- **Não homologou** RTO/RPO real, PWA antiga, rede móvel, dados pós-backup nem rollback de produção. O gate operacional permanece NO-GO.
+
 ## Incrementos efetivamente codificados
 
 | Fase | Implementação verificada | Estado / gate pendente |
