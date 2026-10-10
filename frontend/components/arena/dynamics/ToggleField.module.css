@@ -31,3 +31,8 @@
 .input:disabled { cursor: not-allowed; }
 .field:has(.input:disabled) { opacity: .55; cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) { .track > span { transition: none; } }
+
+/* Compact header action: do not duplicate the state explanation inside the header. */
+.compact { min-height: 2.75rem; padding: .4rem .65rem; gap: .6rem; background: var(--ds-surface-control, var(--surface)); }
+.compact .copy strong { font-size: .78rem; line-height: 1.25; }
+.compact .track { flex-shrink: 0; }

@@ -2,19 +2,20 @@ import styles from "./ToggleField.module.css";
 
 type Props = {
   label: string;
-  description: string;
+  description?: string;
+  compact?: boolean;
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
 };
 
-/** A single boolean setting; its unchecked meaning is described by the helper copy. */
-export default function ToggleField({ label, description, checked, onChange, disabled = false }: Props) {
+/** Boolean setting with an optional helper description; compact mode fits dynamic headers. */
+export default function ToggleField({ label, description, compact = false, checked, onChange, disabled = false }: Props) {
   return (
-    <label className={styles.field}>
+    <label className={[styles.field, compact ? styles.compact : ""].filter(Boolean).join(" ")}>
       <span className={styles.copy}>
         <strong>{label}</strong>
-        <small>{description}</small>
+        {description ? <small>{description}</small> : null}
       </span>
       <input
         type="checkbox"

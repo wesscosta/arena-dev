@@ -100,6 +100,26 @@ export default function WordCloudPanel({
     }
   }
 
+  async function endRound() {
+    if (!round || busy || round.status === "CLOSED") return;
+    if (round.status === "COLLECTING" && participation.pendingCount > 0) {
+      const confirmed = window.confirm(
+        `${participation.answeredCount} de ${participation.presentCount} aluno(s) responderam. ` +
+        `${participation.pendingCount} ainda não responderam. Encerrar a rodada mesmo assim?`,
+      );
+      if (!confirmed) return;
+    }
+    setBusy(true);
+    try {
+      onStateChange(await closeWordCloud(sessionId, round.id));
+      notify("Rodada da Nuvem de Palavras encerrada.");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível encerrar a rodada.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const accessCard = showAccessCard ? (
     <SessionAccessCard
       sessionId={sessionId}
@@ -123,6 +143,16 @@ export default function WordCloudPanel({
             title="Nuvem de Palavras"
             description="Transforme respostas curtas da turma em um painel visual coletivo."
             status="PREPARAR"
+            secondaryActions={(
+              <div className={styles.headerRevealControl}>
+                <ToggleField
+                  compact
+                  label="Exibir resultados ao vivo"
+                  checked={liveReveal}
+                  onChange={setLiveReveal}
+                />
+              </div>
+            )}
             actions={round?.status === "CLOSED" ? (
               <button className={styles.secondary} onClick={() => setCreating(false)}>Ver rodada anterior</button>
             ) : undefined}
@@ -130,32 +160,26 @@ export default function WordCloudPanel({
 
           <div className={styles.prepareGrid}>
             <DynamicSection className={styles.composeCard}>
-              <span className={styles.cardLabel}>PERGUNTA DA RODADA</span>
               <QuestionComposer
                 label="Pergunta para a turma"
+                labelAccessory={(
+                  <label className={styles.inlineWords}>
+                    <span>Respostas por aluno</span>
+                    <select
+                      aria-label="Respostas por aluno"
+                      value={maxWords}
+                      onChange={(event) => setMaxWords(Number(event.target.value))}
+                    >
+                      {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}
+                    </select>
+                  </label>
+                )}
                 value={prompt}
                 onChange={setPrompt}
                 maxLength={280}
                 placeholder="Ex.: Qual palavra melhor resume o conceito de API?"
               />
 
-              <div className={styles.configGrid}>
-                <label className={styles.field}>
-                  <span>Respostas por aluno</span>
-                  <select value={maxWords} onChange={(event) => setMaxWords(Number(event.target.value))}>
-                    {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}
-                  </select>
-                </label>
-
-                <ToggleField
-                  label="Exibir resultados ao vivo"
-                  checked={liveReveal}
-                  onChange={setLiveReveal}
-                  description={liveReveal
-                    ? "A nuvem será atualizada durante a coleta."
-                    : "As palavras ficam ocultas até você revelar."}
-                />
-              </div>
             </DynamicSection>
 
             <DynamicSection className={styles.stagePreviewCard} ariaLabel="Prévia da Nuvem de Palavras">
@@ -271,7 +295,7 @@ export default function WordCloudPanel({
             </button>
           )}
           {round.status !== "CLOSED" && (
-            <button className={styles.danger} disabled={busy} onClick={() => void close()}>
+            <button className={styles.danger} disabled={busy} onClick={() => void endRound()}>
               Encerrar rodada
             </button>
           )}

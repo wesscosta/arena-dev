@@ -1395,6 +1395,26 @@ test("v0.10 cloud/poll composer: compact auto-growing question, binary visibilit
       expect(afterExpansion).toBeLessThanOrEqual(241);
       await question.fill("Qual palavra melhor representa esta aula?");
       const amount = page.getByRole("combobox", { name: "Respostas por aluno" });
+      const cloudHeader = page.getByTestId("dynamic-header");
+      await expect(cloudHeader.getByRole("switch", { name: "Exibir resultados ao vivo" })).toHaveCount(1);
+      await expect(page.getByText("PERGUNTA DA RODADA", { exact: true })).toHaveCount(0);
+      await expect(page.getByText("As palavras ficam ocultas até você revelar.", { exact: true })).toHaveCount(0);
+      const configurationLayout = await page.evaluate(() => {
+        const question = document.querySelector<HTMLElement>('[data-testid="dynamic-question-input"]')!;
+        const control = document.querySelector<HTMLElement>('[aria-label="Respostas por aluno"]')!;
+        const heading = question.previousElementSibling as HTMLElement;
+        const r = control.getBoundingClientRect();
+        return {
+          selectWidth: r.width,
+          inlineWithQuestionLabel: heading.contains(control),
+          aboveTextarea: r.bottom <= question.getBoundingClientRect().top + 1,
+          noOverflow: document.documentElement.scrollWidth - window.innerWidth <= 1,
+        };
+      });
+      expect(configurationLayout.selectWidth).toBeLessThanOrEqual(78);
+      expect(configurationLayout.inlineWithQuestionLabel).toBe(true);
+      expect(configurationLayout.aboveTextarea).toBe(true);
+      expect(configurationLayout.noOverflow).toBe(true);
       await amount.selectOption("2");
       const toggle = page.getByRole("switch", { name: "Exibir resultados ao vivo" });
       await expect(toggle).not.toBeChecked();

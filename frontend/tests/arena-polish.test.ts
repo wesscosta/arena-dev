@@ -298,7 +298,10 @@ test("Nuvem de Palavras 2.0 preserves reveal, projector and close controls", () 
   assert.match(chrome, /onToggleProjector/);
   assert.match(chrome, /projectorActive/);
   assert.match(cloud, /Encerrar rodada/);
-  assert.match(cloud, /onClick=\{\(\) => void close\(\)\}/);
+  assert.match(cloud, /async function endRound\(\)/);
+  assert.match(cloud, /closeWordCloud\(sessionId, round.id\)/);
+  assert.match(cloud, /onClick=\{\(\) => void endRound\(\)\}/);
+  assert.doesNotMatch(cloud, /onClick=\{\(\) => void close\(\)\}/);
   assert.match(cloud, /Coleta protegida/);
 });
 
@@ -804,4 +807,15 @@ test("Arena sidebar owns product identity while the session context stays in the
   assert.doesNotMatch(chrome, /Condução ao vivo/);
   assert.match(chrome, /function ArenaGlyph/);
   assert.match(chrome, /\["draw", "draw", "Sorteio"\]/);
+});
+
+test("Nuvem de Palavras centralizes reveal policy in its header and question settings inline", () => {
+  const cloud = read("components/WordCloudPanel.tsx");
+  const question = read("components/arena/dynamics/QuestionComposer.tsx");
+  assert.match(cloud, /secondaryActions=\{\(/);
+  assert.match(cloud, /label="Exibir resultados ao vivo"/);
+  assert.match(cloud, /labelAccessory=\{\(/);
+  assert.match(cloud, /Respostas por aluno/);
+  assert.doesNotMatch(cloud, /PERGUNTA DA RODADA/);
+  assert.match(question, /htmlFor=\{inputId\}/);
 });

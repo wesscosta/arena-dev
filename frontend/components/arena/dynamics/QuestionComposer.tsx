@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import styles from "./QuestionComposer.module.css";
 
 type Props = {
   label: string;
+  labelAccessory?: ReactNode;
   value: string;
   onChange: (value: string) => void;
   maxLength: number;
@@ -16,6 +17,7 @@ type Props = {
 
 export default function QuestionComposer({
   label,
+  labelAccessory,
   value,
   onChange,
   maxLength,
@@ -25,6 +27,7 @@ export default function QuestionComposer({
   className,
 }: Props) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  const inputId = useId();
   useEffect(() => {
     const textarea = ref.current;
     if (!textarea) return;
@@ -34,9 +37,13 @@ export default function QuestionComposer({
   }, [value]);
 
   return (
-    <label className={[styles.field, className].filter(Boolean).join(" ")}>
-      <span className={styles.label}>{label}</span>
+    <div className={[styles.field, className].filter(Boolean).join(" ")}>
+      <div className={styles.heading}>
+        <label className={styles.label} htmlFor={inputId}>{label}</label>
+        {labelAccessory ? <div className={styles.labelAccessory}>{labelAccessory}</div> : null}
+      </div>
       <textarea
+        id={inputId}
         ref={ref}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -49,6 +56,6 @@ export default function QuestionComposer({
         {hint ? <small>{hint}</small> : <span />}
         <output aria-label={`${value.length} de ${maxLength} caracteres`}>{value.length}/{maxLength}</output>
       </span>
-    </label>
+    </div>
   );
 }
