@@ -1,6 +1,6 @@
 # Arena Dev v0.11 — execução e evidências
 
-**Baseline publicada:** `v0.10.0`. **Estado do desenvolvimento:** 11.0–11.3 integradas à `main`; **11.4 em branch para revisão/CI**, incluindo acessibilidade, responsividade, segurança do Markdown e CSP. Não há release v0.11.
+**Baseline publicada:** `v0.10.0`. **Desenvolvimento:** 11.0–11.4 integradas à `main` (PR #45, CI 3/3). **11.5 em discovery técnico/editorial**; **11.6 reservada à homologação operacional**. Não há release v0.11.
 
 ## 11.0 — itens entregues para revisão
 
@@ -29,7 +29,19 @@
 ## 11.4 — UI/UX, acessibilidade e Security Hardening
 
 - [Auditoria, implementação, evidências e limites](11.4_SECURITY_UX_EXECUTION.md): renderer único de Markdown, CSP, foco/rolagem segura, breakpoints móveis e testes Chromium/WebKit.
-- **Status:** em revisão de CI; testes WebKit com emulação de iPhone **não substituem** homologação de Safari/iOS físico, VoiceOver ou AAA.
+- **Status:** [PR #45](https://github.com/wesscosta/arena-dev/pull/45) integrado, merge `1e3645e` e CI 3/3 aprovado (Chromium/WebKit). Emulação não substitui Safari/iOS físico, VoiceOver nem auditoria AAA.
+
+## 11.5 — Discovery editorial e proveniência
+
+- [Auditoria, direitos e inventário agregado](11.5_EDITORIAL_PROVENANCE_AUDIT.md) — dados de origem, 30 materiais ativos globais e 92 questões, sem exportar conteúdos.
+- [Taxonomia e blueprint propostos](11.5_TAXONOMY_ASSESSMENT_BLUEPRINT.md) — `LearningTarget` existente, Atividades, competências e concursos.
+- [Matriz de decisões e backlog](11.5_DECISIONS_AND_BACKLOG.md) — direitos, revisão humana, piloto editorial e limites.
+- [ADR-0068 proposta](../adr/ADR-0068-editorial-provenance-taxonomy-proposal.md) — **sem aceite pedagógico/jurídico e sem DDL/API**.
+- **Status:** discovery técnico em revisão. Direitos editoriais e piloto humano ainda pendentes.
+
+## 11.6 — Homologação operacional reservada
+
+**Não iniciada.** Safari/iOS físicos, VoiceOver/zoom/teclado, PWA, rede degradada, múltiplos projetores, piloto com turma, backup/rollback e decisão GO/NO-GO por SHA continuam exclusivamente nesta etapa. Não criar tag/release `v0.11.0` antes dos gates.
 
 ## Disciplina de status
 
@@ -37,4 +49,4 @@
 
 ## Gates subsequentes
 
-11.1 publicação/autorização/versionamento; 11.2 renderização docente/projetor; 11.3 sincronização/reconexão; 11.4 auditoria/ajustes UX; 11.5 descoberta editorial; 11.6 homologação. Cada fatia deve registrar SHA, testes e bloqueadores antes da próxima.
+11.0–11.4 integradas; 11.5 é discovery documental sem alterar runtime; 11.6 permanece único gate de homologação operacional e release. Documentação proposta não implica licença, autorização editorial ou API implementada.
