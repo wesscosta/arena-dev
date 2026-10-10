@@ -64,6 +64,7 @@ test("empty learning check participant state never exposes correction", () => {
     selectedOptionKey: null,
     resultsVisiblePublicly: false,
     correctOptionKey: null,
+    selfConfidence: null,
   });
 });
 

@@ -1,6 +1,7 @@
 package br.com.arenadev.interaction;
 
 import br.com.arenadev.learning.LearningEvidence;
+import br.com.arenadev.learning.confidence.LearnerConfidenceService;
 import br.com.arenadev.learning.LearningEvidenceService;
 import br.com.arenadev.learning.LearningTarget;
 import br.com.arenadev.learning.LearningTargetRepository;
@@ -34,6 +35,7 @@ public class LearningCheckService {
     private final InteractionEvaluationService evaluationService;
     private final InteractionResultEngine resultEngine;
     private final LearningEvidenceService evidenceService;
+    private final LearnerConfidenceService confidenceService;
     private final InteractionResponseService responseService;
     private final SessionRealtimeGateway realtimeGateway;
     private final LiveStageService liveStageService;
@@ -47,6 +49,7 @@ public class LearningCheckService {
             InteractionEvaluationService evaluationService,
             InteractionResultEngine resultEngine,
             LearningEvidenceService evidenceService,
+            LearnerConfidenceService confidenceService,
             InteractionResponseService responseService,
             SessionRealtimeGateway realtimeGateway,
             LiveStageService liveStageService,
@@ -59,6 +62,7 @@ public class LearningCheckService {
         this.evaluationService = evaluationService;
         this.resultEngine = resultEngine;
         this.evidenceService = evidenceService;
+        this.confidenceService = confidenceService;
         this.responseService = responseService;
         this.realtimeGateway = realtimeGateway;
         this.liveStageService = liveStageService;
@@ -328,7 +332,8 @@ public class LearningCheckService {
                 response != null,
                 response == null ? null : selectedOptionKey(response.getResponseJson()),
                 run.resultsVisiblePublicly(),
-                run.resultsVisiblePublicly() ? correctOptionKey(definition) : null
+                run.resultsVisiblePublicly() ? correctOptionKey(definition) : null,
+                confidenceService.own(run.getSession().getId(),run.getId(),participantId)
         );
     }
 
@@ -561,7 +566,8 @@ public class LearningCheckService {
             boolean answered,
             String selectedOptionKey,
             boolean resultsVisiblePublicly,
-            String correctOptionKey
+            String correctOptionKey,
+            LearnerConfidenceService.Level selfConfidence
     ) {
         static ParticipantStateView empty() {
             return new ParticipantStateView(
@@ -575,6 +581,7 @@ public class LearningCheckService {
                     false,
                     null,
                     false,
+                    null,
                     null
             );
         }

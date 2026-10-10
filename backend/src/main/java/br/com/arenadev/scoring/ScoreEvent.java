@@ -16,6 +16,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Entity
@@ -61,8 +62,14 @@ public class ScoreEvent {
     @JoinColumn(name = "reversal_of")
     private ScoreEvent reversalOf;
 
+    @Column(name = "reversal_request_id")
+    private UUID reversalRequestId;
+
+    @Column(name = "create_request_id")
+    private UUID createRequestId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt = Instant.now();
+    private Instant createdAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
 
     protected ScoreEvent() {
     }
@@ -102,5 +109,19 @@ public class ScoreEvent {
     public String getActivityRef() { return activityRef; }
     public String getQuestionRef() { return questionRef; }
     public ScoreEvent getReversalOf() { return reversalOf; }
+    public UUID getCreateRequestId() { return createRequestId; }
+    public void setCreateRequestId(UUID requestId) {
+        if (reversalOf != null || requestId == null) {
+            throw new IllegalArgumentException("A chave de criação exige um lançamento original válido.");
+        }
+        createRequestId = requestId;
+    }
+    public UUID getReversalRequestId() { return reversalRequestId; }
+    public void setReversalRequestId(UUID requestId) {
+        if (reversalOf == null || requestId == null) {
+            throw new IllegalArgumentException("A chave de idempotência exige uma reversão e um identificador.");
+        }
+        reversalRequestId = requestId;
+    }
     public Instant getCreatedAt() { return createdAt; }
 }

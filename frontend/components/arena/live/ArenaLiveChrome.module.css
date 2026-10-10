@@ -34,7 +34,7 @@
     height: 100%;
     min-height: 0;
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr);
     gap: .55rem;
     overflow: hidden;
   }
@@ -57,8 +57,7 @@
     align-items: stretch;
   }
 
-  .liveShell :global(.selected-student-bar),
-  .liveShell :global(.quick-score-dock) {
+  .liveShell :global(.selected-student-bar) {
     flex: 0 0 auto;
   }
 

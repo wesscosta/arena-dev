@@ -8,7 +8,6 @@ export function useArenaToolState() {
   const [activeTool, setActiveTool] = useState<ArenaTool>(null);
   const [drawSettingsOpen, setDrawSettingsOpen] = useState(false);
   const [sessionQrOpen, setSessionQrOpen] = useState(false);
-  const [customScoreOpen, setCustomScoreOpen] = useState(false);
 
   function selectDynamic(dynamic: ArenaDynamic) {
     setActiveDynamic(dynamic);
@@ -33,7 +32,6 @@ export function useArenaToolState() {
     activeTool,
     drawSettingsOpen,
     sessionQrOpen,
-    customScoreOpen,
     selectDynamic,
     selectTool,
     closeTool,
@@ -42,7 +40,5 @@ export function useArenaToolState() {
     closeDrawSettings: () => setDrawSettingsOpen(false),
     openSessionQr: () => setSessionQrOpen(true),
     closeSessionQr: () => setSessionQrOpen(false),
-    toggleCustomScore: () => setCustomScoreOpen((open) => !open),
-    closeCustomScore: () => setCustomScoreOpen(false),
   };
 }

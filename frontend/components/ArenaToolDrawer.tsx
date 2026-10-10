@@ -2,17 +2,19 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import styles from "./ArenaToolDrawer.module.css";
+import { DialogCloseButton } from "@/components/ui";
 
 type Props = {
   open: boolean;
   title: string;
   subtitle?: string;
   size?: "default" | "wide";
+  hideScrollbar?: boolean;
   onClose: () => void;
   children: ReactNode;
 };
 
-export default function ArenaToolDrawer({ open, title, subtitle, size = "default", onClose, children }: Props) {
+export default function ArenaToolDrawer({ open, title, subtitle, size = "default", hideScrollbar = false, onClose, children }: Props) {
   const drawerRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -86,18 +88,15 @@ export default function ArenaToolDrawer({ open, title, subtitle, size = "default
             <h2 id="arena-tool-title">{title}</h2>
             {subtitle ? <p>{subtitle}</p> : null}
           </div>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            className={styles.close}
-            onClick={onClose}
-            aria-label="Fechar ferramenta"
-            title="Fechar"
-          >
-            ×
-          </button>
+          <DialogCloseButton ref={closeButtonRef} onClick={onClose} label="Fechar ferramenta" />
         </header>
-        <div className={styles.content} data-testid="arena-tool-drawer-content">{children}</div>
+        <div
+          className={`${styles.content} ${hideScrollbar ? styles.scrollbarHidden : ""}`}
+          data-testid="arena-tool-drawer-content"
+          role="region"
+          aria-label={`Configurações e controles de ${title}`}
+          tabIndex={0}
+        >{children}</div>
       </aside>
     </div>
   );

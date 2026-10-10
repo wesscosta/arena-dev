@@ -401,3 +401,25 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* The preview is optional; timer management controls remain available when collapsed. */
+.timer-active-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: .5rem;
+}
+.timer-active-toolbar-actions .button { min-height: 2.75rem; white-space: nowrap; }
+.timer-compact-status {
+  display: block;
+  margin-top: .35rem;
+  font-size: .85rem;
+  color: var(--ds-text-secondary, var(--muted));
+  font-variant-numeric: tabular-nums;
+}
+.timer-active-card [hidden] { display: none; }
+@media (max-width: 42rem) {
+  .timer-active-toolbar-actions { justify-content: flex-start; }
+  .timer-active-toolbar-actions .button { flex: 1 1 auto; }
+}

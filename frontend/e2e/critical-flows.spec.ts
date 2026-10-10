@@ -51,6 +51,7 @@ async function createSessionFixture(
   api: APIRequestContext,
   csrfHeaders: Record<string, string>,
   label: string,
+  extraStudents = 0,
 ) {
   const suffix = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
   const classroomName = `Turma ${label} ${suffix}`;
@@ -73,26 +74,46 @@ async function createSessionFixture(
   await expectOk(studentResponse, "Criação do aluno E2E");
   const student = (await studentResponse.json()) as StudentView;
 
-  const enrollment = await api.post(
-    `/api/classrooms/${classroom.id}/students/${student.id}`,
-    { headers: csrfHeaders },
-  );
+  const enrollment = await api.post(`/api/classrooms/${classroom.id}/students/${student.id}`, {
+    headers: csrfHeaders,
+  });
   await expectOk(enrollment, "Matrícula E2E");
+
+  const extraParticipants: Array<{ registration: string; nickname: string }> = [];
+  const presentStudentIds = [student.id];
+  for (let index = 0; index < extraStudents; index += 1) {
+    const otherRegistration = `${label}-${suffix}-PEER-${index}`;
+    const nickname = `${label}-peer-${index}`;
+    const otherStudent = await api.post("/api/students", {
+      data: {
+        registration: otherRegistration,
+        name: `Estudante pares ${suffix}-${index}`,
+        nickname,
+      },
+      headers: csrfHeaders,
+    });
+    await expectOk(otherStudent, "Criação de colega para discussão");
+    const participant = (await otherStudent.json()) as StudentView;
+    const enroll = await api.post(`/api/classrooms/${classroom.id}/students/${participant.id}`, {
+      headers: csrfHeaders,
+    });
+    await expectOk(enroll, "Matrícula de colega para discussão");
+    presentStudentIds.push(participant.id);
+    extraParticipants.push({ registration: otherRegistration, nickname });
+  }
 
   const sessionResponse = await api.post("/api/sessions", {
     data: {
       classroomId: classroom.id,
       title: sessionTitle,
-      presentStudentIds: [student.id],
+      presentStudentIds,
     },
     headers: csrfHeaders,
   });
   await expectOk(sessionResponse, "Criação da sessão E2E");
   const session = (await sessionResponse.json()) as SessionView;
 
-  const joinCodeResponse = await api.get(
-    `/api/sessions/${session.id}/join-code`,
-  );
+  const joinCodeResponse = await api.get(`/api/sessions/${session.id}/join-code`);
   await expectOk(joinCodeResponse, "Código de entrada E2E");
   const joinCode = (await joinCodeResponse.json()) as JoinCodeView;
 
@@ -107,6 +128,7 @@ async function createSessionFixture(
     session,
     sessionTitle,
     joinCode,
+    extraParticipants,
   };
 }
 
@@ -180,8 +202,8 @@ test("professor entra na Arena e participante reconecta à sessão", async ({
       page.locator("aside.arena-cockpit-nav").getByText("ARENA DEV", { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("navigation", { name: "Contexto da sessão" })
-        .getByText(fixture.sessionTitle, { exact: true }),
+      page.getByRole("navigation", { name: "Turma atual" })
+        .getByRole("button", { name: `Voltar para a turma ${fixture.classroomName}` }),
     ).toBeVisible();
 
     const participantContext = await browser.newContext();
@@ -840,6 +862,10 @@ test("Verificar aprendizagem preserva reconnect, revela correção e gera Eviden
       participantPage.getByText(/^Resposta registrada/),
     ).toBeVisible();
 
+    // Optional self-perception is separate from grading, token-bound and restored after refresh.
+    await participantPage.getByRole("button", { name: "Pouca confiança" }).click();
+    await expect(participantPage.getByRole("button", { name: "Pouca confiança" }))
+      .toHaveAttribute("aria-pressed", "true");
     await participantPage.reload();
     await expect(
       participantPage.getByRole("heading", { name: questionText }),
@@ -859,6 +885,8 @@ test("Verificar aprendizagem preserva reconnect, revela correção e gera Eviden
     await page
       .getByRole("button", { name: "Bloquear respostas", exact: true })
       .click();
+    // For one student the teacher must not see an individual confidence level.
+    await expect(page.getByText("Distribuição indisponível com menos de três declarações.")).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Revelar correção", exact: true }),
     ).toBeVisible();
@@ -908,8 +936,276 @@ test("Verificar aprendizagem preserva reconnect, revela correção e gera Eviden
         { exact: true },
       ),
     ).toBeVisible();
+    // v0.10: a valid intervention must preserve the baseline and its denominator.
+    await page.getByRole("button", { name: "Iniciar ciclo com esta verificação" }).click();
+    await expect(page.getByLabel("Intervenção docente")).toBeVisible();
+    await expect(page.getByRole("radio", { name: "Discussão em pares (Peer Instruction)" })).toBeDisabled();
+    await page
+      .getByLabel("Intervenção docente")
+      .fill("Discussão das alternativas e revisão do tema.");
+    await page.getByRole("button", { name: "Registrar intervenção" }).click();
+    await page.getByRole("button", { name: "Verificar novamente" }).click();
+    await expect(page.getByRole("button", { name: "Bloquear respostas" })).toBeVisible();
+
+    await expect(participantPage.getByRole("heading", { name: questionText })).toBeVisible();
+    await participantPage.getByRole("radio", { name: new RegExp(distractorA) }).click();
+    await expect(participantPage.getByText(/^Resposta registrada/)).toBeVisible();
+    await page.getByRole("button", { name: "Bloquear respostas" }).click();
+    await page.getByRole("button", { name: "Revelar correção" }).click();
+    await page.getByRole("button", { name: "Encerrar verificação" }).click();
+    // Clínica do Erro: registrar interpretação sobre um distrator realmente selecionado.
+    const clinicPanel = page.getByRole("region", { name: "Clínica do Erro" });
+    await clinicPanel.locator("summary").click();
+    await expect(clinicPanel.getByRole("group", { name: "Alternativas observadas" })).toBeVisible();
+    await clinicPanel.getByRole("group", { name: "Alternativas observadas" })
+      .getByRole("radio", { name: new RegExp(distractorA) }).check();
+    await clinicPanel.getByLabel("Interpretação ou orientação do professor")
+      .fill("Hipótese docente: confusão entre tipos de JOIN; revisar exemplos contrastivos.");
+    const savedResponsePromise = page.waitForResponse((response) =>
+      response.url().endsWith("/error-clinic/notes") && response.request().method() === "POST",
+    );
+    await clinicPanel.getByRole("button", { name: "Registrar análise" }).click();
+    const savedResponse = await savedResponsePromise;
+    expect(savedResponse.status()).toBe(200);
+    const savedClinic = (await savedResponse.json()) as { runId: string; notes: unknown[] };
+    expect(savedClinic.notes).toHaveLength(1);
+    await expect(clinicPanel.getByText(/Hipótese docente: confusão entre tipos de JOIN/)).toBeVisible();
+    const persistedClinic = await api.get(
+      `/api/sessions/${fixture.session.id}/learning-checks/${savedClinic.runId}/error-clinic`,
+    );
+    await expectOk(persistedClinic, "Análise docente persistida");
+    expect((await persistedClinic.json()) as { notes: unknown[] }).toMatchObject({ notes: [{ optionKey: "a" }] });
+
+    const material = await api.post("/api/library/resources", {
+      data: { title: targetTitle, subject: targetTitle, summary: "Revisão dirigida",
+        format: "MARKDOWN", sourceType: "MANUAL", body: "# Revisão\nExemplos de JOIN.",
+        tags: ["JOIN"], language: "pt-BR" },
+      headers: csrfHeaders,
+    });
+    await expectOk(material, "Material para recuperação");
+    const materialId = ((await material.json()) as { id: string }).id;
+    await page.getByRole("button", { name: "Comparar com o diagnóstico" }).click();
+    await expect(page.getByText("Comparáveis", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Variação neste instrumento/)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Investigar oscilações de resposta" })).toBeVisible();
+    // The consolidated teacher view comes from the same persisted LearningCycle,
+    // without confusing self-confidence, participation or XP with verified evidence.
+    if (await page.getByRole("button", { name: "Abrir menu da Arena" }).isVisible()) {
+      await page.getByRole("button", { name: "Abrir menu da Arena" }).click();
+    }
+    await page.getByRole("button", { name: "Evidências da aprendizagem" }).click();
+    const overviewDialog = page.getByRole("dialog", { name: "Evidências da sessão" });
+    await expect(overviewDialog.getByRole("heading", { name: targetTitle })).toBeVisible();
+    await expect(overviewDialog.getByText("Investigar oscilações de resposta")).toBeVisible();
+    await expect(overviewDialog.getByText("Pares comparáveis")).toBeVisible();
+    await overviewDialog.locator("summary").filter({ hasText: "Consultar registro da intervenção" }).click();
+    await expect(overviewDialog.getByText("Discussão das alternativas e revisão do tema.")).toBeVisible();
+    await expect(overviewDialog.getByText("Acerto → acerto")).toBeVisible();
+    const overviewResponse = await api.get(`/api/sessions/${fixture.session.id}/learning-overview`);
+    await expectOk(overviewResponse, "Painel pedagógico consolidado");
+    const overview = (await overviewResponse.json()) as {
+      cycles: number; verifiedCycles: number; rows: Array<{ learningTargetTitle: string;
+        comparison: { paired: number; transitions: { correctToIncorrect: number } } }>;
+    };
+    expect(overview).toMatchObject({ cycles: 1, verifiedCycles: 1 });
+    expect(overview.rows).toHaveLength(1);
+    expect(overview.rows[0]).toMatchObject({ learningTargetTitle: targetTitle,
+      comparison: { paired: 1, transitions: { correctToIncorrect: 1 } },
+    });
+    await page.keyboard.press("Escape");
+    await expect(overviewDialog).toHaveCount(0);
+    const stored = page.waitForResponse((response) =>
+      response.url().endsWith(`/api/sessions/${fixture.session.id}/contextual-material`)
+      && response.request().method() === "PUT");
+    await page.getByRole("button", { name: "Vincular à Arena" }).click();
+    const linked = await stored;
+    expect(linked.status(), await linked.text()).toBe(200);
+    const linkedMaterial = await api.get(`/api/sessions/${fixture.session.id}/contextual-material`);
+    await expectOk(linkedMaterial, "Vínculo após recuperação");
+    expect((await linkedMaterial.json()) as { resourceId: string }).toMatchObject({ resourceId: materialId });
+    await page.getByRole("button", { name: "Abrir material" }).click();
+    await expect(page.getByRole("dialog", { name: "Biblioteca nesta aula" })
+      .getByRole("heading", { name: targetTitle })).toBeVisible();
+    await page.keyboard.press("Escape");
+    const comparisonResponse = await api.get(`/api/sessions/${fixture.session.id}/learning-cycles`);
+    await expectOk(comparisonResponse, "Ciclo de aprendizagem v0.10");
+    const cycles = (await comparisonResponse.json()) as Array<{ status: string }>;
+    expect(cycles).toContainEqual(expect.objectContaining({ status: "VERIFIED" }));
   } finally {
     await participantContext.close().catch(() => {});
+    await api.dispose();
+  }
+});
+
+test("Peer Instruction protege primeira resposta e compara nova decisão após discussão", async ({
+  browser,
+  page,
+}) => {
+  test.setTimeout(75_000);
+
+  const { api, csrfHeaders } = await authenticatedApi();
+  const participantContext = await browser.newContext();
+  const participantPage = await participantContext.newPage();
+  const secondContext = await browser.newContext();
+  const secondPage = await secondContext.newPage();
+
+  try {
+    const fixture = await createSessionFixture(api, csrfHeaders, "PEER-LEARNING", 1);
+    const targetTitle = `Identificar LEFT JOIN ${fixture.suffix}`;
+    const questionText = `Qual JOIN preserva todas as linhas da esquerda? ${fixture.suffix}`;
+    const correctText = `LEFT JOIN ${fixture.suffix.slice(-5)}`;
+    const distractorA = `INNER JOIN ${fixture.suffix.slice(-5)}`;
+    const distractorC = `RIGHT JOIN ${fixture.suffix.slice(-5)}`;
+    const distractorD = `CROSS JOIN ${fixture.suffix.slice(-5)}`;
+
+    await page.goto("/");
+    await page.getByLabel("Usuário").fill(teacherUsername);
+    await page.getByLabel("Senha").fill(teacherPassword);
+    const [browserLogin] = await Promise.all([
+      page.waitForResponse((response) => response.url().endsWith("/api/auth/login")),
+      page.getByRole("button", { name: "Entrar", exact: true }).click(),
+    ]);
+    expect(browserLogin.status(), await browserLogin.text()).toBe(200);
+
+    const classroomCard = page
+      .locator("article.overview-class-card")
+      .filter({ hasText: fixture.classroomName });
+    await expect(classroomCard).toBeVisible();
+    await classroomCard.click();
+    await page.getByRole("button", { name: "Continuar Arena" }).click();
+    await expect(page.locator("aside.arena-cockpit-nav")).toBeVisible();
+
+    await joinParticipant(
+      participantPage,
+      fixture.joinCode.code,
+      fixture.classroomName,
+      fixture.registration,
+      fixture.studentNickname,
+    );
+    await joinParticipant(
+      secondPage,
+      fixture.joinCode.code,
+      fixture.classroomName,
+      fixture.extraParticipants[0].registration,
+      fixture.extraParticipants[0].nickname,
+    );
+
+    await page
+      .getByRole("button", {
+        name: "Verificar aprendizagem",
+        exact: true,
+      })
+      .click();
+    await expect(page.getByRole("heading", { name: "Verificar aprendizagem" })).toBeVisible();
+
+    await page.getByText("Criar um novo objetivo", { exact: true }).click();
+    await page.getByPlaceholder("Ex.: Identificar quando usar LEFT JOIN").fill(targetTitle);
+    await page.getByRole("button", { name: "Criar", exact: true }).click();
+    await expect(page.getByLabel("Objetivo de aprendizagem")).toHaveValue(/.+/);
+
+    await page
+      .getByPlaceholder("Ex.: Qual JOIN preserva todas as linhas da tabela da esquerda?")
+      .fill(questionText);
+    await page.getByPlaceholder("Alternativa A").fill(distractorA);
+    await page.getByPlaceholder("Alternativa B").fill(correctText);
+    await page.getByPlaceholder("Alternativa C").fill(distractorC);
+    await page.getByPlaceholder("Alternativa D").fill(distractorD);
+    await page.getByLabel("Marcar alternativa B como correta").check();
+
+    await page.getByRole("button", { name: "Preparar verificação", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Abrir respostas", exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Abrir respostas", exact: true }).click();
+
+    await expect(participantPage.getByRole("heading", { name: questionText })).toBeVisible();
+    await expect(
+      participantPage.getByText(
+        "A correção permanece protegida até o professor revelar o resultado.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+
+    await participantPage.getByRole("radio", { name: new RegExp(distractorA) }).click();
+    await secondPage.getByRole("radio", { name: new RegExp(correctText) }).click();
+    await expect(secondPage.getByText(/^Resposta registrada/)).toBeVisible();
+    await expect(participantPage.getByText(/^Resposta registrada/)).toBeVisible();
+
+    await participantPage.reload();
+    await expect(participantPage.getByRole("heading", { name: questionText })).toBeVisible();
+    await expect(participantPage.getByText(/^Resposta registrada/)).toBeVisible();
+    await expect(
+      participantPage.getByRole("radio", { name: new RegExp(distractorA) }),
+    ).toHaveAttribute("aria-checked", "true");
+
+    await expect(
+      page
+        .getByText("respostas recebidas", { exact: true })
+        .locator("..")
+        .getByText("2/2", { exact: true }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Bloquear respostas", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Encerrar sem revelar" })).toBeVisible();
+    await page.getByRole("button", { name: "Encerrar sem revelar" }).click();
+    await expect(
+      participantPage.getByText(
+        "A correção permanece protegida até o professor revelar o resultado.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(participantPage.getByText("Resposta correta.", { exact: false })).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Iniciar ciclo com esta verificação" }).click();
+    const peerRadio = page.getByRole("radio", { name: "Discussão em pares (Peer Instruction)" });
+    await expect(peerRadio).toBeEnabled();
+    await peerRadio.check();
+    await page
+      .getByLabel("Intervenção docente")
+      .fill("Pares discutiram argumentos e compararam alternativas sem acesso ao gabarito.");
+    await page.getByRole("button", { name: "Registrar intervenção" }).click();
+    await expect(page.getByText(/Estratégia registrada: discussão em pares/)).toBeVisible();
+
+    // Reaplicar reusa a mesma InteractionDefinition sem copiar nem expor a resposta inicial.
+    await page.getByRole("button", { name: "Verificar novamente" }).click();
+    await expect(participantPage.getByRole("heading", { name: questionText })).toBeVisible();
+    await participantPage.getByRole("radio", { name: new RegExp(correctText) }).click();
+    await secondPage.getByRole("radio", { name: new RegExp(correctText) }).click();
+    await expect(secondPage.getByText(/^Resposta registrada/)).toBeVisible();
+    await expect(participantPage.getByText(/^Resposta registrada/)).toBeVisible();
+    await page.getByRole("button", { name: "Bloquear respostas" }).click();
+    await page.getByRole("button", { name: "Revelar correção" }).click();
+    await page.getByRole("button", { name: "Encerrar verificação" }).click();
+    await page.getByRole("button", { name: "Comparar com o diagnóstico" }).click();
+    await expect(page.getByText("Comparáveis", { exact: true })).toBeVisible();
+    await expect(page.getByText("Passaram de erro a acerto", { exact: true })).toBeVisible();
+    const cyclesResponse = await api.get(`/api/sessions/${fixture.session.id}/learning-cycles`);
+    await expectOk(cyclesResponse, "Ciclo de discussão entre pares");
+    const cycles = (await cyclesResponse.json()) as Array<{
+      id: string;
+      status: string;
+      interventionType: string;
+      baselineResultsRevealed: boolean;
+    }>;
+    const peer = cycles.find((cycle) => cycle.interventionType === "PEER_DISCUSSION");
+    expect(peer).toMatchObject({ status: "VERIFIED", baselineResultsRevealed: false });
+    const comparisonResponse = await api.get(
+      `/api/sessions/${fixture.session.id}/learning-cycles/${peer!.id}/comparison`,
+    );
+    await expectOk(comparisonResponse, "Comparação de discussão em pares");
+    const comparison = (await comparisonResponse.json()) as {
+      paired: number;
+      transitions: { incorrectToCorrect: number };
+    };
+    expect(comparison.paired).toBe(2);
+    expect(comparison.transitions.incorrectToCorrect).toBe(1);
+    const scoreResponse = await api.get(
+      `/api/score-events?classroomId=${encodeURIComponent(fixture.classroom.id)}`,
+    );
+    await expectOk(scoreResponse, "XP não automático em Peer Instruction");
+    expect(await scoreResponse.json()).toHaveLength(0);
+  } finally {
+    await participantContext.close().catch(() => {});
+    await secondContext.close().catch(() => {});
     await api.dispose();
   }
 });

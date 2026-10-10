@@ -68,15 +68,20 @@ class IntegrationPersistenceMigrationIT {
                 ) values (?,?, 'TEAMS','submission-01','user-01','IMPORTED')
                 """, submissionLinkId, submissionId);
 
-        Flyway.configure()
-                .dataSource(dataSource)
-                .load()
-                .migrate();
+        var latestFlyway = Flyway.configure().dataSource(dataSource).load();
+        latestFlyway.migrate();
 
+        // Migration test targets the V25 → current upgrade, not a frozen version number.
+        // New migrations must not break historic Teams/Classroom identity preservation.
+        assertThat(latestFlyway.info().pending()).isEmpty();
+        assertThat(jdbc.queryForObject(
+                "select count(*) from flyway_schema_history where version='26' and success",
+                Integer.class
+        )).isEqualTo(1);
         assertThat(jdbc.queryForObject(
                 "select version from flyway_schema_history where success order by installed_rank desc limit 1",
                 String.class
-         )).isEqualTo("48");
+        )).isEqualTo(latestFlyway.info().current().getVersion().toString());
 
         assertThat(jdbc.queryForObject(
                 "select provider from integration_connections where id='00000000-0000-0000-0000-000000000701'",

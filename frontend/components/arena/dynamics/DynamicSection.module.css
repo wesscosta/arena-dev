@@ -1,0 +1,13 @@
+.section {
+  display: grid;
+  align-content: start;
+  gap: .85rem;
+  min-width: 0;
+  padding: clamp(.85rem, 1.4vw, 1.2rem);
+  border: 1px solid var(--ds-border-subtle, var(--border));
+  background: var(--ds-surface-raised, var(--surface));
+  border-radius: var(--radius-lg, 1rem);
+}
+.heading { display: grid; gap: .25rem; }
+.heading > span { font-size: .7rem; letter-spacing: .09em; font-weight: 800; color: var(--ds-text-tertiary, var(--muted)); text-transform: uppercase; }
+.heading h3 { margin: 0; font-size: 1rem; color: var(--ds-text-primary, var(--text)); }

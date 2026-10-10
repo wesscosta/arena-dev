@@ -75,3 +75,23 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0044 — SubmissionItem representa entregas polimórficas](ADR-0044-submissionitem-entrega-polimorfica.md)
 
 - [ADR-0045 — Jornada é estudo sequencial, não workflow de atividades](ADR-0045-jornada-e-estudo-sequencial-nao-workflow-de-atividades.md)
+
+### Decisões da linha v0.10 (08/10/2026)
+
+- [ADR-0050 — LearningCycle e Confidence](ADR-0050-learning-loop-cycle-and-confidence-boundaries.md)
+- [ADR-0051 — Seleção e desfecho](ADR-0051-selection-outcome-and-draw-policy.md)
+- [ADR-0052 — Recursos externos como placements](ADR-0052-external-resources-as-placements.md)
+
+- [ADR-0053 — Limitação de identidade docente única na v0.10](ADR-0053-single-operator-teacher-security-boundary.md)
+- [ADR-0054 — Peer Instruction pelo LearningCycle](ADR-0054-peer-instruction-through-learning-cycle.md)
+- [ADR-0055 — Clínica do Erro com interpretação docente](ADR-0055-error-clinic-teacher-annotations.md)
+- [ADR-0056 — Bootstrap em lote e mecânicas sob demanda](ADR-0056-dashboard-batch-bootstrap-and-lazy-mechanics.md)
+- [ADR-0057 — Reversão idempotente de XP](ADR-0057-xp-reversal-idempotency-and-participation-independence.md)
+- [ADR-0058 — PWA seguro e recuperação de conexão](ADR-0058-pwa-versioned-offline-shell-and-connection-recovery.md)
+- [ADR-0059 — Biblioteca contextual e material canônico na Arena](ADR-0059-canonical-library-context-in-arena.md)
+- [ADR-0060 — Autoconfiança opcional e recuperação por evidências](ADR-0060-student-self-confidence-and-evidence-based-recovery.md)
+- [ADR-0061 — Painel pedagógico docente](ADR-0061-session-learning-overview-teacher-only.md)
+- [ADR-0062 — Candidata v0.10, contrato V55 e rollback](ADR-0062-v010-release-candidate-schema-and-rollback-gate.md)
+- [ADR-0063 — Ensaio seguro de rollback binário v0.9↔v0.10](ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)
+- [ADR-0064 — Conciliação de rede e PWA cache](ADR-0064-network-uncertainty-draw-reconciliation-and-pwa-cache.md)
+- [ADR-0065 — WebSocket docente: backoff e recuperação offline](ADR-0065-teacher-websocket-backoff-and-offline-recovery.md)

@@ -44,6 +44,9 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
   const [busy, setBusy] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [focusOpen, setFocusOpen] = useState(false);
+  // Automatically compact finished timers; the professor can expand the preview.
+  // Running/paused timers stay expanded by default, without changing timer state.
+  const [previewChoice, setPreviewChoice] = useState<{ timerId: string; collapsed: boolean } | null>(null);
   useBodyScrollLock(focusOpen);
   const [openFocusOnStart, setOpenFocusOnStart] = useState(true);
   const [alerts, setAlerts] = useState({ five: true, one: true, end: true });
@@ -57,6 +60,9 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
   const effectiveStatus = timer
     ? effectiveTimerStatus(timer, remaining)
     : undefined;
+  const previewCollapsed = previewChoice !== null && previewChoice.timerId === timer?.id
+    ? previewChoice.collapsed
+    : (effectiveStatus === "FINISHED" || effectiveStatus === "CANCELLED");
   const durationParts = useMemo(
     () => splitTimerDuration(durationSeconds),
     [durationSeconds],
@@ -323,16 +329,33 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
             <div>
               <span className="eyebrow accent">CONTROLE DE TEMPO</span>
               <strong>{timer.title}</strong>
+              {previewCollapsed && (
+                <small className="timer-compact-status">
+                  {effectiveStatus ? timerStatusLabel(effectiveStatus) : "Pronto"} · {formatTimer(remaining)}
+                </small>
+              )}
             </div>
-            <button
-              type="button"
-              className="button ghost timer-focus-launch"
-              onClick={() => setFocusOpen(true)}
-            >
-              ⛶ Tela cheia
-            </button>
+            <div className="timer-active-toolbar-actions">
+              <button
+                type="button"
+                className="button ghost timer-preview-toggle"
+                aria-expanded={!previewCollapsed}
+                aria-controls="timer-active-preview"
+                onClick={() => setPreviewChoice({ timerId: timer.id, collapsed: !previewCollapsed })}
+              >
+                {previewCollapsed ? "Expandir prévia" : "Recolher prévia"}
+              </button>
+              <button
+                type="button"
+                className="button ghost timer-focus-launch"
+                onClick={() => setFocusOpen(true)}
+              >
+                ⛶ Tela cheia
+              </button>
+            </div>
           </div>
 
+          <div id="timer-active-preview" hidden={previewCollapsed}>
           <div className="timer-active-display">
             <span className="live-pill">
               <span />
@@ -346,6 +369,7 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
 
           <div className="timer-progress" aria-hidden="true">
             <span style={{ width: `${progress}%` }} />
+          </div>
           </div>
 
           {renderTimerControls()}

@@ -5,6 +5,7 @@ import { EXTERNAL_PLATFORM_LABEL, parseExternalResultFile, type ExternalResultPl
 import { applyStudentOverrides, fetchExternalResultImports, importExternalResults, mapImportedScoreEvents, previewExternalResults, type ExternalResultImportSummary, type ExternalResultPreview } from "@/lib/external-results-api";
 import type { Activity, ScoreEvent, Student } from "@/lib/types";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
+import { DialogCloseButton } from "@/components/ui";
 
 type Props = {
   open: boolean;
@@ -193,7 +194,7 @@ export default function ExternalResultImportModal({ open, activity, students, on
       <section ref={dialogRef} tabIndex={-1} className="modal-card large" role="dialog" aria-modal="true" aria-labelledby="external-results-title">
         <header className="modal-header">
           <div><h2 id="external-results-title">Importar resultados externos</h2><p>{activity.title} · XP proporcional ao desempenho</p></div>
-          <button className="modal-close" type="button" aria-label="Fechar" onClick={onClose}>×</button>
+          <DialogCloseButton onClick={onClose} label="Fechar importação de resultados" />
         </header>
         <div className="modal-body external-results-modal">
           <div className="external-import-grid">

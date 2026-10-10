@@ -12,6 +12,7 @@ import {
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { fetchIntegrationConnections, fetchNotionPages, startNotionOAuth, type NotionPageSummary } from "@/lib/microsoft-integration-api";
 import styles from "./JourneyCreationWizard.module.css";
+import { DialogCloseButton } from "@/components/ui";
 import DraftReviewWorkspace from "./DraftReviewWorkspace";
 
 type Props = {
@@ -198,7 +199,7 @@ export default function JourneyCreationWizard({
             <h3>{mode === "choose" ? "Como você quer começar?" : mode === "preview" ? "Revise a estrutura sugerida" : "Prepare o ponto de partida"}</h3>
             <p>A Arena adapta o fluxo ao material que você já tem — inclusive nenhum.</p>
           </div>
-          <button ref={closeRef} className={styles.close} type="button" onClick={onClose} aria-label="Fechar">×</button>
+          <DialogCloseButton ref={closeRef} onClick={onClose} label="Fechar criação de jornada" />
         </header>
         {mode === "choose" && (
           <div className={styles.choiceGrid}>

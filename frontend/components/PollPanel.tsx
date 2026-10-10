@@ -5,6 +5,10 @@ import SessionAccessCard from "@/components/SessionAccessCard";
 import type { JoinCode } from "@/lib/realtime-api";
 import { closePoll, createPoll, revealPoll, type PollState } from "@/lib/poll-api";
 import styles from "./PollPanel.module.css";
+import DynamicHeader from "@/components/arena/dynamics/DynamicHeader";
+import QuestionComposer from "@/components/arena/dynamics/QuestionComposer";
+import ToggleField from "@/components/arena/dynamics/ToggleField";
+import DynamicSection from "@/components/arena/dynamics/DynamicSection";
 
 type Props = {
   sessionId: string;
@@ -80,11 +84,6 @@ export default function PollPanel({ sessionId, state, onStateChange, notify, joi
     finally { setBusy(false); }
   }
 
-  function project() {
-    if (!joinCode) return notify("Aguarde a geração do código da sessão.");
-    window.open(`/projector?code=${encodeURIComponent(joinCode.code)}`, "_blank", "noopener,noreferrer");
-  }
-
   const accessCard = showAccessCard ? <SessionAccessCard sessionId={sessionId} joinCode={joinCode} publicBaseUrl={publicBaseUrl} notify={notify} realtimeStatus={realtimeStatus} connectedCount={connectedCount} compact title="Participação da Votação" subtitle="Os alunos usam o mesmo /join durante toda a aula." /> : null;
 
   if (!round || creating) {
@@ -92,36 +91,24 @@ export default function PollPanel({ sessionId, state, onStateChange, notify, joi
       <div>
         {accessCard}
         <section className={`${styles.shell} ${styles.prepareShell}`}>
-          <div className={styles.heroHeader}>
-            <div>
-              <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
-              <h2>Votação</h2>
-              <p>Crie uma decisão rápida da turma com leitura visual imediata.</p>
-            </div>
-            <div className={styles.headerActions}>
-              <span className={styles.modeBadge}>PREPARAR</span>
-              {round?.status === "CLOSED" && (
-                <button className={styles.secondary} onClick={() => setCreating(false)}>
-                  Ver rodada anterior
-                </button>
-              )}
-            </div>
-          </div>
+          <DynamicHeader dynamic="poll"
+            title="Votação"
+            description="Crie uma decisão rápida da turma com leitura visual imediata."
+            actions={round?.status === "CLOSED" ? (
+              <button className={styles.secondary} onClick={() => setCreating(false)}>Ver rodada anterior</button>
+            ) : undefined}
+          />
 
           <div className={styles.prepareGrid}>
-            <section className={styles.composeCard}>
+            <DynamicSection className={styles.composeCard}>
               <span className={styles.cardLabel}>PERGUNTA DA RODADA</span>
-              <label className={styles.field}>
-                <span>Pergunta</span>
-                <textarea
-                  rows={3}
-                  maxLength={280}
-                  value={prompt}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  placeholder="Ex.: Qual abordagem faz mais sentido para este problema?"
-                />
-                <small>{prompt.length}/280</small>
-              </label>
+              <QuestionComposer
+                label="Pergunta"
+                value={prompt}
+                onChange={setPrompt}
+                maxLength={280}
+                placeholder="Ex.: Qual abordagem faz mais sentido para este problema?"
+              />
 
               <div className={styles.options}>
                 {options.map((option, index) => (
@@ -152,19 +139,18 @@ export default function PollPanel({ sessionId, state, onStateChange, notify, joi
                   </button>
                 )}
               </div>
-            </section>
+            </DynamicSection>
 
             <aside className={styles.modeCard}>
               <span className={styles.cardLabel}>EXIBIÇÃO DOS RESULTADOS</span>
-              <button type="button" className={!liveResults ? styles.modeActive : styles.mode} onClick={() => setLiveResults(false)}>
-                <b>Revelar depois</b>
-                <small>Mostra apenas a participação até você liberar o resultado.</small>
-              </button>
-              <button type="button" className={liveResults ? styles.modeActive : styles.mode} onClick={() => setLiveResults(true)}>
-                <b>Resultados ao vivo</b>
-                <small>A distribuição muda conforme os votos chegam.</small>
-              </button>
-              <div className={styles.prepareOrb} aria-hidden="true">◉</div>
+              <ToggleField
+                label="Exibir resultados ao vivo"
+                checked={liveResults}
+                onChange={setLiveResults}
+                description={liveResults
+                  ? "A distribuição será atualizada enquanto a turma vota."
+                  : "Exiba apenas a participação e revele os resultados depois."}
+              />
               <strong>{presentCount} aluno(s) presente(s)</strong>
               <button
                 className={styles.primary}
@@ -184,14 +170,7 @@ export default function PollPanel({ sessionId, state, onStateChange, notify, joi
     <div>
       {accessCard}
       <section className={`${styles.shell} ${styles.liveShell}`}>
-        <div className={styles.heroHeader}>
-          <div>
-            <span className={styles.eyebrow}>DINÂMICA AO VIVO</span>
-            <h2>Votação</h2>
-            <p>{round.prompt}</p>
-          </div>
-          <span className={`${styles.status} ${styles[round.status.toLowerCase()]}`}>{statusLabel(round.status)}</span>
-        </div>
+        <DynamicHeader dynamic="poll" title="Votação" description={round.prompt} status={statusLabel(round.status)} />
 
         <div className={styles.liveGrid}>
           <section className={styles.voteStage}>
@@ -250,7 +229,6 @@ export default function PollPanel({ sessionId, state, onStateChange, notify, joi
           {round.status === "OPEN" && !round.publicResultsVisible && (
             <button className={styles.secondary} disabled={busy} onClick={() => void reveal()}>Revelar resultados</button>
           )}
-          <button className={styles.secondary} onClick={project}>Projetar ↗</button>
           {round.status !== "CLOSED"
             ? <button className={styles.danger} disabled={busy} onClick={() => void close()}>Encerrar votação</button>
             : <button className={styles.primary} onClick={() => setCreating(true)}>Nova votação</button>}

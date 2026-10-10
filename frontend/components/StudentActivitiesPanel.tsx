@@ -1,5 +1,7 @@
 "use client";
 
+import { secureId } from "@/lib/secure-id";
+
 import { useEffect, useMemo, useState } from "react";
 import type { StudentJoinAccess } from "@/lib/realtime-api";
 import {
@@ -13,6 +15,7 @@ import {
   type ParticipantSubmissionKind,
 } from "@/lib/participant-submission-api";
 import styles from "./StudentActivitiesPanel.module.css";
+import { DialogCloseButton } from "@/components/ui";
 
 function contentValue(value: unknown) {
   if (value == null) return "";
@@ -112,7 +115,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
       const existing = open.items.find((item) => item.questionId === question.id);
       const next = await saveParticipantSubmissionItem(
         access.code, access.token, open.id, open.submissionId,
-        existing?.id ?? crypto.randomUUID(),
+        existing?.id ?? secureId(),
         { kind: "QUESTION_RESPONSE", questionId: question.id, position: question.position, content: { value } },
       );
       replaceActivity(next);
@@ -129,7 +132,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
       const existing = genericItem(open);
       const next = await saveParticipantSubmissionItem(
         access.code, access.token, open.id, open.submissionId,
-        existing?.id ?? crypto.randomUUID(),
+        existing?.id ?? secureId(),
         { kind: genericKind, position: 1000, content: { value: drafts.generic ?? "" } },
       );
       replaceActivity(next);
@@ -204,7 +207,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
             <header className={styles.runnerTop}>
               <div className={styles.runnerBrand}><span>A</span><div><strong>ARENA DEV</strong><small>{access.classroomName}</small></div></div>
               <div className={styles.runnerTitle}><span>ATIVIDADE</span><strong>{open.title}</strong></div>
-              <button type="button" className={styles.runnerClose} onClick={() => setOpenId(null)} aria-label="Fechar atividade">×</button>
+              <DialogCloseButton className={styles.runnerClose} onClick={() => setOpenId(null)} label="Fechar atividade" />
             </header>
 
             <main className={styles.runnerMain}>

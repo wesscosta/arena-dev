@@ -70,3 +70,26 @@ test("timer source does not announce per-second updates through aria-live", () =
   const source = read("components/TimerPanel.tsx");
   assert.equal(source.includes("aria-live"), false);
 });
+
+
+test("participant Spotlight manages focus and exposes its result to assistive technology", () => {
+  const source = read("components/arena/selection/ParticipantSelectionExperience.tsx");
+
+  assert.match(source, /spotlightRef\.current\?\.focus/);
+  assert.match(source, /drawButtonRef\.current\?\.focus/);
+  assert.match(source, /aria-labelledby="spotlight-participant-name"/);
+  assert.match(source, /aria-describedby="spotlight-participant-guidance"/);
+  assert.match(source, /aria-live="assertive"/);
+  assert.match(source, /aria-busy=\{phase === "selecting"\}/);
+});
+
+test("projector announces a neutral draw result without exposing teacher-only controls", () => {
+  const source = read("components/ProjectorView.tsx");
+
+  assert.match(source, /data-testid="projector-draw-stage"/);
+  assert.match(source, /role="status"/);
+  assert.match(source, /aria-live="polite"/);
+  assert.match(source, /Participante selecionado/);
+  assert.doesNotMatch(source, /Confirmar participação/);
+  assert.doesNotMatch(source, /Confirmar e pontuar/);
+});

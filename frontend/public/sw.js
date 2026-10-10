@@ -1,8 +1,11 @@
-const SHELL_CACHE = "arena-dev-shell-v0.8-join-fix-1";
-const STATIC_CACHE = "arena-dev-static-v0.8-join-fix-1";
+/* PWA shell only. The backend, student tokens and interaction state are NEVER cached. */
+const VERSION = "v0.10-pwa-gate-1";
+const CACHE_PREFIX = "arena-dev-";
+const SHELL_CACHE = `${CACHE_PREFIX}shell-${VERSION}`;
+const STATIC_CACHE = `${CACHE_PREFIX}static-${VERSION}`;
+const OFFLINE_PAGE = "/offline.html";
 const SHELL_URLS = [
-  "/join",
-  "/offline.html",
+  OFFLINE_PAGE,
   "/manifest.webmanifest",
   "/icons/arena-192.png",
   "/icons/arena-512.png",
@@ -11,7 +14,11 @@ const SHELL_URLS = [
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(SHELL_CACHE);
-    await Promise.allSettled(SHELL_URLS.map(async (url) => {
+    // Do not take over an old tab unless the neutral offline fallback was cached.
+    const offlineResponse = await fetch(OFFLINE_PAGE, { cache: "reload" });
+    if (!offlineResponse.ok) throw new Error("Offline shell unavailable");
+    await cache.put(OFFLINE_PAGE, offlineResponse);
+    await Promise.allSettled(SHELL_URLS.filter((url) => url !== OFFLINE_PAGE).map(async (url) => {
       const response = await fetch(url, { cache: "reload" });
       if (response.ok) await cache.put(url, response);
     }));
@@ -23,13 +30,21 @@ self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const keep = new Set([SHELL_CACHE, STATIC_CACHE]);
     const names = await caches.keys();
-    await Promise.all(names.filter((name) => !keep.has(name)).map((name) => caches.delete(name)));
+    // Never delete caches owned by another app on the same origin.
+    await Promise.all(names.filter((name) => name.startsWith(CACHE_PREFIX) && !keep.has(name))
+      .map((name) => caches.delete(name)));
     await self.clients.claim();
   })());
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "ARENA_PWA_GET_VERSION") {
+    event.source?.postMessage({ type: "ARENA_PWA_VERSION", version: VERSION });
+  }
+});
+
 function isDomainRequest(url) {
-  return url.pathname.startsWith("/api/");
+  return url.pathname.startsWith("/api/") || url.pathname.startsWith("/ws/");
 }
 
 function isStaticAsset(url) {
@@ -41,26 +56,19 @@ function isStaticAsset(url) {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-
-  // Cache nunca é fonte de verdade do domínio.
+  // No caching of API, authentication, learner responses, presence, WS or score ledger.
   if (isDomainRequest(url)) return;
 
-  if (request.mode === "navigate" && url.pathname.startsWith("/join")) {
+  if (request.mode === "navigate") {
     event.respondWith((async () => {
       try {
-        const response = await fetch(request);
-        if (response.ok) {
-          const cache = await caches.open(SHELL_CACHE);
-          await cache.put("/join", response.clone());
-        }
-        return response;
+        // Always fetch HTML, never store /join or SSR payloads across releases.
+        return await fetch(request);
       } catch {
-        return (await caches.match("/join"))
-          || (await caches.match("/offline.html"))
-          || Response.error();
+        const cache = await caches.open(SHELL_CACHE);
+        return (await cache.match(OFFLINE_PAGE)) || Response.error();
       }
     })());
     return;

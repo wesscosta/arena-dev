@@ -219,6 +219,9 @@ test.describe("Classroom overview MVP contract", () => {
   });
 
   test("survives every target breakpoint and both themes without overflow", async ({ page }) => {
+    // Twelve full navigations across mobile, tablet and ultrawide: allow fixture loading
+    // without relaxing the individual visibility/geometry assertions.
+    test.setTimeout(120_000);
     await page.setViewportSize(viewports[0]);
     await login(page);
 
@@ -276,6 +279,91 @@ test.describe("Classroom overview MVP contract", () => {
           });
         }
       }
+    }
+  });
+
+  test("iOS: topbar remains one row and status filters use three equal columns", async ({ page }, testInfo) => {
+    test.setTimeout(60_000);
+    await login(page);
+    for (const width of [320, 375, 390, 430]) {
+      await page.setViewportSize({ width, height: 844 });
+      const layout = await page.evaluate(() => {
+        const rect = (selector: string) => document.querySelector<HTMLElement>(selector)!.getBoundingClientRect();
+        const header = rect(".contextual-topbar");
+        const brand = rect(".contextual-topbar .topbar-brand");
+        const navigation = rect(".contextual-topbar .topbar-global-nav");
+        const profile = rect(".contextual-topbar .topbar-profile");
+        const buttons = [...document.querySelectorAll<HTMLElement>(".overview-toolbar-main .segmented-control button")]
+          .map(button => button.getBoundingClientRect());
+        const firstCard = rect(".overview-class-card");
+        const button = rect(".overview-class-card-open");
+        return {
+          headerHeight: header.height,
+          profileCentered: Math.abs(profile.top + profile.height / 2 - brand.top - brand.height / 2),
+          navigationCentered: Math.abs(navigation.top + navigation.height / 2 - brand.top - brand.height / 2),
+          profileRightGap: header.right - profile.right,
+          filtersOneRow: buttons.every(entry => Math.abs(entry.top - buttons[0].top) < 2),
+          firstCardHeight: firstCard.height,
+          cardTouchTarget: button.height,
+          documentOverflow: document.documentElement.scrollWidth - innerWidth,
+        };
+      });
+      expect(layout.headerHeight, `header wrapped at ${width}px`).toBeLessThanOrEqual(92);
+      expect(layout.profileCentered, `profile misaligned at ${width}px`).toBeLessThanOrEqual(3);
+      expect(layout.navigationCentered, `global menu misaligned at ${width}px`).toBeLessThanOrEqual(3);
+      expect(layout.profileRightGap, `profile not right-aligned at ${width}px`).toBeGreaterThanOrEqual(-1);
+      expect(layout.profileRightGap).toBeLessThanOrEqual(18);
+      expect(layout.filtersOneRow, `filters wrapped at ${width}px`).toBe(true);
+      expect(layout.firstCardHeight, `card has excess whitespace at ${width}px`).toBeLessThanOrEqual(170);
+      expect(layout.cardTouchTarget).toBeGreaterThanOrEqual(44);
+      const menuAction = page.getByRole("button", { name: `Ações de ${activeClassroom.name}` });
+      await expect(menuAction).toBeVisible();
+      const target = await menuAction.boundingBox();
+      expect(target?.width).toBeGreaterThanOrEqual(44);
+      expect(target?.height).toBeGreaterThanOrEqual(44);
+      await page.locator('.contextual-topbar button[aria-label="Abrir menu do professor"]').click();
+      const profileMenu = page.getByRole("menu");
+      await expect(profileMenu.getByRole("menuitem", { name: /Configurações/ })).toBeInViewport();
+      await page.keyboard.press("Escape");
+      await expect(profileMenu).toHaveCount(0);
+      expect(layout.documentOverflow).toBeLessThanOrEqual(1);
+      await testInfo.attach(`dashboard-mobile-${width}`, {
+        body: await page.screenshot(), contentType: "image/png",
+      });
+    }
+  });
+
+  test("Form modal: X has standard hit target and final step has only one navigation action", async ({ page }) => {
+    test.setTimeout(70_000);
+    const classroomName = `Modal UI ${Date.now().toString(36)}`;
+    let created: ClassroomView | undefined;
+    try {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await login(page);
+      await page.getByRole("button", { name: /Nova turma/ }).click();
+      const dialog = page.getByRole("dialog", { name: "Nova turma" });
+      const close = dialog.getByRole("button", { name: "Fechar nova turma" });
+      await expect(close).toBeFocused();
+      const box = await close.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(44);
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+      await page.keyboard.press("Shift+Tab");
+      await expect(dialog.getByRole("button", { name: "Cancelar" })).toBeFocused();
+      await page.keyboard.press("Tab");
+      await expect(close).toBeFocused();
+      await dialog.getByLabel("Nome da turma").fill(classroomName);
+      await dialog.getByRole("button", { name: "Criar e continuar" }).click();
+      await expect(dialog.getByRole("button", { name: "Abrir turma" })).toBeVisible();
+      await expect(dialog.getByRole("button", { name: "Concluir por enquanto" })).toHaveCount(0);
+      const response = await api.get("/api/classrooms?includeInactive=true");
+      await expectOk(response, "Listar turmas criadas pelo teste de modal");
+      created = (await response.json() as ClassroomView[]).find((row) => row.name === classroomName);
+      expect(created).toBeDefined();
+      await close.click();
+      await expect(dialog).toHaveCount(0);
+      await expect(page.getByRole("heading", { name: "Suas turmas" })).toBeVisible();
+    } finally {
+      await removeClassroom(api, csrfHeaders, created);
     }
   });
 });

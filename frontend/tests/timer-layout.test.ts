@@ -44,3 +44,25 @@ test("Timer layout no longer depends on the legacy inline simplification overrid
   assert.doesNotMatch(globals, /14\.11C — Timer simplification/);
   assert.doesNotMatch(css, /!important/);
 });
+
+test("Timer drawer keeps a focusable scroll region and lets the teacher collapse its preview", () => {
+  const drawer = read("components/ArenaToolDrawer.tsx");
+  const css = read("components/ArenaToolDrawer.module.css");
+  const panel = read("components/TimerPanel.tsx");
+  const timerCss = read("styles/timer-panel.css");
+  assert.match(drawer, /data-testid="arena-tool-drawer-content"[\s\S]*role="region"[\s\S]*tabIndex=\{0\}/);
+  assert.match(css, /\.content\s*\{[^}]*overflow-y:\s*scroll/s);
+  assert.match(css, /\.drawer \.content :global\(\.timer-workspace\)\s*\{[^}]*height:\s*auto/s);
+  assert.match(css, /\.content\s*\{[^}]*scrollbar-width:\s*thin/s);
+  assert.match(drawer, /hideScrollbar \? styles\.scrollbarHidden/);
+  assert.match(css, /\.content\.scrollbarHidden\s*\{[^}]*scrollbar-width:\s*none/s);
+  assert.match(css, /\.content\.scrollbarHidden::-webkit-scrollbar\s*\{[^}]*display:\s*none/s);
+  assert.match(read("components/ArenaApp.tsx"), /title="Timer"[\s\S]*?hideScrollbar[\s\S]*?onClose=\{closeTool\}/);
+  assert.match(panel, /previewChoice.*setPreviewChoice/);
+  assert.match(panel, /const previewCollapsed =/);
+  assert.match(panel, /aria-expanded=\{!previewCollapsed\}/);
+  assert.match(panel, /id="timer-active-preview" hidden=\{previewCollapsed\}/);
+  assert.match(panel, /Expandir prévia/);
+  assert.match(panel, /Recolher prévia/);
+  assert.match(timerCss, /\.timer-active-card \[hidden\] \{ display: none; \}/);
+});

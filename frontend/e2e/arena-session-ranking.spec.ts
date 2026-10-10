@@ -103,7 +103,7 @@ async function createFixture(api: APIRequestContext, csrfHeaders: Record<string,
   return { classroom, classroomName, session, joinCode, students, anaScore, score };
 }
 
-async function loginAndOpenArena(page: Page, classroomName: string, sessionTitle: string) {
+async function loginAndOpenArena(page: Page, classroomName: string, _sessionTitle: string) {
   const csrfResponse = await page.request.get(`${browserApiBaseUrl}/api/auth/csrf`);
   await expectOk(csrfResponse, "Token CSRF do navegador");
   const { token } = (await csrfResponse.json()) as { token: string };
@@ -119,7 +119,7 @@ async function loginAndOpenArena(page: Page, classroomName: string, sessionTitle
   await card.getByRole("button", { name: new RegExp(`Abrir turma ${classroomName}`) }).click();
   await page.getByRole("button", { name: "Continuar Arena" }).click();
   await expect(page.locator("aside.arena-cockpit-nav")).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Contexto da sessão" }).getByText(sessionTitle, { exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Turma atual" }).getByRole("button", { name: `Voltar para a turma ${classroomName}` })).toBeVisible();
 }
 
 async function openProjector(browser: Browser, code: string) {
@@ -187,7 +187,8 @@ test.describe("Arena session ranking", () => {
 
     const projector = await openProjector(browser, fixture.joinCode.code);
     try {
-      await expect(projector.page.getByText("Aluno sorteado", { exact: true })).toBeVisible();
+      await expect(projector.page.getByTestId("projector-draw-stage")).toBeVisible();
+      await expect(projector.page.getByText("Participante selecionado", { exact: true })).toBeVisible();
       await expect(projector.page.getByText("Ana", { exact: true })).toBeVisible();
       await expect(projector.page.getByTestId("projector-session-ranking")).toHaveCount(0);
 
@@ -215,7 +216,11 @@ test.describe("Arena session ranking", () => {
 
       await page.getByRole("button", { name: "Ocultar do projetor" }).click();
       await expect(projector.page.getByTestId("projector-session-ranking")).toHaveCount(0);
-      await expect(projector.page.getByText("Aluno sorteado", { exact: true })).toBeVisible();
+      await expect(projector.page.getByText("Participante selecionado", { exact: true })).toBeVisible();
+      await expect(projector.page.getByText("Ana", { exact: true })).toBeVisible();
+      await projector.page.reload();
+      await expect(projector.page.getByTestId("projector-draw-stage")).toBeVisible();
+      await expect(projector.page.getByText("Participante selecionado", { exact: true })).toBeVisible();
       await expect(projector.page.getByText("Ana", { exact: true })).toBeVisible();
 
       const reverse = await api.post(`/api/score-events/${fixture.anaScore.id}/reverse`, { headers: csrfHeaders });

@@ -7,11 +7,13 @@ export default function WheelParticipantSelector({
   participants,
   selectedStudentId,
   drawing,
+  disabled,
   onDraw,
 }: {
   participants: Student[];
   selectedStudentId?: string;
   drawing: boolean;
+  disabled?: boolean;
   onDraw: () => void;
 }) {
   return (
@@ -20,6 +22,7 @@ export default function WheelParticipantSelector({
         participants={participants}
         selectedStudentId={selectedStudentId}
         drawing={drawing}
+        disabled={disabled}
         onDraw={onDraw}
       />
     </div>

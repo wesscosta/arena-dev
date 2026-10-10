@@ -15,6 +15,7 @@ import { fetchPollState, type PollState } from "@/lib/poll-api";
 import { fetchQuizState, type QuizState } from "@/lib/quiz-api";
 import { emptyLearningCheckState, fetchLearningCheckState, type LearningCheckState } from "@/lib/learning-check-api";
 import { fetchSessionRanking, type SessionRankingState } from "@/lib/ranking-api";
+import { reconnectDelayMs } from "@/lib/runtime-snapshot";
 
 type ArenaRealtimeStatus = "offline" | "connecting" | "online";
 
@@ -45,6 +46,8 @@ export function useArenaRealtime({
   const [rankingState, setRankingState] = useState<SessionRankingState | null>(null);
   const [status, setStatus] = useState<ArenaRealtimeStatus>("offline");
   const [reconnectVersion, setReconnectVersion] = useState(0);
+  const reconnectAttemptRef = useRef(0);
+  const previousSessionRef = useRef<string | undefined>(undefined);
   const notifyRef = useRef(notify);
   const selectedStudentRef = useRef(onSelectedStudent);
   const participantsChangedRef = useRef(onParticipantsChanged);
@@ -56,6 +59,10 @@ export function useArenaRealtime({
   }, [notify, onSelectedStudent, onParticipantsChanged]);
 
   useEffect(() => {
+    if (previousSessionRef.current !== sessionId) {
+      previousSessionRef.current = sessionId;
+      reconnectAttemptRef.current = 0;
+    }
     if (!sessionId) {
       setJoinCode(null);
       setBuzzerState({ status: "IDLE", presses: [] });
@@ -71,6 +78,33 @@ export function useArenaRealtime({
 
     let active = true;
     let reconnectTimer: number | undefined;
+    const socketHolder: { current?: WebSocket } = {};
+    const reconnect = () => setReconnectVersion((version) => version + 1);
+    const onOffline = () => {
+      if (!active) return;
+      if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
+      reconnectTimer = undefined;
+      setStatus("offline");
+      socketHolder.current?.close();
+    };
+    const onOnline = () => {
+      if (!active) return;
+      if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
+      reconnectTimer = undefined;
+      reconnectAttemptRef.current = 0;
+      // New GET snapshot + WebSocket. Never replay a POST on reconnect.
+      reconnect();
+    };
+    window.addEventListener("offline", onOffline);
+    window.addEventListener("online", onOnline);
+    if (!navigator.onLine) {
+      setStatus("offline");
+      return () => {
+        active = false;
+        window.removeEventListener("offline", onOffline);
+        window.removeEventListener("online", onOnline);
+      };
+    }
     setStatus("connecting");
 
     void Promise.all([
@@ -129,21 +163,29 @@ export function useArenaRealtime({
       if (event.type === "SESSION_FINISHED") setStatus("offline");
     });
 
-    socket.onopen = () => setStatus("online");
-    socket.onerror = () => setStatus("offline");
+    socketHolder.current = socket;
+    socket.onopen = () => {
+      if (!active) return;
+      reconnectAttemptRef.current = 0;
+      setStatus("online");
+    };
+    socket.onerror = () => { if (active) setStatus("offline"); };
     socket.onclose = () => {
       if (!active) return;
       setStatus("offline");
-      reconnectTimer = window.setTimeout(
-        () => setReconnectVersion((value) => value + 1),
-        1500,
-      );
+      // Browser offline events resume immediately upon 'online'; do not poll
+      // and flood API/WS requests while the device has no network.
+      if (!navigator.onLine) return;
+      const delay = reconnectDelayMs(reconnectAttemptRef.current++);
+      reconnectTimer = window.setTimeout(reconnect, delay);
     };
 
     return () => {
       active = false;
-      if (reconnectTimer) window.clearTimeout(reconnectTimer);
-      socket.close();
+      if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
+      window.removeEventListener("offline", onOffline);
+      window.removeEventListener("online", onOnline);
+      socketHolder.current?.close();
     };
   }, [sessionId, reconnectVersion]);
 

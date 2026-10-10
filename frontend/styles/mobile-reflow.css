@@ -1,0 +1,646 @@
+/* iOS/mobile reflow for Arena live and teacher overview.
+ * Loaded after the legacy CSS so viewport-specific layout can override desktop tracks.
+ * Do not hide overflowing content at document level: reflow the components instead.
+ */
+.arena-session-shortcuts {
+  display: contents;
+}
+
+@media (max-width: 48rem) {
+  .arena-content-full .arena-live-shell,
+  .arena-content-full .arena-session-workspace,
+  .arena-content-full .arena-cockpit,
+  .arena-content-full .arena-cockpit-main {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  .arena-content-full .arena-cockpit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: .75rem;
+  }
+
+  .arena-content-full .arena-context-rail {
+    position: static;
+    grid-column: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-self: start;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    gap: .75rem;
+    overflow: visible;
+  }
+
+  .arena-content-full .arena-context-rail > * {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .arena-content-full .arena-participants-card {
+    min-height: 0;
+    max-height: 24rem;
+    overflow: hidden;
+  }
+
+  .arena-content-full .arena-participant-list {
+    max-height: 16rem;
+    overflow-y: auto;
+  }
+
+  .arena-content-full .arena-session-code-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto;
+    min-height: 0;
+    padding: .75rem;
+  }
+
+  .arena-content-full .arena-session-code-row {
+    min-width: 0;
+  }
+
+  .arena-content-full .arena-session-code-card img,
+  .arena-content-full .arena-qr-placeholder {
+    width: 4.9rem;
+    height: 4.9rem;
+  }
+
+  .arena-content-full .arena-live-topbar {
+    position: static;
+    display: block;
+    min-width: 0;
+    min-height: 0;
+    padding: .6rem 0;
+  }
+
+  .arena-content-full .arena-session-actions {
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: .5rem;
+  }
+
+  .arena-content-full .arena-session-actions > * {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .arena-content-full .arena-session-shortcuts {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .5rem;
+  }
+
+  .arena-content-full .arena-session-shortcuts > * {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .arena-content-full .arena-session-shortcuts > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .arena-content-full .arena-session-actions > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .arena-content-full .arena-session-elapsed {
+    min-width: 0;
+    align-self: stretch;
+  }
+
+  .arena-content-full .arena-session-elapsed strong {
+    white-space: nowrap;
+  }
+
+  .arena-content-full .arena-cockpit-nav {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .arena-content-full .smart-draw-workspace,
+  .arena-content-full .smart-draw-hero,
+  .arena-content-full .arena-tab-content {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  .arena-content-full .selected-student-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .arena-content-full .selected-student-bar > .selected-student-cta {
+    grid-column: 1;
+    justify-self: stretch;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .arena-content-full .draw-coverage-summary {
+    min-width: 0;
+    width: 100%;
+    padding: .5rem 0 0;
+  }
+}
+
+@media (max-width: 32.5rem) {
+  .overview-page .overview-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .65rem;
+  }
+
+  .overview-page .overview-metrics .metric {
+    min-width: 0;
+    min-height: 0;
+    padding: .8rem;
+  }
+
+  .overview-page .overview-metrics .metric span,
+  .overview-page .overview-metrics .metric small {
+    overflow-wrap: anywhere;
+    line-height: 1.3;
+  }
+
+  .overview-page .overview-metrics .metric strong {
+    font-size: clamp(1.4rem, 5vw, 1.9rem);
+    margin: .4rem 0;
+  }
+
+  .overview-page .overview-toolbar-main .segmented-control {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .overview-page .overview-toolbar-main .segmented-control button {
+    min-width: 0;
+    padding-inline: .15rem;
+    font-size: .75rem;
+    white-space: nowrap;
+  }
+
+  .overview-page .overview-class-card-open {
+    min-height: 9rem;
+    gap: .7rem;
+  }
+}
+
+/* iOS: fixed-height navigation, compact profile and single-column session rail. */
+@media (max-width: 48rem) {
+  .arena-content-full .arena-context-rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .arena-content-full .arena-session-code-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* Classroom: one-line tabs, no vertical pan, fully visible selected state. */
+@media (max-width: 48rem) {
+  .contextual-topbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    width: 100%;
+  }
+  .contextual-topbar .app-topbar-actions {
+    grid-column: 3;
+    justify-self: end;
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+  .contextual-topbar .topbar-profile {
+    width: 3rem;
+    min-width: 3rem;
+    height: 3rem;
+    padding: .25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+  .contextual-topbar .topbar-profile-copy,
+  .contextual-topbar .topbar-profile-chevron { display: none; }
+  .classroom-section-nav {
+    height: 4rem;
+    min-height: 4rem;
+    max-height: 4rem;
+    overflow: hidden;
+    padding: 0;
+  }
+  .classroom-section-tabs {
+    height: 4rem;
+    min-height: 4rem;
+    max-height: 4rem;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scroll-padding-inline: .5rem;
+  }
+  .classroom-section-tab {
+    flex: 0 0 auto;
+    min-width: max-content;
+    min-height: 3rem;
+    height: 3rem;
+    max-height: 3rem;
+    padding: .35rem .75rem;
+    box-sizing: border-box;
+    white-space: nowrap;
+    align-self: center;
+  }
+  .classroom-section-tab > strong { white-space: nowrap; overflow-wrap: normal; }
+  .classroom-section-tab.active::after { bottom: 0; }
+}
+
+/* Dashboard mobile: the hidden breadcrumb must not create an implicit grid row.
+ * The same three-column topbar layout is shared by Turmas and classroom pages. */
+@media (max-width: 48rem) {
+  .contextual-topbar .context-trail-spacer,
+  .contextual-topbar .context-trail {
+    display: none;
+  }
+  .contextual-topbar .topbar-brand {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .contextual-topbar .topbar-global-nav {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    min-width: 0;
+  }
+  .contextual-topbar .app-topbar-actions {
+    grid-column: 3;
+    grid-row: 1;
+    width: auto;
+    min-width: 3rem;
+    margin: 0;
+    justify-self: end;
+  }
+
+  /* Keep all three status filters on one line at narrow phone widths. */
+  .overview-page .overview-toolbar-main .segmented-control {
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .overview-page .overview-toolbar-main .segmented-control button:first-child {
+    grid-column: auto;
+  }
+
+  /* Cards should be content-sized rather than enforcing desktop-height whitespace. */
+  .overview-page .overview-class-card {
+    min-height: 0;
+  }
+  .overview-page .overview-class-card-open {
+    min-height: 0;
+    gap: .6rem;
+    padding: .8rem 3.2rem .8rem .85rem;
+  }
+  .overview-page .overview-class-meta {
+    margin-top: .25rem;
+  }
+  .overview-page .overview-class-card-foot {
+    min-height: 2rem;
+    padding-top: .45rem;
+  }
+}
+
+/* On touch screens, the card context menu is an actual 44px target. */
+@media (max-width: 48rem) {
+  .overview-page .overview-class-card-open {
+    padding-right: 3.8rem;
+  }
+  .overview-page .overview-card-actions .classroom-card-menu-trigger {
+    width: 2.75rem;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    min-height: 2.75rem;
+  }
+}
+
+/* Session identity: one navigable classroom name, without breadcrumb duplicates. */
+.arena-live-topbar .arena-live-context {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+}
+.arena-live-topbar .arena-live-context > .arena-live-classroom-link {
+  display: inline-flex;
+  width: auto;
+  max-width: min(38rem, 100%);
+  min-width: 0;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: .5rem;
+  color: var(--ds-text-primary, var(--text));
+  text-align: left;
+}
+.arena-live-classroom-link > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+.arena-live-classroom-link > span {
+  flex: 0 0 auto;
+  color: var(--ds-accent, var(--accent));
+  font-size: 1.1rem;
+}
+.arena-live-classroom-link:focus-visible {
+  outline: 2px solid var(--ds-accent, var(--accent));
+  outline-offset: 2px;
+  border-radius: .35rem;
+}
+
+@media (max-width: 48rem) {
+  /* Presence and QR access stay in Tools > Presença e acesso, including enlarged QR. */
+  .arena-content-full .arena-context-rail {
+    display: none;
+  }
+
+  .arena-content-full .arena-live-topbar .arena-live-context {
+    display: flex;
+    width: 100%;
+    margin-bottom: .5rem;
+  }
+  .arena-content-full .arena-live-topbar .arena-live-context > .arena-live-classroom-link {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Arena navigation v0.10: a single command registry, desktop rail + mobile drawer. */
+.arena-nav-panel { display: contents; }
+.arena-nav-mobile-projector,
+.arena-nav-menu-trigger,
+.arena-nav-menu-backdrop,
+.arena-nav-panel-head,
+.arena-nav-mobile-session,
+.arena-nav-mobile-title { display: none; }
+.arena-nav-slot { min-width: 0; }
+.arena-nav-slot > div { width: 100%; }
+.arena-nav-slot button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: .55rem .6rem;
+  border: 1px solid transparent;
+  border-radius: .6rem;
+  background: transparent;
+  color: var(--ds-text-primary, var(--text));
+  font-size: .81rem;
+  font-weight: 700;
+  white-space: normal;
+  text-align: left;
+  gap: .6rem;
+}
+.arena-nav-slot button svg { width: 1.125rem; height: 1.125rem; flex: 0 0 1.125rem; }
+.arena-nav-slot button:hover { background: var(--ds-surface-subtle, var(--surface-2)); }
+.arena-nav-slot button:focus-visible,
+.arena-nav-menu-trigger:focus-visible,
+.arena-nav-panel-head button:focus-visible {
+  outline: 3px solid var(--ds-accent, var(--accent));
+  outline-offset: 2px;
+}
+
+/* Compact intermediate rail keeps accessible icon-led links. */
+@media (min-width: 48.01rem) and (max-width: 72rem) {
+  .arena-nav-slot button { font-size: 0; padding: .5rem .15rem; justify-content: center; text-align: center; }
+  .arena-nav-slot button svg { width: 1.4rem; height: 1.4rem; flex-basis: 1.4rem; }
+}
+
+@media (max-width: 48rem) {
+  .arena-content-full .arena-cockpit-nav {
+    position: relative;
+    top: auto;
+    display: flex;
+    height: auto;
+    min-height: 3.5rem;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: .6rem;
+    margin: 0 0 .4rem;
+    padding: .45rem .6rem;
+    border-radius: .75rem;
+    overflow: visible;
+  }
+  .arena-content-full .arena-nav-brand {
+    display: flex;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 2.75rem;
+    min-height: 2.75rem !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+  .arena-nav-mobile-title {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    color: var(--ds-text-primary, var(--text));
+    font-size: 1rem;
+  }
+  .arena-content-full .arena-nav-mobile-projector {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    min-width: 0;
+    margin-left: auto;
+  }
+  .arena-content-full .arena-nav-mobile-projector .arena-projector-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    width: auto;
+    min-width: 6.7rem;
+    max-width: 8rem;
+    padding-inline: .55rem;
+    font-size: .85rem;
+  }
+  .arena-nav-menu-trigger {
+    display: inline-flex;
+    flex: 0 0 2.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    margin-left: 0;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--ds-border, var(--border));
+    border-radius: .65rem;
+    background: var(--ds-surface-raised, var(--surface));
+    color: var(--ds-text-primary, var(--text));
+    cursor: pointer;
+  }
+  .arena-nav-menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 10020;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: rgba(0,0,0,.72);
+  }
+  .arena-content-full .arena-nav-panel {
+    display: none;
+  }
+  .arena-content-full .arena-nav-panel[data-open="true"] {
+    display: flex;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10021;
+    width: min(24rem, 90vw);
+    height: 100dvh;
+    max-height: 100dvh;
+    min-width: 0;
+    flex-direction: column;
+    gap: .5rem;
+    overflow: hidden;
+    padding: max(.8rem,env(safe-area-inset-top)) max(.7rem,env(safe-area-inset-right)) max(.8rem,env(safe-area-inset-bottom)) .7rem;
+    border-left: 1px solid var(--ds-border, var(--border));
+    border-radius: .9rem 0 0 .9rem;
+    background: var(--ds-surface-raised, var(--surface));
+    box-shadow: -1rem 0 3rem rgba(0,0,0,.35);
+  }
+  .arena-nav-panel-head {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .15rem .4rem .6rem;
+    border-bottom: 1px solid var(--ds-border, var(--border));
+  }
+  .arena-nav-panel-head button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    min-height: 2.75rem;
+    background: transparent;
+    color: var(--ds-text-primary, var(--text));
+    font-size: 1.6rem;
+    border: 1px solid var(--ds-border, var(--border));
+    border-radius: .55rem;
+  }
+  .arena-content-full .arena-nav-panel .arena-nav-scroll {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .85rem;
+    margin: 0;
+    padding: .25rem 0 1rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .arena-content-full .arena-nav-panel .arena-cockpit-nav-group {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    flex: 0 0 auto;
+    grid-template-columns: minmax(0,1fr);
+    align-content: start;
+    gap: .2rem;
+    padding: 0 0 .75rem;
+    border: 0;
+    border-bottom: 1px solid var(--ds-border, var(--border));
+  }
+  .arena-content-full .arena-nav-panel .arena-cockpit-nav-label {
+    display: block;
+    position: static;
+    width: auto;
+    height: auto;
+    padding: .35rem .5rem;
+    clip: auto;
+    overflow: visible;
+  }
+  .arena-content-full .arena-nav-panel .arena-cockpit-nav-group > button {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: flex-start;
+    gap: .65rem;
+    padding: .55rem .7rem;
+    text-align: left;
+  }
+  .arena-content-full .arena-nav-panel .arena-cockpit-nav-group > button > strong {
+    display: block;
+    position: static;
+    width: auto;
+    height: auto;
+    clip: auto;
+    overflow: visible;
+    font-size: .9rem;
+    white-space: normal;
+  }
+  .arena-content-full .arena-nav-panel .arena-cockpit-nav-group > button > span { flex: 0 0 1.25rem; }
+  .arena-nav-mobile-session { display: grid; }
+  .arena-nav-mobile-session .arena-nav-elapsed {
+    padding: .5rem .7rem;
+    color: var(--ds-text-secondary, var(--muted));
+    font-size: .85rem;
+  }
+  .arena-nav-mobile-session .arena-nav-danger,
+  .arena-nav-mobile-session .arena-nav-danger strong {
+    color: var(--ds-danger, #ff8a92) !important;
+  }
+  .arena-content-full .arena-nav-panel .arena-nav-professor { display: none; }
+  .arena-content-full .arena-nav-panel .arena-nav-slot button {
+    justify-content: flex-start;
+    min-height: 2.75rem;
+    padding: .55rem .7rem;
+    font-size: .9rem;
+  }
+  /* The projector command moves next to the hamburger, leaving the session header one line. */
+  .arena-content-full .arena-session-actions { display: none; }
+  .arena-content-full .arena-live-topbar { margin-top: 0; padding: .2rem 0 .4rem; }
+  .arena-content-full .arena-live-topbar .arena-live-context { margin-bottom: 0; }
+}

@@ -99,8 +99,13 @@ node_line="$(node --version)"
 [[ "$node_line" == v22.* ]] || fail "Node.js 22 é obrigatório; encontrado: $node_line"
 
 "$SCRIPT_DIR/check-metadata.sh"
-if [[ -x "$SCRIPT_DIR/verify-v0.9-contract.sh" \
-      && -f backend/src/main/resources/db/migration/V48__learning_core_release_gate.sql ]]; then
+if [[ -f backend/src/main/resources/db/migration/V56__manual_score_create_idempotency.sql ]]; then
+  "$SCRIPT_DIR/verify-v0.10-contract.sh"
+  expected_schema_version=56
+elif [[ -f backend/src/main/resources/db/migration/V55__learner_confidence_opt_in.sql ]]; then
+  "$SCRIPT_DIR/verify-v0.10-contract.sh"
+  expected_schema_version=55
+elif [[ -f backend/src/main/resources/db/migration/V48__learning_core_release_gate.sql ]]; then
   "$SCRIPT_DIR/verify-v0.9-contract.sh"
   expected_schema_version=48
 else
@@ -117,6 +122,9 @@ printf 'Java: %s\n' "$java_line"
 printf 'Node.js: %s\n' "$node_line"
 
 if [[ "$MODE" == "final" ]]; then
+  if [[ "$expected_schema_version" -ge 55 && "$RELEASE_VERSION" != "0.10.0" ]]; then
+    fail "o gate final v0.10 exige versão estável 0.10.0; candidata $RELEASE_VERSION não pode ser publicada"
+  fi
   [[ "$branch" == "main" ]] || fail "o gate final deve executar na branch main"
   [[ -z "$(git status --porcelain)" ]] || fail "a árvore de trabalho não está limpa"
 

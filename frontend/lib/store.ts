@@ -1,3 +1,4 @@
+import { secureId } from "@/lib/secure-id";
 import type { ArenaData } from "./types";
 
 export const STORAGE_KEY = "arena-dev-v1";
@@ -39,5 +40,5 @@ export function saveData(data: ArenaData) {
 }
 
 export function uid(prefix: string) {
-  return `${prefix}_${crypto.randomUUID()}`;
+  return `${prefix}_${secureId()}`;
 }

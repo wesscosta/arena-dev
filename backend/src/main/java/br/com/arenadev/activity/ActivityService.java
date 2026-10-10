@@ -32,6 +32,12 @@ public class ActivityService {
                 .toList();
     }
 
+    /** Batch for the teacher dashboard; keeps the same activity/quiz projection as the detail API. */
+    @Transactional(readOnly = true)
+    public List<ActivityView> listAll() {
+        return activityRepository.findAllWithQuestions().stream().map(this::toView).toList();
+    }
+
     @Transactional(readOnly = true)
     public ActivityView get(UUID id) {
         return toView(requireActivity(id));

@@ -1,3 +1,4 @@
+import { secureId } from "@/lib/secure-id";
 import type { Classroom, ScoreCategory, ScoreEvent, ScoreSource } from "./types";
 import { apiRequest } from "./http/client";
 
@@ -42,6 +43,8 @@ export type CreateScoreEventInput = {
   source?: ScoreSource;
   activityId?: string;
   questionId?: string;
+  /** Stable UUID reused on retries of the SAME manual scoring command. */
+  requestId?: string;
 };
 
 function mapEvent(row: ScoreEventView): ScoreEvent {
@@ -90,7 +93,9 @@ export async function createScoreEvents(inputs: CreateScoreEventInput[]): Promis
   return rows.map(mapEvent);
 }
 
-export async function reverseScoreEvent(eventId: string): Promise<ScoreEvent> {
-  const row = await scoreRequest<ScoreEventView>(`/api/score-events/${eventId}/reverse`, { method: "POST" });
+export async function reverseScoreEvent(eventId: string, requestId = secureId()): Promise<ScoreEvent> {
+  const row = await scoreRequest<ScoreEventView>(`/api/score-events/${eventId}/reverse`, {
+    method: "POST", body: JSON.stringify({ requestId }),
+  });
   return mapEvent(row);
 }

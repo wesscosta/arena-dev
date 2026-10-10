@@ -22,6 +22,9 @@ ENV HOSTNAME=0.0.0.0
 RUN addgroup -S arena && adduser -S arena -G arena
 COPY --from=build --chown=arena:arena /app/.next/standalone ./
 COPY --from=build --chown=arena:arena /app/.next/static ./.next/static
+# Next standalone does not bundle public/. PWA worker, offline fallback, manifest icons
+# must be copied into the production image or /sw.js returns HTTP 404.
+COPY --from=build --chown=arena:arena /app/public ./public
 USER arena
 EXPOSE 3000
 CMD ["node", "server.js"]

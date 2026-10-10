@@ -2,11 +2,17 @@
 
 **Arena Dev** é uma plataforma proprietária e self-hosted para condução, participação e gamificação de dinâmicas de sala, com foco em baixa fricção para o professor.
 
-> **Baseline publicada:** `v0.9.0 — Arena Learning Core`.
->
-> **Próxima linha planejada:** `v0.10 — Learning Loop`.
->
-> **Execução atual:** a v0.9.0 está publicada e congelada. Learning Domain, Interaction Core, LearningEvidence, AI-ready trace e shadow/cutover gate fazem parte da baseline. O legado permanece autoritativo até que a amostra operacional de shadows aprove o cutover lógico; remoção física fica para release posterior à janela de rollback.
+**Estado do produto (10/10/2026)**
+
+**Preparação de release:** operador confirmou aceite de campo e autorizou finalização da v0.10. A versão estável `0.10.0` está em preparação; publicação definitiva somente após CI, backup e gate final. [Aceite registrado](docs/v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md).
+
+- **Publicada:** `v0.9.0 — Arena Learning Core` (congelada).
+- **Candidata de estabilização:** `v0.10.0 — Learning Loop` na branch `feat/v0.10-learning-loop`, **ainda não publicada**. O PR [#35](https://github.com/wesscosta/arena-dev/pull/35) permanece em rascunho.
+- **Validação:** código da candidata consolidado até `d876325` (10/10); última bateria local informada: frontend 319/319 testes unitários, TypeScript, build, testes Playwright direcionados do Timer (2/2) e lint sem erros. **O CI remoto precisa aprovar o SHA final**, inclusive commits de documentação. A aprovação de UX em Safari/iOS foi **declarada pelo operador em 10/10**, sem relatório formal de dispositivos/roteiro, e não certifica atualização de PWA previamente instalada.
+- **Evidência adicional:** ensaio isolado de rollback [V48→V56→V48 aprovado em 10/10](docs/v0.10/ROLLBACK_V56_SYNTHETIC_2026-10-10.md); **não** equivale a restauração operacional com RTO/RPO.
+- **Bloqueadores de GO:** atualização de PWA v0.9 previamente instalada em Android/iOS (teste de upgrade não demonstrado); rede degradada/múltiplos dispositivos; auditoria assistiva/zoom; piloto pedagógico; rollback operacional V56, revisão de segurança e aceite formal. Não fazer merge, tag nem release estável antes da decisão GO/NO-GO.
+
+Comece por [estado corrente](docs/STATUS_ATUAL.md), [checklist de release](docs/v0.10/RELEASE_CANDIDATE_CHECKLIST.md), [aceite operacional](docs/v0.10/OPERATIONAL_ACCEPTANCE.md) e [auditoria de consolidação](docs/v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md). A trilha histórica e os ADRs ficam no [índice documental](docs/DOCUMENTATION_INDEX.md).
 
 ## Modelo do produto
 
@@ -24,6 +30,9 @@ Arena Dev não pretende ser um LMS completo. O produto concentra a condução da
 ## Capacidades principais
 
 ### Turma e Arena
+
+**Navegação da Arena (v0.10, candidata):** no desktop, menu lateral persistente; no mobile, menu único com Aula, Dinâmicas, Ferramentas e Evidências da aprendizagem. Material e Evidências deixam o cabeçalho e permanecem disponíveis durante toda a sessão; o projetor conserva seu controle global. Orientações pedagógicas permanecem fundamentadas em evidências, sem o antigo atalho genérico “Próximas ações”. Consulte [`docs/ux/arena-mobile-navigation.md`](docs/ux/arena-mobile-navigation.md). O operador declarou a experiência Safari/iOS validada em 10/10; o roteiro específico de upgrade de PWA v0.9 e demais gates continuam pendentes de evidência. O Timer permite rolagem integral no drawer com scrollbar oculta. Destaques `<aside>` do Notion são renderizados como blocos Markdown seguros. A projeção sincronizada de materiais foi incluída no [backlog v0.11](docs/ROADMAP_V0_11.md), sem implementação na v0.10.
+
 - turmas, estudantes, matrículas e presença;
 - sessão de aula com estado autoritativo no backend;
 - Sorteio, Nuvem de Palavras, Votação, Quiz, Buzzer e Boss Battle;
@@ -118,7 +127,7 @@ flowchart LR
     P["Projetor"] --> F
     F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
     F <-->|"WebSocket"| B
-    B --> D["PostgreSQL 17 + Flyway V1–V48"]
+    B --> D["PostgreSQL 17 + Flyway V1–V56 na candidata"]
 ```
 
 Princípios:
@@ -218,7 +227,7 @@ A v0.9 consolida o **Arena Learning Core** como fundação pedagógica estrutura
 
 O cutover lógico **não acontece automaticamente com a publicação da v0.9.0**. Por padrão, cada tipo precisa atingir a amostra mínima de rodadas terminais equivalentes e não pode ter divergência não resolvida. A exclusão física do legado pertence a uma release posterior à janela de rollback.
 
-A próxima linha planejada é **v0.10 — Learning Loop**, com evolução das intervenções pedagógicas, Confidence, Before & After, Error Clinic, Recovery e Mastery v1. Essas capacidades não fazem parte da baseline v0.9.0.
+A próxima linha candidata é **v0.10 — Learning Loop**, com intervenções pedagógicas, autoconfiança opcional, Before & After, Clínica do Erro e recuperação assistida por evidências. **Mastery longitudinal não integra a v0.10** e permanece dependente de identidade, retenção e instrumentos adequados. Essas capacidades não fazem parte da baseline publicada v0.9.0.
 
 ## Executando localmente
 
@@ -268,28 +277,13 @@ O histórico detalhado de release permanece em `docs/RELEASE_0_6.md`. A document
 
 ## Documentação corrente
 
-- [`docs/STATUS_ATUAL.md`](docs/STATUS_ATUAL.md)
-- [`docs/ROADMAP_0_8.md`](docs/ROADMAP_0_8.md)
-- [`docs/CONTENT_CANONICAL_MARKDOWN.md`](docs/CONTENT_CANONICAL_MARKDOWN.md)
-- [`docs/ARCHITECTURE_STABILIZATION_GATE_V0_8.md`](docs/ARCHITECTURE_STABILIZATION_GATE_V0_8.md)
-- [`docs/INCREMENT_16_3.md`](docs/INCREMENT_16_3.md)
-- [`docs/INCREMENT_16_2.md`](docs/INCREMENT_16_2.md)
-- [`docs/INCREMENT_16_0.md`](docs/INCREMENT_16_0.md)
-- [`docs/INCREMENT_16_0R_SESSION_RANKING.md`](docs/INCREMENT_16_0R_SESSION_RANKING.md)
-- [`docs/ROADMAP_0_7.md`](docs/ROADMAP_0_7.md)
-- [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md)
-- [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)
-- [`docs/ACCESSIBILITY.md`](docs/ACCESSIBILITY.md)
-- [`docs/LEARNING_VALIDATION_ROADMAP.md`](docs/LEARNING_VALIDATION_ROADMAP.md)
-- [`docs/CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md`](docs/CLASSROOM_OVERVIEW_MVP_CONSOLIDATION.md)
-- [`docs/adr/README.md`](docs/adr/README.md)
+- [Estado do projeto](docs/STATUS_ATUAL.md) · [Índice e histórico](docs/DOCUMENTATION_INDEX.md)
+- [Plano da v0.10](docs/v0.10/IMPLEMENTATION_PLAN.md) · [Registro de execução](docs/v0.10/EXECUTION_STATUS.md)
+- [Checklist GO/NO-GO](docs/v0.10/RELEASE_CANDIDATE_CHECKLIST.md) · [Aceite operacional](docs/v0.10/OPERATIONAL_ACCEPTANCE.md)
+- [Design System](docs/DESIGN_SYSTEM.md) · [Acessibilidade](docs/ACCESSIBILITY.md)
+- [Contratos da Biblioteca](docs/CONTENT_CANONICAL_MARKDOWN.md) · [ADRs](docs/adr/README.md)
 
-Histórico da v0.6:
-
-- [`docs/ROADMAP_0_6.md`](docs/ROADMAP_0_6.md)
-- [`docs/RELEASE_0_6.md`](docs/RELEASE_0_6.md)
-- `docs/INCREMENT_14_*`
-- `docs/POLISH_14_11*`
+As documentações de incrementos 14.x/16.x e os relatórios de releases anteriores são **históricos**, não requisitos ainda pendentes da v0.10.
 
 ## Estado das linhas
 
@@ -299,7 +293,9 @@ Histórico da v0.6:
 - `v0.6.0` — baseline técnica encerrada e congelada;
 - `v0.7.0` — Educational Integrations; publicada e encerrada;
 - `v0.8.0` — Professor Experience & Journey MVP; publicada, encerrada e congelada em V38;
-- `v0.9` — **Arena Learning Core em fechamento arquitetural**; schema aditivo até V48, fluxo nativo `Verificar aprendizagem` operando de LearningTarget até LearningEvidence, trace AI-ready estruturado e shadows de Quiz/Poll/Nuvem com observações duráveis e gate objetivo de cutover. A remoção física do legado permanece bloqueada até a janela segura de rollback; consulte `docs/v0.9/FINAL_ARCHITECTURE_GATE.md`.
+- `v0.9.0` — **Arena Learning Core publicada e congelada**; schema aditivo até V48, fluxo nativo `Verificar aprendizagem` operando de LearningTarget até LearningEvidence, trace AI-ready estruturado e shadows de Quiz/Poll/Nuvem com observações duráveis e gate objetivo de cutover. A remoção física do legado permanece bloqueada até a janela segura de rollback; consulte `docs/v0.9/FINAL_ARCHITECTURE_GATE.md`.
+
+- `v0.10.0-rc.1` — **candidata em homologação** (Flyway V56); publicação e tag dependem dos gates operacionais e do CI no SHA definitivo.
 
 ## Licença
 
@@ -308,62 +304,4 @@ A baseline atual é **proprietária**. A fronteira canônica é: `v0.1.x`–`v0.
 O saneamento do histórico realizado antes da v0.9.0 preservou integralmente a v0.4.0 e reescreveu apenas os descendentes v0.5+ para aplicar a política de produto correta. O registro está em [`LICENSING_HISTORY.md`](LICENSING_HISTORY.md), ADR-0026 e ADR-0050.
 
 
-### Student Live — 16.4B
-
-O Student Shell descobre sessões ativas das matrículas do aluno em `/learn/live`, mantém entrada manual por código e reutiliza o mesmo runtime público de `/join`.
-
-
-### Journey Redemption — 16.4C
-
-Jornadas publicadas compatíveis podem ser distribuídas por código e vinculadas ao perfil leve do aluno sem criar matrícula artificial. O código é usado apenas no resgate; acesso e progresso persistem depois.
-
-### Fechamento do Student Experience — 16.4
-
-Checkpoint funcional/visual encerrado em **28/09/2026** para `16.4A–16.4C` e para o refinamento transversal do Student Shell.
-
-- workspace persistente do aluno separado de `/join`;
-- visibilidade de Journey controlada pelo professor;
-- aluno pode pertencer a múltiplas turmas;
-- Live discovery integrado ao Student Shell;
-- Journey discovery/redemption;
-- Home, Journey e Reader refinados;
-- progresso sequencial, retomada e capítulos recolhíveis;
-- zoom global da área de estudos (80–200%), preservando o chrome da aplicação;
-- Style Guide do Student Shell com critérios de acessibilidade;
-- descrições/excerpts de importação sanitizados para não expor metadados técnicos ao aluno.
-
-Esse registro descreve o gate histórico daquele fechamento. Desde então, 16.4D — Achievements Foundation e a base de 16.5 — Content Library & Reuse até 16.5B.2 foram implementados; o estado corrente está nas seções mais recentes deste README.
-
-Detalhes e pendências: [`docs/CLOSURE_16_4_STUDENT_EXPERIENCE.md`](docs/CLOSURE_16_4_STUDENT_EXPERIENCE.md).
-
-### 16.4D — Achievements Foundation
-
-Implementado em 28/09/2026. Conquistas agora são marcos persistentes derivados do progresso real do Student: **Primeiro Passo**, **Primeiro Capítulo** e **Primeira Jornada**. A fundação é idempotente, global ao aluno/multi-turma, reconcilia progresso anterior e cobre tanto matrícula quanto Journey adicionada por redemption. Não concede XP, não altera progresso e não possui endpoint público de unlock.
-
-Detalhes: docs/INCREMENT_16_4D.md. Com A–D implementados, o **16.4 está tecnicamente completo**; hardening de release permanece separado.
-
-### 16.5.0 — Content Library Architecture Audit
-
-Concluído em 28/09/2026. A auditoria determinou que a Biblioteca deve evoluir LearningResource, evitando um ContentLibraryItem paralelo. Antes da V37 será necessário separar o recurso editável do snapshot executável da Journey e resolver ownership sem inventar uma entidade de professor que ainda não existe no modelo persistente.
-
-Detalhes: docs/INCREMENT_16_5_0_ARCHITECTURE_AUDIT.md.
-
-### 16.5A — Library Core
-
-A Content Library agora possui núcleo persistente e API administrativa. LearningResource foi evoluído sem duplicação de domínio e Journeys materializam snapshots imutáveis do recurso/revisão usada. Consulte docs/INCREMENT_16_5A.md.
-
-### 16.5B — Library Workspace & Reuse
-
-A Biblioteca agora possui workspace global do professor, autoria manual, busca, archive/restore e reuso bidirecional com o Journey Builder. O snapshot continua pertencendo à Journey; editar ou arquivar o material não altera Journeys existentes. Consulte docs/INCREMENT_16_5B.md.
-
-### Sequência de fechamento da v0.8
-
-O **Gate de Estabilização Arquitetural v0.8** foi concluído, os cortes `16.5C–F` foram fechados no escopo MVP e a v0.8.0 foi publicada/congelada. O desenvolvimento funcional corrente ocorre na **v0.9 — Arena Learning Core**; a linha `v0.8.x` fica restrita a regressão, segurança, acessibilidade crítica e documentação.
-
-A futura `16.6 — Knowledge & Retrieval Foundation` fica fora do gate da v0.8: chunks, índices lexical/vetorial, embeddings, avaliação de retrieval e RAG/LLM só serão iniciados depois da estabilização do corpus e da Biblioteca.
-
-O eixo pedagógico seguinte é `17.x` e também não bloqueia a v0.8. A ordem começa por auditoria do modelo de evidência, depois taxonomia e roadmaps/editais, banco de questões com proveniência, Assessment Blueprint + Mastery, revisão/retenção e somente então progressão visual/avatar. Detalhes em [`docs/LEARNING_VALIDATION_ROADMAP.md`](docs/LEARNING_VALIDATION_ROADMAP.md).
-
-### 16.5B.2 — Journey Snapshot Integrity Hardening — implementado
-
-A materialização Biblioteca → Journey agora é explícita: updates comuns preservam a revisão já copiada, inclusive quando a origem foi posteriormente editada ou arquivada. `JourneyStage.updateConfiguration()` não toca no snapshot; `materializeResource()` é a fronteira de escrita. O 16.5E concluiu a atualização explícita entre revisões apenas em Journey `DRAFT`.
+Os registros históricos de Student Live, Journey Redemption, Achievements e Biblioteca 16.4–16.5 permanecem nos documentos `docs/INCREMENT_16_*`, em [`docs/CLOSURE_16_4_STUDENT_EXPERIENCE.md`](docs/CLOSURE_16_4_STUDENT_EXPERIENCE.md) e no histórico Git. Eles não são a fonte operacional da candidata v0.10.
