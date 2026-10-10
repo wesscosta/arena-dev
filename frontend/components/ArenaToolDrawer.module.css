@@ -50,18 +50,29 @@
   line-height: 1.45;
 }
 
+/* The drawer owns the vertical scroll; never depend on document scrolling. */
 .content {
   min-width: 0;
   min-height: 0;
   max-height: 100%;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: scroll;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: var(--accent) transparent;
   scrollbar-gutter: stable;
   padding: 1rem 1rem 2rem;
+}
+
+/* Arena fullscreen rules also target .arena-tab-content. Their 100% height
+ * must not be inherited by a Timer mounted inside this independent dialog. */
+.drawer .content :global(.timer-workspace) {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  flex: 0 0 auto;
+  overflow: visible;
 }
 
 .content:focus-visible {

@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 
-const drawerCss = readFileSync(resolve(process.cwd(), "components/ArenaToolDrawer.module.css"), "utf8");
+// Playwright's isolated fixture uses plain class names; map CSS Modules :global()
+// to browser-ready selectors (Next.js does this transform in the application).
+const drawerCss = readFileSync(resolve(process.cwd(), "components/ArenaToolDrawer.module.css"), "utf8")
+  .replaceAll(":global(.timer-workspace)", ".timer-workspace");
 const timerCss = readFileSync(resolve(process.cwd(), "styles/timer-panel.css"), "utf8");
 
 for (const viewport of [{ width: 390, height: 700 }, { width: 1440, height: 720 }]) {
@@ -19,15 +22,22 @@ for (const viewport of [{ width: 390, height: 700 }, { width: 1440, height: 720 
           --font-size-xs:.7rem; --font-size-sm:.85rem; --font-size-xl:1.25rem;
           --font-bold:700; --font-semibold:600; --font-family-mono:monospace; }
         * {box-sizing:border-box} body{margin:0;background:#060b09;color:white;font:16px system-ui}
-        .stack-lg {display:grid;gap:1rem}
+        .stack-lg {display:flex;flex-direction:column;gap:1rem}
+        @media (min-width: 74.01rem) {
+          .arena-content-full .arena-tab-content {height:100%;min-height:0}
+        }
+        @media (max-width: 48rem) {
+          .arena-content-full .arena-tab-content {height:auto;min-height:0}
+        }
         ${drawerCss}
         ${timerCss}
       </style>
+      <div class="arena-content-full">
       <div class="backdrop">
         <aside class="drawer wide" role="dialog" aria-label="Timer">
           <header class="header"><h2>Timer</h2><button>Fechar</button></header>
           <div class="content" role="region" aria-label="Configurações e controles de Timer" tabindex="0">
-            <div class="stack-lg timer-workspace">
+            <div class="stack-lg arena-tab-content timer-workspace">
               <section class="timer-active-card">
                 <div class="timer-active-toolbar">
                   <div><strong>Atividade cronometrada</strong><small>Encerrado · 00:00</small></div>
@@ -45,10 +55,24 @@ for (const viewport of [{ width: 390, height: 700 }, { width: 1440, height: 720 
           </div>
         </aside>
       </div>
+      </div>
     `);
     const scroll = page.getByRole("region", { name: "Configurações e controles de Timer" });
-    const geometry = await scroll.evaluate((el) => ({ clientHeight: el.clientHeight, scrollHeight: el.scrollHeight }));
+    const geometry = await scroll.evaluate((el) => {
+      const workspace = el.querySelector<HTMLElement>(".timer-workspace")!;
+      const css = getComputedStyle(workspace);
+      return {
+        clientHeight: el.clientHeight,
+        scrollHeight: el.scrollHeight,
+        visibleOverflow: getComputedStyle(el).overflowY,
+        workspaceHeight: workspace.getBoundingClientRect().height,
+        workspaceStyle: css.height,
+        workspaceOverflow: css.overflowY,
+      };
+    });
+    expect(geometry.visibleOverflow).toBe("scroll");
     expect(geometry.scrollHeight).toBeGreaterThan(geometry.clientHeight + 120);
+    expect(geometry.workspaceHeight).toBeGreaterThan(geometry.clientHeight + 120);
     await scroll.hover();
     await page.mouse.wheel(0, 1200);
     await expect.poll(async () => scroll.evaluate((el) => el.scrollTop)).toBeGreaterThan(100);

@@ -51,7 +51,8 @@ test("Timer drawer keeps a focusable scroll region and lets the teacher collapse
   const panel = read("components/TimerPanel.tsx");
   const timerCss = read("styles/timer-panel.css");
   assert.match(drawer, /data-testid="arena-tool-drawer-content"[\s\S]*role="region"[\s\S]*tabIndex=\{0\}/);
-  assert.match(css, /\.content\s*\{[^}]*overflow-y:\s*auto/s);
+  assert.match(css, /\.content\s*\{[^}]*overflow-y:\s*scroll/s);
+  assert.match(css, /\.drawer \.content :global\(\.timer-workspace\)\s*\{[^}]*height:\s*auto/s);
   assert.match(css, /\.content\s*\{[^}]*scrollbar-width:\s*thin/s);
   assert.match(panel, /previewChoice.*setPreviewChoice/);
   assert.match(panel, /const previewCollapsed =/);
