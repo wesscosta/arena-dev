@@ -1,6 +1,6 @@
 # Arena Dev v0.10.0 — Notas de release preparatórias
 
-**Status: candidata 0.10.0-rc.1, NÃO PUBLICADA.** A interface e os documentos passaram por consolidação local em 09/10; o CI citado nesta página é **histórico** e não cobre ainda o diff local. Veja [auditoria e bloqueadores](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md). Este documento descreve a implementação validada automaticamente, mas não autoriza tag estável ou implantação. A baseline publicada permanece v0.9.0. A release estável depende dos gates em [checklist GO/NO-GO](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e [aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md).
+**Status: candidata 0.10.0-rc.1, NÃO PUBLICADA.** Interface consolidada até 10/10; o CI histórico citado abaixo não cobre as últimas correções da branch. A aprovação Safari/iOS foi relatada pelo operador, mas os demais gates de release não foram homologados. Veja [auditoria e bloqueadores](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md). Este documento descreve a implementação validada automaticamente, mas não autoriza tag estável ou implantação. A baseline publicada permanece v0.9.0. A release estável depende dos gates em [checklist GO/NO-GO](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e [aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md).
 
 ## Principais entregas da candidata
 
@@ -12,6 +12,9 @@
 - Autoconfiança opt-in e sugestões de recuperação: resultado agregado protegido contra amostras pequenas e intervenção sob decisão docente.
 - Dashboard em lote para reduzir fan-out da Home, PWA offline segura, reconexão do aluno e backoff WebSocket docente.
 - Painel de evidências da sessão, acessível apenas ao docente, com comparação de ciclos e lacunas de pareamento.
+- Nova navegação responsiva: menu único no mobile, sidebar no desktop, Projetar no cabeçalho mobile; Material e Evidências em grupos pedagógicos da navegação.
+- Timer em drawer de rolagem independente (indicador visual da barra oculto apenas no Timer), prévia recolhível e modo tela cheia.
+- Exportações Notion com blocos `<aside>` renderizados como destaques Markdown seguros no leitor canônico.
 
 ## Compatibilidade e implantação
 
@@ -22,8 +25,8 @@
 
 ## Evidências e limites
 
-- CI no SHA `38b73ca829e7f57b24fc97ec2a29dc73ba5ec0f1`: [GitHub Actions #37873486460](https://github.com/wesscosta/arena-dev/actions/runs/37873486460), três jobs aprovados.
-- Testes locais e regressões estão registrados em [EXECUTION_STATUS](v0.10/EXECUTION_STATUS.md); não são equivalentes a experiência real em sala, auditoria manual WCAG, conectividade física nem rollback operacional.
+- CI histórico no SHA `38b73ca829e7f57b24fc97ec2a29dc73ba5ec0f1`: [GitHub Actions #37873486460](https://github.com/wesscosta/arena-dev/actions/runs/37873486460), três jobs aprovados; **não valida o HEAD atual**. CI SHA `d876325`: [run #38019345190](https://github.com/wesscosta/arena-dev/actions/runs/38019345190), em andamento quando registrada esta revisão.
+- Testes locais mais recentes: frontend 319/319 unitários, 2/2 testes direcionados de rolagem Timer em Chromium, typecheck e build aprovados, lint sem erros. O operador declarou Safari/iOS validado, mas não apresentou roteiro formal de instalação/atualização v0.9→v0.10. Outros gates estão abertos. [EXECUTION_STATUS](v0.10/EXECUTION_STATUS.md).
 - Correção do E2E de WebSocket: distinguir GET `/join-code` de GET de imagem `/join-code/qr`, sem alterar comportamento da API.
 
 ## Bloqueadores para publicação

@@ -2,6 +2,15 @@
 
 **Data:** 08/10/2026 · **branch:** `feat/v0.10-learning-loop` · **v0.9.0 permanece congelada.**
 
+## Atualização operacional de 10/10/2026 — UI/UX concluída como código, release ainda NO-GO
+
+- Branch publicada até `d876325` antes desta atualização documental: navegação compartilhada (desktop sidebar / mobile drawer), materiais/roteiro/evidências no menu, projetor imediatamente antes do hambúrguer no mobile, atalhos genéricos de próximas ações removidos, seção e contexto preservados.
+- Leitor canônico de Markdown com bloco semântico `aside` do Notion, sem executar HTML arbitrário; Biblioteca da Arena ainda **não projeta materiais**, pois a ação de publicação no LiveStage ficou no [roadmap v0.11](../ROADMAP_V0_11.md).
+- Timer: rolagem interna do drawer (independente do layout fullscreen da Arena), prévia recolhível e scrollbar oculta apenas na ferramenta Timer; botões de ação continuam acessíveis.
+- Último conjunto local direcionado: frontend **319/319 unitários**, E2E Playwright do Timer **2/2**, TypeScript, lint sem erros e build de produção. Esses testes não cobrem por si sós toda a regressão integrada backend + frontend no commit final.
+- **Aceite declarado em chat pelo operador em 10/10:** Safari/iOS foi testado e considerado válido. Sem evidências formais de aparelhos, instalação anterior de PWA v0.9, upgrade, rede instável, auditoria assistiva, aula piloto e rollback operacional; os gates correspondentes permanecem abertos.
+- PR [#35](https://github.com/wesscosta/arena-dev/pull/35) segue em rascunho até resolução de gates. Release estável, merge e tag **não realizados**.
+
 ## Incrementos efetivamente codificados
 
 | Fase | Implementação verificada | Estado / gate pendente |

@@ -1,13 +1,13 @@
 # Estado atual — Arena Dev
 
-**Atualizado em 09/10/2026.** Este é o resumo operacional, não o diário histórico das implementações.
+**Atualizado em 10/10/2026.** Este é o resumo operacional, não o diário histórico das implementações.
 
 | Linha | Estado | Fonte de verdade |
 | --- | --- | --- |
 | `v0.9.0` | Publicada, congelada; Flyway V48 | [`RELEASE_0_9.md`](RELEASE_0_9.md) |
 | `v0.10.0-rc.1` | Candidata em homologação; **NO-GO para release estável**; Flyway V56 | [`v0.10/RELEASE_CANDIDATE_CHECKLIST.md`](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) |
 | `main` | Branch de publicação da baseline | Tag v0.9.0 e GitHub Release |
-| `feat/v0.10-learning-loop` | Branch de trabalho com mudanças locais ainda não versionadas | PR [#35](https://github.com/wesscosta/arena-dev/pull/35), em rascunho |
+| `feat/v0.10-learning-loop` | Branch da candidata, publicada no remoto até `d876325` antes da atualização documental | PR [#35](https://github.com/wesscosta/arena-dev/pull/35), em rascunho |
 
 ## Capacidades efetivamente implementadas na candidata v0.10
 
@@ -18,16 +18,16 @@
 - Biblioteca canônica reutilizada dentro da Arena, sem cópias e sem exigir embed de Canva.
 - Autoconfiança voluntária separada de pontuação/evidência; sugestões de recuperação que dependem da decisão docente.
 - PWA com fallback offline seguro e reconexão por snapshot; validação física de upgrade ainda pendente.
-- Design system compartilhado das dinâmicas, responsividade mobile e um único comando de projetor no cabeçalho da sessão.
+- Navegação consolidada: sidebar desktop, drawer único no mobile, Projetar junto ao hambúrguer, Material da aula, Roteiro e Evidências sem duplicar atalhos. Timer com rolagem vertical integral e scrollbar invisível; renderização semântica e segura de `<aside>` exportado do Notion.
 
 **Não incluir como capacidades estáveis:** Mastery v1, SaaS multi-docente isolado, RAG/LLM de domínio, embed Canva em iframe, comprovação de aprendizagem longitudinal, ou qualquer funcionalidade experimental sem piloto.
 
 ## Evidências disponíveis e o que elas não demonstram
 
-- Último CI GitHub verificado antes desta auditoria: [#37935122578](https://github.com/wesscosta/arena-dev/actions/runs/37935122578), sucesso no commit `cce0758` (09/10). **Não cobre alterações locais posteriores.**
-- A última regressão local de navegador antes desta auditoria registrou **62/62 E2E Chromium** em stack isolada. Deve ser repetida sobre o código consolidado; não equivale a Safari iOS real.
+- CI remoto do SHA `d876325`: [run #38019345190](https://github.com/wesscosta/arena-dev/actions/runs/38019345190), **em execução no momento da revisão documental**; não considerá-lo aprovado sem conclusão `success`. Qualquer commit de documentação gera novo SHA e exige novo CI.
+- Em 10/10, os testes locais mais recentes do frontend tiveram **319/319 unitários**, TypeScript, build, lint sem erros e 2/2 E2E direcionados de rolagem. Não equivalem à regressão integrada completa (backend + frontend + projeto) no SHA final.
 - Build/health de desenvolvimento são verificações técnicas, **não** autorização de lançamento.
-- Em 09/10, havia 44 arquivos modificados e 19 não rastreados; a auditoria amplia esse diff. Antes da publicação é obrigatório revisar, versionar e executar gates no mesmo SHA.
+- **Declaração do operador em 10/10:** experiência em Safari/iOS concluída e validada. Não foram informados versão de iOS, aparelhos, instalação prévia de PWA v0.9, execução de upgrade, checklist assistivo nem logs. Registrar como aceite visual/funcional relatado, **não** como prova dos demais gates.
 
 ## Bloqueadores de homologação
 

@@ -1,6 +1,6 @@
 # Gate de release v0.10 — Checklist GO / NO-GO
 
-**Candidata em homologação:** `0.10.0-rc.1`, branch `feat/v0.10-learning-loop`, PR #35 em rascunho. **Não executar merge, tag nem deploy** antes de aprovar todos os gates abaixo. Evidências devem apontar para o **mesmo SHA** do candidato.
+**Candidata em homologação:** `0.10.0-rc.1`, branch `feat/v0.10-learning-loop`, PR #35 em rascunho. **Não executar merge, tag nem deploy** antes de aprovar todos os gates abaixo. Evidências devem apontar para o **mesmo SHA** do candidato. Em 10/10, o operador informou validação Safari/iOS; o relato não identifica teste de atualização PWA v0.9, rede degradada, leitor assistivo ou aula piloto.
 
 **Migração aditiva V56 em andamento de consolidação:** proteção contra duplicação em criação de XP manual [ADR-0066](../adr/ADR-0066-manual-score-creation-idempotency.md). O último CI verde citado abaixo é **histórico, anterior a V56**; exigir novos backend/frontend/E2E e rollback sobre a nova SHA.
 
@@ -24,7 +24,7 @@
 
 ## 2. Gates operacionais/manuais
 
-- [ ] Upgrade de PWA **previamente instalada em v0.9** para v0.10 em Android/Chrome e iOS/Safari, com atividade em andamento e cache/service worker antigo; perda de rede, retomada, gabarito e tokens.
+- [ ] Upgrade de PWA **previamente instalada em v0.9** para v0.10 em Android/Chrome e iOS/Safari, com atividade em andamento e cache/service worker antigo; perda de rede, retomada, gabarito e tokens. **Relato de 10/10 confirma uso/UX em Safari/iOS, não esse cenário de upgrade.**
 - [ ] Navegação por teclado, ordem/foco, NVDA/VoiceOver, zoom 200–400%, contraste claro/escuro, tamanhos mobile/tablet/desktop e modo projetor. Testes axe-core **não certificam WCAG AAA**.
 - [ ] Roteiro docente piloto em turma real: Sorteio, Peer Instruction, Clínica do Erro, Material contextual, Verificar aprendizagem, Antes/Depois e Painel de evidências. Registrar feedback e métrica operacional; **não medir mastery com apenas uma verificação**.
 - [x] **Ensaio técnico isolado histórico, V55 (não valida V56):** v0.9.0 real / V48 → dump sintético + SHA-256 → backend v0.10 / V55 → restore V48 → reinício v0.9 original, com integridade de IDs, presença, reversão e saldo XP confirmados em **duas execuções exit 0** (`scripts/release/rehearse-v09-v010-rollback.sh`; [ADR-0063](../adr/ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)). Sem tocar a instalação principal.
@@ -34,6 +34,8 @@
 - [ ] README, docs, Notion, release notes, decisão GO/NO-GO, PR aprovado, plano de suporte e monitoração de erros atualizados.
 
 **Resultado local de 09/10, após V56:** frontend `npm test` 313/313, TypeScript, lint (zero erros, 94 avisos), build, `npm audit --omit=dev` sem vulnerabilidades; integração backend V56 + migração 10/10; Docker + E2E Chromium 63/63. A primeira execução E2E em stack isolada teve falhas de autenticação por URL de teste incorreta (não da aplicação), e o rerun com `E2E_BROWSER_API_URL` correto passou integralmente. O primeiro backend verify completo teve uma asserção antiga de migração V55, corrigida e validada na suíte focada; **novo verify integral precisa passar no CI do SHA atualizado**. Essas evidências não representam o GO operacional.
+
+**Atualização de 10/10:** navegação, Biblioteca/callouts e correções do Timer consolidadas até `d876325`. O operador confirmou validação da experiência Safari/iOS, sem informações de hardware/roteiro para homologar o ciclo PWA. Testes locais da última fatia: 319/319 frontend, 2/2 Playwright Timer, typecheck/build e lint 0 erros. CI do SHA `d876325` em execução [run #38019345190](https://github.com/wesscosta/arena-dev/actions/runs/38019345190); um novo SHA de documentação exige execução correspondente.
 
 **Decisão técnica registrada: implementação concluída como candidata; NO-GO para publicação ampla até completar e aprovar os gates operacionais.** Consultar [roteiro operacional e evidências ainda faltantes](OPERATIONAL_ACCEPTANCE.md).
 

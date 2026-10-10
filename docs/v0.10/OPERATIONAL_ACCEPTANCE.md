@@ -1,6 +1,6 @@
 # v0.10 — Aceite operacional e limites de implantação
 
-**Estado: NO-GO para publicação ampla.** Candidata `0.10.0-rc.1` em `feat/v0.10-learning-loop`. Este documento é roteiro de aceite, não evidência de execução dos testes físicos.
+**Estado: NO-GO para publicação ampla.** Candidata `0.10.0-rc.1` em `feat/v0.10-learning-loop`. Em 10/10, o operador confirmou visualmente/funcionalmente Safari e iOS, **sem anexos técnicos ou passos reproduzíveis**. Este documento continua sendo roteiro de aceite, não comprovação de todos os testes físicos.
 
 ## Escopo permitido
 
@@ -26,7 +26,8 @@
 
 | Gate | Data/ambiente | Responsável | Resultado | Evidência | Bloqueio/ação |
 |---|---|---|---|---|---|
-| PWA instalada Android/iOS | Pendente | — | NÃO EXECUTADO | — | Homologar |
+| PWA instalada Android/iOS **com upgrade v0.9→v0.10** | Pendente | — | NÃO COMPROVADO | Relato Safari/iOS 10/10 (sem teste de upgrade) | Homologar em Android e iOS, registrar SW/cache, versão, dispositivo e resultado |
+| UX Safari/iOS da candidata | 10/10/2026 | Operador (declaração no chat) | VALIDADO PELO OPERADOR; SEM RELATÓRIO FORMAL | Declaração de conclusão no chat | Opcionalmente anexar versão/dispositivo/cenários; não substitui testes de upgrade |
 | Rede real e idempotência | Pendente | — | NÃO EXECUTADO | — | Homologar |
 | Teclado/leitor de tela/zoom | Pendente | — | NÃO EXECUTADO | — | Homologar |
 | Aula piloto | Pendente | — | NÃO EXECUTADO | — | Homologar |

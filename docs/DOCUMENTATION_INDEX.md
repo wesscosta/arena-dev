@@ -9,7 +9,7 @@ Este índice separa **fontes operacionais vigentes**, **propostas**, **diários 
 | Qual versão está publicada? | [Estado atual](STATUS_ATUAL.md) e [release v0.9.0](RELEASE_0_9.md) |
 | O que está planejado e o que ficou fora? | [Roadmap v0.10](ROADMAP_V0_10.md), [plano técnico](v0.10/IMPLEMENTATION_PLAN.md) |
 | O que foi executado? | [Diário de execução](v0.10/EXECUTION_STATUS.md) (registros datados, não estado automático) |
-| Podemos publicar? | [Checklist de release](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e [aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md) |
+| Podemos publicar? | [Checklist de release](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e [aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md): **NO-GO até evidências completas** |
 | Quais são os contratos? | [API/dados](v0.10/API_CONTRACTS.md) e [ADRs](adr/README.md) |
 | Como devem funcionar os fluxos? | [UX v0.10](v0.10/UX_FLOWS.md) e [sistema visual](ux/arena-dynamics-visual-system-v010.md) |
 | Quais riscos e excessos foram encontrados? | [Auditoria de consolidação](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md) |
@@ -20,7 +20,7 @@ Este índice separa **fontes operacionais vigentes**, **propostas**, **diários 
 - [Design System](DESIGN_SYSTEM.md), [UI Style Guide](STYLE_GUIDE_UI.md), [Acessibilidade](ACCESSIBILITY.md).
 - [Student Shell](STUDENT_SHELL_STYLE_GUIDE.md), [Biblioteca/Markdown canônico](CONTENT_CANONICAL_MARKDOWN.md).
 - [Seleção e XP no Sorteio](ux/arena-draw-outcome-contract-v010.md), [Modais](ux/dialog-interaction-contract.md), [Navegação móvel](ux/arena-mobile-navigation.md).
-- [Matriz técnica de testes](v0.10/TEST_MATRIX.md), [notas preparatórias da release](RELEASE_0_10.md).
+- [Matriz técnica de testes](v0.10/TEST_MATRIX.md), [notas preparatórias da release](RELEASE_0_10.md), [navegação móvel](ux/arena-mobile-navigation.md) e [planejamento v0.11 de projeção de materiais](ROADMAP_V0_11.md).
 
 ## Linha de evolução anterior (histórico, não tarefas abertas da v0.10)
 

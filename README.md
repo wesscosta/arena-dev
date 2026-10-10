@@ -2,12 +2,12 @@
 
 **Arena Dev** é uma plataforma proprietária e self-hosted para condução, participação e gamificação de dinâmicas de sala, com foco em baixa fricção para o professor.
 
-**Estado do produto (09/10/2026)**
+**Estado do produto (10/10/2026)**
 
 - **Publicada:** `v0.9.0 — Arena Learning Core` (congelada).
 - **Candidata:** `v0.10.0-rc.1 — Learning Loop` na branch `feat/v0.10-learning-loop`, **não publicada**. O PR [#35](https://github.com/wesscosta/arena-dev/pull/35) permanece em rascunho.
-- **Validação:** a auditoria e a proteção V56 do XP manual exigem novos testes e CI no SHA definitivo; a CI anterior não abrange essas mudanças. Não confundir o frontend de desenvolvimento com release oficial.
-- **Bloqueadores de GO:** atualização de PWA v0.9 previamente instalada em Android/iOS; rede real/múltiplos dispositivos; auditoria assistiva/zoom; piloto pedagógico; rollback operacional, segurança e aceite do operador.
+- **Validação:** código da candidata consolidado até `d876325` (10/10); última bateria local informada: frontend 319/319 testes unitários, TypeScript, build, testes Playwright direcionados do Timer (2/2) e lint sem erros. **O CI remoto precisa aprovar o SHA final**, inclusive commits de documentação. A aprovação de UX em Safari/iOS foi **declarada pelo operador em 10/10**, sem relatório formal de dispositivos/roteiro, e não certifica atualização de PWA previamente instalada.
+- **Bloqueadores de GO:** atualização de PWA v0.9 previamente instalada em Android/iOS (teste de upgrade não demonstrado); rede degradada/múltiplos dispositivos; auditoria assistiva/zoom; piloto pedagógico; rollback operacional V56, revisão de segurança e aceite formal. Não fazer merge, tag nem release estável antes da decisão GO/NO-GO.
 
 Comece por [estado corrente](docs/STATUS_ATUAL.md), [checklist de release](docs/v0.10/RELEASE_CANDIDATE_CHECKLIST.md), [aceite operacional](docs/v0.10/OPERATIONAL_ACCEPTANCE.md) e [auditoria de consolidação](docs/v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md). A trilha histórica e os ADRs ficam no [índice documental](docs/DOCUMENTATION_INDEX.md).
 
@@ -28,7 +28,7 @@ Arena Dev não pretende ser um LMS completo. O produto concentra a condução da
 
 ### Turma e Arena
 
-**Navegação da Arena (v0.10, candidata):** no desktop, menu lateral persistente; no mobile, menu único com Aula, Dinâmicas, Ferramentas e Evidências da aprendizagem. Material e Evidências deixam o cabeçalho e permanecem disponíveis durante toda a sessão; o projetor conserva seu controle global. Orientações pedagógicas permanecem fundamentadas em evidências, sem o antigo atalho genérico “Próximas ações”. Consulte [`docs/ux/arena-mobile-navigation.md`](docs/ux/arena-mobile-navigation.md). A homologação Safari iOS/PWA continua obrigatória. A projeção sincronizada de materiais foi incluída no [backlog v0.11](docs/ROADMAP_V0_11.md), sem implementação na v0.10.
+**Navegação da Arena (v0.10, candidata):** no desktop, menu lateral persistente; no mobile, menu único com Aula, Dinâmicas, Ferramentas e Evidências da aprendizagem. Material e Evidências deixam o cabeçalho e permanecem disponíveis durante toda a sessão; o projetor conserva seu controle global. Orientações pedagógicas permanecem fundamentadas em evidências, sem o antigo atalho genérico “Próximas ações”. Consulte [`docs/ux/arena-mobile-navigation.md`](docs/ux/arena-mobile-navigation.md). O operador declarou a experiência Safari/iOS validada em 10/10; o roteiro específico de upgrade de PWA v0.9 e demais gates continuam pendentes de evidência. O Timer permite rolagem integral no drawer com scrollbar oculta. Destaques `<aside>` do Notion são renderizados como blocos Markdown seguros. A projeção sincronizada de materiais foi incluída no [backlog v0.11](docs/ROADMAP_V0_11.md), sem implementação na v0.10.
 
 - turmas, estudantes, matrículas e presença;
 - sessão de aula com estado autoritativo no backend;
@@ -124,7 +124,7 @@ flowchart LR
     P["Projetor"] --> F
     F -->|"REST"| B["Java 21 + Spring Boot 4.1"]
     F <-->|"WebSocket"| B
-    B --> D["PostgreSQL 17 + Flyway V1–V48"]
+    B --> D["PostgreSQL 17 + Flyway V1–V56 na candidata"]
 ```
 
 Princípios:
@@ -224,7 +224,7 @@ A v0.9 consolida o **Arena Learning Core** como fundação pedagógica estrutura
 
 O cutover lógico **não acontece automaticamente com a publicação da v0.9.0**. Por padrão, cada tipo precisa atingir a amostra mínima de rodadas terminais equivalentes e não pode ter divergência não resolvida. A exclusão física do legado pertence a uma release posterior à janela de rollback.
 
-A próxima linha planejada é **v0.10 — Learning Loop**, com evolução das intervenções pedagógicas, Confidence, Before & After, Error Clinic, Recovery e Mastery v1. Essas capacidades não fazem parte da baseline v0.9.0.
+A próxima linha candidata é **v0.10 — Learning Loop**, com intervenções pedagógicas, autoconfiança opcional, Before & After, Clínica do Erro e recuperação assistida por evidências. **Mastery longitudinal não integra a v0.10** e permanece dependente de identidade, retenção e instrumentos adequados. Essas capacidades não fazem parte da baseline publicada v0.9.0.
 
 ## Executando localmente
 
