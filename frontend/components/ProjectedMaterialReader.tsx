@@ -38,7 +38,7 @@ export default function ProjectedMaterialReader({ material }: { material: Public
       <h1>{material.title}</h1>
       <span className={styles.revision}>Versão apresentada · revisão {material.revision}</span>
     </header>
-    <section className={styles.body} aria-label="Conteúdo publicado para o projetor">
+    <section className={styles.body} tabIndex={0} aria-label="Conteúdo publicado para o projetor">
       <SafePresentationBody body={material.body} format={material.format} />
     </section>
   </article>;

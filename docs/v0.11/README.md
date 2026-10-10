@@ -9,7 +9,7 @@
 - [Contrato proposto do projetor v1](11.0_CONTRATOS_PROJECAO.md): snapshot imutável, palco único, eventos versionados, HTTP, WebSocket, sincronização e retorno seguro.
 - [Plano de execução e gates](11.0_PLANO_GATES.md): sequência 11.1–11.6, condições de aceite e riscos residuais.
 - [Evidências verificadas da etapa](11.0_EVIDENCIAS.md): comandos e resultados, limites do teste e pendências.
-- [ADR-0067](../adr/ADR-0067-material-presentation-v011.md): escolha arquitetural proposta, ainda sujeita à revisão.
+- [ADR-0067](../adr/ADR-0067-material-presentation-v011.md): contrato arquitetural aceito para o backend 11.1; decisões de sincronização futura ainda sujeitas à 11.3.
 
 ## 11.1 — backend de publicação segura
 

@@ -55,3 +55,5 @@
 .plain { white-space: pre-wrap; overflow-wrap: anywhere; font-size: clamp(1.1rem, 1.7vw, 1.65rem); line-height: 1.65; margin: 0; }
 @media(max-width:48rem) { .body { padding: .9rem; } .reader { gap: .65rem; } }
 @media(prefers-reduced-motion:reduce) { .body { scroll-behavior:auto; } }
+
+.body:focus-visible { outline: 3px solid #58f3a7; outline-offset: -4px; }

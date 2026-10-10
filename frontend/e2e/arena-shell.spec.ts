@@ -1608,6 +1608,7 @@ test("v0.11 / 11.2: professor publica leitura segura e o projetor recebe somente
     await expect(projector.getByTestId("projector-material-stage")).toBeVisible({ timeout: 15_000 });
     const reader = projector.getByTestId("projector-material-stage");
     await expect(reader.getByRole("heading", { name: title })).toBeVisible();
+    await expect(reader.getByRole("region", { name: "Conteúdo publicado para o projetor" })).toHaveAttribute("tabindex", "0");
     await expect(reader.getByText(publishedText)).toBeVisible();
     await expect(reader.getByRole("complementary", { name: "Destaque do material" })).toContainText("WHERE");
     await expect(reader.getByRole("table")).toContainText("Consulta");
