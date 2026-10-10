@@ -23,17 +23,20 @@ public class LearningResourceService {
     private final ClassroomRepository classrooms;
     private final ContentCanonicalizer canonicalizer;
     private final JsonMapper objectMapper;
+    private final br.com.arenadev.stage.LiveStageService liveStage;
 
     public LearningResourceService(
             LearningResourceRepository resources,
             ClassroomRepository classrooms,
             ContentCanonicalizer canonicalizer,
-            JsonMapper objectMapper
+            JsonMapper objectMapper,
+            br.com.arenadev.stage.LiveStageService liveStage
     ) {
         this.resources = resources;
         this.classrooms = classrooms;
         this.canonicalizer = canonicalizer;
         this.objectMapper = objectMapper;
+        this.liveStage = liveStage;
     }
 
     @Transactional(readOnly = true)
@@ -166,6 +169,7 @@ public class LearningResourceService {
         if (!resource.isLibraryVisible()) {
             throw new ResourceNotFoundException("Conteúdo da Biblioteca não encontrado.");
         }
+        liveStage.revokeForResource(resource.getId());
         resource.archiveFromLibrary();
     }
 

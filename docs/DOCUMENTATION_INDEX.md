@@ -19,6 +19,7 @@ Este índice separa **fontes operacionais vigentes**, **propostas**, **diários 
 - [Índice 11.0 e evidências](v0.11/README.md) · [auditoria por persona/tela](v0.11/11.0_AUDITORIA_PERSONAS_TELAS.md) · [permissões e ameaças](v0.11/11.0_PERMISSOES_AMENACAS.md).
 - [Contrato de apresentação e versionamento proposto](v0.11/11.0_CONTRATOS_PROJECAO.md) · [plano e gates](v0.11/11.0_PLANO_GATES.md) · [ADR-0067](adr/ADR-0067-material-presentation-v011.md).
 - [Resultados e limites da auditoria 11.0](v0.11/11.0_EVIDENCIAS.md).
+- [Implementação e testes de backend 11.1](v0.11/11.1_EXECUTION_STATUS.md) — branch de desenvolvimento, não release estável.
 - **Nota:** a v0.10 está publicada; o trabalho documental 11.0 não significa feature 11.1 executada.
 
 ## Contratos técnicos e de experiência

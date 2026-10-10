@@ -11,5 +11,6 @@ public enum LiveStageType {
     POLL,
     BUZZER,
     BOSS_BATTLE,
-    TIMER
+    TIMER,
+    MATERIAL
 }

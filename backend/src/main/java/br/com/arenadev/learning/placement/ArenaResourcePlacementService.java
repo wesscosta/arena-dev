@@ -18,12 +18,15 @@ public class ArenaResourcePlacementService {
     private final JdbcTemplate jdbc;
     private final ClassSessionRepository sessions;
     private final LearningResourceRepository resources;
+    private final br.com.arenadev.stage.LiveStageService stage;
 
     public ArenaResourcePlacementService(JdbcTemplate jdbc, ClassSessionRepository sessions,
-                                         LearningResourceRepository resources) {
+                                         LearningResourceRepository resources,
+                                         br.com.arenadev.stage.LiveStageService stage) {
         this.jdbc=jdbc;
         this.sessions=sessions;
         this.resources=resources;
+        this.stage=stage;
     }
 
     @Transactional(readOnly = true)
@@ -54,6 +57,10 @@ public class ArenaResourcePlacementService {
         if (!resource.isLibraryVisible() || resource.getArchivedAt()!=null || resource.getClassroom()!=null) {
             throw new IllegalArgumentException("Selecione um material publicado na Biblioteca canônica.");
         }
+        var current = get(sessionId);
+        if (current != null && !current.resourceId().equals(resourceId)) {
+            stage.clearPublishedMaterialUnderLock(sessionId);
+        }
         jdbc.update("""
             insert into arena_session_resource_placements(session_id,resource_id,updated_at)
             values(?,?,now())
@@ -68,6 +75,7 @@ public class ArenaResourcePlacementService {
     public void unlink(UUID sessionId) {
         sessions.findByIdForUpdate(sessionId)
                 .orElseThrow(()->new ResourceNotFoundException("Sessão não encontrada."));
+        stage.clearPublishedMaterialUnderLock(sessionId);
         jdbc.update("delete from arena_session_resource_placements where session_id=?",sessionId);
     }
 

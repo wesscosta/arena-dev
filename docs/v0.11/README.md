@@ -11,6 +11,11 @@
 - [Evidências verificadas da etapa](11.0_EVIDENCIAS.md): comandos e resultados, limites do teste e pendências.
 - [ADR-0067](../adr/ADR-0067-material-presentation-v011.md): escolha arquitetural proposta, ainda sujeita à revisão.
 
+## 11.1 — backend de publicação segura
+
+- [Execução 11.1](11.1_EXECUTION_STATUS.md): Flyway V57, snapshot por publicação, endpoints docentes/publicação projetor, LiveStage versionado, revogação e testes de segurança/concorrência.
+- **Status:** código implementado em branch filha e aguardando CI/revisão; nenhuma interface nova de projetor foi entregue.
+
 ## Disciplina de status
 
 **Decisão de produto/contrato ≠ API funcionando.** A arquitetura e o escopo de 11.0 são uma especificação verificável do que implementar em 11.1, não uma prova de que endpoints de publicação, persistência ou projetor já existam. Inspeção de código não equivale a teste manual de UI/UX, WCAG ou iOS. A release v0.10 publicada não deve ser reaberta para inserir recursos v0.11.

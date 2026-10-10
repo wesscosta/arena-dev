@@ -1,8 +1,9 @@
 # Arena Dev v0.11 — planejamento de evolução (não implementada)
 
-**Estado:** etapa 11.0 (auditoria por persona/tela, permissões, contratos e arquitetura) iniciada em branch dedicada; as funcionalidades 11.1+ não estão implementadas nem homologadas.
+**Estado:** 11.0 auditada; 11.1 backend implementado com V57 e testes locais, sujeito a CI/PR. Funcionalidades 11.2+ ainda não implementadas nem homologadas.
 **Baseline confirmada:** v0.10.0 publicada em 10/10/2026 (PR #35, tag e GitHub Release). Seus limites de campo e de implantação continuam registrados na própria release.
 **Artefatos 11.0:** [índice e evidências](v0.11/README.md), [ADR-0067](adr/ADR-0067-material-presentation-v011.md).
+**11.1 em desenvolvimento:** backend de publicação segura e revogação com Flyway V57 e ITs; [execução e limites](v0.11/11.1_EXECUTION_STATUS.md). **11.2/11.3 ainda não implementadas.**
 **Referências:** [ROADMAP_V0_10.md](ROADMAP_V0_10.md), [Projeção de materiais da Arena](ux/arena-material-projector-proposal.md), ADR-0045/0046/0052/0059.
 
 ## Objetivo geral

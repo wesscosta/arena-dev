@@ -1,6 +1,6 @@
 # ADR-0067 — Publicação segura e versionada de materiais no palco ao vivo (v0.11)
 
-**Status:** Proposto para aprovação na etapa 11.0; congelamento de contrato condicionado à revisão antes da 11.1. **Data:** 10/10/2026.
+**Status:** Aceito como fundamento técnico para o backend 11.1; extensões de UI, sincronização de seções e retorno ao palco anterior ainda dependem de 11.2/11.3. Revisar evidências de CI antes do merge. **Data:** 10/10/2026.
 
 ## Contexto
 

@@ -16,6 +16,7 @@ import br.com.arenadev.session.SessionParticipant;
 import br.com.arenadev.session.SessionParticipantRepository;
 import br.com.arenadev.session.SessionStatus;
 import br.com.arenadev.shared.ResourceNotFoundException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
@@ -34,6 +35,7 @@ public class LiveStageService {
     private final DisplayNameService displayNameService;
     private final ActivityStepRepository activityStepRepository;
     private final JsonMapper json;
+    private final JdbcTemplate jdbc;
 
     public LiveStageService(
             ClassSessionRepository sessionRepository,
@@ -42,7 +44,7 @@ public class LiveStageService {
             SessionRealtimeGateway realtimeGateway,
             DisplayNameService displayNameService,
             ActivityStepRepository activityStepRepository,
-            JsonMapper json
+            JsonMapper json, JdbcTemplate jdbc
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -51,6 +53,7 @@ public class LiveStageService {
         this.displayNameService = displayNameService;
         this.activityStepRepository = activityStepRepository;
         this.json = json;
+        this.jdbc = jdbc;
     }
 
     @Transactional(readOnly = true)
@@ -73,8 +76,15 @@ public class LiveStageService {
 
     @Transactional
     public StateView activate(UUID sessionId, ActivateCommand command) {
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = sessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+        if (session.getStatus() != SessionStatus.ACTIVE) {
+            throw new IllegalArgumentException("Sessão não está ativa.");
+        }
         LiveStageType type = command.type() == null ? LiveStageType.IDLE : command.type();
+        if (type == LiveStageType.MATERIAL) {
+            throw new IllegalArgumentException("Use a publicação protegida de material.");
+        }
         LiveStageAudience audience = command.audience() == null
                 ? defaultAudience(type)
                 : command.audience();
@@ -105,13 +115,10 @@ public class LiveStageService {
             requirePreparedStep(session, sourceId, ActivityStepType.QUESTION);
         }
 
-        StoredState stored = new StoredState(
-                type.name(),
-                sourceId == null ? null : sourceId.toString(),
-                audience.name(),
-                timerOverlay,
-                Instant.now().toString()
-        );
+        StoredState previous = readStored(sessionId);
+        revokeActiveUnderLock(sessionId);
+        StoredState stored = new StoredState(type.name(), sourceId == null ? null : sourceId.toString(),
+                audience.name(), timerOverlay, Instant.now().toString(), previous.stageVersion() + 1, null);
         save(session, stored);
         publishAfterCommit(sessionId, stored);
         return project(sessionId, stored, Projection.TEACHER);
@@ -255,6 +262,82 @@ public class LiveStageService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public long version(UUID sessionId) {
+        requireSession(sessionId);
+        return readStored(sessionId).stageVersion();
+    }
+
+    @Transactional(readOnly = true)
+    public UUID activeMaterialId(UUID sessionId) {
+        StoredState stored = readStored(sessionId);
+        return LiveStageType.MATERIAL.name().equals(stored.type()) ? parseUuid(stored.sourceId()) : null;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isPublishedMaterial(UUID sessionId, UUID publicationId) {
+        return publicationId != null && publicationId.equals(activeMaterialId(sessionId));
+    }
+
+    // Caller holds session row lock; mutate snapshot status in the current transaction.
+    public void revokeActiveUnderLock(UUID sessionId) {
+        jdbc.update("""
+                update arena_material_publications set status='REVOKED', revoked_at=now()
+                where session_id=? and status='ACTIVE'
+                """, sessionId);
+    }
+
+    @Transactional
+    public void showPublishedMaterialUnderLock(UUID sessionId, UUID publicationId, long nextVersion) {
+        ClassSession session = sessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+        if (session.getStatus() != SessionStatus.ACTIVE || readStored(sessionId).stageVersion()+1 != nextVersion) {
+            throw new IllegalArgumentException("Transição inválida.");
+        }
+        StoredState stored = new StoredState(LiveStageType.MATERIAL.name(), publicationId.toString(),
+                LiveStageAudience.PROJECTOR.name(), true, Instant.now().toString(), nextVersion, null);
+        save(session, stored);
+        publishAfterCommit(sessionId, stored);
+    }
+
+    @Transactional
+    public void clearPublishedMaterialUnderLock(UUID sessionId) {
+        ClassSession session = sessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+        StoredState previous = readStored(sessionId);
+        revokeActiveUnderLock(sessionId);
+        if (!LiveStageType.MATERIAL.name().equals(previous.type())) return;
+        StoredState next = StoredState.idle(previous.stageVersion()+1);
+        save(session,next);
+        publishAfterCommit(sessionId,next);
+    }
+
+    @Transactional
+    public void revokeForResource(UUID resourceId) {
+        var sessionIds = jdbc.query("""
+                select distinct session_id from arena_material_publications
+                where resource_id=? and status='ACTIVE' order by session_id
+                """, (rs,row) -> rs.getObject(1,UUID.class), resourceId);
+        for (UUID sessionId : sessionIds) {
+            sessionRepository.findByIdForUpdate(sessionId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+            clearPublishedMaterialUnderLock(sessionId);
+        }
+    }
+
+    @Transactional
+    public void revokeForFinishedSession(UUID sessionId) {
+        ClassSession session = sessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+        StoredState previous = readStored(sessionId);
+        revokeActiveUnderLock(sessionId);
+        if (LiveStageType.MATERIAL.name().equals(previous.type())) {
+            StoredState next = StoredState.idle(previous.stageVersion()+1);
+            save(session,next);
+            publishAfterCommit(sessionId,next);
+        }
+    }
+
     private void publishAfterCommit(UUID sessionId, StoredState stored) {
         realtimeGateway.broadcastTeachersAfterCommit(
                 sessionId,
@@ -275,6 +358,22 @@ public class LiveStageService {
 
     private StateView project(UUID sessionId, StoredState stored, Projection projection) {
         LiveStageType type = parseType(stored.type());
+        if (type == LiveStageType.MATERIAL) {
+            Integer allowed = jdbc.queryForObject("""
+                    select count(*) from arena_material_publications p
+                    join class_sessions s on s.id=p.session_id
+                    join learning_resources r on r.id=p.resource_id
+                    join arena_session_resource_placements x on x.session_id=p.session_id
+                      and x.resource_id=p.resource_id
+                    where p.id=? and p.session_id=? and p.status='ACTIVE'
+                      and s.status='ACTIVE' and r.library_visible=true
+                      and r.archived_at is null and r.classroom_id is null
+                    """, Integer.class, parseUuid(stored.sourceId()), sessionId);
+            if (allowed == null || allowed == 0) {
+                stored = StoredState.idle(stored.stageVersion());
+                type = LiveStageType.IDLE;
+            }
+        }
         LiveStageAudience audience = parseAudience(stored.audience());
         boolean visible = switch (projection) {
             case TEACHER -> true;
@@ -285,10 +384,11 @@ public class LiveStageService {
         if (!visible) {
             return new StateView(
                     sessionId,
-                    new PrimaryView(LiveStageType.IDLE, null, null, null, null),
+                    new PrimaryView(LiveStageType.IDLE, null, null, null, null, null),
                     new OverlayView(stored.timerOverlay()),
                     audience,
-                    parseInstant(stored.activatedAt())
+                    parseInstant(stored.activatedAt()),
+                    stored.stageVersion()
             );
         }
 
@@ -312,11 +412,13 @@ public class LiveStageService {
                         projectedSourceId,
                         displayName,
                         preparedStep,
-                        parseInstant(stored.activatedAt())
+                        parseInstant(stored.activatedAt()),
+                        stored.sectionAnchor()
                 ),
                 new OverlayView(stored.timerOverlay()),
                 audience,
-                parseInstant(stored.activatedAt())
+                parseInstant(stored.activatedAt()),
+                stored.stageVersion()
         );
     }
 
@@ -487,20 +589,13 @@ public class LiveStageService {
     }
 
     private record StoredState(
-            String type,
-            String sourceId,
-            String audience,
-            boolean timerOverlay,
-            String activatedAt
+            String type, String sourceId, String audience, boolean timerOverlay,
+            String activatedAt, long stageVersion, String sectionAnchor
     ) {
-        static StoredState idle() {
-            return new StoredState(
-                    LiveStageType.IDLE.name(),
-                    null,
-                    LiveStageAudience.BOTH.name(),
-                    true,
-                    null
-            );
+        static StoredState idle() { return idle(0); }
+        static StoredState idle(long version) {
+            return new StoredState(LiveStageType.IDLE.name(), null,
+                    LiveStageAudience.BOTH.name(), true, null, version, null);
         }
     }
 
@@ -517,7 +612,8 @@ public class LiveStageService {
             PrimaryView primary,
             OverlayView overlays,
             LiveStageAudience audience,
-            Instant occurredAt
+            Instant occurredAt,
+            long stageVersion
     ) {
     }
 
@@ -526,7 +622,8 @@ public class LiveStageService {
             UUID sourceId,
             String displayName,
             PreparedStepView step,
-            Instant activatedAt
+            Instant activatedAt,
+            String sectionAnchor
     ) {
     }
 

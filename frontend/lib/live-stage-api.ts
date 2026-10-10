@@ -11,7 +11,8 @@ export type LiveStageType =
   | "POLL"
   | "BUZZER"
   | "BOSS_BATTLE"
-  | "TIMER";
+  | "TIMER"
+  | "MATERIAL";
 
 export type LiveStageAudience = "PROJECTOR" | "PARTICIPANTS" | "BOTH";
 
@@ -37,12 +38,14 @@ export type LiveStageState = {
       } | null;
     } | null;
     activatedAt?: string | null;
+    sectionAnchor?: string | null;
   };
   overlays: {
     timer: boolean;
   };
   audience: LiveStageAudience;
   occurredAt?: string | null;
+  stageVersion?: number;
 };
 
 export type ActivateLiveStageInput = {
