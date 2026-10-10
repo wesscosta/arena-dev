@@ -11,7 +11,11 @@
 
 **Fechamento (10/10):** o operador autorizou a publicação e declarou aprovados os testes manuais Safari/iOS, DevTools e demais gates; [registro e limites de evidência](v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md). A publicação foi condicionada ao CI do SHA estável, ao backup V56 e ao gate final na `main`.
 
-## Capacidades efetivamente implementadas na candidata v0.10
+## Linha de evolução ativa: v0.11
+
+A implementação da v0.11 **inicia pela etapa 11.0 (auditoria, riscos, contratos e arquitetura)** na branch `feat/v0.11-audit-contract-freeze`. **Nenhum modo MATERIAL, endpoint público de conteúdo ou migração V57 está implementado nesta etapa.** Veja [índice 11.0](v0.11/README.md), [roadmap](ROADMAP_V0_11.md) e [ADR-0067 proposto](adr/ADR-0067-material-presentation-v011.md). A v0.10 segue baseline estável.
+
+## Capacidades efetivamente implementadas na v0.10
 
 - `LearningCycle` e comparação antes/depois **apenas para respostas pareáveis**; não atestar mastery longitudinal com uma medição.
 - **XP manual/avulso V56:** `requestId` único no ledger, replay seguro do mesmo comando e 409 para divergência, sem alterar importações antigas. [ADR-0066](adr/ADR-0066-manual-score-creation-idempotency.md). A reconciliação após F5 ainda precisa de conferência do histórico.

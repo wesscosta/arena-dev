@@ -6,13 +6,20 @@ Este índice separa **fontes operacionais vigentes**, **propostas**, **diários 
 
 | Pergunta | Fonte |
 | --- | --- |
-| Qual versão está publicada? | [Estado atual](STATUS_ATUAL.md) e [release v0.9.0](RELEASE_0_9.md) |
+| Qual versão está publicada? | [Estado atual](STATUS_ATUAL.md) e [release v0.10.0](RELEASE_0_10.md) |
 | O que está planejado e o que ficou fora? | [Roadmap v0.10](ROADMAP_V0_10.md), [plano técnico](v0.10/IMPLEMENTATION_PLAN.md) |
 | O que foi executado? | [Diário de execução](v0.10/EXECUTION_STATUS.md) (registros datados, não estado automático) |
 | Qual o aceite da v0.10? | [Registro do operador](v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md), [checklist histórico](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e [gate técnico](RELEASE_0_10.md) |
 | Quais são os contratos? | [API/dados](v0.10/API_CONTRACTS.md) e [ADRs](adr/README.md) |
 | Como devem funcionar os fluxos? | [UX v0.10](v0.10/UX_FLOWS.md) e [sistema visual](ux/arena-dynamics-visual-system-v010.md) |
 | Quais riscos e excessos foram encontrados? | [Auditoria de consolidação](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md) |
+
+## Linha ativa v0.11 (planejamento de implementação)
+
+- [Índice 11.0 e evidências](v0.11/README.md) · [auditoria por persona/tela](v0.11/11.0_AUDITORIA_PERSONAS_TELAS.md) · [permissões e ameaças](v0.11/11.0_PERMISSOES_AMENACAS.md).
+- [Contrato de apresentação e versionamento proposto](v0.11/11.0_CONTRATOS_PROJECAO.md) · [plano e gates](v0.11/11.0_PLANO_GATES.md) · [ADR-0067](adr/ADR-0067-material-presentation-v011.md).
+- [Resultados e limites da auditoria 11.0](v0.11/11.0_EVIDENCIAS.md).
+- **Nota:** a v0.10 está publicada; o trabalho documental 11.0 não significa feature 11.1 executada.
 
 ## Contratos técnicos e de experiência
 
@@ -33,7 +40,7 @@ Este índice separa **fontes operacionais vigentes**, **propostas**, **diários 
 ## Regra de precedência
 
 1. Para **versão publicada**: tag/commit efetivo na `main`, migration e build correspondente, com evidência de release.
-2. Para **candidata v0.10**: código da branch/commit analisado, [checklist de release](v0.10/RELEASE_CANDIDATE_CHECKLIST.md), [aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md) e CI **no mesmo SHA**. O estado local não deve ser chamado de publicado.
+2. Para **desenvolvimento v0.11**: branch/commit efetivo, auditoria/ADR e evidências no SHA testado. Documentos 11.0 não implicam implementação 11.1. Para detalhes da candidata histórica v0.10, consulte o [checklist de release](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e o [aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md).
 3. Para **decisões de domínio e segurança**: ADR vigente/contratos e testes.
 4. [Execução](v0.10/EXECUTION_STATUS.md) é diário datado: resultados antigos não validam automaticamente o código novo.
 5. Roadmaps, wireframes e incrementos históricos **não** sobrepõem o comportamento implementado.

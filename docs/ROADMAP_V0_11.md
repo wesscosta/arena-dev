@@ -1,7 +1,8 @@
 # Arena Dev v0.11 — planejamento de evolução (não implementada)
 
-**Estado:** backlog proposto para planejamento e priorização, não release aprovada nem escopo inteiro fechado.
-**Dependência:** homologação e decisão GO/NO-GO da v0.10 permanecem independentes e pendentes de evidências reais (incluindo Safari iOS/PWA).
+**Estado:** etapa 11.0 (auditoria por persona/tela, permissões, contratos e arquitetura) iniciada em branch dedicada; as funcionalidades 11.1+ não estão implementadas nem homologadas.
+**Baseline confirmada:** v0.10.0 publicada em 10/10/2026 (PR #35, tag e GitHub Release). Seus limites de campo e de implantação continuam registrados na própria release.
+**Artefatos 11.0:** [índice e evidências](v0.11/README.md), [ADR-0067](adr/ADR-0067-material-presentation-v011.md).
 **Referências:** [ROADMAP_V0_10.md](ROADMAP_V0_10.md), [Projeção de materiais da Arena](ux/arena-material-projector-proposal.md), ADR-0045/0046/0052/0059.
 
 ## Objetivo geral
@@ -65,4 +66,4 @@ Nenhum item autoriza geração de conteúdo/questões por IA ou publicação aut
 
 ## Próxima decisão de planejamento
 
-Detalhar as fatias e contratos após o fechamento seguro da v0.10. Escopo, cronograma, migração e decisão GO/NO-GO da v0.11 ainda não foram aprovados.
+Etapa 11.0 documentou o inventário e propôs o contrato de projeção. Antes de implementar M1/11.1, revisar e aceitar ADR-0067, matriz de autorização, limites do snapshot e gatilhos de revogação; não extrapolar essa aprovação para liberar a release v0.11. [Gates técnicos](v0.11/11.0_PLANO_GATES.md).

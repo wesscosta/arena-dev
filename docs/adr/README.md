@@ -95,3 +95,7 @@ Use [TEMPLATE.md](TEMPLATE.md) para novas decisões.
 - [ADR-0063 — Ensaio seguro de rollback binário v0.9↔v0.10](ADR-0063-v09-to-v010-isolated-rollback-rehearsal.md)
 - [ADR-0064 — Conciliação de rede e PWA cache](ADR-0064-network-uncertainty-draw-reconciliation-and-pwa-cache.md)
 - [ADR-0065 — WebSocket docente: backoff e recuperação offline](ADR-0065-teacher-websocket-backoff-and-offline-recovery.md)
+
+### Decisões propostas para v0.11
+
+- [ADR-0067 — Publicação segura e versionada de materiais](ADR-0067-material-presentation-v011.md) — **Proposto**, sujeito a revisão antes de 11.1.
