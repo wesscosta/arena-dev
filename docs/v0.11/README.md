@@ -24,7 +24,7 @@
 ## 11.3 — navegação sincronizada e recuperação de estado
 
 - [Execução 11.3](11.3_EXECUTION_STATUS.md): V58 para idempotência, âncora validada contra snapshot, comando docente CAS, estágio versionado e reconciliação de eventos/reload.
-- **Estado:** implementação na branch `feat/v0.11-material-section-sync`; integração condicionada ao CI backend, frontend e Playwright completo. A release v0.11 ainda não está homologada.
+- **Estado:** [PR #42](https://github.com/wesscosta/arena-dev/pull/42) aprovado em três jobs no SHA `f5526ba` e integrado à `main` (merge `7ffe27b`). [Validação e limites](11.3_VALIDATION_CLOSURE_2026-10-10.md). A release v0.11 ainda não está homologada.
 
 ## Disciplina de status
 
