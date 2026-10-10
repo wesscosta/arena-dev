@@ -28,7 +28,7 @@ Arena Dev não pretende ser um LMS completo. O produto concentra a condução da
 
 ### Turma e Arena
 
-**Navegação da Arena (v0.10, candidata):** no desktop, menu lateral persistente; no mobile, menu único com Aula, Dinâmicas, Ferramentas e Evidências da aprendizagem. Material e Evidências deixam o cabeçalho e permanecem disponíveis durante toda a sessão; o projetor conserva seu controle global. Orientações pedagógicas permanecem fundamentadas em evidências, sem o antigo atalho genérico “Próximas ações”. Consulte [`docs/ux/arena-mobile-navigation.md`](docs/ux/arena-mobile-navigation.md). A homologação Safari iOS/PWA continua obrigatória.
+**Navegação da Arena (v0.10, candidata):** no desktop, menu lateral persistente; no mobile, menu único com Aula, Dinâmicas, Ferramentas e Evidências da aprendizagem. Material e Evidências deixam o cabeçalho e permanecem disponíveis durante toda a sessão; o projetor conserva seu controle global. Orientações pedagógicas permanecem fundamentadas em evidências, sem o antigo atalho genérico “Próximas ações”. Consulte [`docs/ux/arena-mobile-navigation.md`](docs/ux/arena-mobile-navigation.md). A homologação Safari iOS/PWA continua obrigatória. A projeção sincronizada de materiais foi incluída no [backlog v0.11](docs/ROADMAP_V0_11.md), sem implementação na v0.10.
 
 - turmas, estudantes, matrículas e presença;
 - sessão de aula com estado autoritativo no backend;

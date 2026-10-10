@@ -1,6 +1,6 @@
 # Arena v0.10+ — proposta para apresentação sincronizada de materiais
 
-**Natureza:** decisão de produto e escopo futuro; não está implementada. **Data:** 09/10/2026.
+**Natureza:** decisão de produto e escopo futuro; não está implementada. **Data:** 09/10/2026. **Release candidata de planejamento:** [v0.11](../ROADMAP_V0_11.md), sujeita a especificação e homologação.
 
 ## Diagnóstico do código
 
