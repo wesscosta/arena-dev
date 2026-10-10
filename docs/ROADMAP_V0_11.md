@@ -48,6 +48,14 @@ Nenhum item autoriza geração de conteúdo/questões por IA ou publicação aut
 - E2E professor → projetor → mudança de seção → reconexão → encerramento, incluindo desktop e Safari iOS, temas, zoom e teclado.
 - Piloto com turma real para validar redução de alternância de abas, legibilidade do conteúdo, qualidade da condução e necessidade de controles adicionais.
 
+## Eixo transversal de melhoria de UI/UX (planejamento, não v0.10)
+
+- Auditoria responsiva por tela e por persona (docente desktop/mobile, aluno, projetor), incluindo Safari/iOS e PWA. Priorizar tarefas recorrentes, legibilidade, consistência de navegação e densidade de informação.
+- Revisar ergonomia e estados operacionais das dinâmicas (início/coleta/resultado/confirmação/XP) sem criar ações redundantes ou experiência visual semelhante a apostas.
+- Simplificar formulários, modais, menus, feedback de reconexão e acesso a recursos; reduzir cliques somente quando preservada a intenção pedagógica e a prevenção de erros.
+- Investigar acessibilidade manual (foco, leitura assistiva, zoom, contraste e alvos de toque) com critérios testáveis em vez de prometer AAA sem auditoria.
+- Manter roadmap modular e priorizar por evidência de uso/piloto; protótipos e comparações com concorrentes não são aprovação automática para implementar novos componentes.
+
 ## Não incluir nessa fatia
 
 - Editor duplicado da Biblioteca/Jornada dentro da Arena.

@@ -9,6 +9,8 @@
 | `main` | Branch de publicação da baseline | Tag v0.9.0 e GitHub Release |
 | `feat/v0.10-learning-loop` | Branch da candidata, publicada no remoto até `d876325` antes da atualização documental | PR [#35](https://github.com/wesscosta/arena-dev/pull/35), em rascunho |
 
+**Preparação de estabilização (10/10):** o operador autorizou concluir a release e declarou aprovados os testes manuais, Safari/iOS e DevTools; [registro](v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md). A árvore passa a preparar metadata `0.10.0`, mas isso **não significa release publicada**: tag, merge e gate final ainda precisam ocorrer e ser verificados. O estado definitivo deste arquivo deve ser atualizado após a publicação.
+
 ## Capacidades efetivamente implementadas na candidata v0.10
 
 - `LearningCycle` e comparação antes/depois **apenas para respostas pareáveis**; não atestar mastery longitudinal com uma medição.

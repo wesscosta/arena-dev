@@ -6,6 +6,10 @@
 
 **Auditoria de 09/10:** última CI verificada de código versionado [#37935122578](https://github.com/wesscosta/arena-dev/actions/runs/37935122578) verde no SHA `cce0758`, **anterior às refatorações locais de UI/UX e desta auditoria**. Testes Chromium locais (62/62 antes da consolidação) são evidência limitada e não substituem CI no SHA final ou gates em dispositivos reais. [Registro das decisões de remoção/retenção](AUDITORIA_CONSOLIDACAO_2026-10-09.md).
 
+## Aceite de campo declarado pelo operador — 10/10/2026
+
+O operador confirmou nesta conversa ter aprovado os testes operacionais e a experiência Safari/iOS, incluindo inspeção em DevTools. [Registro de aceite e limites das evidências](OPERATOR_ACCEPTANCE_2026-10-10.md). Os itens manuais marcados `[ ]` abaixo permanecem como **requisitos de evidência detalhada**, não como negação do aceite informado. O operador autoriza preparar a versão estável; CI do SHA exato, backup, revisão de segurança e gate final **não** podem ser presumidos.
+
 ## 1. Gates automatizáveis
 
 - [x] Código da candidata identificado de modo diferente da v0.9 publicada (Java + npm + lockfile em `0.10.0-rc.1`).

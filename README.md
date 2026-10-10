@@ -4,8 +4,10 @@
 
 **Estado do produto (10/10/2026)**
 
+**Preparação de release:** operador confirmou aceite de campo e autorizou finalização da v0.10. A versão estável `0.10.0` está em preparação; publicação definitiva somente após CI, backup e gate final. [Aceite registrado](docs/v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md).
+
 - **Publicada:** `v0.9.0 — Arena Learning Core` (congelada).
-- **Candidata:** `v0.10.0-rc.1 — Learning Loop` na branch `feat/v0.10-learning-loop`, **não publicada**. O PR [#35](https://github.com/wesscosta/arena-dev/pull/35) permanece em rascunho.
+- **Candidata de estabilização:** `v0.10.0 — Learning Loop` na branch `feat/v0.10-learning-loop`, **ainda não publicada**. O PR [#35](https://github.com/wesscosta/arena-dev/pull/35) permanece em rascunho.
 - **Validação:** código da candidata consolidado até `d876325` (10/10); última bateria local informada: frontend 319/319 testes unitários, TypeScript, build, testes Playwright direcionados do Timer (2/2) e lint sem erros. **O CI remoto precisa aprovar o SHA final**, inclusive commits de documentação. A aprovação de UX em Safari/iOS foi **declarada pelo operador em 10/10**, sem relatório formal de dispositivos/roteiro, e não certifica atualização de PWA previamente instalada.
 - **Evidência adicional:** ensaio isolado de rollback [V48→V56→V48 aprovado em 10/10](docs/v0.10/ROLLBACK_V56_SYNTHETIC_2026-10-10.md); **não** equivale a restauração operacional com RTO/RPO.
 - **Bloqueadores de GO:** atualização de PWA v0.9 previamente instalada em Android/iOS (teste de upgrade não demonstrado); rede degradada/múltiplos dispositivos; auditoria assistiva/zoom; piloto pedagógico; rollback operacional V56, revisão de segurança e aceite formal. Não fazer merge, tag nem release estável antes da decisão GO/NO-GO.

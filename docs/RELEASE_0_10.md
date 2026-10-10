@@ -2,6 +2,8 @@
 
 **Status: candidata 0.10.0-rc.1, NÃO PUBLICADA.** Interface consolidada até 10/10; o CI histórico citado abaixo não cobre as últimas correções da branch. A aprovação Safari/iOS foi relatada pelo operador, mas os demais gates de release não foram homologados. Veja [auditoria e bloqueadores](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md). Este documento descreve a implementação validada automaticamente, mas não autoriza tag estável ou implantação. A baseline publicada permanece v0.9.0. A release estável depende dos gates em [checklist GO/NO-GO](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e [aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md).
 
+**Atualização de estabilização 10/10:** metadata passa a `0.10.0`; aceite de campo informado pelo operador [registrado aqui](v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md). Esta atualização não confirma tag nem release: verificações de CI no novo SHA e gate final da `main` ainda são necessárias.
+
 ## Principais entregas da candidata
 
 - Learning Loop: diagnóstico, intervenção docente e verificação, com comparação apenas das respostas pareáveis, sem inferir mastery longitudinal.

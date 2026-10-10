@@ -2,6 +2,10 @@
 
 **Estado: NO-GO para publicação ampla.** Candidata `0.10.0-rc.1` em `feat/v0.10-learning-loop`. Em 10/10, o operador confirmou visualmente/funcionalmente Safari e iOS, **sem anexos técnicos ou passos reproduzíveis**. Este documento continua sendo roteiro de aceite, não comprovação de todos os testes físicos.
 
+## Aceite de campo informado em 10/10
+
+O responsável confirmou por mensagem que os testes manuais discutidos foram aprovados e autorizou o fechamento. [Declaração registrada](OPERATOR_ACCEPTANCE_2026-10-10.md). Não há anexos descritivos por dispositivo ou métricas RTO/RPO; o registro diferencia aprovação declarada de ensaio auditado independentemente. A liberação técnica continua exigindo CI + restore/checksum + gate final.
+
 ## Escopo permitido
 
 - Uma conta docente autenticada por implantação self-hosted, conforme [ADR-0053](../adr/ADR-0053-single-operator-teacher-security-boundary.md). Não anunciar contas independentes, tenant isolation nem SaaS multi-docente.
