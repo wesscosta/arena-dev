@@ -89,7 +89,13 @@ export default function ArenaToolDrawer({ open, title, subtitle, size = "default
           </div>
           <DialogCloseButton ref={closeButtonRef} onClick={onClose} label="Fechar ferramenta" />
         </header>
-        <div className={styles.content} data-testid="arena-tool-drawer-content">{children}</div>
+        <div
+          className={styles.content}
+          data-testid="arena-tool-drawer-content"
+          role="region"
+          aria-label={`Configurações e controles de ${title}`}
+          tabIndex={0}
+        >{children}</div>
       </aside>
     </div>
   );
