@@ -1638,6 +1638,33 @@ test("v0.11 / 11.2: professor publica leitura segura e o projetor recebe somente
       expect(dimensions.viewportOverflow).toBeLessThanOrEqual(1);
     }
 
+    // 11.3: teacher navigates the canonical outline without republishing.
+    const sectionSelect = dialog.getByLabel("Seção apresentada no projetor");
+    await expect(sectionSelect).toBeVisible();
+    await sectionSelect.selectOption("exemplo-30");
+    await expect(sectionSelect).toHaveValue("exemplo-30");
+    await expect.poll(async () => {
+      const state = await api.get(`/api/sessions/${fixture.session.id}/stage`);
+      return (await state.json() as { primary: { sectionAnchor: string } }).primary.sectionAnchor;
+    }).toBe("exemplo-30");
+    await expect.poll(async () => projector.getByRole("region", {
+      name: "Conteúdo publicado para o projetor",
+    }).evaluate((element) => element.scrollTop), { timeout: 12_000 }).toBeGreaterThan(100);
+    const stillSame = await anonymous.request.get(`${apiBaseUrl}${publicPath}`);
+    expect(stillSame.status()).toBe(200);
+    expect((await stillSame.json() as { publicationId: string }).publicationId)
+      .toBe((JSON.parse(snapshotJson) as { publicationId: string }).publicationId);
+
+    await projector.reload();
+    await expect(projector.getByTestId("projector-material-stage")).toBeVisible({ timeout: 15_000 });
+    await expect.poll(async () => projector.getByRole("region", {
+      name: "Conteúdo publicado para o projetor",
+    }).evaluate((element) => element.scrollTop), { timeout: 15_000 }).toBeGreaterThan(100);
+    await sectionSelect.selectOption("");
+    await expect.poll(async () => projector.getByRole("region", {
+      name: "Conteúdo publicado para o projetor",
+    }).evaluate((element) => element.scrollTop), { timeout: 12_000 }).toBe(0);
+
     await dialog.getByRole("button", { name: "Retirar do projetor" }).click();
     await expect(dialog.getByText("Material vinculado · ainda não apresentado")).toBeVisible();
     await expect(projector.getByTestId("projector-material-stage")).toHaveCount(0, { timeout: 12_000 });

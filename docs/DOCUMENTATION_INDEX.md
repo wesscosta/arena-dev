@@ -21,6 +21,7 @@ Este índice separa **fontes operacionais vigentes**, **propostas**, **diários 
 - [Resultados e limites da auditoria 11.0](v0.11/11.0_EVIDENCIAS.md).
 - [Implementação e testes de backend 11.1](v0.11/11.1_EXECUTION_STATUS.md) — PR #39 integrado; ainda não é release v0.11.
 - [Implementação do leitor de material 11.2](v0.11/11.2_EXECUTION_STATUS.md) — interface docente/projetor e regressão E2E; [fechamento validado](v0.11/11.2_VALIDATION_CLOSURE_2026-10-10.md).
+- [Implementação de navegação e reconexão 11.3](v0.11/11.3_EXECUTION_STATUS.md) — idempotência V58, seção ativa e eventos versionados.
 - **Nota:** a v0.10 está publicada; o trabalho documental 11.0 não significa feature 11.1 executada.
 
 ## Contratos técnicos e de experiência

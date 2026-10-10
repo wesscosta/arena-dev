@@ -300,6 +300,31 @@ public class LiveStageService {
         publishAfterCommit(sessionId, stored);
     }
 
+    /**
+     * The caller holds the session row lock and has validated publication and
+     * anchor against its immutable outline. Only the teacher route may call it.
+     */
+    public StateView navigateMaterialUnderLock(UUID sessionId, UUID publicationId,
+            String sectionAnchor, long expectedVersion) {
+        ClassSession session = sessionRepository.findByIdForUpdate(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+        StoredState previous = readStored(sessionId);
+        if (session.getStatus() != SessionStatus.ACTIVE
+                || !LiveStageType.MATERIAL.name().equals(previous.type())
+                || !publicationId.equals(parseUuid(previous.sourceId()))
+                || previous.stageVersion() != expectedVersion) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.CONFLICT,
+                    "O material ou a versão do palco mudou.");
+        }
+        StoredState next = new StoredState(previous.type(), previous.sourceId(),
+                previous.audience(), previous.timerOverlay(), Instant.now().toString(),
+                previous.stageVersion() + 1, sectionAnchor);
+        save(session, next);
+        publishAfterCommit(sessionId, next);
+        return project(sessionId, next, Projection.TEACHER);
+    }
+
     @Transactional
     public void clearPublishedMaterialUnderLock(UUID sessionId) {
         ClassSession session = sessionRepository.findByIdForUpdate(sessionId)

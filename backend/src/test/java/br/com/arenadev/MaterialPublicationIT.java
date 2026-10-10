@@ -202,6 +202,74 @@ class MaterialPublicationIT {
     }
 
     @Test
+    void sectionNavigationRejectsUnknownAnchorAndReplaysSafely() {
+        Scenario s = scenario("# SQL\n## Seleção\n### SELECT\n## Seleção\nFim");
+        var pub = publish(s, 0, UUID.randomUUID());
+        UUID requestId = UUID.randomUUID();
+        var command = new MaterialPublicationService.SectionCommand(pub.id(),
+                "selecao-2", 1L, requestId);
+        var moved = publications.navigate(s.sessionId(), command);
+        assertThat(moved.stageVersion()).isEqualTo(2);
+        assertThat(moved.primary().sectionAnchor()).isEqualTo("selecao-2");
+        assertThat(stage.projectorState(s.sessionId()).primary().sectionAnchor()).isEqualTo("selecao-2");
+        assertThat(publications.publicMaterial(s.code()).contentHash()).hasSize(64);
+        assertThat(publications.publicMaterial(s.code()).body()).contains("Fim");
+
+        assertThat(stage.participantState(s.sessionId()).primary().sectionAnchor()).isNull();
+        assertThat(jdbc.queryForObject("""
+                select count(*) from arena_material_section_commands where session_id=?
+                """, Integer.class, s.sessionId())).isEqualTo(1);
+        assertThat(publications.navigate(s.sessionId(), command).stageVersion()).isEqualTo(2);
+        assertThatThrownBy(()->publications.navigate(s.sessionId(),
+                new MaterialPublicationService.SectionCommand(pub.id(),"sql",1L,requestId)))
+                .hasMessageContaining("409");
+        assertThatThrownBy(()->publications.navigate(s.sessionId(),
+                new MaterialPublicationService.SectionCommand(pub.id(),"inexistente",2L,UUID.randomUUID())))
+                .hasMessageContaining("422");
+        assertThatThrownBy(()->publications.navigate(s.sessionId(),
+                new MaterialPublicationService.SectionCommand(pub.id(),"sql",1L,UUID.randomUUID())))
+                .hasMessageContaining("409");
+        var top = publications.navigate(s.sessionId(),
+                new MaterialPublicationService.SectionCommand(pub.id(),null,2L,UUID.randomUUID()));
+        assertThat(top.primary().sectionAnchor()).isNull();
+        assertThat(top.stageVersion()).isEqualTo(3);
+        assertThat(publications.publicMaterial(s.code()).stageVersion()).isEqualTo(3);
+        assertThat(stage.projectorState(s.sessionId()).stageVersion()).isEqualTo(3);
+    }
+
+    @Test
+    void concurrentSectionNavigationSerializesAndWithdrawalWinsOverOldCommands() throws Exception {
+        Scenario s = scenario("# Introdução\n## Parte A\n## Parte B");
+        var pub = publish(s,0,UUID.randomUUID());
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch fire = new CountDownLatch(1);
+        try (var pool = Executors.newFixedThreadPool(2)) {
+            var action = (java.util.concurrent.Callable<Boolean>) () -> {
+                ready.countDown();fire.await();
+                try {
+                    publications.navigate(s.sessionId(),
+                        new MaterialPublicationService.SectionCommand(pub.id(),"parte-a",1L,UUID.randomUUID()));
+                    return true;
+                } catch (org.springframework.web.server.ResponseStatusException ex) {
+                    assertThat(ex.getStatusCode().value()).isEqualTo(409);
+                    return false;
+                }
+            };
+            var a=pool.submit(action);var b=pool.submit(action);
+            ready.await();fire.countDown();
+            assertThat((a.get()?1:0)+(b.get()?1:0)).isEqualTo(1);
+        }
+        assertThat(stage.version(s.sessionId())).isEqualTo(2);
+        publications.withdraw(s.sessionId(),
+                new MaterialPublicationService.WithdrawCommand(pub.id(),2L,UUID.randomUUID()));
+        assertThatThrownBy(()->publications.navigate(s.sessionId(),
+                new MaterialPublicationService.SectionCommand(pub.id(),"parte-b",2L,UUID.randomUUID())))
+                .hasMessageContaining("409");
+        assertThat(stage.projectorState(s.sessionId()).primary().type()).isEqualTo(LiveStageType.IDLE);
+        assertThat(publications.current(s.sessionId())).isNull();
+    }
+
+    @Test
     void protectedMutationRequiresTeacherAndCsrf() throws Exception {
         Scenario s = scenario("Seguro");
         String body="{\"resourceId\":\""+s.resourceId()+"\",\"expectedVersion\":0,\"requestId\":\""+UUID.randomUUID()+"\"}";
@@ -236,5 +304,18 @@ class MaterialPublicationIT {
         assertThat(allowed.body()).contains("ACTIVE");
         assertThat(jdbc.queryForObject("select count(*) from arena_material_publications where session_id=?",
                 Integer.class,s.sessionId())).isEqualTo(1);
+
+        UUID publicationId=publications.current(s.sessionId()).id();
+        String navBody="{\"publicationId\":\""+publicationId+"\",\"anchor\":null,"
+                +"\"expectedVersion\":1,\"requestId\":\""+UUID.randomUUID()+"\"}";
+        String navPath="/api/sessions/"+s.sessionId()+"/material-presentation/section";
+        assertThat(request(HttpClient.newHttpClient(),"PUT",navPath,navBody).statusCode()).isIn(401,403);
+        assertThat(request(authenticated,"PUT",navPath,navBody).statusCode()).isEqualTo(403);
+        var navigateRequest=HttpRequest.newBuilder(URI.create("http://localhost:"+port+navPath))
+                .header("Content-Type","application/json").header("X-XSRF-TOKEN",token)
+                .PUT(HttpRequest.BodyPublishers.ofString(navBody)).build();
+        var navigation=authenticated.send(navigateRequest,HttpResponse.BodyHandlers.ofString());
+        assertThat(navigation.statusCode()).isEqualTo(200);
+        assertThat(navigation.body()).contains("\"stageVersion\":2");
     }
 }

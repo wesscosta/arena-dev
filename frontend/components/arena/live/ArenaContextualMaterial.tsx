@@ -5,8 +5,9 @@ import { createPortal } from "react-dom";
 import { AnchoredMarkdown } from "@/components/LibraryContentViews";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { fetchLiveStageState } from "@/lib/live-stage-api";
+import { flattenMaterialOutline } from "@/lib/material-section-sync";
 import {
-  getMaterialPresentation, publishMaterial, withdrawMaterial, materialRequestId,
+  getMaterialPresentation, publishMaterial, withdrawMaterial, navigateMaterialSection, materialRequestId,
   type MaterialPublication,
 } from "@/lib/material-presentation-api";
 import {
@@ -26,6 +27,7 @@ type Props = { sessionId: string; notify: (message: string) => void };
 export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
   const [placement, setPlacement] = useState<ArenaContextMaterial | null>(null);
   const [presentation, setPresentation] = useState<MaterialPublication | null>(null);
+  const [sectionAnchor, setSectionAnchor] = useState<string | null>(null);
   const [resources, setResources] = useState<LearningResource[]>([]);
   const [selected, setSelected] = useState<LearningResource | null>(null);
   const [query, setQuery] = useState("");
@@ -42,6 +44,7 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
     let active = true;
     setPlacement(null);
     setPresentation(null);
+    setSectionAnchor(null);
     setSelected(null);
     setOpen(false);
     void fetchArenaContextMaterial(sessionId)
@@ -67,10 +70,19 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
   useEffect(() => {
     if (!open) return;
     let active = true;
-    void getMaterialPresentation(sessionId)
-      .then((value) => { if (active) setPresentation(value); })
-      .catch(() => { if (active) setPresentation(null); });
-    return () => { active = false; };
+    const refresh = () => {
+      void Promise.all([getMaterialPresentation(sessionId), fetchLiveStageState(sessionId)])
+        .then(([current, state]) => {
+          if (!active) return;
+          setPresentation(current);
+          setSectionAnchor(state.primary.type === "MATERIAL"
+            && state.primary.sourceId === current?.id ? state.primary.sectionAnchor ?? null : null);
+        })
+        .catch(() => { if (active) setError("Não foi possível verificar a apresentação atual."); });
+    };
+    refresh();
+    const interval = window.setInterval(refresh, 6000);
+    return () => { active = false; window.clearInterval(interval); };
   }, [open, sessionId]);
 
   useEffect(() => {
@@ -124,7 +136,7 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
     setBusy(true); setError(null);
     try {
       const saved = await linkArenaContextMaterial(sessionId, resourceId);
-      if (placement?.resourceId !== resourceId) setPresentation(null);
+      if (placement?.resourceId !== resourceId) { setPresentation(null); setSectionAnchor(null); }
       setPlacement(saved);
       const resource = resources.find((item) => item.id === resourceId);
       if (resource) setSelected(resource);
@@ -139,7 +151,7 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
     setBusy(true); setError(null);
     try {
       await unlinkArenaContextMaterial(sessionId);
-      setPlacement(null); setSelected(null); setPresentation(null);
+      setPlacement(null); setSelected(null); setPresentation(null); setSectionAnchor(null);
       notify("Vínculo removido. O material original permanece na Biblioteca e na Jornada.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Falha ao desvincular material.");
@@ -154,6 +166,7 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
       const stage = await fetchLiveStageState(sessionId);
       const result = await publishMaterial(sessionId, selected.id, stage.stageVersion ?? 0, materialRequestId());
       setPresentation(result);
+      setSectionAnchor(null);
       notify("Material publicado no palco. O projetor conectado receberá a leitura da aula.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível apresentar o material.");
@@ -168,12 +181,41 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
       const stage = await fetchLiveStageState(sessionId);
       await withdrawMaterial(sessionId, presentation.id, stage.stageVersion ?? 0, materialRequestId());
       setPresentation(null);
+      setSectionAnchor(null);
       notify("Material retirado do projetor. A fonte permanece vinculada à sessão.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível retirar o material.");
       void getMaterialPresentation(sessionId).then(setPresentation).catch(() => setPresentation(null));
     } finally { setBusy(false); }
   }
+
+  async function navigateSection(anchor: string | null) {
+    if (busy || !presentation || presentation.status !== "ACTIVE") return;
+    setBusy(true); setError(null);
+    try {
+      const currentStage = await fetchLiveStageState(sessionId);
+      const next = await navigateMaterialSection(sessionId, presentation.id, anchor,
+        currentStage.stageVersion ?? 0, materialRequestId());
+      if (next.primary.type === "MATERIAL" && next.primary.sourceId === presentation.id) {
+        setSectionAnchor(next.primary.sectionAnchor ?? null);
+        notify(anchor ? "Seção enviada ao projetor." : "Projetor retornou ao início do material.");
+      } else {
+        setPresentation(null);
+        setSectionAnchor(null);
+        setError("A apresentação foi alterada. Reabra o material para continuar.");
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível mudar de seção.");
+      void fetchLiveStageState(sessionId).then((state) =>
+        setSectionAnchor(state.primary.type === "MATERIAL"
+          && state.primary.sourceId === presentation.id ? state.primary.sectionAnchor ?? null : null))
+        .catch(() => {});
+    } finally { setBusy(false); }
+  }
+
+  const sectionItems = presentation ? flattenMaterialOutline(presentation.outline ?? []) : [];
+  const selectedSectionIndex = sectionAnchor
+    ? sectionItems.findIndex((entry) => entry.anchor === sectionAnchor) : -1;
 
   const isPresented = presentation?.status === "ACTIVE"
     && presentation.resourceId === placement?.resourceId;
@@ -262,6 +304,37 @@ export default function ArenaContextualMaterial({ sessionId, notify }: Props) {
                           </button>
                         )}
                       </div>
+                      {isPresented && (
+                        <div className={styles.sectionNavigator} role="group" aria-label="Navegação guiada do material">
+                          <label htmlFor={`${headingId}-section`}>Seção apresentada no projetor</label>
+                          <select id={`${headingId}-section`} value={sectionAnchor ?? ""} disabled={busy}
+                            onChange={(event) => { void navigateSection(event.target.value || null); }}>
+                            <option value="">Início do material</option>
+                            {sectionItems.map((section) => (
+                              <option key={section.anchor} value={section.anchor}>
+                                {`${"— ".repeat(Math.max(0,section.level - 1))}${section.title}`}
+                              </option>
+                            ))}
+                          </select>
+                          <div className={styles.sectionSteps}>
+                            <button type="button" disabled={busy || selectedSectionIndex < 0}
+                              onClick={() => { void navigateSection(
+                                selectedSectionIndex <= 0 ? null : sectionItems[selectedSectionIndex - 1].anchor
+                              ); }}>Seção anterior</button>
+                            <button type="button" disabled={busy || selectedSectionIndex >= sectionItems.length - 1}
+                              onClick={() => { void navigateSection(sectionItems[selectedSectionIndex + 1]?.anchor ?? null); }}>
+                              Próxima seção
+                            </button>
+                          </div>
+                          <p className={styles.explanation} role="status">
+                            {sectionItems.length
+                              ? sectionAnchor
+                                ? `Seção ${selectedSectionIndex + 1} de ${sectionItems.length} · sincronizada com o palco`
+                                : `No início do material · ${sectionItems.length} seções disponíveis`
+                              : "Sem títulos estruturados. A apresentação exibe o conteúdo completo."}
+                          </p>
+                        </div>
+                      )}
                       {selected.format === "LINK"
                         ? <p className={styles.explanation}>Links externos não são publicados. Use Markdown ou texto da Biblioteca.</p>
                         : <p className={styles.explanation}>A apresentação substituirá o palco atual. Não registra XP ou progresso de estudo.</p>}

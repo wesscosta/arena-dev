@@ -125,6 +125,81 @@ public class MaterialPublicationService {
         return find(input.publicationId());
     }
 
+    /**
+     * Per-session serialized CAS; requestId persists across retries/restarts.
+     * A section command cannot modify the immutable publication snapshot.
+     */
+    @Transactional
+    public LiveStageService.StateView navigate(UUID sessionId, SectionCommand command) {
+        if (command == null || command.publicationId() == null
+                || command.requestId() == null || command.expectedVersion() == null
+                || command.expectedVersion() < 0
+                || (command.anchor() != null
+                    && (command.anchor().length() > 220
+                        || !command.anchor().matches("[a-z0-9]+(?:-[a-z0-9]+)*")))) {
+            throw new IllegalArgumentException("Informe uma publicação, requestId, versão e âncora válidos.");
+        }
+        var session = sessions.findByIdForUpdate(sessionId).orElseThrow(MaterialPublicationService::notFound);
+        var previous = jdbc.query("""
+                select publication_id, section_anchor, expected_stage_version
+                from arena_material_section_commands where session_id=? and request_id=?
+                """, (rs, row) -> new SectionCommand(
+                rs.getObject("publication_id", UUID.class),
+                rs.getString("section_anchor"), rs.getLong("expected_stage_version"),
+                command.requestId()), sessionId, command.requestId());
+        if (!previous.isEmpty()) {
+            var recorded = previous.getFirst();
+            if (!recorded.publicationId().equals(command.publicationId())
+                    || !java.util.Objects.equals(recorded.anchor(), command.anchor())
+                    || !recorded.expectedVersion().equals(command.expectedVersion())) {
+                throw conflict("requestId já utilizado para outra navegação.");
+            }
+            // Replay never restores a superseded or revoked stage.
+            return stage.state(sessionId);
+        }
+        if (session.getStatus() != SessionStatus.ACTIVE) throw conflict("Sessão encerrada.");
+        if (stage.version(sessionId) != command.expectedVersion()
+                || !stage.isPublishedMaterial(sessionId, command.publicationId())) {
+            throw conflict("Palco ou publicação desatualizados.");
+        }
+        var outlineRows = jdbc.query("""
+                select p.outline_json::text from arena_material_publications p
+                join learning_resources r on r.id=p.resource_id
+                join arena_session_resource_placements x on x.session_id=p.session_id
+                    and x.resource_id=p.resource_id
+                where p.id=? and p.session_id=? and p.status='ACTIVE'
+                  and r.library_visible=true and r.archived_at is null and r.classroom_id is null
+                """, (rs, row) -> rs.getString(1), command.publicationId(), sessionId);
+        if (outlineRows.isEmpty()) throw notFound();
+        List<CanonicalDocument.Section> sections = readOutline(outlineRows.getFirst());
+        if (command.anchor() != null && !containsAnchor(sections, command.anchor())) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "A seção não pertence ao snapshot apresentado.");
+        }
+        long newVersion = command.expectedVersion() + 1;
+        var result = stage.navigateMaterialUnderLock(
+                sessionId, command.publicationId(), command.anchor(), command.expectedVersion());
+        jdbc.update("""
+                insert into arena_material_section_commands
+                  (session_id,request_id,publication_id,section_anchor,
+                   expected_stage_version,applied_stage_version)
+                values(?,?,?,?,?,?)
+                """, sessionId, command.requestId(), command.publicationId(),
+                command.anchor(), command.expectedVersion(), newVersion);
+        return result;
+    }
+
+    private static boolean containsAnchor(List<CanonicalDocument.Section> sections, String anchor) {
+        for (var section : sections) {
+            if (section.anchor().equals(anchor) || containsAnchor(section.children(), anchor)) return true;
+        }
+        return false;
+    }
+
+    private List<CanonicalDocument.Section> readOutline(String raw) {
+        return json.readValue(raw, new TypeReference<List<CanonicalDocument.Section>>() {});
+    }
+
     @Transactional(readOnly = true)
     public PublicationView current(UUID sessionId) {
         sessions.findById(sessionId).orElseThrow(MaterialPublicationService::notFound);
@@ -155,7 +230,7 @@ public class MaterialPublicationService {
                 """, (rs, row) -> new PublicMaterialView(
                 rs.getObject("id", UUID.class), rs.getString("title"),
                 rs.getInt("resource_revision"), rs.getString("format"), rs.getString("snapshot_body"),
-                json.readValue(rs.getString("outline_json"), new TypeReference<List<CanonicalDocument.Section>>() {}),
+                readOutline(rs.getString("outline_json")),
                 rs.getString("parser_version"), rs.getString("content_sha256"), stage.version(sessionId)
         ), activeId, sessionId);
         if (content.isEmpty()) throw notFound();
@@ -172,7 +247,8 @@ public class MaterialPublicationService {
     private PublicationView find(UUID id) {
         var rows = jdbc.query("""
                 select id,session_id,resource_id,resource_revision,title,status,request_id,
-                       expected_stage_version,published_stage_version,withdraw_request_id,created_at,revoked_at
+                       expected_stage_version,published_stage_version,withdraw_request_id,created_at,revoked_at,
+                       outline_json::text
                 from arena_material_publications where id=?
                 """, (rs, row) -> new PublicationView(
                 rs.getObject("id",UUID.class),rs.getObject("session_id",UUID.class),
@@ -181,7 +257,8 @@ public class MaterialPublicationService {
                 rs.getLong("expected_stage_version"),rs.getLong("published_stage_version"),
                 rs.getObject("withdraw_request_id",UUID.class),
                 rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("revoked_at")==null?null:rs.getTimestamp("revoked_at").toInstant()
+                rs.getTimestamp("revoked_at")==null?null:rs.getTimestamp("revoked_at").toInstant(),
+                readOutline(rs.getString("outline_json"))
         ), id);
         if (rows.isEmpty()) throw notFound();
         return rows.getFirst();
@@ -194,12 +271,14 @@ public class MaterialPublicationService {
         return new ResponseStatusException(HttpStatus.CONFLICT, message);
     }
 
+    public record SectionCommand(UUID publicationId, String anchor, Long expectedVersion, UUID requestId) {}
     public record PublishCommand(UUID resourceId, Long expectedVersion, UUID requestId) {}
     public record WithdrawCommand(UUID publicationId, Long expectedVersion, UUID requestId) {}
     public record PublicationView(UUID id, UUID sessionId, UUID resourceId,
             int resourceRevision, String title, String status, UUID requestId,
             long expectedStageVersion, long publishedStageVersion,
-            UUID withdrawRequestId, Instant createdAt, Instant revokedAt) {}
+            UUID withdrawRequestId, Instant createdAt, Instant revokedAt,
+            List<CanonicalDocument.Section> outline) {}
     // Only safe public fields. No source reference, external token, resourceId, or individual data.
     public record PublicMaterialView(UUID publicationId, String title, int revision, String format,
             String body, List<CanonicalDocument.Section> outline,
