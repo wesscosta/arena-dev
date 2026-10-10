@@ -10,6 +10,8 @@
 
 O operador confirmou nesta conversa ter aprovado os testes operacionais e a experiência Safari/iOS, incluindo inspeção em DevTools. [Registro de aceite e limites das evidências](OPERATOR_ACCEPTANCE_2026-10-10.md). Os itens manuais marcados `[ ]` abaixo permanecem como **requisitos de evidência detalhada**, não como negação do aceite informado. O operador autoriza preparar a versão estável; CI do SHA exato, backup, revisão de segurança e gate final **não** podem ser presumidos.
 
+**Resultado de publicação:** GO restrito self-hosted por aceite declarado do operador e gates técnicos verificados no SHA publicado; leia [declaração e limitações](OPERATOR_ACCEPTANCE_2026-10-10.md). Este checklist conserva pendências de **anexos detalhados** dos testes manuais como dívida documental, sem apresentá-los como validação independente do assistente.
+
 ## 1. Gates automatizáveis
 
 - [x] Código da candidata identificado de modo diferente da v0.9 publicada (Java + npm + lockfile em `0.10.0-rc.1`).

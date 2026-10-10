@@ -16,6 +16,12 @@
 - `scripts/release/rehearse-v09-v010-rollback.sh` foi executado sobre SHA `f03f813` e retornou **exit 0**: V48 → backup sintético verificado → Flyway V56 → restore V48 → API tag original v0.9 pronta, com fingerprint de IDs/presença/XP inalterado. [Registro](ROLLBACK_V56_SYNTHETIC_2026-10-10.md).
 - **Não homologou** RTO/RPO real, PWA antiga, rede móvel, dados pós-backup nem rollback de produção. O gate operacional permanece NO-GO.
 
+## Fechamento estável de v0.10.0 (10/10/2026)
+
+- Após aceite declarado do operador, a PR #35 foi incorporada à `main` e os artefatos foram estabilizados como `0.10.0`. Confirmar no histórico o SHA exato da tag, CI remoto e `release-gate.sh final`; não usar os resultados da RC como substitutos.
+- Backup V56 com checksum e restore isolado; rollback sintético V48→V56→V48 validado. A ausência de anexos de campo por dispositivo e métricas RTO/RPO permanece registrada no aceite como risco documental explícito.
+- A v0.11 receberá projeção de conteúdo, melhorias funcionais, UX e acessibilidade, sem reabrir a linha v0.10 congelada.
+
 ## Incrementos efetivamente codificados
 
 | Fase | Implementação verificada | Estado / gate pendente |

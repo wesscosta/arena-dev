@@ -4,13 +4,13 @@
 
 **Estado do produto (10/10/2026)**
 
-**Preparação de release:** operador confirmou aceite de campo e autorizou finalização da v0.10. A versão estável `0.10.0` está em preparação; publicação definitiva somente após CI, backup e gate final. [Aceite registrado](docs/v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md).
+**Release v0.10.0:** publicada a partir da `main`, com contratos Flyway V56 e aceite operacional do responsável. [Aceite](docs/v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md) · [Release notes](docs/RELEASE_0_10.md).
 
-- **Publicada:** `v0.9.0 — Arena Learning Core` (congelada).
-- **Candidata de estabilização:** `v0.10.0 — Learning Loop` na branch `feat/v0.10-learning-loop`, **ainda não publicada**. O PR [#35](https://github.com/wesscosta/arena-dev/pull/35) permanece em rascunho.
+- **Publicada:** `v0.10.0 — Learning Loop` (atual). `v0.9.0` permanece congelada como baseline anterior.
+- **Integração:** [PR #35](https://github.com/wesscosta/arena-dev/pull/35) incorporada na `main`, release estável `v0.10.0`.
 - **Validação:** código da candidata consolidado até `d876325` (10/10); última bateria local informada: frontend 319/319 testes unitários, TypeScript, build, testes Playwright direcionados do Timer (2/2) e lint sem erros. **O CI remoto precisa aprovar o SHA final**, inclusive commits de documentação. A aprovação de UX em Safari/iOS foi **declarada pelo operador em 10/10**, sem relatório formal de dispositivos/roteiro, e não certifica atualização de PWA previamente instalada.
 - **Evidência adicional:** ensaio isolado de rollback [V48→V56→V48 aprovado em 10/10](docs/v0.10/ROLLBACK_V56_SYNTHETIC_2026-10-10.md); **não** equivale a restauração operacional com RTO/RPO.
-- **Bloqueadores de GO:** atualização de PWA v0.9 previamente instalada em Android/iOS (teste de upgrade não demonstrado); rede degradada/múltiplos dispositivos; auditoria assistiva/zoom; piloto pedagógico; rollback operacional V56, revisão de segurança e aceite formal. Não fazer merge, tag nem release estável antes da decisão GO/NO-GO.
+- **Aceite operacional:** os testes manuais foram declarados aprovados pelo operador em 10/10; os artefatos individuais e métricas RTO/RPO não foram anexados. A release foi concluída somente após a verificação técnica (CI, backup/restauração V56 e gate final). Manter as limitações e riscos residuais documentados.
 
 Comece por [estado corrente](docs/STATUS_ATUAL.md), [checklist de release](docs/v0.10/RELEASE_CANDIDATE_CHECKLIST.md), [aceite operacional](docs/v0.10/OPERATIONAL_ACCEPTANCE.md) e [auditoria de consolidação](docs/v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md). A trilha histórica e os ADRs ficam no [índice documental](docs/DOCUMENTATION_INDEX.md).
 
@@ -31,7 +31,7 @@ Arena Dev não pretende ser um LMS completo. O produto concentra a condução da
 
 ### Turma e Arena
 
-**Navegação da Arena (v0.10, candidata):** no desktop, menu lateral persistente; no mobile, menu único com Aula, Dinâmicas, Ferramentas e Evidências da aprendizagem. Material e Evidências deixam o cabeçalho e permanecem disponíveis durante toda a sessão; o projetor conserva seu controle global. Orientações pedagógicas permanecem fundamentadas em evidências, sem o antigo atalho genérico “Próximas ações”. Consulte [`docs/ux/arena-mobile-navigation.md`](docs/ux/arena-mobile-navigation.md). O operador declarou a experiência Safari/iOS validada em 10/10; o roteiro específico de upgrade de PWA v0.9 e demais gates continuam pendentes de evidência. O Timer permite rolagem integral no drawer com scrollbar oculta. Destaques `<aside>` do Notion são renderizados como blocos Markdown seguros. A projeção sincronizada de materiais foi incluída no [backlog v0.11](docs/ROADMAP_V0_11.md), sem implementação na v0.10.
+**Navegação da Arena (v0.10, candidata):** no desktop, menu lateral persistente; no mobile, menu único com Aula, Dinâmicas, Ferramentas e Evidências da aprendizagem. Material e Evidências deixam o cabeçalho e permanecem disponíveis durante toda a sessão; o projetor conserva seu controle global. Orientações pedagógicas permanecem fundamentadas em evidências, sem o antigo atalho genérico “Próximas ações”. Consulte [`docs/ux/arena-mobile-navigation.md`](docs/ux/arena-mobile-navigation.md). O operador declarou aprovado o conjunto de testes manuais (Safari/iOS/DevTools e demais gates) em 10/10; os relatórios individuais permanecem não anexados ao repositório. O Timer permite rolagem integral no drawer com scrollbar oculta. Destaques `<aside>` do Notion são renderizados como blocos Markdown seguros. A projeção sincronizada de materiais foi incluída no [backlog v0.11](docs/ROADMAP_V0_11.md), sem implementação na v0.10.
 
 - turmas, estudantes, matrículas e presença;
 - sessão de aula com estado autoritativo no backend;
@@ -295,7 +295,7 @@ As documentações de incrementos 14.x/16.x e os relatórios de releases anterio
 - `v0.8.0` — Professor Experience & Journey MVP; publicada, encerrada e congelada em V38;
 - `v0.9.0` — **Arena Learning Core publicada e congelada**; schema aditivo até V48, fluxo nativo `Verificar aprendizagem` operando de LearningTarget até LearningEvidence, trace AI-ready estruturado e shadows de Quiz/Poll/Nuvem com observações duráveis e gate objetivo de cutover. A remoção física do legado permanece bloqueada até a janela segura de rollback; consulte `docs/v0.9/FINAL_ARCHITECTURE_GATE.md`.
 
-- `v0.10.0-rc.1` — **candidata em homologação** (Flyway V56); publicação e tag dependem dos gates operacionais e do CI no SHA definitivo.
+- `v0.10.0` — **publicada e congelada** (Flyway V56); compatibilidade, release e limites em [notas de release](docs/RELEASE_0_10.md).
 
 ## Licença
 

@@ -1,6 +1,6 @@
 # v0.10 — Aceite operacional e limites de implantação
 
-**Estado: NO-GO para publicação ampla.** Candidata `0.10.0-rc.1` em `feat/v0.10-learning-loop`. Em 10/10, o operador confirmou visualmente/funcionalmente Safari e iOS, **sem anexos técnicos ou passos reproduzíveis**. Este documento continua sendo roteiro de aceite, não comprovação de todos os testes físicos.
+**Estado: GO restrito à instância self-hosted de operador único, v0.10.0.** O aceite manual foi confirmado pelo operador em 10/10. Em 10/10, o operador confirmou visualmente/funcionalmente Safari e iOS, **sem anexos técnicos ou passos reproduzíveis**. Este documento continua sendo roteiro de aceite, não comprovação de todos os testes físicos.
 
 ## Aceite de campo informado em 10/10
 

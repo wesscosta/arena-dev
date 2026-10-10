@@ -1,8 +1,8 @@
-# Arena Dev v0.10.0 — Notas de release preparatórias
+# Arena Dev v0.10.0 — Learning Loop
 
-**Status: candidata 0.10.0-rc.1, NÃO PUBLICADA.** Interface consolidada até 10/10; o CI histórico citado abaixo não cobre as últimas correções da branch. A aprovação Safari/iOS foi relatada pelo operador, mas os demais gates de release não foram homologados. Veja [auditoria e bloqueadores](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md). Este documento descreve a implementação validada automaticamente, mas não autoriza tag estável ou implantação. A baseline publicada permanece v0.9.0. A release estável depende dos gates em [checklist GO/NO-GO](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e [aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md).
+**Status: release estável publicada `v0.10.0` (10/10/2026).** Foco: ciclo de aprendizagem, sorteio e XP resilientes, Arena responsiva e Biblioteca contextual. Escopo: self-hosted com um único operador docente. Os testes de campo foram aprovados por declaração do operador; os registros detalhados não foram anexados. O gate técnico inclui CI do SHA estável, backup/restauração e verificação final na `main`. Veja [auditoria e bloqueadores](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md). Este documento descreve a implementação validada automaticamente, mas não autoriza tag estável ou implantação. A baseline publicada permanece v0.9.0. A release estável depende dos gates em [checklist GO/NO-GO](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e [aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md).
 
-**Atualização de estabilização 10/10:** metadata passa a `0.10.0`; aceite de campo informado pelo operador [registrado aqui](v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md). Esta atualização não confirma tag nem release: verificações de CI no novo SHA e gate final da `main` ainda são necessárias.
+**Aceite:** [registro formal do operador](v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md), [ensaios de rollback V56](v0.10/ROLLBACK_V56_SYNTHETIC_2026-10-10.md), backup de dados V56 com SHA-256 e restore em PostgreSQL isolado. A tag v0.10.0 aponta para o SHA publicado; o CI e o log do gate final devem ser preservados nos artefatos de release.
 
 ## Principais entregas da candidata
 
@@ -40,4 +40,4 @@
 4. Piloto pedagógico documentado com turma real.
 5. Homologação de rollback RTO/RPO, revisão de segurança e decisão GO assinada.
 
-**Publicação:** somente após todos os itens aplicáveis passarem, PR aprovado/merge, mudança de metadata para `0.10.0`, CI verde no SHA de `main`, `release-gate.sh final` aprovado, tag e GitHub Release. Não declarar esta candidata estável antecipadamente.
+**Publicação:** PR #35 integrada na `main`; metadata `0.10.0`; backup V56 validado; release-gate final executado no SHA exato após CI. Tag `v0.10.0` é referência canônica. Evolução de conteúdo/projetor e novas melhorias funcionais/UX ficaram em [v0.11](ROADMAP_V0_11.md).

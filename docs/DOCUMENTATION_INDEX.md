@@ -2,14 +2,14 @@
 
 Este índice separa **fontes operacionais vigentes**, **propostas**, **diários de execução** e **histórico**. Um plano não é evidência de implementação; testes locais não são autorização de release.
 
-## Leitura atual (v0.10 candidata)
+## Leitura atual (v0.10 publicada)
 
 | Pergunta | Fonte |
 | --- | --- |
 | Qual versão está publicada? | [Estado atual](STATUS_ATUAL.md) e [release v0.9.0](RELEASE_0_9.md) |
 | O que está planejado e o que ficou fora? | [Roadmap v0.10](ROADMAP_V0_10.md), [plano técnico](v0.10/IMPLEMENTATION_PLAN.md) |
 | O que foi executado? | [Diário de execução](v0.10/EXECUTION_STATUS.md) (registros datados, não estado automático) |
-| Podemos publicar? | [Checklist de release](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e [aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md): **NO-GO até evidências completas** |
+| Qual o aceite da v0.10? | [Registro do operador](v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md), [checklist histórico](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e [gate técnico](RELEASE_0_10.md) |
 | Quais são os contratos? | [API/dados](v0.10/API_CONTRACTS.md) e [ADRs](adr/README.md) |
 | Como devem funcionar os fluxos? | [UX v0.10](v0.10/UX_FLOWS.md) e [sistema visual](ux/arena-dynamics-visual-system-v010.md) |
 | Quais riscos e excessos foram encontrados? | [Auditoria de consolidação](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md) |

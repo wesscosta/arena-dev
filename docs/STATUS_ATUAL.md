@@ -5,11 +5,11 @@
 | Linha | Estado | Fonte de verdade |
 | --- | --- | --- |
 | `v0.9.0` | Publicada, congelada; Flyway V48 | [`RELEASE_0_9.md`](RELEASE_0_9.md) |
-| `v0.10.0-rc.1` | Candidata em homologação; **NO-GO para release estável**; Flyway V56 | [`v0.10/RELEASE_CANDIDATE_CHECKLIST.md`](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) |
-| `main` | Branch de publicação da baseline | Tag v0.9.0 e GitHub Release |
-| `feat/v0.10-learning-loop` | Branch da candidata, publicada no remoto até `d876325` antes da atualização documental | PR [#35](https://github.com/wesscosta/arena-dev/pull/35), em rascunho |
+| `v0.10.0` | **Publicada**, Flyway V56, edição self-hosted docente único | [`RELEASE_0_10.md`](RELEASE_0_10.md) |
+| `main` | Branch estável v0.10 | Tag v0.10.0 e GitHub Release |
+| `feat/v0.10-learning-loop` | Origem histórica da integração v0.10 | PR [#35](https://github.com/wesscosta/arena-dev/pull/35), incorporada |
 
-**Preparação de estabilização (10/10):** o operador autorizou concluir a release e declarou aprovados os testes manuais, Safari/iOS e DevTools; [registro](v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md). A árvore passa a preparar metadata `0.10.0`, mas isso **não significa release publicada**: tag, merge e gate final ainda precisam ocorrer e ser verificados. O estado definitivo deste arquivo deve ser atualizado após a publicação.
+**Fechamento (10/10):** o operador autorizou a publicação e declarou aprovados os testes manuais Safari/iOS, DevTools e demais gates; [registro e limites de evidência](v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md). A publicação foi condicionada ao CI do SHA estável, ao backup V56 e ao gate final na `main`.
 
 ## Capacidades efetivamente implementadas na candidata v0.10
 
@@ -40,7 +40,7 @@
 4. Piloto docente com turma real, com evidência pedagógica e feedback.
 5. Backup/restore e rollback operacional com RTO/RPO aceitos, segurança e aprovação do PR.
 
-**Decisão atual: NO-GO para `v0.10.0` estável.** [Aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md), [matriz de testes](v0.10/TEST_MATRIX.md) e [auditoria de consolidação](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md).
+**Decisão: GO restrito self-hosted / operador único para `v0.10.0`, sujeito à evidência técnica de tag e gate final.** [Aceite operacional](v0.10/OPERATIONAL_ACCEPTANCE.md), [matriz de testes](v0.10/TEST_MATRIX.md) e [auditoria de consolidação](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md).
 
 ## Onde encontrar detalhes sem duplicar o README
 
