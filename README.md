@@ -8,7 +8,7 @@
 
 - **Publicada:** `v0.10.0 — Learning Loop` (atual). `v0.9.0` permanece congelada como baseline anterior.
 - **Integração:** [PR #35](https://github.com/wesscosta/arena-dev/pull/35) incorporada na `main`, release estável `v0.10.0`.
-- **Evolução v0.11:** etapa 11.0 aberta para auditoria por persona/tela e contratos de publicação segura; a projeção da Biblioteca **ainda não foi implementada**. [Pacote de auditoria 11.0](docs/v0.11/README.md).
+- **Evolução v0.11:** 11.0 auditada e 11.1 backend de publicação segura em desenvolvimento, com Flyway V57, snapshot imutável e revogação. **Nenhuma interface de projeção visual foi implementada**. [Documentação v0.11](docs/v0.11/README.md) · [execução 11.1](docs/v0.11/11.1_EXECUTION_STATUS.md).
 - **Validação:** código da candidata consolidado até `d876325` (10/10); última bateria local informada: frontend 319/319 testes unitários, TypeScript, build, testes Playwright direcionados do Timer (2/2) e lint sem erros. **O CI remoto precisa aprovar o SHA final**, inclusive commits de documentação. A aprovação de UX em Safari/iOS foi **declarada pelo operador em 10/10**, sem relatório formal de dispositivos/roteiro, e não certifica atualização de PWA previamente instalada.
 - **Evidência adicional:** ensaio isolado de rollback [V48→V56→V48 aprovado em 10/10](docs/v0.10/ROLLBACK_V56_SYNTHETIC_2026-10-10.md); **não** equivale a restauração operacional com RTO/RPO.
 - **Aceite operacional:** os testes manuais foram declarados aprovados pelo operador em 10/10; os artefatos individuais e métricas RTO/RPO não foram anexados. A release foi concluída somente após a verificação técnica (CI, backup/restauração V56 e gate final). Manter as limitações e riscos residuais documentados.

@@ -42,6 +42,7 @@ public class SessionService {
     private final QuizService quizService;
     private final DisplayNameService displayNameService;
     private final SessionEventService sessionEventService;
+    private final br.com.arenadev.stage.LiveStageService liveStage;
 
     public SessionService(
             ClassSessionRepository sessionRepository,
@@ -56,7 +57,8 @@ public class SessionService {
             PollService pollService,
             QuizService quizService,
             DisplayNameService displayNameService,
-            SessionEventService sessionEventService
+            SessionEventService sessionEventService,
+            br.com.arenadev.stage.LiveStageService liveStage
     ) {
         this.sessionRepository = sessionRepository;
         this.participantRepository = participantRepository;
@@ -71,6 +73,7 @@ public class SessionService {
         this.quizService = quizService;
         this.displayNameService = displayNameService;
         this.sessionEventService = sessionEventService;
+        this.liveStage = liveStage;
     }
 
     @Transactional
@@ -175,6 +178,7 @@ public class SessionService {
         ClassSession session = getEntityForUpdate(sessionId);
         ensureActive(session);
         session.finish();
+        liveStage.revokeForFinishedSession(sessionId);
         joinService.deactivate(sessionId);
         buzzerService.closeForFinishedSession(sessionId);
         timerService.cancelOpenForFinishedSession(sessionId);
