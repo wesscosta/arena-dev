@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { normalizeJoinCode } from "@/lib/app-state";
+import ProjectedMaterialReader from "@/components/ProjectedMaterialReader";
+import {
+  fetchPublicPresentedMaterial, type PublicPresentedMaterial,
+} from "@/lib/material-presentation-api";
 import {
   connectProjectorSocket,
   fetchProjectorSnapshot,
@@ -83,6 +87,9 @@ export default function ProjectorView() {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [connection, setConnection] = useState<"offline" | "connecting" | "reconnecting" | "online">("offline");
   const [realtimeVersion, setRealtimeVersion] = useState(0);
+  const [presentedMaterial, setPresentedMaterial] = useState<PublicPresentedMaterial | null>(null);
+  const [materialLoading, setMaterialLoading] = useState(false);
+  const [materialError, setMaterialError] = useState("");
   const [error, setError] = useState("");
   const [sessionFinished, setSessionFinished] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -209,6 +216,9 @@ export default function ProjectorView() {
         if (!active) return;
 
         if (event.type === "AUTH_OK") {
+          // Do not show previously delivered material until server authorization
+          // and a fresh runtime snapshot have been checked after reconnection.
+          setPresentedMaterial(null);
           reconnectAttemptRef.current = 0;
           setConnection("online");
           setError("");
@@ -301,11 +311,12 @@ export default function ProjectorView() {
     );
 
     socket.onerror = () => {
-      if (active) setConnection("offline");
+      if (active) { setPresentedMaterial(null); setConnection("offline"); }
     };
 
     socket.onclose = () => {
       if (!active || finished || authFailed) return;
+      setPresentedMaterial(null);
       setConnection("reconnecting");
       const delay = reconnectDelayMs(reconnectAttemptRef.current);
       reconnectAttemptRef.current += 1;
@@ -321,6 +332,43 @@ export default function ProjectorView() {
       socket.close();
     };
   }, [snapshot?.sessionId, code, realtimeVersion, sessionFinished]);
+
+  useEffect(() => {
+    const id = liveStage.primary.sourceId;
+    if (!code || !snapshot?.sessionId || sessionFinished
+        || liveStage.primary.type !== "MATERIAL" || !id || connection !== "online") {
+      // Fail closed: an inactive/revoked or disconnected projector never
+      // continues displaying a cached copy.
+      setPresentedMaterial(null);
+      setMaterialLoading(false);
+      setMaterialError("");
+      return;
+    }
+
+    let active = true;
+    const controller = new AbortController();
+    setPresentedMaterial(null);
+    setMaterialError("");
+    setMaterialLoading(true);
+    void fetchPublicPresentedMaterial(code, controller.signal)
+      .then((resource) => {
+        if (!active) return;
+        if (resource.publicationId !== id) {
+          setMaterialError("A publicação mudou. Aguardando a versão atual do palco.");
+          return;
+        }
+        setPresentedMaterial(resource);
+      })
+      .catch((cause: unknown) => {
+        if (!active) return;
+        setMaterialError(cause instanceof Error
+          ? cause.message : "O material não está disponível para esta sessão.");
+      })
+      .finally(() => { if (active) setMaterialLoading(false); });
+
+    return () => { active = false; controller.abort(); };
+  }, [code, snapshot?.sessionId, liveStage.primary.type, liveStage.primary.sourceId,
+    liveStage.stageVersion, connection, sessionFinished, realtimeVersion]);
 
   useEffect(() => {
     if (timerState.timer?.status !== "RUNNING") return;
@@ -342,6 +390,8 @@ export default function ProjectorView() {
 
   const wordCloudRound = wordCloudState.round;
   const primaryType = liveStage.primary.type;
+  const showMaterial = primaryType === "MATERIAL";
+  const materialReady = connection === "online" && presentedMaterial?.publicationId === liveStage.primary.sourceId;
   const timerCanTakeFocus = Boolean(
     timer
       && status
@@ -435,7 +485,7 @@ export default function ProjectorView() {
   }
 
   return (
-    <main className={styles.projector}>
+    <main className={`${styles.projector} ${showMaterial ? styles.materialProjector : ""}`}>
       <header className={styles.header}>
         <div className={styles.brand}>
           <div className={styles.brandMark}>A</div>
@@ -473,13 +523,28 @@ export default function ProjectorView() {
         </div>
       )}
 
-      <section className={`${styles.stage} ${showRanking ? styles.rankingFocus : ""} ${showWordCloud ? styles.wordCloudFocus : ""} ${showPoll ? styles.pollFocus : ""} ${showQuiz ? styles.quizFocus : ""}`}>
+      <section className={`${styles.stage} ${showMaterial ? styles.materialFocus : ""} ${showRanking && !showMaterial ? styles.rankingFocus : ""} ${showWordCloud ? styles.wordCloudFocus : ""} ${showPoll ? styles.pollFocus : ""} ${showQuiz ? styles.quizFocus : ""}`}>
         {sessionFinished ? (
           <div className={styles.waiting}>
             <span className={styles.eyebrow}>SESSÃO ENCERRADA</span>
             <h1>A aula foi finalizada</h1>
             <p>O modo projetor pode ser fechado com segurança.</p>
           </div>
+        ) : showMaterial ? (
+          materialReady && presentedMaterial ? (
+            <ProjectedMaterialReader material={presentedMaterial} />
+          ) : (
+            <div className={styles.waiting} role="status" aria-live="polite"
+              data-testid="projector-material-unavailable">
+              <span className={styles.eyebrow}>MATERIAL DA AULA</span>
+              <h1>{connection !== "online" ? "Reconectando à aula" :
+                materialLoading ? "Preparando a leitura" : "Material indisponível"}</h1>
+              <p>{connection !== "online"
+                ? "O conteúdo permanece oculto até a conexão ser restabelecida."
+                : materialLoading ? "Validando a publicação autorizada pelo professor."
+                  : materialError || "A apresentação foi retirada ou não pode ser carregada."}</p>
+            </div>
+          )
         ) : showRanking ? (
           <div className={styles.rankingStage} data-testid="projector-session-ranking">
             <div className={styles.rankingHeading}>
@@ -817,6 +882,12 @@ export default function ProjectorView() {
         </div>
         <p>Alunos podem usar este código em <b>/join</b>.</p>
         <small>Visualização pública · somente leitura</small>
+        {showMaterial && showTimerOverlay && timer && status && (
+          <strong className={styles.materialFooterTimer} role="timer"
+            aria-label={`Tempo restante em ${timer.title}: ${formatTimer(remaining)}`}>
+            {timer.title} · {formatTimer(remaining)}
+          </strong>
+        )}
       </footer>
 
       {error && <div className={styles.floatingError}>{error}</div>}
