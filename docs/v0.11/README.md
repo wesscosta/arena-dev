@@ -1,6 +1,6 @@
 # Arena Dev v0.11 — execução e evidências
 
-**Baseline publicada:** `v0.10.0`. **Desenvolvimento:** 11.0–11.5 integradas à `main` (PRs #45–46, CI aprovado). **11.6 iniciada tecnicamente** com testes de reconexão de dois projetores e bloqueio NO-GO; homologação manual/operacional pendente. Não há release v0.11.
+**Baseline publicada:** `v0.10.0`. **v0.11 tecnicamente encerrada:** 11.0–11.6 integradas à `main`, último merge `2c1e011`, CI 3/3 aprovado no SHA. **11.6 operacional NO-GO:** testes físicos, piloto, segurança e rollback pendentes. **Sem tag/release v0.11.0.** [Fechamento](11.6_TECHNICAL_CLOSURE_NO_GO_2026-10-10.md) · [v0.12](../ROADMAP_V0_12.md).
 
 ## 11.0 — itens entregues para revisão
 
@@ -39,9 +39,9 @@
 - [ADR-0068 proposta](../adr/ADR-0068-editorial-provenance-taxonomy-proposal.md) — **sem aceite pedagógico/jurídico e sem DDL/API**.
 - **Status:** discovery técnico em revisão. Direitos editoriais e piloto humano ainda pendentes.
 
-## 11.6 — Homologação operacional reservada
+## 11.6 — Gate técnico encerrado; homologação operacional pendente
 
-**Gate técnico iniciado; homologação em campo ainda não executada.** [Roteiro por dispositivo/ambiente](11.6_OPERATIONAL_HOMOLOGATION_PLAN.md), [evidências técnicas e pendências](11.6_TECHNICAL_EVIDENCE.md), [template NO-GO](11.6_ACCEPTANCE_TEMPLATE.json) e verificador fail-closed de oito requisitos obrigatórios. O WebKit emulado não substitui Safari físico, VoiceOver, PWA, rede real, piloto ou rollback. Não criar tag/release `v0.11.0` antes dos gates.
+**Gate técnico integrado e aprovado no CI da `main`; homologação em campo ainda não executada.** [Roteiro por dispositivo/ambiente](11.6_OPERATIONAL_HOMOLOGATION_PLAN.md), [evidências técnicas e pendências](11.6_TECHNICAL_EVIDENCE.md), [template NO-GO](11.6_ACCEPTANCE_TEMPLATE.json) e verificador fail-closed de oito requisitos obrigatórios. O WebKit emulado não substitui Safari físico, VoiceOver, PWA, rede real, piloto ou rollback. Não criar tag/release `v0.11.0` antes dos gates.
 
 ## Disciplina de status
 
@@ -49,4 +49,4 @@
 
 ## Gates subsequentes
 
-11.0–11.5 integradas; 11.5 foi discovery documental sem runtime. 11.6 adiciona testes e gates, mas permanece **NO-GO operacional** até evidência real. Documentação proposta não implica licença ou autorização editorial.
+11.0–11.6 integradas; **pacote técnico encerrado e congelado**. A release permanece **NO-GO operacional** até evidência real dos oito gates. Redesign e Active Learning foram reservados ao [roadmap v0.12](../ROADMAP_V0_12.md).

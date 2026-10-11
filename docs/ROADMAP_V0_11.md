@@ -1,6 +1,6 @@
 # Arena Dev v0.11 — roadmap e execução incremental
 
-**Estado:** 11.0–11.4 integradas à `main`, incluindo [PR #45](https://github.com/wesscosta/arena-dev/pull/45) (CI 3/3, merge `1e3645e`). **11.5 concluída como discovery e integrada** pelo [PR #46](https://github.com/wesscosta/arena-dev/pull/46), sem DDL/API: [inventário](v0.11/11.5_EDITORIAL_PROVENANCE_AUDIT.md), [blueprint](v0.11/11.5_TAXONOMY_ASSESSMENT_BLUEPRINT.md), [backlog](v0.11/11.5_DECISIONS_AND_BACKLOG.md). **11.6 iniciada tecnicamente**, com [testes e evidências](v0.11/11.6_TECHNICAL_EVIDENCE.md) e [roteiro operacional](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md), sem homologação física ou GO.
+**Estado:** **desenvolvimento v0.11 concluído**, 11.0–11.6 integradas à `main`, merge `2c1e011`; [CI 3/3 aprovado](https://github.com/wesscosta/arena-dev/actions/runs/38098271861). **Homologação operacional NO-GO** até os oito gates. [Fechamento técnico](v0.11/11.6_TECHNICAL_CLOSURE_NO_GO_2026-10-10.md). **v0.12 em separado:** [roadmap de redesign e Active Learning](ROADMAP_V0_12.md).
 **Baseline confirmada:** v0.10.0 publicada em 10/10/2026 (PR #35, tag e GitHub Release). Seus limites de campo e de implantação continuam registrados na própria release.
 **Artefatos 11.0:** [índice e evidências](v0.11/README.md), [ADR-0067](adr/ADR-0067-material-presentation-v011.md).
 **11.1 integrada:** backend V57 e testes [execução e limites](v0.11/11.1_EXECUTION_STATUS.md). **11.2 validada e integrada** (leitor seguro e apresentação docente): [status 11.2](v0.11/11.2_EXECUTION_STATUS.md). **11.3 concluída e integrada:** [execução](v0.11/11.3_EXECUTION_STATUS.md) e [validação de fechamento](v0.11/11.3_VALIDATION_CLOSURE_2026-10-10.md).
@@ -67,4 +67,4 @@ Nenhum item autoriza geração de conteúdo/questões por IA ou publicação aut
 
 ## Próxima decisão de planejamento
 
-As 11.0–11.4 estão integradas; a 11.5 só propõe governança/blueprint com ADR-0068 ainda não aceita. A 11.6 exige evidências físicas Safari/iOS/VoiceOver, rede incerta, piloto docente, backup/rollback e GO/NO-GO por SHA. CI não equivale a publicação. [Gates técnicos](v0.11/11.0_PLANO_GATES.md).
+11.0–11.6 já integradas e aprovadas em CI; novos incrementos visuais/pedagógicos entram **somente na v0.12**. Para publicar a v0.11 ainda são necessárias evidências reais Safari/iOS/VoiceOver, PWA, rede, piloto, backup/rollback, segurança e GO assinado. CI não equivale à publicação. [Gates](v0.11/11.0_PLANO_GATES.md) · [fechamento](v0.11/11.6_TECHNICAL_CLOSURE_NO_GO_2026-10-10.md).
