@@ -1685,6 +1685,104 @@ test("v0.11 / 11.2: professor publica leitura segura e o projetor recebe somente
   }
 });
 
+test("v0.11 / 11.6: dois projetores conciliam seção, perda de rede e revogação", async ({ page, browser }) => {
+  test.setTimeout(140_000);
+  const { api, csrfHeaders } = await authenticatedApi();
+  const audienceA = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+  const audienceB = await browser.newContext({ viewport: { width: 390, height: 700 } });
+  const projectorA = await audienceA.newPage();
+  const projectorB = await audienceB.newPage();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 0);
+    const title = `Homologação 11.6 ${fixture.session.id.slice(0, 8)}`;
+    const body = [
+      "# Introdução", "", "## Objetivo", "",
+      "A exposição não representa uma atividade avaliada.", "",
+      ...Array.from({ length: 25 }, (_, i) =>
+        `## Topico ${i + 1}\nConteúdo de referência para projeção.\n\n`),
+    ].join("\n");
+    const created = await api.post("/api/library/resources", {
+      data: { title, body, format: "MARKDOWN", sourceType: "MANUAL",
+        subject: "Homologação", tags: ["11.6"], language: "pt-BR" },
+      headers: csrfHeaders,
+    });
+    await expectOk(created, "Criar material do teste de homologação");
+    const codeResponse = await api.get(`/api/sessions/${fixture.session.id}/join-code`);
+    await expectOk(codeResponse, "Código da sessão");
+    const { code } = await codeResponse.json() as { code: string };
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    await openArenaMaterial(page);
+    const dialog = page.getByRole("dialog", { name: "Biblioteca nesta aula" });
+    await dialog.getByLabel("Encontrar material na Biblioteca").fill(title);
+    await dialog.getByRole("button", { name: new RegExp(title) }).click();
+    await dialog.getByRole("button", { name: "Apresentar no projetor" }).click();
+    await expect(dialog.getByText(/Publicado no palco/)).toBeVisible();
+    await Promise.all([
+      projectorA.goto(`/projector?code=${code}`),
+      projectorB.goto(`/projector?code=${code}`),
+    ]);
+    for (const projector of [projectorA, projectorB]) {
+      await expect(projector.getByTestId("projector-material-stage")).toBeVisible();
+      await expect(projector.getByRole("heading", { name: title })).toBeVisible();
+    }
+    const select = dialog.getByLabel("Seção apresentada no projetor");
+    await select.selectOption("topico-20");
+    await expect.poll(async () => {
+      const currentStage = await api.get(`/api/sessions/${fixture.session.id}/stage`);
+      await expectOk(currentStage, "Palco autoritativo");
+      return (await currentStage.json() as { primary: { sectionAnchor: string | null } }).primary.sectionAnchor;
+    }, { timeout: 12_000 }).toBe("topico-20");
+    const stageResponse = await api.get(`/api/sessions/${fixture.session.id}/stage`);
+    const stage = await stageResponse.json() as {
+      primary: { sectionAnchor: string | null; stageVersion: number };
+    };
+    const originalVersion = stage.primary.stageVersion;
+    const region = (projector: Page) =>
+      projector.getByRole("region", { name: "Conteúdo publicado para o projetor" });
+    for (const projector of [projectorA, projectorB]) {
+      await expect.poll(async () => region(projector)
+        .evaluate((element) => element.scrollTop), { timeout: 15_000 }).toBeGreaterThan(100);
+    }
+    await audienceB.setOffline(true);
+    await select.selectOption("topico-12");
+    await expect.poll(async () => {
+      const currentStage = await api.get(`/api/sessions/${fixture.session.id}/stage`);
+      await expectOk(currentStage, "Palco durante perda de rede");
+      return (await currentStage.json() as { primary: { sectionAnchor: string | null } }).primary.sectionAnchor;
+    }, { timeout: 12_000 }).toBe("topico-12");
+    const updated = await api.get(`/api/sessions/${fixture.session.id}/stage`);
+    const authoritative = await updated.json() as {
+      primary: { sectionAnchor: string | null; stageVersion: number };
+    };
+    expect(authoritative.primary.stageVersion).toBeGreaterThan(originalVersion);
+    await audienceB.setOffline(false);
+    await projectorB.reload();
+    await expect(projectorB.getByTestId("projector-material-stage")).toBeVisible();
+    await expect.poll(async () => region(projectorB)
+      .evaluate((element) => element.scrollTop), { timeout: 15_000 }).toBeGreaterThan(100);
+    const publicSnapshot = await audienceB.request.get(
+      `${apiBaseUrl}/api/projector/${code}/material`);
+    expect(publicSnapshot.status()).toBe(200);
+    expect(JSON.stringify(await publicSnapshot.json()))
+      .not.toMatch(/sourceReference|sourceUrl|resourceId|classroomId/);
+    await dialog.getByRole("button", { name: "Retirar do projetor" }).click();
+    for (const projector of [projectorA, projectorB]) {
+      await expect(projector.getByTestId("projector-material-stage"))
+        .toHaveCount(0, { timeout: 15_000 });
+    }
+    const withdrawn = await audienceA.request.get(
+      `${apiBaseUrl}/api/projector/${code}/material`);
+    expect(withdrawn.status()).toBe(404);
+    expect(withdrawn.headers()["cache-control"]).toContain("no-store");
+    await projectorB.reload();
+    await expect(projectorB.getByTestId("projector-material-stage")).toHaveCount(0);
+  } finally {
+    await audienceA.close();
+    await audienceB.close();
+    await api.dispose();
+  }
+});
+
 test("v0.11 / 11.4: CSP, Markdown inerte, modal responsivo e navegação por teclado", async ({ page }) => {
   test.setTimeout(100_000);
   const response = await page.goto("/");

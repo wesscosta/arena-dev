@@ -1,0 +1,66 @@
+{
+  "version": "0.11.0",
+  "candidateSha": "",
+  "decision": "NO-GO",
+  "approvedBy": "",
+  "approvedAt": "",
+  "notes": "Esta é uma matriz inicial SEM aprovação. Preencher apenas após testes reais, com evidência rastreável e SHA imutável.",
+  "gates": [
+    {
+      "id": "ios_safari_physical",
+      "status": "PENDING",
+      "evidenceRef": "",
+      "verifiedBy": "",
+      "verifiedAt": ""
+    },
+    {
+      "id": "android_pwa_upgrade",
+      "status": "PENDING",
+      "evidenceRef": "",
+      "verifiedBy": "",
+      "verifiedAt": ""
+    },
+    {
+      "id": "voiceover_keyboard_zoom",
+      "status": "PENDING",
+      "evidenceRef": "",
+      "verifiedBy": "",
+      "verifiedAt": ""
+    },
+    {
+      "id": "network_degraded_two_projectors",
+      "status": "PENDING",
+      "evidenceRef": "",
+      "verifiedBy": "",
+      "verifiedAt": ""
+    },
+    {
+      "id": "teacher_pedagogical_pilot",
+      "status": "PENDING",
+      "evidenceRef": "",
+      "verifiedBy": "",
+      "verifiedAt": ""
+    },
+    {
+      "id": "backup_restore_rollback",
+      "status": "PENDING",
+      "evidenceRef": "",
+      "verifiedBy": "",
+      "verifiedAt": ""
+    },
+    {
+      "id": "security_privacy_authorization",
+      "status": "PENDING",
+      "evidenceRef": "",
+      "verifiedBy": "",
+      "verifiedAt": ""
+    },
+    {
+      "id": "release_owner_go_nogo",
+      "status": "PENDING",
+      "evidenceRef": "",
+      "verifiedBy": "",
+      "verifiedAt": ""
+    }
+  ]
+}

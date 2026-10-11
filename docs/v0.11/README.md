@@ -1,6 +1,6 @@
 # Arena Dev v0.11 — execução e evidências
 
-**Baseline publicada:** `v0.10.0`. **Desenvolvimento:** 11.0–11.4 integradas à `main` (PR #45, CI 3/3). **11.5 em discovery técnico/editorial**; **11.6 reservada à homologação operacional**. Não há release v0.11.
+**Baseline publicada:** `v0.10.0`. **Desenvolvimento:** 11.0–11.5 integradas à `main` (PRs #45–46, CI aprovado). **11.6 iniciada tecnicamente** com testes de reconexão de dois projetores e bloqueio NO-GO; homologação manual/operacional pendente. Não há release v0.11.
 
 ## 11.0 — itens entregues para revisão
 
@@ -41,7 +41,7 @@
 
 ## 11.6 — Homologação operacional reservada
 
-**Não iniciada.** Safari/iOS físicos, VoiceOver/zoom/teclado, PWA, rede degradada, múltiplos projetores, piloto com turma, backup/rollback e decisão GO/NO-GO por SHA continuam exclusivamente nesta etapa. Não criar tag/release `v0.11.0` antes dos gates.
+**Gate técnico iniciado; homologação em campo ainda não executada.** [Roteiro por dispositivo/ambiente](11.6_OPERATIONAL_HOMOLOGATION_PLAN.md), [evidências técnicas e pendências](11.6_TECHNICAL_EVIDENCE.md), [template NO-GO](11.6_ACCEPTANCE_TEMPLATE.json) e verificador fail-closed de oito requisitos obrigatórios. O WebKit emulado não substitui Safari físico, VoiceOver, PWA, rede real, piloto ou rollback. Não criar tag/release `v0.11.0` antes dos gates.
 
 ## Disciplina de status
 
@@ -49,4 +49,4 @@
 
 ## Gates subsequentes
 
-11.0–11.4 integradas; 11.5 é discovery documental sem alterar runtime; 11.6 permanece único gate de homologação operacional e release. Documentação proposta não implica licença, autorização editorial ou API implementada.
+11.0–11.5 integradas; 11.5 foi discovery documental sem runtime. 11.6 adiciona testes e gates, mas permanece **NO-GO operacional** até evidência real. Documentação proposta não implica licença ou autorização editorial.
