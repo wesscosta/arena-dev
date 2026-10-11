@@ -1734,9 +1734,10 @@ test("v0.11 / 11.6: dois projetores conciliam seção, perda de rede e revogaç�
     }, { timeout: 12_000 }).toBe("topico-20");
     const stageResponse = await api.get(`/api/sessions/${fixture.session.id}/stage`);
     const stage = await stageResponse.json() as {
-      primary: { sectionAnchor: string | null; stageVersion: number };
+      primary: { sectionAnchor: string | null };
+      stageVersion: number;
     };
-    const originalVersion = stage.primary.stageVersion;
+    const originalVersion = stage.stageVersion;
     const region = (projector: Page) =>
       projector.getByRole("region", { name: "Conteúdo publicado para o projetor" });
     for (const projector of [projectorA, projectorB]) {
@@ -1752,9 +1753,10 @@ test("v0.11 / 11.6: dois projetores conciliam seção, perda de rede e revogaç�
     }, { timeout: 12_000 }).toBe("topico-12");
     const updated = await api.get(`/api/sessions/${fixture.session.id}/stage`);
     const authoritative = await updated.json() as {
-      primary: { sectionAnchor: string | null; stageVersion: number };
+      primary: { sectionAnchor: string | null };
+      stageVersion: number;
     };
-    expect(authoritative.primary.stageVersion).toBeGreaterThan(originalVersion);
+    expect(authoritative.stageVersion).toBeGreaterThan(originalVersion);
     await audienceB.setOffline(false);
     await projectorB.reload();
     await expect(projectorB.getByTestId("projector-material-stage")).toBeVisible();
