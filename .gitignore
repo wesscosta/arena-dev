@@ -49,3 +49,7 @@ Thumbs.db
 
 patch/
 *.patch
+
+# Python release readiness checks
+__pycache__/
+*.py[cod]

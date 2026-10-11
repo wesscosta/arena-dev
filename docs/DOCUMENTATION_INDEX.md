@@ -23,7 +23,7 @@ Este índice separa **fontes operacionais vigentes**, **propostas**, **diários 
 - [Implementação do leitor de material 11.2](v0.11/11.2_EXECUTION_STATUS.md) — interface docente/projetor e regressão E2E; [fechamento validado](v0.11/11.2_VALIDATION_CLOSURE_2026-10-10.md).
 - [Implementação de navegação e reconexão 11.3](v0.11/11.3_EXECUTION_STATUS.md) — idempotência V58, seção ativa e eventos versionados. [Validação da 11.3](v0.11/11.3_VALIDATION_CLOSURE_2026-10-10.md).
 - [Auditoria, hardening e testes 11.4](v0.11/11.4_SECURITY_UX_EXECUTION.md) — CSP, leitores de Markdown, UI/UX, WebKit mobile e gates Safari/iOS.
-- [Discovery 11.5 — inventário editorial](v0.11/11.5_EDITORIAL_PROVENANCE_AUDIT.md) · [taxonomia/blueprint](v0.11/11.5_TAXONOMY_ASSESSMENT_BLUEPRINT.md) · [decisões e backlog](v0.11/11.5_DECISIONS_AND_BACKLOG.md). Sem DDL/API; 11.6 permanece o gate operacional.
+- [Discovery 11.5 — inventário editorial](v0.11/11.5_EDITORIAL_PROVENANCE_AUDIT.md) · [taxonomia/blueprint](v0.11/11.5_TAXONOMY_ASSESSMENT_BLUEPRINT.md) · [decisões e backlog](v0.11/11.5_DECISIONS_AND_BACKLOG.md). Sem DDL/API; [11.6 roteiro operacional](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md) · [evidências/status NO-GO](v0.11/11.6_TECHNICAL_EVIDENCE.md).
 - **Nota:** a v0.10 está publicada; o trabalho documental 11.0 não significa feature 11.1 executada.
 
 ## Contratos técnicos e de experiência
