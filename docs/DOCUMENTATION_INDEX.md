@@ -14,7 +14,7 @@ Este índice separa **fontes operacionais vigentes**, **propostas**, **diários 
 | Como devem funcionar os fluxos? | [UX v0.10](v0.10/UX_FLOWS.md) e [sistema visual](ux/arena-dynamics-visual-system-v010.md) |
 | Quais riscos e excessos foram encontrados? | [Auditoria de consolidação](v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md) |
 
-## Linha ativa v0.11 (planejamento de implementação)
+## v0.11 — implementada; homologação operacional pendente
 
 - [Índice 11.0 e evidências](v0.11/README.md) · [auditoria por persona/tela](v0.11/11.0_AUDITORIA_PERSONAS_TELAS.md) · [permissões e ameaças](v0.11/11.0_PERMISSOES_AMENACAS.md).
 - [Contrato de apresentação e versionamento proposto](v0.11/11.0_CONTRATOS_PROJECAO.md) · [plano e gates](v0.11/11.0_PLANO_GATES.md) · [ADR-0067](adr/ADR-0067-material-presentation-v011.md).
@@ -24,7 +24,8 @@ Este índice separa **fontes operacionais vigentes**, **propostas**, **diários 
 - [Implementação de navegação e reconexão 11.3](v0.11/11.3_EXECUTION_STATUS.md) — idempotência V58, seção ativa e eventos versionados. [Validação da 11.3](v0.11/11.3_VALIDATION_CLOSURE_2026-10-10.md).
 - [Auditoria, hardening e testes 11.4](v0.11/11.4_SECURITY_UX_EXECUTION.md) — CSP, leitores de Markdown, UI/UX, WebKit mobile e gates Safari/iOS.
 - [Discovery 11.5 — inventário editorial](v0.11/11.5_EDITORIAL_PROVENANCE_AUDIT.md) · [taxonomia/blueprint](v0.11/11.5_TAXONOMY_ASSESSMENT_BLUEPRINT.md) · [decisões e backlog](v0.11/11.5_DECISIONS_AND_BACKLOG.md). Sem DDL/API; [11.6 roteiro operacional](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md) · [evidências/status NO-GO](v0.11/11.6_TECHNICAL_EVIDENCE.md).
-- **Nota:** a v0.10 está publicada; o trabalho documental 11.0 não significa feature 11.1 executada.
+- [Fechamento técnico v0.11 e NO-GO](v0.11/11.6_TECHNICAL_CLOSURE_NO_GO_2026-10-10.md) · [roadmap v0.12 — redesign e Active Learning](ROADMAP_V0_12.md).
+- **Status:** 11.0–11.6 integradas em `main`, CI aprovado. Última release pública: `v0.10.0`. Sem oito evidências operacionais, não existe GO para v0.11.0.
 
 ## Contratos técnicos e de experiência
 
