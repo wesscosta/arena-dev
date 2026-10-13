@@ -19,16 +19,16 @@
 
 .trigger:hover,
 .open {
-  border-color: rgba(88, 243, 167, .2);
-  background: rgba(88, 243, 167, .05);
+  border-color: color-mix(in srgb, var(--ds-accent) 20.0%, transparent);
+  background: color-mix(in srgb, var(--ds-accent) 5.0%, transparent);
 }
 
 .monogram,
 .itemMonogram {
   display: grid;
   place-items: center;
-  border: 1px solid rgba(88, 243, 167, .16);
-  background: rgba(88, 243, 167, .07);
+  border: 1px solid color-mix(in srgb, var(--ds-accent) 16.0%, transparent);
+  background: color-mix(in srgb, var(--ds-accent) 7.0%, transparent);
   color: var(--accent);
   font-weight: 900;
 }
@@ -131,8 +131,8 @@
 
 .list > button:hover,
 .list > button.selected {
-  border-color: rgba(88, 243, 167, .13);
-  background: rgba(88, 243, 167, .045);
+  border-color: color-mix(in srgb, var(--ds-accent) 13.0%, transparent);
+  background: color-mix(in srgb, var(--ds-accent) 4.5%, transparent);
 }
 
 .itemMonogram {
@@ -167,7 +167,7 @@
   height: 5px;
   border-radius: 999px;
   background: var(--accent);
-  box-shadow: 0 0 9px rgba(88, 243, 167, .7);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--ds-accent) 70.0%, transparent);
 }
 
 .inactive {
@@ -278,7 +278,7 @@
 .trigger:hover,
 .open {
   border-color: transparent;
-  background: rgba(88, 243, 167, .04);
+  background: color-mix(in srgb, var(--ds-accent) 4.0%, transparent);
   color: var(--accent-2);
 }
 
@@ -351,7 +351,7 @@
 .list {
   padding-right: 4px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(88,243,167,.28) rgba(255,255,255,.02);
+  scrollbar-color: color-mix(in srgb, var(--ds-accent) 28.0%, transparent) rgba(255,255,255,.02);
   scrollbar-gutter: stable;
 }
 .list::-webkit-scrollbar { width: 8px; }
@@ -360,13 +360,13 @@
   border-radius: 999px;
 }
 .list::-webkit-scrollbar-thumb {
-  background: rgba(88,243,167,.20);
+  background: color-mix(in srgb, var(--ds-accent) 20.0%, transparent);
   border: 2px solid transparent;
   background-clip: padding-box;
   border-radius: 999px;
 }
 .list:hover::-webkit-scrollbar-thumb {
-  background: rgba(88,243,167,.38);
+  background: color-mix(in srgb, var(--ds-accent) 38.0%, transparent);
   background-clip: padding-box;
 }
 

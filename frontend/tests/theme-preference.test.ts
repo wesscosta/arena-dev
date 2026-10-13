@@ -28,6 +28,6 @@ test("theme is applied before the application paints", () => {
 
 test("light theme is defined by the semantic theme contract", () => {
   assert.match(themeContract, /html\[data-theme="light"\]/);
-  assert.match(themeContract, /--theme-canvas:\s*#f4f8f6/);
-  assert.match(themeContract, /--theme-surface-toolbar:\s*#ffffff/);
+  assert.match(themeContract, /--theme-canvas:\s*#f4f6fa/);
+  assert.match(themeContract, /--theme-surface-toolbar:\s*#fff(?:fff)?/);
 });

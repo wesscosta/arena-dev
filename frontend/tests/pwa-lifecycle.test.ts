@@ -68,7 +68,7 @@ test("v0.9 cached join is deleted on v0.10 activation; only neutral offline page
   assert.equal(w.storage.has("arena-dev-shell-v0.8-join-fix-1"), false);
   assert.equal(w.storage.has("arena-dev-static-v0.8-join-fix-1"), false);
   assert.equal(w.storage.has("other-project-cache"), true);
-  const newCache = [...w.storage.keys()].find((name) => name.startsWith("arena-dev-shell-v0.10-"));
+  const newCache = [...w.storage.keys()].find((name) => name.startsWith("arena-dev-shell-v0.12-"));
   assert.ok(newCache);
   assert.equal(w.storage.get(newCache)?.has("/join"), false);
   assert.equal(w.storage.get(newCache)?.has("/offline.html"), true);

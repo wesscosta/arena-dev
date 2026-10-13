@@ -26,8 +26,8 @@ export default function TeacherLogin({ onAuthenticated }: { onAuthenticated: (se
   return (
     <main className="teacher-login-shell">
       <section className="teacher-login-card">
-        <div className="brand-mark teacher-login-mark">A</div>
-        <span className="eyebrow accent">ARENA DEV</span>
+        <div className="brand-mark teacher-login-mark" aria-hidden="true">r</div>
+        <span className="eyebrow accent">RAMUVI</span>
         <h1>Acesso do professor</h1>
         <p>Entre para administrar turmas, sessões, pontuação e mecânicas.</p>
         <form onSubmit={submit} className="teacher-login-form">

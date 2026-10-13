@@ -217,7 +217,7 @@ export default function ExternalResultImportModal({ open, activity, students, on
             </section>
 
             <section className="external-import-preview">
-              {!report && <div className="external-preview-empty"><strong>Fluxo seguro de importação</strong><p>O Arena Dev identifica colunas, cruza nome/matrícula com os alunos desta turma, mostra o XP calculado e só grava após sua validação.</p></div>}
+              {!report && <div className="external-preview-empty"><strong>Fluxo seguro de importação</strong><p>O Ramuvi identifica colunas, cruza nome/matrícula com os alunos desta turma, mostra o XP calculado e só grava após sua validação.</p></div>}
               {report && !preview && <div className="external-preview-empty"><strong>Arquivo carregado</strong><p>Valide o relatório para conferir o vínculo de cada linha com os alunos da turma antes de gerar XP.</p></div>}
               {preview && <>
                 <div className="external-preview-summary">

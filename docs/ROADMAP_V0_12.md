@@ -1,11 +1,11 @@
 # Arena Dev v0.12 — Redesign e Active Learning | roadmap
 
-**Estado:** reservado e planejado, com [issue #48 de acompanhamento](https://github.com/wesscosta/arena-dev/issues/48); não implementado, não homologado. O lançamento da v0.11.0 ainda exige o GO operacional da 11.6.
+**Estado:** planejamento aprovado para execução incremental; pilotos D12.2 em implementação/revisão na branch `feat/v012-ramuvi-pro-cards` ([issue #48](https://github.com/wesscosta/arena-dev/issues/48)); **não homologado, sem release**. [Evidências](v0.12/D12.2_PILOTS_IMPLEMENTATION.md). O lançamento da v0.11.0 ainda exige o GO operacional da 11.6.
 **Figma:** [ARENA — Redesign UX v0.12 · Transportta](https://www.figma.com/design/gWMkarPwmeFY15jr0Tr6DN). A exploração é referência visual editável, **não** especificação funcional aprovada.
 
 ## 1. Objetivos e decisões preservadas
 
-Evoluir a Arena Dev para uma plataforma educacional com identidade comercial madura, aplicável à educação profissional, concursos e outras áreas, sem estética de aposta/cassino nem excesso de gamificação. Priorizar verde institucional, superfícies claras, tipografia legível, ícones funcionais, espaçamento coerente, navegação intuitiva e acessibilidade.
+Evoluir a Arena Dev para uma plataforma educacional com identidade comercial madura, aplicável à educação profissional, concursos e outras áreas, sem estética de aposta/cassino nem excesso de gamificação. Priorizar a identidade candidata da Ramuvi (navy/verde-petróleo e ouro restrito), superfícies claras no trabalho e estudo, Arena com intensidade escura contextual, tipografia legível, ícones funcionais, navegação intuitiva e acessibilidade.
 
 **Domínios preservados (ADR-0045):** Jornada = estudo sequencial; Atividades = fazer/entregar; Arena = interação ao vivo. Mostrar conteúdo não comprova aprendizagem, não pontua XP e não confirma Mastery.
 

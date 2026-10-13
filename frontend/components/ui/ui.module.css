@@ -23,8 +23,8 @@
 }
 
 .button:hover:not(:disabled) {
-  border-color: rgba(88, 243, 167, .28);
-  background: rgba(88, 243, 167, .055);
+  border-color: color-mix(in srgb, var(--ds-accent) 28.0%, transparent);
+  background: color-mix(in srgb, var(--ds-accent) 5.5%, transparent);
 }
 
 .button:active:not(:disabled) {
@@ -91,8 +91,8 @@
 }
 
 .iconButton:hover:not(:disabled) {
-  border-color: rgba(88, 243, 167, .28);
-  background: rgba(88, 243, 167, .055);
+  border-color: color-mix(in srgb, var(--ds-accent) 28.0%, transparent);
+  background: color-mix(in srgb, var(--ds-accent) 5.5%, transparent);
   color: var(--ds-accent);
 }
 
@@ -127,8 +127,8 @@
 
 .badgeLive,
 .badgeSuccess {
-  border-color: rgba(88, 243, 167, .25);
-  background: rgba(88, 243, 167, .065);
+  border-color: color-mix(in srgb, var(--ds-accent) 25.0%, transparent);
+  background: color-mix(in srgb, var(--ds-accent) 6.5%, transparent);
   color: var(--ds-accent);
 }
 
@@ -175,12 +175,12 @@
 }
 
 .tab:hover:not(:disabled) {
-  background: rgba(88, 243, 167, .04);
+  background: color-mix(in srgb, var(--ds-accent) 4.0%, transparent);
   color: var(--ds-text-primary);
 }
 
 .tabActive {
-  background: rgba(88, 243, 167, .045);
+  background: color-mix(in srgb, var(--ds-accent) 4.5%, transparent);
   color: var(--ds-text-primary);
 }
 
@@ -247,7 +247,7 @@
 }
 
 .menuItem:hover:not(:disabled) {
-  background: rgba(88, 243, 167, .055);
+  background: color-mix(in srgb, var(--ds-accent) 5.5%, transparent);
 }
 
 .menuItemDanger {
@@ -313,7 +313,7 @@
 }
 
 .breadcrumbLink:hover {
-  background: rgba(88, 243, 167, .045);
+  background: color-mix(in srgb, var(--ds-accent) 4.5%, transparent);
   color: var(--ds-text-primary);
 }
 
@@ -377,7 +377,7 @@
 
 .cardInteractive:hover {
   transform: translateY(-1px);
-  border-color: rgba(88, 243, 167, .24);
+  border-color: color-mix(in srgb, var(--ds-accent) 24.0%, transparent);
   box-shadow: var(--shadow-sm);
 }
 

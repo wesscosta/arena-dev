@@ -133,8 +133,8 @@ export function ArenaSidebar({
     <aside className="arena-cockpit-nav" aria-label="Ferramentas da Arena">
       <button type="button" className="arena-nav-brand" onClick={onGoDashboard}
         aria-label="Voltar para Turmas" title="Voltar para Turmas">
-        <span className="topbar-brand-mark">A</span>
-        <span className="arena-nav-brand-copy"><strong>ARENA DEV</strong><small>Classroom Edition</small></span>
+        <span className="topbar-brand-mark" aria-hidden="true">r</span>
+        <span className="arena-nav-brand-copy"><strong>ramuvi</strong><small>Interação ao vivo</small></span>
       </button>
       <span className="arena-nav-mobile-title" aria-hidden="true"><strong>Arena</strong></span>
       <div className="arena-nav-mobile-projector">{projectorAction}</div>
@@ -262,6 +262,7 @@ export function ArenaSessionHeader({
 }: ArenaSessionHeaderProps) {
   return (
     <header className="topbar app-topbar arena-live-topbar">
+      <span className="arena-live-indicator"><span aria-hidden="true" /> Sessão ao vivo</span>
       <nav className="arena-live-context" aria-label="Turma atual">
         <button
           type="button"

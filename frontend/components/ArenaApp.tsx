@@ -337,7 +337,7 @@ export default function ArenaApp() {
   }
 
   if (!hydrated) {
-    return <div className="loading-screen">Carregando Arena Dev...</div>;
+    return <div className="loading-screen">Carregando Ramuvi...</div>;
   }
 
   return (
@@ -356,10 +356,10 @@ export default function ArenaApp() {
             }}
             title="Voltar para Turmas"
           >
-            <span className="topbar-brand-mark">A</span>
+            <span className="topbar-brand-mark" aria-hidden="true">r</span>
             <span>
-              <strong>ARENA DEV</strong>
-              <small>Classroom Edition · V1</small>
+              <strong>ramuvi</strong>
+              <small>Educação em movimento</small>
             </span>
           </button>
 
@@ -506,7 +506,7 @@ export default function ArenaApp() {
           {view === "dashboard" && (
             <OverviewView
               data={data}
-              onSelectClassroom={(classroomId) => { setActiveClassroom(classroomId); openClassroom("home"); }}
+              onSelectClassroom={(classroomId, tab = "home") => { setActiveClassroom(classroomId); openClassroom(tab); }}
               onManageClassroom={(classroomId, intent) => openClassroomSettings(classroomId, intent)}
               notify={notify}
               refreshClassroomDomain={refreshClassroomDomain}
@@ -671,7 +671,7 @@ export default function ArenaApp() {
                 <div>
                   <span className="eyebrow accent">CONFIGURAÇÕES</span>
                   <h2>Professor e sistema</h2>
-                  <p>Preferências administrativas do Arena Dev, informações do ambiente e rotinas de segurança.</p>
+                  <p>Preferências administrativas da Ramuvi, informações do ambiente e rotinas de segurança.</p>
                 </div>
                 <button className="button ghost" onClick={() => setView("dashboard")}>
                   ← Turmas
@@ -720,7 +720,7 @@ export default function ArenaApp() {
                   <span className="eyebrow accent">INTEGRAÇÕES</span>
                   <h3>Plataformas educacionais</h3>
                   <p>
-                    Conecte o Arena Dev às plataformas usadas pela instituição. As turmas continuam únicas no Arena e recebem apenas um indicador quando existe vínculo externo.
+                    Conecte o Ramuvi às plataformas usadas pela instituição. As turmas continuam únicas no Arena e recebem apenas um indicador quando existe vínculo externo.
                   </p>
                 </div>
                 <IntegrationSettingsSummary onManage={() => setView("integrations")} />
@@ -730,13 +730,13 @@ export default function ArenaApp() {
                 <div className="settings-section-heading">
                   <span className="eyebrow accent">APARÊNCIA</span>
                   <h3>Tema da interface</h3>
-                  <p>Escolha como o Arena Dev deve aparecer neste navegador.</p>
+                  <p>Escolha como o Ramuvi deve aparecer neste navegador.</p>
                 </div>
 
                 <Panel title="Tema" subtitle="Preferência local deste dispositivo">
                   <div className="theme-choice-grid" role="radiogroup" aria-label="Tema da interface">
                     {([
-                      { id: "dark", label: "Escuro", description: "Tema padrão do Arena Dev.", icon: "◐" },
+                      { id: "dark", label: "Escuro", description: "Superfícies profundas e contraste elevado.", icon: "◐" },
                       { id: "light", label: "Claro", description: "Superfícies claras e contraste suave.", icon: "☀" },
                       { id: "system", label: "Sistema", description: "Segue a preferência do sistema operacional.", icon: "◒" },
                     ] as const).map((option) => (
@@ -791,7 +791,7 @@ export default function ArenaApp() {
 
 function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refreshClassroomDomain }: {
   data: ArenaData;
-  onSelectClassroom: (classroomId: string) => void;
+  onSelectClassroom: (classroomId: string, tab?: ClassroomTab) => void;
   onManageClassroom: (classroomId: string, intent: "general" | "delete") => void;
   notify: (message: string) => void;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
@@ -838,6 +838,15 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
   const activeEnrollments = data.enrollments.filter((enrollment) => enrollment.active && activeClassroomIds.has(enrollment.classroomId));
   const hasActiveFilters = Boolean(query.trim()) || filter !== "ALL";
 
+  // Resume the real classroom context; this is not a demo metric or a new flow.
+  const liveClassroom = data.classrooms.find((classroom) =>
+    activeSessions.some((session) => session.classroomId === classroom.id),
+  );
+  const resumeClassroom =
+    liveClassroom ??
+    data.classrooms.find((classroom) => classroom.id === data.activeClassroomId && classroom.active) ??
+    data.classrooms.find((classroom) => classroom.active);
+
   async function toggleClassroomActive(classroom: Classroom) {
     const hasActiveSession = activeSessions.some(
       (session) => session.classroomId === classroom.id,
@@ -883,6 +892,53 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
           + Nova turma
         </button>
       </header>
+
+      {resumeClassroom && (
+        <div className="overview-feature-grid">
+        <section className="overview-resume" aria-labelledby="overview-resume-heading">
+          <div className="overview-resume-copy">
+            <span className="overview-resume-kicker">
+              {liveClassroom ? "SESSÃO EM ANDAMENTO" : "CONTINUE DE ONDE PAROU"}
+            </span>
+            <h2 id="overview-resume-heading">
+              {liveClassroom ? "Sua turma está ao vivo" : "Sua próxima etapa começa aqui"}
+            </h2>
+            <p>
+              <strong>{resumeClassroom.name}</strong>
+              {liveClassroom
+                ? " tem uma sessão ativa. Acesse o espaço da turma para acompanhar a aula."
+                : " está pronta para você organizar jornadas, atividades e encontros."}
+            </p>
+          </div>
+          <button type="button" className="overview-resume-action"
+            onClick={() => onSelectClassroom(resumeClassroom.id)}>
+            Abrir turma <span aria-hidden="true">↗</span>
+          </button>
+        </section>
+        <aside className="overview-command-card" aria-label="Preparação e condução da turma">
+          <div className="overview-command-head">
+            <span className="overview-command-icon" aria-hidden="true">◈</span>
+            <span>{liveClassroom ? "ARENA AO VIVO" : "CENTRAL DE PREPARAÇÃO"}</span>
+          </div>
+          <h3>{liveClassroom ? "Conduza a sessão" : "Prepare sua próxima aula"}</h3>
+          <p>{liveClassroom
+            ? `Uma sessão está ativa em ${liveClassroom.name}. Abra a turma para acompanhar a participação.`
+            : `${resumeClassroom.name}: acesse o conteúdo e organize as próximas atividades.`}</p>
+          <dl className="overview-command-facts">
+            <div><dt>Atividades cadastradas</dt><dd>{data.activities.filter((item) => item.classroomId === resumeClassroom.id).length}</dd></div>
+            <div><dt>Sessão ao vivo</dt><dd>{liveClassroom ? "Em andamento" : "Não iniciada"}</dd></div>
+          </dl>
+          <div className="overview-command-actions">
+            <button type="button" onClick={() => onSelectClassroom(resumeClassroom.id, "activities")}>
+              Ver atividades <span aria-hidden="true">↗</span>
+            </button>
+            <button type="button" onClick={() => onSelectClassroom(resumeClassroom.id, "journeys")}>
+              Planejar jornada <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+        </aside>
+        </div>
+      )}
 
       <div className="metrics-grid overview-metrics" aria-label="Resumo das turmas">
         <Metric label="Turmas ativas" value={activeCount.toString()} hint={`${data.classrooms.length} cadastradas`} />
@@ -946,7 +1002,7 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
       {!data.classrooms.length ? (
         <EmptyState
           title="Crie sua primeira turma"
-          text="Turmas é o ponto de entrada do Arena Dev. Crie a turma e, na etapa seguinte, inclua os alunos."
+          text="Turmas é o ponto de entrada da Ramuvi. Crie a turma e, na etapa seguinte, inclua os alunos."
           actionLabel="+ Nova turma"
           onAction={() => setCreateOpen(true)}
         />
@@ -965,7 +1021,7 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
             return (
               <article
                 key={classroom.id}
-                className={`overview-class-card ${classroom.active ? "" : "inactive"} ${data.activeClassroomId === classroom.id ? "selected" : ""}`}
+                className={`overview-class-card ${classroom.active ? "" : "inactive"} ${data.activeClassroomId === classroom.id ? "selected" : ""} ${session ? "has-live-session" : ""}`}
                 data-testid="classroom-overview-card"
               >
                 <button
@@ -1993,7 +2049,7 @@ function ClassroomManagementPage({
             <div className="classroom-settings-section-heading">
               <span className="eyebrow accent">GERAL</span>
               <h3>Identificação</h3>
-              <p>Defina como a turma é identificada no Arena Dev.</p>
+              <p>Defina como a turma é identificada no Ramuvi.</p>
             </div>
 
             <div className="classroom-settings-fields">
@@ -4488,7 +4544,7 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
 
   return (
     <div className="two-col">
-      <Panel title="Backup dos dados" subtitle="Snapshot dos módulos atuais do Arena Dev">
+      <Panel title="Backup dos dados" subtitle="Snapshot dos módulos atuais do Ramuvi">
         <div className="backup-card"><span className="backup-icon">↓</span><div><h3>Exportar snapshot</h3><p>Inclui uma fotografia da visão atual carregada do backend/PostgreSQL.</p></div><button className="button primary" onClick={exportData}>Exportar JSON</button></div>
         <div className="backup-card"><span className="backup-icon">↑</span><div><h3>Validar snapshot</h3><p>Confere o JSON exportado. Restauração server-side será implementada separadamente para não sobrescrever dados persistentes de forma insegura.</p></div><label className="button file-button">Validar JSON<input type="file" accept="application/json" onChange={(e) => importData(e.target.files?.[0])} /></label></div>
       </Panel>

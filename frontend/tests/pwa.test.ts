@@ -33,7 +33,7 @@ test("client registers worker and treats installation as progressive enhancement
   assert.match(runtime, /updateViaCache: "none"/);
   assert.match(runtime, /result\.update\(\)/);
   assert.match(runtime, /beforeinstallprompt/);
-  assert.match(runtime, /Instalar Arena Dev/);
+  assert.match(runtime, /Instalar Ramuvi/);
 });
 
 test("v0.10 worker discards stale join HTML and only evicts its own caches", () => {

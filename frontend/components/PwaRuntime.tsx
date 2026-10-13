@@ -73,7 +73,7 @@ export default function PwaRuntime() {
   return (
     <>
       {updateAvailable && (
-        <aside className="pwa-install-prompt" role="status" aria-label="Atualização da Arena Dev">
+        <aside className="pwa-install-prompt" role="status" aria-label="Atualização da Ramuvi">
           <div>
             <strong>Nova versão disponível</strong>
             <span>Conclua sua resposta antes de atualizar. Nada será enviado automaticamente.</span>
@@ -85,9 +85,9 @@ export default function PwaRuntime() {
         </aside>
       )}
       {installVisible && (
-        <aside className="pwa-install-prompt" aria-label="Instalar Arena Dev">
+        <aside className="pwa-install-prompt" aria-label="Instalar Ramuvi">
           <div>
-            <strong>Instalar Arena Dev</strong>
+            <strong>Instalar Ramuvi</strong>
             <span>Abra o /join como aplicativo neste dispositivo.</span>
           </div>
           <div>

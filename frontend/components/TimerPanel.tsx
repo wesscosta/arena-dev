@@ -560,7 +560,7 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
             <div>
               <span className="brand-mark">A</span>
               <div>
-                <strong>ARENA DEV</strong>
+                <strong>RAMUVI</strong>
                 <small>Tempo da atividade</small>
               </div>
             </div>

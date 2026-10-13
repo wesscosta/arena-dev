@@ -163,14 +163,14 @@
 
 .sessionActionStart {
   border-color: rgba(102, 255, 184, 0.58);
-  background: linear-gradient(180deg, #58f3a7 0%, #43cf8d 100%);
+  background: linear-gradient(180deg, var(--ds-accent) 0%, #43cf8d 100%);
 }
 
 .sessionActionStart:hover:not(:disabled),
 .sessionActionStart:focus-visible {
   border-color: rgba(122, 255, 193, 0.72);
   background: linear-gradient(180deg, #6af8b6 0%, #4cda99 100%);
-  box-shadow: 0 1rem 2.5rem rgba(88, 243, 167, 0.19);
+  box-shadow: 0 1rem 2.5rem color-mix(in srgb, var(--ds-accent) 19.0%, transparent);
 }
 
 .sessionActionResume {

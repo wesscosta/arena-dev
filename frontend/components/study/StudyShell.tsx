@@ -41,7 +41,7 @@ export default function StudyShell({ children }: { children: ReactNode }) {
   }
   return <div className={styles.shell} style={{ "--study-text-scale": textScale, "--study-text-percent": `${Math.round(textScale * 100)}%` } as React.CSSProperties}>
     <aside className={styles.studySidebar}>
-      <Link href="/learn" className={styles.brand} aria-label="Arena Dev — Estudos"><span className={styles.brandMark}>A</span><span className={styles.brandCopy}><strong>ARENA DEV</strong><small>ESTUDOS</small></span></Link>
+      <Link href="/learn" className={styles.brand} aria-label="Ramuvi — Estudos"><span className={styles.brandMark}>r</span><span className={styles.brandCopy}><strong>ramuvi</strong><small>ESTUDOS</small></span></Link>
       <nav className={styles.nav} aria-label="Navegação de estudos">
         <Link href="/learn" className={homeActive ? styles.activeNav : undefined}><HomeIcon/><span>Início</span></Link>
         <Link href="/learn/journeys" className={journeysActive ? styles.activeNav : undefined}><JourneyIcon/><span>Jornadas</span></Link>
@@ -58,7 +58,7 @@ export default function StudyShell({ children }: { children: ReactNode }) {
       </div>
     </aside>
     <div className={styles.studyWorkspace}>
-      <header className={styles.mobileHeader}><Link href="/learn" className={styles.brand} aria-label="Arena Dev — Estudos"><span className={styles.brandMark}>A</span><span className={styles.brandCopy}><strong>ARENA DEV</strong><small>ESTUDOS</small></span></Link></header>
+      <header className={styles.mobileHeader}><Link href="/learn" className={styles.brand} aria-label="Ramuvi — Estudos"><span className={styles.brandMark}>r</span><span className={styles.brandCopy}><strong>ramuvi</strong><small>ESTUDOS</small></span></Link></header>
       <main className={styles.main}>{children}</main>
     </div>
     {achievementToast && <div className={styles.achievementToast} role="status" aria-live="polite"><span><AchievementIcon /></span><div><small>Nova conquista</small><strong>{achievementToast.title}</strong><p>{achievementToast.description}</p></div></div>}

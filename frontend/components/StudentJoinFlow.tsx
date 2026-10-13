@@ -464,7 +464,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
   return (
     <main className="student-join-shell">
       <section className="student-join-card">
-        {!embedded && <div className="student-brand"><span>A</span><div><strong>ARENA DEV</strong><small>Participação ao vivo</small></div></div>}
+        {!embedded && <div className="student-brand"><span>r</span><div><strong>ramuvi</strong><small>Participação ao vivo</small></div></div>}
 
         {!session && (
           <form className="student-join-form" onSubmit={submitCode}>
@@ -880,7 +880,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
               </div>
             ) : liveStage.primary.type !== "WORD_CLOUD" && liveStage.primary.type !== "POLL" && liveStage.primary.type !== "QUESTION" && liveStage.primary.type !== "QUIZ" && liveStage.primary.type !== "LEARNING_CHECK" ? (
               <div className={wordStyles.waiting}>
-                <span>{liveStage.primary.type === "IDLE" ? "ARENA DEV" : liveStage.primary.type.replaceAll("_", " ")}</span>
+                <span>{liveStage.primary.type === "IDLE" ? "RAMUVI" : liveStage.primary.type.replaceAll("_", " ")}</span>
                 <strong>Aguardando próxima dinâmica</strong>
                 <p>O celular acompanha o mesmo estado da aula, exibindo apenas as ações destinadas aos participantes.</p>
               </div>

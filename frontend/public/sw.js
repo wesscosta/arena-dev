@@ -1,5 +1,5 @@
 /* PWA shell only. The backend, student tokens and interaction state are NEVER cached. */
-const VERSION = "v0.10-pwa-gate-1";
+const VERSION = "v0.12-ramuvi-visual-1";
 const CACHE_PREFIX = "arena-dev-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${VERSION}`;
 const STATIC_CACHE = `${CACHE_PREFIX}static-${VERSION}`;
@@ -7,8 +7,8 @@ const OFFLINE_PAGE = "/offline.html";
 const SHELL_URLS = [
   OFFLINE_PAGE,
   "/manifest.webmanifest",
-  "/icons/arena-192.png",
-  "/icons/arena-512.png",
+  "/icons/ramuvi-192.png",
+  "/icons/ramuvi-512.png",
 ];
 
 self.addEventListener("install", (event) => {

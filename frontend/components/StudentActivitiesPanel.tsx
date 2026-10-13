@@ -205,7 +205,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
           const isLast = questionIndex === total - 1;
           return <div className={styles.runner} role="dialog" aria-modal="true" aria-label={`Atividade ${open.title}`}>
             <header className={styles.runnerTop}>
-              <div className={styles.runnerBrand}><span>A</span><div><strong>ARENA DEV</strong><small>{access.classroomName}</small></div></div>
+              <div className={styles.runnerBrand}><span>r</span><div><strong>RAMUVI</strong><small>{access.classroomName}</small></div></div>
               <div className={styles.runnerTitle}><span>ATIVIDADE</span><strong>{open.title}</strong></div>
               <DialogCloseButton className={styles.runnerClose} onClick={() => setOpenId(null)} label="Fechar atividade" />
             </header>

@@ -1,0 +1,281 @@
+/*
+ * Ramuvi D12.2 pilot / visual migration layer.
+ * Pilot 1: teacher workflow. Pilot 2: student journey (in study.module.css).
+ * Pilot 3: arena workspace. Preserve the existing domain and component contracts.
+ * Cards communicate priority/state rather than gamifying the professor.
+ */
+:root {
+  --ramuvi-panel-radius: 1.15rem;
+  --ramuvi-panel-outline: var(--ds-border-subtle);
+  --ramuvi-panel-shadow: 0 8px 28px rgba(20,43,96,.055);
+}
+.overview-feature-grid {
+  display:grid;
+  grid-template-columns:minmax(0,1.6fr) minmax(18rem,.85fr);
+  gap:1.1rem;
+  align-items:stretch;
+}
+.overview-feature-grid .overview-resume {
+  min-width:0;
+  min-height:15.25rem;
+  padding:clamp(1.45rem,2.5vw,2.25rem);
+  border:1px solid var(--ramuvi-panel-outline);
+  border-left:5px solid var(--brand-petrol);
+  border-radius:var(--ramuvi-panel-radius);
+  background:var(--ds-surface);
+  color:var(--ds-text-primary);
+  box-shadow:var(--ramuvi-panel-shadow);
+}
+.overview-feature-grid .overview-resume::after { display:none; }
+.overview-feature-grid .overview-resume h2{
+  color:var(--ds-text-primary);
+  font-size:clamp(1.55rem,2.2vw,2.1rem);
+  line-height:1.18;
+  letter-spacing:-.052em;
+}
+.overview-feature-grid .overview-resume p{
+  color:var(--ds-text-secondary);
+  font-size:.94rem;
+  max-width:36rem;
+}
+.overview-feature-grid .overview-resume p strong { color:var(--ds-text-primary); }
+.overview-feature-grid .overview-resume-kicker {
+  color:var(--ds-accent-strong);
+  font-size:.74rem;
+  letter-spacing:.09em;
+}
+.overview-feature-grid .overview-resume-action {
+  border:1px solid var(--ds-accent);
+  border-radius:.75rem;
+  background:var(--ds-accent);
+  color:var(--ds-accent-contrast);
+  font-size:.88rem;
+}
+.overview-feature-grid .overview-resume-action:hover {
+  background:var(--ds-accent-strong);
+  color:var(--ds-accent-contrast);
+}
+.overview-command-card {
+  display:flex;flex-direction:column;min-width:0;
+  padding:clamp(1.3rem,2vw,1.85rem);
+  border:1px solid #455f88;
+  border-radius:var(--ramuvi-panel-radius);
+  background:#142b60;
+  color:#fff;
+}
+.overview-command-head{
+  display:flex;align-items:center;gap:.65rem;
+  color:#e8f5fa;font-size:.75rem;letter-spacing:.08em;font-weight:800;
+}
+.overview-command-icon{
+  display:grid;place-items:center;flex-shrink:0;
+  width:2.3rem;height:2.3rem;
+  border:1px solid #52729f;border-radius:.75rem;
+  font-size:1.15rem;color:#a9e1db;
+}
+.overview-command-card h3{
+  color:#fff;font-size:clamp(1.24rem,1.7vw,1.55rem);
+  line-height:1.24;letter-spacing:-.04em;
+  margin:1.15rem 0 .45rem;
+}
+.overview-command-card p{
+  color:#e3ebf7;font-size:.88rem;
+  line-height:1.65;margin:0;
+}
+.overview-command-facts{display:grid;gap:0;margin:1.35rem 0 1rem}
+.overview-command-facts > div{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;padding:.6rem 0;border-top:1px solid #466189;
+}
+.overview-command-facts dt{color:#d6e1f4;font-size:.77rem}
+.overview-command-facts dd{
+  color:#fff;font-size:.85rem;font-weight:800;
+  text-align:right;margin:0;font-variant-numeric:tabular-nums;
+}
+.overview-command-actions{display:grid;gap:.45rem;margin-top:auto}
+.overview-command-actions button{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;min-height:2.75rem;padding:.57rem .8rem;
+  border:1px solid #526c96;border-radius:.7rem;
+  background:#193969;color:#fff;font-size:.83rem;font-weight:750;
+  text-align:left;
+}
+.overview-command-actions button:hover{background:#245082;border-color:#88a2c6}
+.overview-command-actions button:focus-visible{outline:3px solid #b8e6df;outline-offset:2px}
+.overview-page .overview-metrics .metric {
+  position:relative;overflow:hidden;min-height:7.5rem;
+  border-radius:1rem;border-color:var(--ds-border-subtle);
+  background:var(--ds-surface);
+  box-shadow:var(--ramuvi-panel-shadow);
+}
+.overview-page .overview-metrics .metric::before {
+  content:"";position:absolute;top:0;left:1rem;right:1rem;height:3px;
+  background:var(--ds-border-strong);border-radius:0 0 999px 999px;
+}
+.overview-page .overview-metrics .metric strong {line-height:1.3}
+.overview-page .overview-class-card {
+  border-radius:1rem;border-color:var(--ds-border-subtle);
+  box-shadow:var(--ramuvi-panel-shadow);
+}
+.overview-page .overview-class-card.has-live-session {
+  border-color:var(--ds-accent);
+  box-shadow:inset 0 0 0 1px var(--ds-accent),var(--ramuvi-panel-shadow);
+}
+.overview-page .overview-class-card.has-live-session .overview-class-identity h3 {
+  color:var(--ds-text-primary);
+}
+@media(max-width:76rem) {
+  .overview-feature-grid{grid-template-columns:minmax(0,1fr)}
+  .overview-command-card{min-height:0}
+  .overview-command-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:40rem){
+  .overview-feature-grid{gap:.85rem}
+  .overview-feature-grid .overview-resume{flex-direction:column;align-items:stretch;gap:1.2rem}
+  .overview-feature-grid .overview-resume-action{align-self:stretch}
+  .overview-command-actions{grid-template-columns:1fr}
+}
+
+/* Arena: higher expression only inside the live-session cockpit.
+ * Projection has its own contract and is deliberately not themed by this scope.
+ */
+.arena-live-shell {
+  --bg:#0c1831;
+  --surface:#142747;
+  --surface-2:#192f52;
+  --surface-3:#20395d;
+  --text:#f7f9ff;
+  --muted:#c7d5ea;
+  --border:#3b557b;
+  --accent:#9bded4;
+  --accent-2:#c8f0ec;
+  --ds-canvas:#0c1831;
+  --ds-surface:#142747;
+  --ds-surface-raised:#192f52;
+  --ds-surface-subtle:#122441;
+  --ds-surface-control:#10233f;
+  --ds-surface-inset:#0b1c36;
+  --ds-surface-muted:#20395d;
+  --ds-surface-hover:#233b5c;
+  --ds-surface-interactive:#1f3859;
+  --ds-text-primary:#f7f9ff;
+  --ds-text-secondary:#c7d5ea;
+  --ds-text-tertiary:#b7cbe5;
+  --ds-border:#3b557b;
+  --ds-border-strong:#6480a8;
+  --ds-border-subtle:#344c71;
+  --ds-accent:#9bded4;
+  --ds-accent-strong:#c8f0ec;
+  --ds-accent-contrast:#0b2830;
+  --ds-shadow-panel:0 10px 26px rgba(2,8,24,.24);
+  --ds-shadow-elevated:0 15px 42px rgba(2,8,24,.32);
+  color:var(--ds-text-primary);
+  background:var(--ds-canvas);
+}
+.arena-live-shell .arena-cockpit-nav {
+  background:#102340;
+  border-right:1px solid #344c71;
+  color:var(--ds-text-primary);
+}
+.arena-live-shell .arena-nav-brand{
+  border-bottom-color:#344c71!important;
+}
+.arena-live-shell .arena-nav-brand-copy strong { color:#f7f9ff!important }
+.arena-live-shell .arena-nav-brand-copy small { color:#c7d5ea }
+.arena-live-shell .arena-cockpit-nav button:focus-visible {
+  outline:3px solid #c8f0ec;
+  outline-offset:3px;
+}
+.arena-live-shell .arena-session-workspace {
+  background:var(--ds-canvas);
+}
+.arena-live-shell .arena-live-topbar {
+  background:#142747;
+  border-bottom:1px solid #3b557b;
+  color:#f7f9ff;
+  box-shadow:0 8px 25px rgba(2,8,24,.18);
+}
+.arena-live-shell .arena-live-indicator {
+  display:inline-flex;
+  align-items:center;
+  flex:0 0 auto;
+  gap:.45rem;
+  padding:.5rem .75rem;
+  border-radius:999px;
+  border:1px solid #5d7da1;
+  background:#203b58;
+  color:#edf8f6;
+  font-size:.75rem;
+  font-weight:800;
+  letter-spacing:.025em;
+  white-space:nowrap;
+}
+.arena-live-shell .arena-live-indicator > span {
+  display:block;
+  width:.5rem;
+  height:.5rem;
+  border-radius:50%;
+  background:#a4e4d7;
+}
+.arena-live-shell .arena-live-classroom-link {
+  color:#f7f9ff;
+}
+.arena-live-shell .arena-live-classroom-link:hover {
+  color:#c8f0ec;
+}
+.arena-live-shell .arena-session-elapsed {
+  border-color:#557198;
+  background:#1b3557;
+  color:#fff;
+}
+.arena-live-shell .arena-session-elapsed :is(small,span) { color:#dce8f8 }
+.arena-live-shell .arena-projector-toggle {
+  border-color:#6083aa;
+  background:#1d385c;
+  color:#f2f8ff;
+}
+.arena-live-shell .arena-projector-toggle[data-active="true"] {
+  background:#1b4b4d;
+  border-color:#9bded4;
+  color:#c8f0ec;
+}
+.arena-live-shell :is(.arena-main-card,.arena-tab-content>.panel,.arena-participants-card,.arena-context-rail,.arena-header.compact) {
+  border-color:var(--ds-border);
+  background:var(--ds-surface);
+  box-shadow:var(--ds-shadow-panel);
+}
+.arena-live-shell .arena-activity-strip{
+  border:1px solid var(--ds-border);
+  border-radius:1rem;
+  padding:.75rem 1rem;
+  background:var(--ds-surface);
+}
+.arena-live-shell .arena-activity-strip strong { color:var(--ds-text-primary) }
+.arena-live-shell .eyebrow.accent {
+  color:#a5e5dc;
+}
+.arena-live-shell :is(.button.primary,.ui-button-primary) {
+  background:var(--ds-accent);
+  color:var(--ds-accent-contrast);
+  border-color:var(--ds-accent);
+}
+.arena-live-shell :is(.button.primary,.ui-button-primary):hover:not(:disabled) {
+  background:var(--ds-accent-strong);
+  color:var(--ds-accent-contrast);
+}
+.arena-live-shell :is(button,a,input,select,textarea):focus-visible {
+  outline-color:#c8f0ec;
+  outline-offset:3px;
+}
+.arena-live-shell :is(.select,.input){
+  border-color:var(--ds-border-strong);
+  background:var(--ds-surface-control);
+  color:var(--ds-text-primary);
+}
+@media(max-width:64rem) {
+  .arena-live-shell .arena-live-indicator{display:none}
+}
+@media(prefers-reduced-motion:reduce) {
+  .overview-feature-grid :is(button,.overview-resume),
+  .arena-live-shell :is(button,a) { transition-duration:0ms!important }
+}

@@ -157,7 +157,7 @@
   background:
     radial-gradient(
       circle at 50% 48%,
-      rgba(88, 243, 167, .07),
+      color-mix(in srgb, var(--ds-accent) 7.0%, transparent),
       transparent 34%
     ),
     var(--ds-surface);
@@ -171,7 +171,7 @@
   background:
     linear-gradient(
       145deg,
-      rgba(88, 243, 167, .035),
+      color-mix(in srgb, var(--ds-accent) 3.5%, transparent),
       transparent 40%
     );
 }
@@ -282,8 +282,8 @@
 
 .score-presets > button:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: rgba(88, 243, 167, .28);
-  background: rgba(88, 243, 167, .055);
+  border-color: color-mix(in srgb, var(--ds-accent) 28.0%, transparent);
+  background: color-mix(in srgb, var(--ds-accent) 5.5%, transparent);
 }
 
 .score-presets > button:disabled {

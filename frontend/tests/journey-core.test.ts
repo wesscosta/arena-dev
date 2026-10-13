@@ -110,7 +110,7 @@ test("16.3.7B converges the study shell and learning hierarchy with the product 
   const reader = readFileSync(resolve(process.cwd(), "app/learn/journeys/[journeyId]/content/[contentId]/page.tsx"), "utf8");
 
   assert.match(shell, /studySidebar/);
-  assert.match(shell, /ARENA DEV/);
+  assert.match(shell, /ramuvi/);
   assert.match(shell, /ESTUDOS/);
   assert.match(studyCss, /16\.3\.7B — Study experience visual convergence/);
   assert.match(studyCss, /studyModule:not\(:last-child\)>\.studyModuleIndex:after/);
