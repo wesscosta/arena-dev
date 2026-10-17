@@ -1,6 +1,6 @@
 # Estado atual — Arena Dev
 
-**Atualizado em 10/10/2026.** Este é o resumo operacional, não o diário histórico das implementações.
+**Atualizado em 19/10/2026.** Este é o resumo operacional, não o diário histórico das implementações. Planejamento e decisões de produto vivem no Notion ([Arena Dev — Plataforma de Aprendizagem](https://app.notion.com/p/3bff3eb198c3818fa281fd0abb23b6ce)); este arquivo registra o estado do código.
 
 | Linha | Estado | Fonte de verdade |
 | --- | --- | --- |
@@ -8,13 +8,23 @@
 | `v0.10.0` | **Publicada**, Flyway V56, edição self-hosted docente único | [`RELEASE_0_10.md`](RELEASE_0_10.md) |
 | `v0.11.0-rc.1` | **Pré-release candidata** (19/10/2026): v0.11 + ferramental de release + 11.7 (coerência visual, WCAG AA, contraste de texto AAA). **SHA congelado para os 8 gates de campo**; NO-GO para `0.11.0` | [Release notes](RELEASE_0_11.md) |
 | `main` | Candidata `v0.11.0-rc.1` integrada; sem release estável v0.11.0 | [11.7](v0.11/11.7_COHERENCE_AA.md) |
-| `feat/v0.10-learning-loop` | Origem histórica da integração v0.10 | PR [#35](https://github.com/wesscosta/arena-dev/pull/35), incorporada |
+| `v0.12` | **Figma-first**: só auditoria e design; o código parte da baseline `v0.11.0-rc.1` (`796a029`) e não recebe mudanças da v0.12 até aprovação explícita do design | [Roadmap v0.12](ROADMAP_V0_12.md) |
+| `feat/v012-ramuvi-pro-cards` | Tentativa descartada como implementação (PR [#54](https://github.com/wesscosta/arena-dev/pull/54), draft, não mesclar); preservada para recuperação seletiva | [Decisão 14/10](https://app.notion.com/p/3f9f3eb198c38136b319e5807170f8bf) |
+| `feat/v0.10-learning-loop` | Origem histórica da integração v0.10; branch removida após o merge (19/10) | PR [#35](https://github.com/wesscosta/arena-dev/pull/35), incorporada |
 
 **Fechamento (10/10):** o operador autorizou a publicação e declarou aprovados os testes manuais Safari/iOS, DevTools e demais gates; [registro e limites de evidência](v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md). A publicação foi condicionada ao CI do SHA estável, ao backup V56 e ao gate final na `main`.
 
-## Linha de evolução ativa: v0.11
+## Linha de evolução ativa: v0.12 em modo Figma-first
 
-A v0.11 iniciou com a etapa **11.0** (PR #38, integrada), seguida do backend de publicação segura **11.1** (PR #39, integrado, Flyway V57). A interface **11.2** de apresentação docente e leitura pública foi **integrada à `main`** pelo [PR #40](https://github.com/wesscosta/arena-dev/pull/40), após os três jobs aprovados no SHA `ceb60cd` (merge `863c83c`). **Navegação sincronizada por seção 11.3 aprovada e integrada à `main`** pelo [PR #42](https://github.com/wesscosta/arena-dev/pull/42) no SHA `f5526ba`, merge `7ffe27b`. **11.4 integrada à main** pelo PR #45 (merge `1e3645e`, CI 3/3 com WebKit). **11.5 discovery editorial integrado** (PR #46, merge `02da003`), sem nova API/DDL; **11.6 tecnicamente concluída e integrada pelo PR #47** (merge `2c1e011`), incluindo dois projetores, reconexão, WebKit emulado e gate NO-GO; **testes físicos, piloto, rollback e aceite de segurança ainda pendentes**. [Fechamento técnico](v0.11/11.6_TECHNICAL_CLOSURE_NO_GO_2026-10-10.md). Redesign e Active Learning estão [reservados à v0.12](ROADMAP_V0_12.md). Consulte [documentação](v0.11/README.md), [execução 11.1](v0.11/11.1_EXECUTION_STATUS.md), [11.2](v0.11/11.2_EXECUTION_STATUS.md), [11.3](v0.11/11.3_EXECUTION_STATUS.md), [11.4](v0.11/11.4_SECURITY_UX_EXECUTION.md), [11.5](v0.11/11.5_EDITORIAL_PROVENANCE_AUDIT.md), [11.6](v0.11/11.6_TECHNICAL_EVIDENCE.md) e [roadmap](ROADMAP_V0_11.md). A v0.10 permanece baseline estável.
+**Decisão de 14/10/2026** ([Notion, auditoria Figma-first](https://app.notion.com/p/3f9f3eb198c38136b319e5807170f8bf)): a v0.12 começa por auditoria e design no Figma. O código parte da candidata `v0.11.0-rc.1` (`796a029`), que já inclui a correção de coerência visual e acessibilidade da 11.7 contra o Design System atual; ela não antecipa a nova linguagem visual da v0.12. Processo: **Figma → revisão UX/UI → protótipo → aceite explícito → código → testes**. Até o aceite, não refatorar JSX/CSS, não criar telas, não alterar tokens no produto e não criar migrations ou APIs da v0.12.
+
+- O PR #54 (`bc49dda`) é tentativa substituída: não mesclar; encerrar só depois de preservar a referência da implementação.
+- Requisitos já registrados para o design (não implementados): Jornada do Aluno em **mapa panorâmico e linha do tempo** (14/10) e **D12-JR-CODE-01**, restrições opcionais de cópia em blocos de código da Jornada (16/10). Detalhes no [roadmap v0.12](ROADMAP_V0_12.md).
+- Primeiro gate: inventário completo do Figma, hoje bloqueado pelo limite de leitura da integração Figma Starter.
+
+## Linha anterior: v0.11 (pré-release rc.1, NO-GO operacional)
+
+A v0.11 iniciou com a etapa **11.0** (PR #38, integrada), seguida do backend de publicação segura **11.1** (PR #39, integrado, Flyway V57). A interface **11.2** de apresentação docente e leitura pública foi **integrada à `main`** pelo [PR #40](https://github.com/wesscosta/arena-dev/pull/40), após os três jobs aprovados no SHA `ceb60cd` (merge `863c83c`). **Navegação sincronizada por seção 11.3 aprovada e integrada à `main`** pelo [PR #42](https://github.com/wesscosta/arena-dev/pull/42) no SHA `f5526ba`, merge `7ffe27b`. **11.4 integrada à main** pelo PR #45 (merge `1e3645e`, CI 3/3 com WebKit). **11.5 discovery editorial integrado** (PR #46, merge `02da003`), sem nova API/DDL; **11.6 tecnicamente concluída e integrada pelo PR #47** (merge `2c1e011`), incluindo dois projetores, reconexão, WebKit emulado e gate NO-GO; **testes físicos, piloto, rollback e aceite de segurança ainda pendentes**. [Fechamento técnico](v0.11/11.6_TECHNICAL_CLOSURE_NO_GO_2026-10-10.md). Fechamento documental e handoff da v0.12 pelo PR #49 (merge `fc239fe`). Ferramental de release, 11.7 e candidata `v0.11.0-rc.1` pelo [PR #57](https://github.com/wesscosta/arena-dev/pull/57) (merge `796a029`). Consulte [documentação](v0.11/README.md), [execução 11.1](v0.11/11.1_EXECUTION_STATUS.md), [11.2](v0.11/11.2_EXECUTION_STATUS.md), [11.3](v0.11/11.3_EXECUTION_STATUS.md), [11.4](v0.11/11.4_SECURITY_UX_EXECUTION.md), [11.5](v0.11/11.5_EDITORIAL_PROVENANCE_AUDIT.md), [11.6](v0.11/11.6_TECHNICAL_EVIDENCE.md) e [roadmap](ROADMAP_V0_11.md). A v0.10 permanece baseline estável.
 
 ## Capacidades efetivamente implementadas na v0.10
 
@@ -31,7 +41,7 @@ A v0.11 iniciou com a etapa **11.0** (PR #38, integrada), seguida do backend de 
 
 ## Evidências disponíveis e o que elas não demonstram
 
-- CI remoto do SHA `d876325`: [run #38019345190](https://github.com/wesscosta/arena-dev/actions/runs/38019345190), **em execução no momento da revisão documental**; não considerá-lo aprovado sem conclusão `success`. Qualquer commit de documentação gera novo SHA e exige novo CI.
+- CI do SHA `d876325` ([run #38019345190](https://github.com/wesscosta/arena-dev/actions/runs/38019345190)) terminou **cancelado**, não aprovado. O CI vigente da candidata é o da `main` em `796a029` ([run #39199028144](https://github.com/wesscosta/arena-dev/actions/runs/39199028144), `success`). Qualquer commit de documentação gera novo SHA e exige novo CI.
 - Em 10/10, os testes locais mais recentes do frontend tiveram **319/319 unitários**, TypeScript, build, lint sem erros e 2/2 E2E direcionados de rolagem. Não equivalem à regressão integrada completa (backend + frontend + projeto) no SHA final.
 - Build/health de desenvolvimento são verificações técnicas, **não** autorização de lançamento.
 - **Rollback técnico isolado V48→V56→V48 aprovado em 10/10 (exit 0):** [evidência](v0.10/ROLLBACK_V56_SYNTHETIC_2026-10-10.md), dados sintéticos e sem alteração do banco principal; RTO/RPO operacional segue pendente.
