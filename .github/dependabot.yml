@@ -1,4 +1,8 @@
 version: 2
+
+# Major bumps arrive as individual PRs; minor and patch stay grouped.
+# Runtime upgrades (JDK, Node) are deliberate: CI, build and runtime images
+# change together, never through an automated PR.
 updates:
   - package-ecosystem: npm
     directory: /frontend
@@ -7,6 +11,11 @@ updates:
     groups:
       frontend:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
+    ignore:
+      # Types track the Node version used by CI and the image (22).
+      - dependency-name: "@types/node"
+        versions: [">=23"]
 
   - package-ecosystem: maven
     directory: /backend
@@ -15,6 +24,7 @@ updates:
     groups:
       backend:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: github-actions
     directory: /
@@ -28,8 +38,18 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
+    ignore:
+      # maven:<version>-eclipse-temurin-<jdk> carries the JDK in the tag suffix
+      # and Dependabot proposes non-LTS JDKs. Bump by hand together with
+      # setup-java and eclipse-temurin.
+      - dependency-name: "maven"
+      - dependency-name: "eclipse-temurin"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: /frontend
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
