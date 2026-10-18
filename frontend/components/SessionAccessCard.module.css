@@ -207,7 +207,7 @@
 }
 
 .warning strong {
-  color: #e5b94d;
+  color: var(--ds-warning-text);
   font-size: var(--font-size-2xs);
 }
 
