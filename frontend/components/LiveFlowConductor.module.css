@@ -51,7 +51,7 @@
 }
 
 .progress span {
-  font-size: 11px;
+  font-size: var(--font-size-2xs);
 }
 
 .timeline {
@@ -82,7 +82,7 @@
   border-radius: 8px;
   background: rgba(255, 255, 255, .035);
   color: #71877d;
-  font-size: 8px;
+  font-size: var(--font-size-2xs);
   font-weight: 900;
 }
 
@@ -95,7 +95,7 @@
 }
 
 .timelineItem strong {
-  font-size: 8px;
+  font-size: var(--font-size-2xs);
   text-transform: uppercase;
   letter-spacing: .06em;
 }
@@ -103,7 +103,7 @@
 .timelineItem small {
   margin-top: 2px;
   color: var(--muted);
-  font-size: 7px;
+  font-size: var(--font-size-2xs);
 }
 
 .timelineItem.current {
@@ -149,7 +149,7 @@
   max-width: 550px;
   margin: 0 0 8px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--font-size-2xs);
   line-height: 1.5;
 }
 
@@ -170,7 +170,7 @@
 
 .currentHead > div > span {
   color: var(--accent);
-  font-size: 8px;
+  font-size: var(--font-size-2xs);
   font-weight: 900;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -189,7 +189,7 @@
 
 .currentHead > strong small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
 }
 
 .teacherNote {
@@ -199,7 +199,7 @@
 }
 
 .teacherNote strong {
-  font-size: 8px;
+  font-size: var(--font-size-2xs);
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: .08em;
@@ -208,7 +208,7 @@
 .teacherNote p {
   margin: 4px 0 0;
   color: #a7bbb2;
-  font-size: 9px;
+  font-size: var(--font-size-2xs);
   line-height: 1.5;
 }
 
@@ -243,7 +243,7 @@
   border-radius: 999px;
   padding: 5px 8px;
   color: var(--muted);
-  font-size: 8px;
+  font-size: var(--font-size-2xs);
 }
 
 .question pre {
@@ -252,7 +252,7 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   background: #07100d;
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
 }
 
 .options,
@@ -285,7 +285,7 @@
 
 .interactionPreview > span {
   color: var(--accent);
-  font-size: 8px;
+  font-size: var(--font-size-2xs);
   font-weight: 900;
   letter-spacing: .1em;
 }
@@ -299,7 +299,7 @@
   border: 1px solid rgba(255, 188, 88, .2);
   border-radius: 9px;
   color: #d9b976;
-  font-size: 9px;
+  font-size: var(--font-size-2xs);
 }
 
 .controls {
@@ -317,7 +317,7 @@
 
 .controls > div span {
   color: var(--muted);
-  font-size: 8px;
+  font-size: var(--font-size-2xs);
 }
 
 @media (max-width: 680px) {

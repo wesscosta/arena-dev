@@ -43,11 +43,11 @@ Cabeçalhos usam um **papel**, nunca um tamanho próprio. Mudar o valor do papel
 
 Espaçamento do título: `--page-title-margin`. Tracking de títulos: `--tracking-title`.
 
-**Dívida registrada para a v0.12:** cerca de 1.170 declarações de `font-size` e 670 cores ainda são literais. A migração é gradual, com regressão visual, e não faz parte da v0.11.
+**Dívida registrada para a v0.12:** cerca de 1.170 declarações de `font-size` e 670 cores ainda são literais, e 585 tamanhos ficam abaixo de 12px em 33 arquivos. Na v0.11 foram corrigidos apenas os cabeçalhos e os painéis usados ao vivo (Presença e acesso, Roteiro). A migração é gradual, com regressão visual, e não faz parte da v0.11.
 
 ### Cor da turma
 
-Cada cor tem `value` (superfícies escuras) e `lightValue` (≥ 4,5:1 em superfícies claras, pois a cor também aparece como texto). A classe `.classroom-accent-scope` resolve `--classroom-accent` conforme o tema; propriedades inline não podem ser sobrescritas por seletor, por isso o componente recebe `--classroom-accent-dark` e `--classroom-accent-light`. A Home da turma usa faixa sólida de 4px, borda a 40% e fundo a 12%. Colisões conhecidas (Rosa × erro, Esmeralda × destaque do sistema) ficam para a nova paleta da v0.12.
+Cada cor tem `value` (superfícies escuras) e `lightValue` (≥ 4,5:1 em superfícies claras, pois a cor também aparece como texto). A classe `.classroom-accent-scope` resolve `--classroom-accent` conforme o tema; propriedades inline não podem ser sobrescritas por seletor, por isso o componente recebe `--classroom-accent-dark` e `--classroom-accent-light`. A Home da turma usa faixa sólida de 4px, borda a 40% e fundo a 12%. Fundos suaves usam `--classroom-tint` (sempre o valor vivo), porque derivá-los do tom escuro do tema claro deixava os painéis acinzentados; texto, borda e faixa usam `--classroom-accent`. Colisões conhecidas (Rosa × erro, Esmeralda × destaque do sistema) ficam para a nova paleta da v0.12.
 
 ## Hierarquia semântica
 

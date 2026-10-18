@@ -10,7 +10,7 @@
   background:
     linear-gradient(
       120deg,
-      color-mix(in srgb, var(--classroom-accent, var(--accent)) 12%, var(--ds-surface)) 0%,
+      color-mix(in srgb, var(--classroom-tint, var(--accent)) 12%, var(--ds-surface)) 0%,
       transparent 58%
     ),
     var(--ds-surface);
@@ -81,7 +81,7 @@
   border-radius: var(--radius-lg);
   background: color-mix(
     in srgb,
-    var(--classroom-accent, var(--accent)) 4%,
+    var(--classroom-tint, var(--accent)) 4%,
     var(--ds-surface-inset)
   );
 }
@@ -90,7 +90,7 @@
   border-color: color-mix(in srgb, var(--classroom-accent, var(--accent)) 38%, var(--ds-border));
   background: color-mix(
     in srgb,
-    var(--classroom-accent, var(--accent)) 7%,
+    var(--classroom-tint, var(--accent)) 7%,
     var(--ds-surface-inset)
   );
 }
