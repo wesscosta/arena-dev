@@ -272,10 +272,11 @@
   height: 2.5rem;
   display: grid;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--ds-accent) 24%, var(--ds-border));
+  /* 11.7: the chosen classroom colour identifies the card in the list. */
+  border: 1px solid color-mix(in srgb, var(--classroom-accent, var(--ds-accent)) 45%, var(--ds-border));
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--ds-accent) 8%, var(--ds-surface));
-  color: var(--ds-accent-strong);
+  background: color-mix(in srgb, var(--classroom-tint, var(--ds-accent)) 16%, var(--ds-surface));
+  color: var(--classroom-accent, var(--ds-accent-strong));
   font-size: var(--font-size-sm);
   font-weight: var(--font-black);
 }

@@ -977,7 +977,7 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
                 >
                   <div className="overview-class-card-head">
                     <div className="overview-class-identity">
-                      <div className="classroom-monogram">{classroom.name.trim().charAt(0).toUpperCase()}</div>
+                      <div className={`classroom-monogram ${CLASSROOM_ACCENT_SCOPE_CLASS}`} style={classroomThemePresentation(classroom).style}>{classroom.name.trim().charAt(0).toUpperCase()}</div>
                       <div>
                         <h3>{classroom.name}</h3>
                         <p>{classroom.code || "Sem código"}</p>
