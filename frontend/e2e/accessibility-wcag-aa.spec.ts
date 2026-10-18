@@ -9,7 +9,7 @@ const apiBaseUrl = process.env.E2E_API_URL ?? "http://127.0.0.1:8080";
 const teacherUsername = process.env.E2E_TEACHER_USERNAME ?? "professor";
 const teacherPassword = process.env.E2E_TEACHER_PASSWORD ?? "arena-dev-change-me";
 
-type AxeFinding = { id: string; impact: string; nodes: Array<{ target: string[] }> };
+type AxeFinding = { id: string; impact: string; nodes: Array<{ target: string[]; any: Array<{ message: string }> }> };
 
 async function audit(page: Page, screen: string) {
   await page.addScriptTag({ content: axeSource });
@@ -20,7 +20,7 @@ async function audit(page: Page, screen: string) {
   });
   const blocking = results.violations.filter((item) => item.impact === "serious" || item.impact === "critical");
   const summary = blocking.map((item) => ({ id: item.id, impact: item.impact,
-    targets: item.nodes.slice(0, 3).map((node) => node.target.join(" ")) }));
+    targets: item.nodes.slice(0, 3).map((node) => `${node.target.join(" ")} — ${node.any[0]?.message ?? ""}`) }));
   console.log(`WCAG ${screen}: ${JSON.stringify(summary)}`);
   return summary;
 }
