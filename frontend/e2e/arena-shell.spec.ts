@@ -1593,7 +1593,12 @@ test("v0.11 / 11.2: professor publica leitura segura e o projetor recebe somente
     await openArenaMaterial(page);
     const dialog = page.getByRole("dialog", { name: "Biblioteca nesta aula" });
     await dialog.getByLabel("Encontrar material na Biblioteca").fill(title);
+    // The GET returns an empty body until the UI's PUT commits; wait for it.
+    const linked = page.waitForResponse((response) =>
+      response.request().method() === "PUT"
+      && response.url().endsWith(`/api/sessions/${fixture.session.id}/contextual-material`));
     await dialog.getByRole("button", { name: new RegExp(title) }).click();
+    expect((await linked).ok()).toBe(true);
     const placed = await api.get(`/api/sessions/${fixture.session.id}/contextual-material`);
     await expectOk(placed, "Vínculo de material");
     expect((await placed.json() as { resourceId: string }).resourceId).toBe(resource.id);
