@@ -10,14 +10,14 @@
   gap: 1rem;
 }
 
-.header h2 { margin: .18rem 0 .25rem; }
+.header h2 { margin: var(--page-title-margin); font-size: var(--font-size-section-title); letter-spacing: var(--tracking-title); }
 .header p { margin: 0; color: var(--muted); max-width: 48rem; }
 
 .eyebrow {
   color: var(--accent);
-  font-size: .68rem;
+  font-size: var(--font-size-eyebrow);
   font-weight: 800;
-  letter-spacing: .09em;
+  letter-spacing: var(--tracking-eyebrow);
 }
 
 .primary,

@@ -16,6 +16,18 @@
   --font-size-3xl: 1.875rem;
   --font-size-display: clamp(2rem, 3vw, 2.75rem);
 
+  /* 11.7 — papéis tipográficos: cada cabeçalho usa um papel, não um tamanho
+     próprio. Alterar o papel ajusta todas as telas de uma vez. */
+  --font-size-page-title: var(--font-size-3xl);
+  --font-size-section-title: var(--font-size-2xl);
+  --font-size-dynamic-title: clamp(1.5rem, 1.8vw, 2rem);
+  --font-size-panel-title: var(--font-size-xl);
+  --font-size-eyebrow: var(--font-size-2xs);
+  --font-size-page-description: var(--font-size-sm);
+  --tracking-title: -0.035em;
+  --tracking-eyebrow: 0.12em;
+  --page-title-margin: var(--space-2) 0 var(--space-1);
+
   --line-tight: 1.15;
   --line-snug: 1.3;
   --line-normal: 1.5;

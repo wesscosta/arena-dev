@@ -314,7 +314,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
     <div className={styles.workspace}>
       <header className={styles.header}>
         <div>
-          <span className={styles.eyebrow}>JORNADAS · CONTEÚDOS · 16.2</span>
+          <span className={styles.eyebrow}>JORNADAS · CONTEÚDOS</span>
           <h2>Jornadas de aprendizagem</h2>
           <p>Comece do zero, use um modelo ou transforme o material que você já possui em um rascunho de jornada.</p>
         </div>

@@ -1,15 +1,17 @@
 import type { CSSProperties } from "react";
 import type { Classroom, ClassroomThemeColor, ClassroomThemeIcon } from "./types";
 
-export const CLASSROOM_THEME_COLORS: { id: ClassroomThemeColor; label: string; value: string }[] = [
-  { id: "emerald", label: "Esmeralda", value: "#49d49d" },
-  { id: "teal", label: "Turquesa", value: "#2dd4bf" },
-  { id: "blue", label: "Azul", value: "#60a5fa" },
-  { id: "indigo", label: "Índigo", value: "#818cf8" },
-  { id: "violet", label: "Violeta", value: "#a78bfa" },
-  { id: "amber", label: "Âmbar", value: "#fbbf24" },
-  { id: "orange", label: "Laranja", value: "#fb923c" },
-  { id: "rose", label: "Rosa", value: "#fb7185" },
+// `value` is tuned for dark surfaces; `lightValue` keeps >= 4.5:1 on light
+// surfaces, because the accent is also used as text (session kicker).
+export const CLASSROOM_THEME_COLORS: { id: ClassroomThemeColor; label: string; value: string; lightValue: string }[] = [
+  { id: "emerald", label: "Esmeralda", value: "#49d49d", lightValue: "#047857" },
+  { id: "teal", label: "Turquesa", value: "#2dd4bf", lightValue: "#0f766e" },
+  { id: "blue", label: "Azul", value: "#60a5fa", lightValue: "#1d4ed8" },
+  { id: "indigo", label: "Índigo", value: "#818cf8", lightValue: "#4338ca" },
+  { id: "violet", label: "Violeta", value: "#a78bfa", lightValue: "#6d28d9" },
+  { id: "amber", label: "Âmbar", value: "#fbbf24", lightValue: "#92400e" },
+  { id: "orange", label: "Laranja", value: "#fb923c", lightValue: "#9a3412" },
+  { id: "rose", label: "Rosa", value: "#fb7185", lightValue: "#be123c" },
 ];
 
 export const CLASSROOM_THEME_ICONS: { id: ClassroomThemeIcon; label: string; glyph: string }[] = [
@@ -23,6 +25,8 @@ export const CLASSROOM_THEME_ICONS: { id: ClassroomThemeIcon; label: string; gly
   { id: "math", label: "Matemática", glyph: "∑" },
 ];
 
+export const CLASSROOM_ACCENT_SCOPE_CLASS = "classroom-accent-scope";
+
 export function classroomThemePresentation(classroom: Classroom): {
   color: string;
   glyph: string;
@@ -33,6 +37,11 @@ export function classroomThemePresentation(classroom: Classroom): {
   return {
     color: color.value,
     glyph: icon.glyph,
-    style: { "--classroom-accent": color.value } as CSSProperties,
+    // Inline custom properties outrank selectors, so the theme switch lives in
+    // CSS (.classroom-accent-scope) and resolves --classroom-accent per theme.
+    style: {
+      "--classroom-accent-dark": color.value,
+      "--classroom-accent-light": color.lightValue,
+    } as CSSProperties,
   };
 }

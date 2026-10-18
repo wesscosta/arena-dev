@@ -28,14 +28,14 @@
 .category {
   display: block;
   color: var(--ds-accent, var(--accent));
-  font-size: .73rem;
+  font-size: var(--font-size-eyebrow);
   font-weight: 800;
-  letter-spacing: .09em;
+  letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
 }
 .copy h2 {
   margin: .28rem 0 .26rem;
-  font-size: clamp(1.5rem, 1.8vw, 2rem);
+  font-size: var(--font-size-dynamic-title);
   line-height: 1.18;
   letter-spacing: -.025em;
   color: var(--ds-text-primary, var(--text));
@@ -101,7 +101,7 @@
 @media (max-width: 560px) {
   .header { min-height: 0; gap: .3rem; padding: .55rem .8rem; }
   .identity { gap: .65rem; }
-  .copy h2 { font-size: 1.48rem; margin: .19rem 0 .15rem; }
+  .copy h2 { font-size: var(--font-size-section-title); margin: .19rem 0 .15rem; }
   .copy p { font-size: .83rem; }
   .icon { flex-basis: 2.4rem; width: 2.4rem; height: 2.4rem; }
   .icon svg { width: 1.25rem; height: 1.25rem; }

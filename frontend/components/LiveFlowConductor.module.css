@@ -19,21 +19,21 @@
 .eyebrow {
   display: block;
   color: var(--accent);
-  font-size: 8px;
+  font-size: var(--font-size-eyebrow);
   font-weight: 900;
-  letter-spacing: .14em;
+  letter-spacing: var(--tracking-eyebrow);
 }
 
 .header h3 {
   margin: 5px 0 4px;
-  font-size: 19px;
+  font-size: var(--font-size-panel-title);
   letter-spacing: -.025em;
 }
 
 .header p {
   margin: 0;
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--font-size-xs);
 }
 
 .progress {

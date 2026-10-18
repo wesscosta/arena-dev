@@ -54,15 +54,16 @@
   padding-top: var(--space-2);
 }
 .overview-page-header h1 {
-  margin: var(--space-2) 0 var(--space-1);
-  font-size: var(--font-size-3xl);
-  letter-spacing: -0.035em;
+  margin: var(--page-title-margin);
+  font-size: var(--font-size-page-title);
+  line-height: var(--line-tight);
+  letter-spacing: var(--tracking-title);
 }
 .overview-page-header p {
   max-width: 42rem;
   margin: 0;
   color: var(--ds-text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-page-description);
   line-height: var(--line-normal);
 }
 .overview-new-classroom {

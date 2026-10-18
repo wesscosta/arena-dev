@@ -112,7 +112,7 @@ async function expectInsideViewport(page: Page, testId: string, viewportWidth: n
 }
 
 async function assertHomeLayout(page: Page, viewport: { width: number; height: number }) {
-  await expect(page.getByText("HOME DA TURMA", { exact: true })).toBeVisible();
+  await expect(page.getByText("INÍCIO DA TURMA", { exact: true })).toBeVisible();
   await expect(page.getByTestId("classroom-session-panel")).toBeVisible();
   await expect(page.getByTestId("classroom-session-action")).toBeVisible();
   await expect(page.getByTestId("classroom-summary")).toBeVisible();
@@ -342,7 +342,7 @@ test.describe.serial("Classroom Home responsive contract", () => {
       await loginAndOpenClassroom(page, fixture.classroom.name);
       for (const width of [320, 375, 390, 430]) {
         await page.setViewportSize({ width, height: 844 });
-        for (const tabName of ["Home", "Alunos", "Atividades", "Jornadas"]) {
+        for (const tabName of ["Início", "Alunos", "Atividades", "Jornadas"]) {
           await page.locator(".classroom-section-tab").filter({ hasText: tabName }).click();
           const state = await page.evaluate(() => {
             const nav = document.querySelector<HTMLElement>(".classroom-section-nav")!;

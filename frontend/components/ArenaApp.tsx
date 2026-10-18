@@ -104,6 +104,7 @@ import type { Activity, ActivityQuestion, ActivityStep, ArenaData, Classroom, Cl
 import { classroomArenaCtaState } from "@/lib/classroom-arena-cta";
 import { applyThemePreference, loadThemePreference, saveThemePreference, type ThemePreference } from "@/lib/theme-preference";
 import {
+  CLASSROOM_ACCENT_SCOPE_CLASS,
   CLASSROOM_THEME_COLORS,
   CLASSROOM_THEME_ICONS,
   classroomThemePresentation,
@@ -123,7 +124,7 @@ const VIEW_LABEL: Record<View, string> = {
 };
 
 const CLASSROOM_TABS: { id: ClassroomTab; label: string; icon: string }[] = [
-  { id: "home", label: "Home", icon: "⌂" },
+  { id: "home", label: "Início", icon: "⌂" },
   { id: "students", label: "Alunos", icon: "◎" },
   { id: "activities", label: "Atividades", icon: "✓" },
   { id: "journeys", label: "Jornadas", icon: "◈" },
@@ -1125,7 +1126,7 @@ function ClassroomWorkspaceTabs({ tab, onTabChange, studentCount, activityCount,
               className={tab === item.id ? "classroom-section-tab active" : "classroom-section-tab"}
               onClick={() => onTabChange(item.id)}
             >
-              <span>{item.icon}</span>
+              <span aria-hidden="true">{item.icon}</span>
               <strong>{item.label}</strong>
               {badge !== undefined && <small>{badge}</small>}
             </button>
@@ -1165,12 +1166,12 @@ function ClassroomHome({ classroom, data, students, currentSession, onOpenArena,
           <button className="button small" onClick={onManageClassroom}>Gerenciar turma</button>
         </div>
       )}
-      <section className={classroomHomeStyles.hero} style={classroomTheme.style} data-testid="classroom-home-hero">
+      <section className={`${classroomHomeStyles.hero} ${CLASSROOM_ACCENT_SCOPE_CLASS}`} style={classroomTheme.style} data-testid="classroom-home-hero">
         <div className={classroomHomeStyles.watermark} aria-hidden>{classroomTheme.glyph}</div>
 
         <div className={classroomHomeStyles.heroHeader}>
           <div className={classroomHomeStyles.identity}>
-            <span className="eyebrow accent">HOME DA TURMA</span>
+            <span className="eyebrow accent">INÍCIO DA TURMA</span>
             <h2>{classroom.name}</h2>
           </div>
 
@@ -2028,7 +2029,7 @@ function ClassroomManagementPage({
                       aria-label={option.label}
                       title={option.label}
                       className={themeColor === option.id ? "classroom-color-swatch selected" : "classroom-color-swatch"}
-                      style={{ background: option.value }}
+                      style={{ "--classroom-accent-dark": option.value, "--classroom-accent-light": option.lightValue } as CSSProperties}
                       onClick={() => setThemeColor(option.id)}
                     >
                       {themeColor === option.id && <span>✓</span>}
@@ -2057,7 +2058,7 @@ function ClassroomManagementPage({
                 </div>
               </div>
 
-              <div className="classroom-appearance-preview classroom-settings-preview" style={appearancePreview.style}>
+              <div className={`classroom-appearance-preview classroom-settings-preview ${CLASSROOM_ACCENT_SCOPE_CLASS}`} style={appearancePreview.style}>
                 <span className="classroom-appearance-preview-icon" aria-hidden>{appearancePreview.glyph}</span>
                 <div>
                   <small>Pré-visualização</small>

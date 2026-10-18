@@ -28,6 +28,27 @@ Princípios:
 
 Evitar `7px`, `8px` e `9px` para informação funcional.
 
+### Papéis tipográficos (v0.11 / 11.7)
+
+Cabeçalhos usam um **papel**, nunca um tamanho próprio. Mudar o valor do papel em `styles/tokens.css` ajusta todas as telas que o usam.
+
+| Papel | Token | Valor | Onde |
+|---|---|---|---|
+| Título de página | `--font-size-page-title` | `--font-size-3xl` | Turmas, Início da turma, Biblioteca, Gerenciar turma, Configurações, Integrações |
+| Título de seção | `--font-size-section-title` | `--font-size-2xl` | Abas da turma (Alunos, Atividades, Jornadas) |
+| Título de dinâmica | `--font-size-dynamic-title` | `clamp(1.5rem, 1.8vw, 2rem)` | `DynamicHeader` da Arena (todas as dinâmicas) |
+| Título de painel | `--font-size-panel-title` | `--font-size-xl` | Roteiro ao vivo, gaveta de ferramentas |
+| Eyebrow | `--font-size-eyebrow` | `--font-size-2xs` (12px) | Rótulo acima de títulos, com `--tracking-eyebrow` |
+| Descrição de página | `--font-size-page-description` | `--font-size-sm` | Parágrafo sob o título de página |
+
+Espaçamento do título: `--page-title-margin`. Tracking de títulos: `--tracking-title`.
+
+**Dívida registrada para a v0.12:** cerca de 1.170 declarações de `font-size` e 670 cores ainda são literais. A migração é gradual, com regressão visual, e não faz parte da v0.11.
+
+### Cor da turma
+
+Cada cor tem `value` (superfícies escuras) e `lightValue` (≥ 4,5:1 em superfícies claras, pois a cor também aparece como texto). A classe `.classroom-accent-scope` resolve `--classroom-accent` conforme o tema; propriedades inline não podem ser sobrescritas por seletor, por isso o componente recebe `--classroom-accent-dark` e `--classroom-accent-light`. A Home da turma usa faixa sólida de 4px, borda a 40% e fundo a 12%. Colisões conhecidas (Rosa × erro, Esmeralda × destaque do sistema) ficam para a nova paleta da v0.12.
+
 ## Hierarquia semântica
 
 ```text
