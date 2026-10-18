@@ -8,6 +8,7 @@ RELEASE_VERSION="${ARENA_RELEASE_VERSION:-}"
 MODE="${1:-}"
 CI_RUN_URL=""
 BACKUP_FILE=""
+ATTESTATION_FILE=""
 
 fail() {
   printf 'ERRO: %s\n' "$*" >&2
@@ -18,11 +19,13 @@ usage() {
   cat <<'EOF'
 Uso:
   scripts/release/release-gate.sh local
-  scripts/release/release-gate.sh final --ci-run-url URL --backup ARQUIVO
+  scripts/release/release-gate.sh final --ci-run-url URL --backup ARQUIVO [--attestation ACEITE.json]
 
 local  Executa todos os gates técnicos locais e gera evidência ignorada pelo Git.
 final  Exige main limpa/sincronizada, licença, CI verde no mesmo SHA e backup
        restaurável; depois repete os gates locais. Não cria tag nem release.
+       A partir da v0.11 (V57+) exige também --attestation: cópia PRIVADA do
+       aceite 11.6 com GO, validada por scripts/release/v011-readiness.py.
 EOF
 }
 
@@ -49,6 +52,11 @@ while (($#)); do
     --backup)
       (($# >= 2)) || fail "--backup exige um arquivo"
       BACKUP_FILE="$2"
+      shift
+      ;;
+    --attestation)
+      (($# >= 2)) || fail "--attestation exige um arquivo"
+      ATTESTATION_FILE="$2"
       shift
       ;;
     -h|--help)
@@ -87,7 +95,7 @@ exec > >(tee "$evidence_file") 2>&1
 printf 'Arena Dev — gate %s da versão %s\n' "$MODE" "$RELEASE_VERSION"
 printf 'Início UTC: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-for command_name in git java mvn node npm docker; do
+for command_name in git java mvn node npm docker python3; do
   command -v "$command_name" >/dev/null 2>&1 || fail "$command_name não encontrado"
 done
 docker compose version >/dev/null 2>&1 || fail "Docker Compose não disponível"
@@ -99,7 +107,13 @@ node_line="$(node --version)"
 [[ "$node_line" == v22.* ]] || fail "Node.js 22 é obrigatório; encontrado: $node_line"
 
 "$SCRIPT_DIR/check-metadata.sh"
-if [[ -f backend/src/main/resources/db/migration/V56__manual_score_create_idempotency.sql ]]; then
+if [[ -f backend/src/main/resources/db/migration/V58__arena_material_section_commands.sql ]]; then
+  "$SCRIPT_DIR/verify-v0.11-contract.sh"
+  expected_schema_version=58
+elif [[ -f backend/src/main/resources/db/migration/V57__arena_material_publications.sql ]]; then
+  "$SCRIPT_DIR/verify-v0.11-contract.sh"
+  expected_schema_version=57
+elif [[ -f backend/src/main/resources/db/migration/V56__manual_score_create_idempotency.sql ]]; then
   "$SCRIPT_DIR/verify-v0.10-contract.sh"
   expected_schema_version=56
 elif [[ -f backend/src/main/resources/db/migration/V55__learner_confidence_opt_in.sql ]]; then
@@ -122,7 +136,12 @@ printf 'Java: %s\n' "$java_line"
 printf 'Node.js: %s\n' "$node_line"
 
 if [[ "$MODE" == "final" ]]; then
-  if [[ "$expected_schema_version" -ge 55 && "$RELEASE_VERSION" != "0.10.0" ]]; then
+  if [[ "$expected_schema_version" -ge 57 ]]; then
+    [[ "$RELEASE_VERSION" == "0.11.0" ]] || \
+      fail "o gate final v0.11 exige versão estável 0.11.0; candidata $RELEASE_VERSION não pode ser publicada"
+    [[ -n "$ATTESTATION_FILE" ]] || fail "informe --attestation com o aceite 11.6 assinado"
+    [[ -f "$ATTESTATION_FILE" ]] || fail "aceite não encontrado: $ATTESTATION_FILE"
+  elif [[ "$expected_schema_version" -ge 55 && "$RELEASE_VERSION" != "0.10.0" ]]; then
     fail "o gate final v0.10 exige versão estável 0.10.0; candidata $RELEASE_VERSION não pode ser publicada"
   fi
   [[ "$branch" == "main" ]] || fail "o gate final deve executar na branch main"
@@ -166,6 +185,15 @@ if [[ "$MODE" == "final" ]]; then
   [[ "$ci_sha" == "$head_sha" ]] || \
     fail "CI validou $ci_sha, mas a release aponta para $head_sha"
   printf 'CI validado: %s\n' "$verified_ci_url"
+
+  if [[ "$expected_schema_version" -ge 57 ]]; then
+    # Fail-closed operational decision: eight field gates PASS, named owner,
+    # same SHA and green CI jobs. It never creates tags or releases.
+    python3 "$SCRIPT_DIR/v011-readiness.py" \
+      --attestation "$ATTESTATION_FILE" \
+      --candidate "$head_sha" \
+      --ci-run-id "$run_id" || fail "aceite operacional v0.11 não autoriza a release"
+  fi
 
   ARENA_SCHEMA_VERSION="$expected_schema_version" \
     "$SCRIPT_DIR/verify-backup.sh" "$BACKUP_FILE"
