@@ -217,7 +217,7 @@ export default function ParticipantSelectionExperience({
                     </span>
                   </div>
                   {present && !selectedNow && (
-                    <span className={styles.presenceDot} aria-label="Presente" />
+                    <span className={styles.presenceDot} aria-hidden="true" />
                   )}
                 </article>
               );

@@ -18,7 +18,7 @@
 
 .eyebrow {
   display: block;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: var(--font-size-eyebrow);
   font-weight: 900;
   letter-spacing: var(--tracking-eyebrow);
@@ -113,7 +113,7 @@
 
 .timelineItem.current > span {
   background: rgba(88, 243, 167, .13);
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 
 .timelineItem.past {
@@ -137,7 +137,7 @@
 }
 
 .ready > span {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 28px;
 }
 
@@ -169,7 +169,7 @@
 }
 
 .currentHead > div > span {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: var(--font-size-2xs);
   font-weight: 900;
   letter-spacing: .12em;
@@ -200,7 +200,7 @@
 
 .teacherNote strong {
   font-size: var(--font-size-2xs);
-  color: var(--accent);
+  color: var(--ds-accent-text);
   text-transform: uppercase;
   letter-spacing: .08em;
 }
@@ -274,7 +274,7 @@
 
 .options b,
 .pollOptions b {
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 
 .interactionPreview {
@@ -284,7 +284,7 @@
 }
 
 .interactionPreview > span {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: var(--font-size-2xs);
   font-weight: 900;
   letter-spacing: .1em;

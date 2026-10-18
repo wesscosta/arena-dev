@@ -35,7 +35,7 @@
 
 .dialogHeader h3 { margin: .2rem 0 .22rem; font-size: 1.45rem; }
 .dialogHeader p { margin: 0; max-width: 46rem; color: var(--muted); font-size: .84rem; }
-.eyebrow { color: var(--accent); font-size: .66rem; font-weight: 850; letter-spacing: .1em; }
+.eyebrow { color: var(--ds-accent-text); font-size: .66rem; font-weight: 850; letter-spacing: .1em; }
 .choiceGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -71,7 +71,7 @@
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
   border-radius: .7rem;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 1rem;
 }
 
@@ -165,7 +165,7 @@
 
 .importTabs button.activeTab {
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 
 .dropZone {
@@ -208,7 +208,7 @@
   text-align: right;
 }
 
-.previewMetrics b { color: var(--accent); font-size: 1rem; }
+.previewMetrics b { color: var(--ds-accent-text); font-size: 1rem; }
 .previewMetrics span { font-size: .65rem; }
 
 .sectionList { display: grid; gap: .75rem; }
@@ -235,7 +235,7 @@
   place-items: center;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: .65rem;
   font-weight: 850;
 }
@@ -260,7 +260,7 @@
   padding: .22rem .4rem;
   border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
   border-radius: 999px;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: .59rem;
   font-weight: 800;
 }
@@ -370,7 +370,7 @@
 
 .itemTypeSelect {
   padding: .42rem .48rem;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: .65rem;
   font-weight: 800;
   color-scheme: dark;
@@ -448,7 +448,7 @@
   border: 1px dashed color-mix(in srgb, var(--accent) 30%, var(--border));
   border-radius: .6rem;
   background: transparent;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font: inherit;
   font-size: .72rem;
   font-weight: 800;
@@ -507,7 +507,7 @@
 }
 
 .itemDetails summary::-webkit-details-marker { display: none; }
-.itemDetails summary::after { content: "⌄"; float: right; color: var(--accent); }
+.itemDetails summary::after { content: "⌄"; float: right; color: var(--ds-accent-text); }
 .itemDetails[open] summary::after { content: "⌃"; }
 
 .itemDetailsBody {
@@ -554,6 +554,6 @@
 .notionPages { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.55rem; max-height:17rem; overflow:auto; }
 .notionPage { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.8rem; text-align:left; border:1px solid var(--border); border-radius:.7rem; background:var(--surface-2,var(--surface)); color:var(--text); cursor:pointer; }
 .notionPage:hover { border-color:color-mix(in srgb,var(--accent) 48%,var(--border)); }
-.notionPage small { color:var(--accent); white-space:nowrap; }
+.notionPage small { color:var(--ds-accent-text); white-space:nowrap; }
 .emptyPages { grid-column:1/-1; padding:1rem; text-align:center; color:var(--muted); }
 @media (max-width: 720px) { .notionPages { grid-template-columns:1fr; } }

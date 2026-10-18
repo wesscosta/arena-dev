@@ -24,7 +24,7 @@
   font-size: var(--font-size-eyebrow);
   font-weight: 800;
   letter-spacing: var(--tracking-eyebrow);
-  color: var(--ds-accent, var(--accent));
+  color: var(--ds-accent-text);
 }
 
 .heading h2,
@@ -153,7 +153,7 @@
 .activeContentTab {
   border-color: var(--ds-accent, var(--accent)) !important;
   background: var(--ds-surface-interactive, var(--surface-2)) !important;
-  color: var(--ds-accent, var(--accent)) !important;
+  color: var(--ds-accent-text) !important;
 }
 
 .filterBar {
@@ -256,7 +256,7 @@
 
 .rowTags b,
 .detailMetadata b {
-  color: var(--ds-accent, var(--accent));
+  color: var(--ds-accent-text);
 }
 
 .meta {
@@ -407,7 +407,7 @@
 .markdown table { width: 100%; border-collapse: collapse; margin: 1em 0; }
 .markdown th,
 .markdown td { border: 1px solid var(--ds-border, var(--border)); padding: .55rem .7rem; text-align: left; }
-.markdown a { color: var(--ds-accent, var(--accent)); text-decoration: underline; text-underline-offset: 2px; }
+.markdown a { color: var(--ds-accent-text); text-decoration: underline; text-underline-offset: 2px; }
 
 .detailMetadata {
   margin-top: .75rem;
@@ -475,7 +475,7 @@
 }
 
 .externalResource a {
-  color: var(--ds-accent, var(--accent));
+  color: var(--ds-accent-text);
   font-weight: 750;
 }
 
@@ -603,7 +603,7 @@
 }
 
 .mapNode small {
-  color: var(--ds-accent, var(--accent));
+  color: var(--ds-accent-text);
   font-family: var(--font-family-mono, monospace);
 }
 
@@ -681,7 +681,7 @@
 }
 
 .snapshotLocked { color: var(--ds-warning-text, #b7791f); }
-.snapshotCurrent { color: var(--ds-accent, var(--accent)); }
+.snapshotCurrent { color: var(--ds-accent-text); }
 
 .importSourceGrid {
   display: grid;

@@ -368,7 +368,7 @@
 }
 .arena-live-classroom-link > span {
   flex: 0 0 auto;
-  color: var(--ds-accent, var(--accent));
+  color: var(--ds-accent-text);
   font-size: 1.1rem;
 }
 .arena-live-classroom-link:focus-visible {

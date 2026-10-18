@@ -93,7 +93,7 @@
 .iconButton:hover:not(:disabled) {
   border-color: rgba(88, 243, 167, .28);
   background: rgba(88, 243, 167, .055);
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
 }
 
 .iconButtonDanger {
@@ -129,7 +129,7 @@
 .badgeSuccess {
   border-color: rgba(88, 243, 167, .25);
   background: rgba(88, 243, 167, .065);
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
 }
 
 .badgeWarning {
@@ -257,7 +257,7 @@
 .menuItemIcon {
   display: grid;
   place-items: center;
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
 }
 
 .menuItemDanger .menuItemIcon {
@@ -395,7 +395,7 @@
 }
 
 .emptyStateIcon {
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
   font-size: var(--font-size-2xl);
 }
 

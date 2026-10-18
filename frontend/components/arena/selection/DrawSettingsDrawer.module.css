@@ -63,7 +63,7 @@
   place-items: center;
   border: var(--border-width) solid color-mix(in srgb, var(--ds-accent) 38%, var(--ds-border));
   border-radius: var(--radius-pill);
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
   font-size: var(--font-size-2xs);
 }
 

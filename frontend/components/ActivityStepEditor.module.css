@@ -19,7 +19,7 @@
 
 .intro span {
   display: block;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 8px;
   font-weight: 900;
   letter-spacing: .14em;
@@ -98,7 +98,7 @@
   place-items: center;
   border-radius: 9px;
   background: rgba(88, 243, 167, .08);
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 14px;
 }
 
@@ -131,7 +131,7 @@
 }
 
 .empty > span {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 26px;
 }
 
@@ -167,7 +167,7 @@
   border: 1px solid rgba(88, 243, 167, .28);
   border-radius: 9px;
   background: #10251d;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 9px;
   font-weight: 900;
 }
@@ -201,7 +201,7 @@
 }
 
 .type {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 8px;
   font-weight: 900;
   letter-spacing: .11em;
@@ -305,7 +305,7 @@
 .pollOptionsHead button {
   width: auto;
   padding: 0 10px;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 8px;
 }
 
@@ -322,7 +322,7 @@
   place-items: center;
   border: 1px solid var(--border);
   border-radius: 8px;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 9px;
   font-weight: 900;
 }

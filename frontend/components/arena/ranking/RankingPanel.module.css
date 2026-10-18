@@ -27,7 +27,7 @@
 }
 
 .kicker {
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
   font-size: var(--font-size-2xs);
   font-weight: var(--font-extrabold);
   letter-spacing: .09em;
@@ -58,7 +58,7 @@
 }
 
 .publicStatus {
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
   border-color: color-mix(in srgb, var(--ds-accent) 42%, var(--ds-border));
   background: color-mix(in srgb, var(--ds-accent) 10%, var(--ds-surface-raised));
 }
@@ -186,7 +186,7 @@
   min-height: 2.45rem;
   border-radius: var(--radius-md);
   background: var(--ds-surface-subtle);
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
   font-weight: var(--font-extrabold);
   font-variant-numeric: tabular-nums;
 }

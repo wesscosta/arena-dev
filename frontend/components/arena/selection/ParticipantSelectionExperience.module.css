@@ -34,14 +34,14 @@
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--ds-accent) 55%, var(--ds-border));
   border-radius: 999px;
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
   background: color-mix(in srgb, var(--ds-accent) 6%, transparent);
 }
 
 .eyebrow {
   display: block;
   margin-bottom: .2rem;
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
   font-size: .7rem;
   font-weight: 800;
   letter-spacing: .11em;
@@ -202,7 +202,7 @@
 
 .card[data-status="selected"] .cardCopy span,
 .card[data-status="drawn"] .cardCopy span {
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
 }
 
 .presenceDot {
@@ -281,7 +281,7 @@
 }
 
 .spotlightEyebrow {
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
   font-size: .7rem;
   font-weight: 800;
   letter-spacing: .13em;

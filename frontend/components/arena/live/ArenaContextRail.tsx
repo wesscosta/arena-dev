@@ -171,13 +171,7 @@ export default function ArenaContextRail({
                           ? "arena-status-dot present"
                           : "arena-status-dot offline"
                     }
-                    aria-label={
-                      participant.connected
-                        ? "Online"
-                        : participant.present
-                          ? "Presente, offline"
-                          : "Ausente"
-                    }
+                    aria-hidden="true"
                   />
                 </div>
               );

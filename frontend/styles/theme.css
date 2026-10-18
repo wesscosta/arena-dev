@@ -21,13 +21,15 @@ html[data-theme="dark"] {
   --theme-surface-interactive: rgba(255, 255, 255, .018);
   --theme-text-primary: #f3f7f5;
   --theme-text-secondary: #8ea39a;
-  --theme-text-tertiary: #6f847b;
+  /* 11.7: >= 4.5:1 on raised/tinted dark surfaces (was 4.2:1). */
+  --theme-text-tertiary: #83998f;
   --theme-border: rgba(255, 255, 255, .09);
   --theme-border-subtle: rgba(255, 255, 255, .055);
   --theme-border-strong: rgba(255, 255, 255, .18);
   --theme-accent: #58f3a7;
   --theme-accent-strong: #b5ffda;
   --theme-accent-contrast: #04110b;
+  --theme-accent-text: #58f3a7;
   --theme-danger: #ff6b73;
   --theme-danger-fill: #7d2d36;
   --theme-danger-text: #ff9da3;
@@ -57,14 +59,17 @@ html[data-theme="light"] {
   --theme-surface-hover: rgba(20, 46, 35, .045);
   --theme-surface-interactive: rgba(20, 46, 35, .025);
   --theme-text-primary: #13231c;
-  --theme-text-secondary: #61756c;
-  --theme-text-tertiary: #7b8d85;
+  /* 11.7: AA on tinted light panels (secondary was 4.27:1, tertiary 3.0-3.5:1). */
+  --theme-text-secondary: #55685f;
+  --theme-text-tertiary: #5a6d65;
   --theme-border: rgba(20, 46, 35, .13);
   --theme-border-subtle: rgba(20, 46, 35, .075);
   --theme-border-strong: rgba(20, 46, 35, .22);
   --theme-accent: #22b978;
   --theme-accent-strong: #0d6f48;
   --theme-accent-contrast: #06150e;
+  /* The light accent (#22b978) is a fill colour; as text it was 2.2-2.5:1. */
+  --theme-accent-text: #0d6f48;
   --theme-danger: #d84f5a;
   --theme-danger-fill: #fff0f1;
   --theme-danger-text: #a93640;
@@ -94,6 +99,7 @@ html[data-theme="light"] {
   --text-tertiary: var(--theme-text-tertiary);
   --accent: var(--theme-accent);
   --accent-2: var(--theme-accent-strong);
+  --accent-text: var(--theme-accent-text);
   --danger: var(--theme-danger);
   --warning: var(--theme-warning);
   --shadow: var(--theme-shadow-elevated);

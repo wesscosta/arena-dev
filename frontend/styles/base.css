@@ -52,7 +52,7 @@ small {
 }
 
 .ui-eyebrow {
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
   font-size: var(--font-size-xs);
   line-height: var(--line-snug);
   font-weight: var(--font-extrabold);

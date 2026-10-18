@@ -30,7 +30,7 @@
 }
 
 .eyebrow {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: var(--font-size-2xs);
   font-weight: 850;
   letter-spacing: .12em;
@@ -57,7 +57,7 @@
 }
 
 .online {
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 
 .connecting {
@@ -654,7 +654,7 @@
 
 .header h3 {
   margin: 0;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: clamp(1.6rem, 2vw, 1.95rem);
   line-height: 1.1;
   font-weight: 800;
@@ -1059,7 +1059,7 @@
 
 .drawer .refreshButton:hover,
 .drawer .refreshButton:focus-visible {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
   background: color-mix(in srgb, var(--accent) 8%, transparent);
   outline: none;

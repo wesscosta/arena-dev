@@ -1520,7 +1520,7 @@ function StudentManager({
                 <span>Participante</span>
                 <span>Status</span>
                 <span>XP</span>
-                <span aria-label="Ações" />
+                <span><span className="sr-only">Ações</span></span>
               </div>
               {visibleRows.map(({ student, enrollment }) => {
                 const xp = xpForStudent(
