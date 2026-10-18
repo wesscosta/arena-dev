@@ -43,6 +43,10 @@
 
 **Gate técnico integrado e aprovado no CI da `main`; homologação em campo ainda não executada.** [Roteiro por dispositivo/ambiente](11.6_OPERATIONAL_HOMOLOGATION_PLAN.md), [evidências técnicas e pendências](11.6_TECHNICAL_EVIDENCE.md), [template NO-GO](11.6_ACCEPTANCE_TEMPLATE.json) e verificador fail-closed de oito requisitos obrigatórios. O WebKit emulado não substitui Safari físico, VoiceOver, PWA, rede real, piloto ou rollback. Não criar tag/release `v0.11.0` antes dos gates.
 
+## 11.7 — Coerência visual com o Design System atual
+
+- [Defeitos, causas, correções e evidência](11.7_COHERENCE_AA.md): papéis tipográficos, cor da turma por tema, textos abaixo de 12px nos painéis ao vivo. Sem redesign; axe e CSP `wss:` pendentes.
+
 ## Disciplina de status
 
 **Decisão de produto/contrato ≠ API funcionando.** A arquitetura e o escopo de 11.0 são uma especificação verificável do que implementar em 11.1, não uma prova de que endpoints de publicação, persistência ou projetor já existam. Inspeção de código não equivale a teste manual de UI/UX, WCAG ou iOS. A release v0.10 publicada não deve ser reaberta para inserir recursos v0.11.
