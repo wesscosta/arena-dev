@@ -1841,7 +1841,8 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 .settings-integrations-section{display:grid;gap:14px;padding-top:4px}
 .integration-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .integration-provider-card{display:flex;flex-direction:column;align-items:flex-start;gap:14px;border:1px solid var(--border);border-radius:14px;padding:16px;background:var(--surface)}
-.integration-provider-card-muted{opacity:.75}
+/* Unavailable providers are marked by their badge and a dashed border; opacity would drop text below 7:1. */
+.integration-provider-card-muted{border-style:dashed}
 .integration-provider-head{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px}
 .integration-provider-head strong,.integration-provider-head small{display:block}
 .integration-provider-head strong{font-size:12px}
