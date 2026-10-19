@@ -47,7 +47,7 @@ Espaçamento do título: `--page-title-margin`. Tracking de títulos: `--trackin
 
 ### Controles de página
 
-Campos, seletores e botões de barras de ferramenta usam `--control-height` (44px), `--control-radius`, `--control-font` (16px, evita zoom no iOS) e, nos botões, `--button-font`/`--button-weight`. Cabeçalhos de página usam `--page-title-margin` e `--page-section-gap`; larguras, `--page-max-width` (listas) e `--page-form-width` (formulários).
+Campos, seletores e botões de barras de ferramenta usam `--control-height` (44px), `--control-radius`, `--control-font` (16px, evita zoom no iOS) e, nos botões, `--button-font`/`--button-weight`. Cabeçalhos de página usam `--page-title-margin` e `--page-section-gap`; larguras, `--page-max-width` (listas) e `--page-form-width` (formulários). Toda página começa na mesma margem esquerda (`--content-gutter`); páginas de formulário limitam a largura, mas não se centralizam.
 
 ### Reuso de componentes
 

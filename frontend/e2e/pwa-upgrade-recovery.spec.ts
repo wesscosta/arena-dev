@@ -31,7 +31,8 @@ test("PWA instala shell seguro; offline não reutiliza HTML antigo nem dados da 
       });
       return version;
     });
-    expect(current).toMatch(/^v0\.10-pwa-gate-/);
+    // The active worker is the current release worker (see public/sw.js VERSION).
+    expect(current).toMatch(/^v0\.11-pwa-/);
 
     await context.setOffline(true);
     await page.goto("/join?code=OFFLINE");

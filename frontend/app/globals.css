@@ -566,7 +566,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .settings-page {
   gap: var(--page-section-gap);
   max-width: var(--page-form-width);
-  margin: 0 auto;
+  /* Forms keep a readable width but share the page's left edge. */
+  margin-inline: 0;
 }
 
 .settings-heading {
@@ -1611,7 +1612,7 @@ html[data-theme="light"] .classroom-color-swatch{color:#ffffff}html[data-theme="
 }
 
 /* 13.7D — classroom management is a page, not a modal */
-.classroom-settings-page { width: 100%; max-width: var(--page-form-width); margin: 0 auto; gap: var(--page-section-gap); }
+.classroom-settings-page { width: 100%; max-width: var(--page-form-width); margin-inline: 0; gap: var(--page-section-gap); }
 .classroom-settings-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; padding-bottom:22px; border-bottom:1px solid var(--border); }
 .classroom-settings-heading h2 { margin: var(--page-title-margin); font-size: var(--font-size-page-title); line-height: var(--line-tight); letter-spacing: var(--tracking-title); }
 .classroom-settings-heading p { margin:0; color:var(--muted); font-size:var(--font-size-page-description); line-height:var(--line-normal); }
