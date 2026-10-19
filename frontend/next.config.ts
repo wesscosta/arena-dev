@@ -6,6 +6,9 @@ const internalApiUrl = (process.env.INTERNAL_API_URL ?? "http://localhost:8080")
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: "standalone",
+  // The app serves no optimized images; turning the optimizer off removes the
+  // /_next/image endpoint and its sharp/librsvg decoder from the attack surface.
+  images: { unoptimized: true },
   async headers() {
     return [{
       source: "/:path*",

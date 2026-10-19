@@ -1,6 +1,6 @@
 {
   "name": "arena-dev-web",
-  "version": "0.11.0-rc.1",
+  "version": "0.11.0-rc.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -14,7 +14,7 @@
     "format:check:all": "prettier --check app components lib styles tests e2e *.ts *.mjs *.json"
   },
   "dependencies": {
-    "next": "16.3.8",
+    "next": "16.4.2",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-markdown": "^10.1.0",
@@ -26,7 +26,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.8",
+    "eslint-config-next": "^16.4.2",
     "prettier": "^3.9.9",
     "typescript": "^5.9.2"
   }
