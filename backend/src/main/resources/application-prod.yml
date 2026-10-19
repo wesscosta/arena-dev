@@ -1,5 +1,6 @@
 server:
-  forward-headers-strategy: framework
+  # Same trust model as the base profile: only loopback/Compose proxies.
+  forward-headers-strategy: native
   servlet:
     session:
       cookie:

@@ -27,13 +27,17 @@ import java.util.Locale;
 public class TeacherAuthController {
     private final AuthenticationManager authenticationManager;
     private final LoginRateLimitService loginRateLimitService;
+    private final TeacherPreferenceService preferences;
 
     public TeacherAuthController(
             AuthenticationManager authenticationManager,
-            LoginRateLimitService loginRateLimitService
+            @org.springframework.beans.factory.annotation.Qualifier("loginRateLimitService")
+            LoginRateLimitService loginRateLimitService,
+            TeacherPreferenceService preferences
     ) {
         this.authenticationManager = authenticationManager;
         this.loginRateLimitService = loginRateLimitService;
+        this.preferences = preferences;
     }
 
     @GetMapping("/csrf")
@@ -65,6 +69,7 @@ public class TeacherAuthController {
         SecurityContextHolder.setContext(context);
         HttpSession session = servletRequest.getSession(true);
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+        session.setMaxInactiveInterval(preferences.get(authentication.getName()).sessionTimeoutMinutes() * 60);
         return TeacherSessionView.from(authentication);
     }
 
@@ -81,6 +86,10 @@ public class TeacherAuthController {
         SecurityContextHolder.clearContext();
     }
 
+    // getRemoteAddr() is the real client: the Next.js proxy forwards
+    // X-Forwarded-For and Tomcat trusts it only from the Compose network
+    // (server.tomcat.remoteip.internal-proxies), so one student's failures
+    // no longer lock the teacher out through the shared proxy address.
     private String loginRateLimitKey(HttpServletRequest request, String username) {
         String remoteAddress = request.getRemoteAddr() == null ? "unknown" : request.getRemoteAddr();
         return remoteAddress + "|" + username.trim().toLowerCase(Locale.ROOT);

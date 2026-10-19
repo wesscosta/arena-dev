@@ -126,11 +126,10 @@ public class SessionJoinService {
 
         List<SessionParticipant> participants = participantRepository.findBySessionIdForUpdate(session.getId());
         List<SessionParticipant> matches = findMatches(session, participants, identity.trim());
-        if (matches.isEmpty()) {
-            throw new ResourceNotFoundException("Aluno não encontrado nesta sessão. Confira a matrícula ou o nome completo.");
-        }
-        if (matches.size() > 1) {
-            throw new IllegalArgumentException("Identificação ambígua. Use sua matrícula para entrar.");
+        // Same answer for "not found" and "ambiguous": distinct replies let anyone
+        // with the projected code enumerate who is in the class.
+        if (matches.size() != 1) {
+            throw new UnknownParticipantIdentityException();
         }
 
         SessionParticipant participant = matches.getFirst();
@@ -438,5 +437,12 @@ public class SessionJoinService {
             boolean present,
             Instant expiresAt
     ) {
+    }
+
+    /** Identity does not resolve to exactly one participant of this session. */
+    public static class UnknownParticipantIdentityException extends IllegalArgumentException {
+        public UnknownParticipantIdentityException() {
+            super("Não encontramos você nesta turma. Confira a matrícula ou fale com o professor.");
+        }
     }
 }

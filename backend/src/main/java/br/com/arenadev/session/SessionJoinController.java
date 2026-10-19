@@ -1,7 +1,10 @@
 package br.com.arenadev.session;
 
+import br.com.arenadev.auth.LoginRateLimitExceededException;
+import br.com.arenadev.auth.LoginRateLimitService;
 import br.com.arenadev.realtime.QrCodeService;
 import br.com.arenadev.quiz.QuizService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.Locale;
 import java.util.UUID;
 
 @RestController
@@ -24,15 +28,19 @@ public class SessionJoinController {
     private final SessionJoinService joinService;
     private final QrCodeService qrCodeService;
     private final QuizService quizService;
+    private final LoginRateLimitService joinRateLimitService;
 
     public SessionJoinController(
             SessionJoinService joinService,
             QrCodeService qrCodeService,
-            QuizService quizService
+            QuizService quizService,
+            @org.springframework.beans.factory.annotation.Qualifier("joinRateLimitService")
+            LoginRateLimitService joinRateLimitService
     ) {
         this.joinService = joinService;
         this.qrCodeService = qrCodeService;
         this.quizService = quizService;
+        this.joinRateLimitService = joinRateLimitService;
     }
 
     @GetMapping("/api/sessions/{sessionId}/join-code")
@@ -68,9 +76,26 @@ public class SessionJoinController {
     @PostMapping("/api/join/{code}")
     public SessionJoinService.JoinResultView join(
             @PathVariable String code,
-            @Valid @RequestBody JoinRequest request
+            @Valid @RequestBody JoinRequest request,
+            HttpServletRequest servletRequest
     ) {
-        return joinService.join(code, request.identity(), request.rememberDevice());
+        String key = (servletRequest.getRemoteAddr() == null ? "unknown" : servletRequest.getRemoteAddr())
+                + "|" + code.trim().toUpperCase(Locale.ROOT);
+        LoginRateLimitService.Decision decision = joinRateLimitService.beforeAttempt(key);
+        if (!decision.allowed()) {
+            throw new LoginRateLimitExceededException(
+                    "Muitas tentativas de entrada. Aguarde um minuto ou fale com o professor.",
+                    decision.retryAfterSeconds()
+            );
+        }
+        try {
+            SessionJoinService.JoinResultView result = joinService.join(code, request.identity(), request.rememberDevice());
+            joinRateLimitService.recordSuccess(key);
+            return result;
+        } catch (SessionJoinService.UnknownParticipantIdentityException unknown) {
+            joinRateLimitService.recordFailure(key);
+            throw unknown;
+        }
     }
 
     @PostMapping("/api/join/{code}/device/recognize")
