@@ -30,8 +30,10 @@ public class SessionRealtimeGateway {
     // the decorator, the container's blocking send gives up after
     // SEND_TIME_LIMIT, and a socket over either limit is closed. The client
     // reconnects and reconciles through the runtime snapshot.
-    private final Map<String, ConcurrentWebSocketSessionDecorator> outbound = new ConcurrentHashMap<>();
-    private final Map<String, Instant> lastSeen = new ConcurrentHashMap<>();
+    // Keyed by the socket itself (identity), never by getId(): ids are an
+    // implementation detail and absent on test doubles.
+    private final Map<WebSocketSession, ConcurrentWebSocketSessionDecorator> outbound = new ConcurrentHashMap<>();
+    private final Map<WebSocketSession, Instant> lastSeen = new ConcurrentHashMap<>();
     static final Duration SEND_TIME_LIMIT = Duration.ofSeconds(3);
     static final int SEND_BUFFER_LIMIT_BYTES = 512 * 1024;
     /** Clients ping every 25 s; two missed pings mean a half-open connection. */
@@ -182,7 +184,7 @@ public class SessionRealtimeGateway {
             return;
         }
         try {
-            outbound.computeIfAbsent(socket.getId(), ignored -> decorate(socket))
+            outbound.computeIfAbsent(socket, SessionRealtimeGateway::decorate)
                     .sendMessage(new TextMessage(body));
         } catch (SessionLimitExceededException slow) {
             close(socket, CloseStatus.SESSION_NOT_RELIABLE);
@@ -206,27 +208,25 @@ public class SessionRealtimeGateway {
 
     /** Records inbound activity (any frame, including PING). */
     public void touch(WebSocketSession socket) {
-        lastSeen.put(socket.getId(), Instant.now());
-        outbound.computeIfAbsent(socket.getId(), ignored -> decorate(socket));
+        lastSeen.put(socket, Instant.now());
+        outbound.computeIfAbsent(socket, SessionRealtimeGateway::decorate);
     }
 
     /** Forgets a socket once it is closed. */
     public void release(WebSocketSession socket) {
-        lastSeen.remove(socket.getId());
-        outbound.remove(socket.getId());
+        lastSeen.remove(socket);
+        outbound.remove(socket);
     }
 
     /** Closes sockets with no inbound frame since {@code now - IDLE_LIMIT}; returns how many. */
     public int closeIdle(Instant now) {
         Instant cutoff = now.minus(IDLE_LIMIT);
         int closed = 0;
-        for (Map.Entry<String, Instant> entry : lastSeen.entrySet()) {
+        for (Map.Entry<WebSocketSession, Instant> entry : lastSeen.entrySet()) {
             if (!entry.getValue().isBefore(cutoff)) continue;
-            ConcurrentWebSocketSessionDecorator socket = outbound.get(entry.getKey());
-            lastSeen.remove(entry.getKey());
-            if (socket == null) continue;
-            close(socket.getDelegate(), CloseStatus.SESSION_NOT_RELIABLE);
-            outbound.remove(entry.getKey());
+            WebSocketSession socket = entry.getKey();
+            release(socket);
+            close(socket, CloseStatus.SESSION_NOT_RELIABLE);
             closed++;
         }
         return closed;

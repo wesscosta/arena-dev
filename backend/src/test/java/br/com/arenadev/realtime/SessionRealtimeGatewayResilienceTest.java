@@ -78,9 +78,9 @@ class SessionRealtimeGatewayResilienceTest {
         verify(socket, never()).close(any(CloseStatus.class));
     }
 
-    private static WebSocketSession socket(String id) {
-        WebSocketSession socket = mock(WebSocketSession.class);
-        when(socket.getId()).thenReturn(id);
+    // No id stubbed on purpose: the gateway must not depend on getId().
+    private static WebSocketSession socket(String name) {
+        WebSocketSession socket = mock(WebSocketSession.class, name);
         when(socket.isOpen()).thenReturn(true);
         when(socket.getAttributes()).thenReturn(new HashMap<>());
         when(socket.getTextMessageSizeLimit()).thenReturn(64 * 1024);
