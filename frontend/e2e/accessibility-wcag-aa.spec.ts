@@ -17,12 +17,19 @@ async function audit(page: Page, screen: string) {
   await page.addScriptTag({ content: axeSource });
   const results = await page.evaluate(async () => {
     const engine = (window as unknown as { axe: { run: (context: object, options: object) =>
-      Promise<{ violations: AxeFinding[] }> } }).axe;
+      Promise<{ violations: AxeFinding[]; incomplete: AxeFinding[] }> } }).axe;
     const aa = await engine.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } });
     const aaa = await engine.run({ include: [["body"]], exclude: [[".classroom-accent-scope"]] },
       { runOnly: { type: "rule", values: ["color-contrast-enhanced"] } });
-    return { violations: [...aa.violations, ...aaa.violations] };
+    // Translucent/gradient backgrounds come back as "incomplete" instead of a
+    // violation; log them so they get a manual look (the Arena end-session
+    // button failed this way).
+    const review = [...aa.incomplete, ...aaa.incomplete]
+      .filter((item) => item.id.startsWith("color-contrast"))
+      .reduce((total, item) => total + item.nodes.length, 0);
+    return { violations: [...aa.violations, ...aaa.violations], review };
   });
+  console.log(`WCAG ${screen}: contraste para revisão manual: ${results.review}`);
   const blocking = results.violations.filter((item) =>
     item.id === "color-contrast-enhanced" || item.impact === "serious" || item.impact === "critical");
   const summary = blocking.map((item) => ({ id: item.id, impact: item.impact,

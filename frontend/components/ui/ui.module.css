@@ -53,7 +53,7 @@
 
 .danger {
   border-color: rgba(255, 120, 128, .35);
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 .danger:hover:not(:disabled) {
@@ -97,7 +97,7 @@
 }
 
 .iconButtonDanger {
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 .badge {
@@ -141,7 +141,7 @@
 .badgeDanger {
   border-color: rgba(255, 120, 128, .28);
   background: rgba(255, 90, 105, .06);
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 .tabsRoot {
@@ -251,7 +251,7 @@
 }
 
 .menuItemDanger {
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 .menuItemIcon {
@@ -261,7 +261,7 @@
 }
 
 .menuItemDanger .menuItemIcon {
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 .menuItemCopy strong,
@@ -354,7 +354,7 @@
 }
 
 .fieldError {
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 .card {

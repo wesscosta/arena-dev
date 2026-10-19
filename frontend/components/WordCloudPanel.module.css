@@ -163,7 +163,7 @@
 }
 
 .revealed {
-  color: #e5b94d;
+  color: var(--ds-warning-text);
 }
 
 .closed {
