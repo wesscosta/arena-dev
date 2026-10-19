@@ -32,6 +32,13 @@
   /* Page widths: lists use the full content width; forms are narrower. */
   --page-max-width: 1500px;
   --page-form-width: 1180px;
+  /* 11.7: one control size for fields and buttons in page toolbars.
+     Fields use 16px text (also avoids iOS zoom on focus). */
+  --control-height: var(--control-md);
+  --control-radius: var(--radius-sm);
+  --control-font: var(--font-size-md);
+  --button-font: var(--font-size-sm);
+  --button-weight: var(--font-semibold);
 
   --line-tight: 1.15;
   --line-snug: 1.3;

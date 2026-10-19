@@ -64,26 +64,28 @@
 .secondaryAction,
 .clearFilters,
 .usageRow button {
-  min-height: var(--control-md, 2.75rem);
+  min-height: var(--control-height);
   border: 1px solid var(--ds-border, var(--border));
-  border-radius: var(--radius-sm, .5rem);
+  border-radius: var(--control-radius);
   padding: 0 .95rem;
   background: var(--ds-surface-control, var(--surface));
   color: var(--ds-text-primary, var(--text));
   font: inherit;
-  font-weight: 650;
+  font-size: var(--button-font);
+  font-weight: var(--button-weight);
   cursor: pointer;
 }
 
 .primary {
-  min-height: var(--control-md, 2.75rem);
+  min-height: var(--control-height);
   border: 1px solid var(--ds-accent, var(--accent)) !important;
-  border-radius: var(--radius-sm, .5rem);
+  border-radius: var(--control-radius);
   padding: 0 1rem;
   background: var(--ds-accent, var(--accent)) !important;
   color: var(--ds-accent-contrast, #06120d) !important;
   font: inherit;
-  font-weight: 800;
+  font-size: var(--button-font);
+  font-weight: var(--button-weight);
   cursor: pointer;
 }
 
@@ -120,6 +122,14 @@
 
 .search {
   flex: 1;
+}
+
+/* Toolbar fields share the page control size (other forms keep padding). */
+.search input,
+.filterBar select {
+  height: var(--control-height);
+  padding-block: 0;
+  font-size: var(--control-font);
 }
 
 .search input,

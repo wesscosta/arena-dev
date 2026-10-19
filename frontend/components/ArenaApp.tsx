@@ -980,7 +980,7 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
                     <div className="overview-class-identity">
                       <div className={`classroom-monogram ${CLASSROOM_ACCENT_SCOPE_CLASS}`} style={classroomThemePresentation(classroom).style}>{classroom.name.trim().charAt(0).toUpperCase()}</div>
                       <div>
-                        <h3>{classroom.name}</h3>
+                        <h3 title={classroom.name}>{classroom.name}</h3>
                         <p>{classroom.code || "Sem código"}</p>
                       </div>
                     </div>

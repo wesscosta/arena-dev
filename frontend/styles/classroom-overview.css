@@ -67,6 +67,10 @@
 }
 .overview-new-classroom {
   flex: 0 0 auto;
+  min-height: var(--control-height);
+  border-radius: var(--control-radius);
+  font-size: var(--button-font);
+  font-weight: var(--button-weight);
 }
 .overview-metrics {
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -89,12 +93,18 @@
   gap: var(--space-3);
 }
 .segmented-control {
+  box-sizing: border-box;
+  min-height: var(--control-height);
+  padding: 3px;
   border-color: var(--ds-border);
+  border-radius: var(--control-radius);
   background: var(--ds-surface-control);
 }
 .segmented-control button {
-  min-height: var(--control-sm);
+  min-height: calc(var(--control-height) - 8px);
   color: var(--ds-text-secondary);
+  font-size: var(--button-font);
+  font-weight: var(--button-weight);
 }
 .segmented-control button span {
   color: var(--ds-text-tertiary);
@@ -107,7 +117,10 @@
   color: var(--ds-accent-text);
 }
 .overview-search {
+  box-sizing: border-box;
   min-width: 0;
+  min-height: var(--control-height);
+  border-radius: var(--control-radius);
   border-color: var(--ds-border);
   background: var(--ds-surface-control);
 }
@@ -121,7 +134,7 @@
 }
 .overview-search input {
   color: var(--ds-text-primary);
-  font-size: var(--font-size-sm);
+  font-size: var(--control-font);
 }
 .overview-search button {
   border: 0;
@@ -131,8 +144,10 @@
 .overview-sort {
   min-width: 0;
   width: 100%;
-  height: var(--control-md);
-  font-size: var(--font-size-xs);
+  height: var(--control-height);
+  border-radius: var(--control-radius);
+  font-size: var(--control-font);
+  font-weight: var(--font-regular);
 }
 .overview-results-meta {
   min-height: 1.75rem;
@@ -283,12 +298,17 @@
 .overview-class-identity h3 {
   min-height: 0;
   margin: 0 0 var(--space-1);
+  /* 11.7: up to two lines; one-line ellipsis hid what distinguishes
+     similar class names. */
+  display: -webkit-box;
   overflow: hidden;
   color: var(--ds-text-primary);
   font-size: var(--font-size-md);
   line-height: var(--line-snug);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 .overview-class-card p {
   margin: 0;
