@@ -14,10 +14,10 @@
 }
 
 .heading span {
-  color: #58f3a7;
-  font-size: 10px;
+  color: var(--ds-accent-text);
+  font-size: var(--font-size-eyebrow);
   font-weight: 850;
-  letter-spacing: .12em;
+  letter-spacing: var(--tracking-eyebrow);
 }
 
 .heading h2 {
@@ -30,14 +30,14 @@
   border: 1px solid rgba(88, 243, 167, .35);
   border-radius: 999px;
   padding: 6px 9px;
-  color: #58f3a7;
+  color: var(--ds-accent-text);
   font-size: 9px;
   letter-spacing: .08em;
 }
 
 .hint {
   margin: 15px 0 12px;
-  color: #91a59c;
+  color: var(--ds-text-secondary);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -51,10 +51,10 @@
 .form input {
   min-width: 0;
   padding: 12px 13px;
-  border: 1px solid rgba(255,255,255,.12);
+  border: 1px solid var(--border);
   border-radius: 10px;
   background: rgba(0,0,0,.18);
-  color: #f2f7f4;
+  color: var(--text);
   font: inherit;
 }
 
@@ -62,7 +62,7 @@
   border: 0;
   border-radius: 10px;
   padding: 10px 15px;
-  background: #58f3a7;
+  background: var(--accent);
   color: #07100d;
   font: inherit;
   font-weight: 850;
@@ -82,29 +82,29 @@
 
 .sentWords span,
 .terms span {
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 6px 10px;
-  background: rgba(255,255,255,.045);
+  background: var(--ds-surface-subtle);
   font-size: 12px;
 }
 
 .terms b {
   margin-left: 5px;
-  color: #58f3a7;
+  color: var(--ds-accent-text);
 }
 
 .remaining {
   display: block;
   margin-top: 8px;
-  color: #71857c;
+  color: var(--ds-text-tertiary);
 }
 
 .done {
   padding: 12px;
   border-radius: 10px;
-  background: rgba(255,255,255,.045);
-  color: #91a59c;
+  background: var(--ds-surface-subtle);
+  color: var(--ds-text-secondary);
   font-size: 12px;
 }
 
@@ -124,26 +124,26 @@
   gap: 8px;
   margin-bottom: 18px;
   padding: 22px 20px;
-  border: 1px dashed rgba(255,255,255,.12);
+  border: 1px dashed var(--border);
   border-radius: 14px;
-  background: rgba(255,255,255,.025);
+  background: var(--ds-surface-subtle);
 }
 
 .waiting span {
-  color: #58f3a7;
-  font-size: 10px;
+  color: var(--ds-accent-text);
+  font-size: var(--font-size-eyebrow);
   font-weight: 850;
-  letter-spacing: .12em;
+  letter-spacing: var(--tracking-eyebrow);
 }
 
 .waiting strong {
-  color: #f2f7f4;
+  color: var(--text);
   font-size: 18px;
 }
 
 .waiting p {
   margin: 0;
-  color: #91a59c;
+  color: var(--ds-text-secondary);
   font-size: 13px;
   line-height: 1.5;
 }
