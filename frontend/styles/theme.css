@@ -9,8 +9,9 @@
 html[data-theme="dark"] {
   color-scheme: dark;
   --theme-canvas: #08100e;
-  --theme-surface: #0d1714;
-  --theme-surface-raised: #111e1a;
+  /* 11.7: clearer elevation steps (card vs canvas was 1.05:1). */
+  --theme-surface: #111c18;
+  --theme-surface-raised: #15211c;
   --theme-surface-muted: #16251f;
   --theme-surface-control: #0b1512;
   --theme-surface-subtle: #0c1613;
@@ -23,7 +24,7 @@ html[data-theme="dark"] {
   /* 11.7: text tokens reach WCAG AAA (>= 7:1) on raised/tinted surfaces. */
   --theme-text-secondary: #a3b7ae;
   --theme-text-tertiary: #99ada4;
-  --theme-border: rgba(255, 255, 255, .09);
+  --theme-border: rgba(255, 255, 255, .12);
   --theme-border-subtle: rgba(255, 255, 255, .055);
   --theme-border-strong: rgba(255, 255, 255, .18);
   --theme-accent: #58f3a7;
@@ -47,14 +48,16 @@ html[data-theme="dark"] {
 
 html[data-theme="light"] {
   color-scheme: light;
-  --theme-canvas: #f4f8f6;
-  --theme-surface: #ffffff;
-  --theme-surface-raised: #f8fbf9;
-  --theme-surface-muted: #eef4f1;
-  --theme-surface-control: #ffffff;
-  --theme-surface-subtle: #f7faf8;
+  /* 11.7: calmer light theme. The near-white canvas with pure white cards
+     produced glare and only 1.07:1 card separation. */
+  --theme-canvas: #e9eeeb;
+  --theme-surface: #fbfcfb;
+  --theme-surface-raised: #f3f6f4;
+  --theme-surface-muted: #e9efec;
+  --theme-surface-control: #fbfcfb;
+  --theme-surface-subtle: #f3f6f4;
   --theme-surface-inset: #eef4f0;
-  --theme-surface-toolbar: #ffffff;
+  --theme-surface-toolbar: #fbfcfb;
   --theme-surface-stat: #f1f5f3;
   --theme-surface-hover: rgba(20, 46, 35, .045);
   --theme-surface-interactive: rgba(20, 46, 35, .025);
@@ -62,7 +65,7 @@ html[data-theme="light"] {
   /* 11.7: text tokens reach WCAG AAA (>= 7:1) on tinted light panels. */
   --theme-text-secondary: #3a4a43;
   --theme-text-tertiary: #3f5048;
-  --theme-border: rgba(20, 46, 35, .13);
+  --theme-border: rgba(20, 46, 35, .16);
   --theme-border-subtle: rgba(20, 46, 35, .075);
   --theme-border-strong: rgba(20, 46, 35, .22);
   --theme-accent: #22b978;
@@ -76,9 +79,9 @@ html[data-theme="light"] {
   --theme-danger-text: #8c2a33;
   --theme-warning: #b87b08;
   --theme-warning-text: #6b4705;
-  --theme-topbar: rgba(248, 252, 250, .90);
-  --theme-sticky-top: rgba(244, 248, 246, .98);
-  --theme-sticky-bottom: rgba(244, 248, 246, .94);
+  --theme-topbar: rgba(240, 244, 242, .92);
+  --theme-sticky-top: rgba(233, 238, 235, .98);
+  --theme-sticky-bottom: rgba(233, 238, 235, .94);
   --theme-avatar-start: #e4f3eb;
   --theme-avatar-end: #d6ebe0;
   --theme-avatar-text: #1d4a36;

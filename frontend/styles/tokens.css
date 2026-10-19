@@ -27,6 +27,11 @@
   --tracking-title: -0.035em;
   --tracking-eyebrow: 0.12em;
   --page-title-margin: var(--space-2) 0 var(--space-1);
+  /* Gap between page header and the first content block on top-level pages. */
+  --page-section-gap: var(--space-6);
+  /* Page widths: lists use the full content width; forms are narrower. */
+  --page-max-width: 1500px;
+  --page-form-width: 1180px;
 
   --line-tight: 1.15;
   --line-snug: 1.3;

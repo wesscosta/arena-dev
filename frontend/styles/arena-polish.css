@@ -154,13 +154,7 @@
   padding: var(--space-6);
   overflow: hidden;
   text-align: center;
-  background:
-    radial-gradient(
-      circle at 50% 48%,
-      rgba(88, 243, 167, .07),
-      transparent 34%
-    ),
-    var(--ds-surface);
+  background: var(--ds-surface);
 }
 
 .arena-main-card::before {
@@ -168,12 +162,8 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(
-      145deg,
-      rgba(88, 243, 167, .035),
-      transparent 40%
-    );
+  /* 11.7: ornamental accent sheen removed (v0.12 identity forbids it). */
+  background: none;
 }
 
 .arena-main-card > * {
@@ -917,7 +907,6 @@
 .arena-session-code-card {
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
   background:
-    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--accent) 5%, transparent), transparent 45%),
     color-mix(in srgb, var(--surface) 94%, #02100c);
   box-shadow: 0 1.4rem 3.8rem rgba(0, 0, 0, .12);
 }
@@ -951,7 +940,7 @@
   background: color-mix(in srgb, var(--surface-2) 86%, transparent);
   color: var(--text);
   font: inherit;
-  font-size: .72rem;
+  font-size:var(--font-size-2xs);
   font-weight: 700;
   cursor: pointer;
 }
@@ -1585,7 +1574,6 @@
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
   border-radius: var(--radius-lg);
   background:
-    radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 44%),
     color-mix(in srgb, var(--surface) 95%, #04110d);
   box-shadow: 0 1.4rem 3.8rem rgba(0, 0, 0, .12);
 }
@@ -1706,7 +1694,7 @@
 }
 .buzzer-metrics span {
   color: var(--muted);
-  font-size: .56rem;
+  font-size:var(--font-size-2xs);
 }
 .buzzer-ranking-card {
   min-width: 0;
@@ -1860,7 +1848,6 @@
   border:1px solid color-mix(in srgb,var(--accent) 18%,var(--border));
   border-radius:var(--radius-lg);
   background:
-    radial-gradient(circle at 50% 18%,color-mix(in srgb,var(--accent) 7%,transparent),transparent 44%),
     color-mix(in srgb,var(--surface) 95%,#06100d);
   box-shadow:0 1.4rem 3.8rem rgba(0,0,0,.14);
 }
@@ -2075,7 +2062,7 @@
 }
 .boss-session-metrics span {
   color:var(--muted);
-  font-size:.54rem;
+  font-size:var(--font-size-2xs);
 }
 .boss-victory-banner {
   position:relative;
@@ -4191,7 +4178,7 @@
 .smart-draw-settings {
   min-height: 2.15rem;
   padding: .42rem .72rem;
-  font-size: .7rem;
+  font-size:var(--font-size-2xs);
 }
 
 /* Contextual student picker reads as a chip instead of a form field. */

@@ -33,6 +33,7 @@ import {
   ArenaProjectorButton,
   ArenaSessionHeader,
   ArenaSidebar,
+  type ArenaGlyphName,
 } from "@/components/arena/live/ArenaLiveChrome";
 import WordCloudPanel from "@/components/WordCloudPanel";
 import DynamicHeader from "@/components/arena/dynamics/DynamicHeader";
@@ -123,13 +124,13 @@ const VIEW_LABEL: Record<View, string> = {
   settings: "Configurações",
 };
 
-const CLASSROOM_TABS: { id: ClassroomTab; label: string; icon: string }[] = [
-  { id: "home", label: "Início", icon: "⌂" },
-  { id: "students", label: "Alunos", icon: "◎" },
-  { id: "activities", label: "Atividades", icon: "✓" },
-  { id: "journeys", label: "Jornadas", icon: "◈" },
-  { id: "ranking", label: "Ranking", icon: "▲" },
-  { id: "history", label: "Histórico", icon: "≡" },
+const CLASSROOM_TABS: { id: ClassroomTab; label: string; icon: ArenaGlyphName }[] = [
+  { id: "home", label: "Início", icon: "home" },
+  { id: "students", label: "Alunos", icon: "groups" },
+  { id: "activities", label: "Atividades", icon: "activities" },
+  { id: "journeys", label: "Jornadas", icon: "journeys" },
+  { id: "ranking", label: "Ranking", icon: "ranking" },
+  { id: "history", label: "Histórico", icon: "history" },
 ];
 
 const SCORE_PRESETS: { points: number; label: string; category: ScoreCategory }[] = [
@@ -372,7 +373,7 @@ export default function ArenaApp() {
               aria-current={view === "dashboard" ? "page" : undefined}
               onClick={() => setView("dashboard")}
             >
-              <span aria-hidden="true">▦</span>
+              <span aria-hidden="true"><ArenaGlyph name="classrooms" /></span>
               <strong>Turmas</strong>
             </button>
             <button
@@ -382,7 +383,7 @@ export default function ArenaApp() {
               aria-current={view === "library" ? "page" : undefined}
               onClick={() => setView("library")}
             >
-              <span aria-hidden="true">▤</span>
+              <span aria-hidden="true"><ArenaGlyph name="material" /></span>
               <strong>Biblioteca</strong>
             </button>
           </nav>
@@ -737,9 +738,9 @@ export default function ArenaApp() {
                 <Panel title="Tema" subtitle="Preferência local deste dispositivo">
                   <div className="theme-choice-grid" role="radiogroup" aria-label="Tema da interface">
                     {([
-                      { id: "dark", label: "Escuro", description: "Tema padrão do Arena Dev.", icon: "◐" },
-                      { id: "light", label: "Claro", description: "Superfícies claras e contraste suave.", icon: "☀" },
-                      { id: "system", label: "Sistema", description: "Segue a preferência do sistema operacional.", icon: "◒" },
+                      { id: "dark", label: "Escuro", description: "Tema padrão do Arena Dev." },
+                      { id: "light", label: "Claro", description: "Superfícies claras e contraste suave." },
+                      { id: "system", label: "Sistema", description: "Segue a preferência do sistema operacional." },
                     ] as const).map((option) => (
                       <button
                         key={option.id}
@@ -754,7 +755,7 @@ export default function ArenaApp() {
                           <b />
                         </span>
                         <span className="theme-choice-copy">
-                          <strong><span aria-hidden>{option.icon}</span> {option.label}</strong>
+                          <strong>{option.label}</strong>
                           <small>{option.description}</small>
                         </span>
                         <span className="theme-choice-check" aria-hidden>{themePreference === option.id ? "✓" : ""}</span>
@@ -1126,7 +1127,7 @@ function ClassroomWorkspaceTabs({ tab, onTabChange, studentCount, activityCount,
               className={tab === item.id ? "classroom-section-tab active" : "classroom-section-tab"}
               onClick={() => onTabChange(item.id)}
             >
-              <span aria-hidden="true">{item.icon}</span>
+              <span aria-hidden="true"><ArenaGlyph name={item.icon} /></span>
               <strong>{item.label}</strong>
               {badge !== undefined && <small>{badge}</small>}
             </button>

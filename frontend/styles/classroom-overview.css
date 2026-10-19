@@ -44,14 +44,13 @@
   color: var(--ds-accent-text);
 }
 .overview-page {
-  gap: var(--space-5);
+  gap: var(--page-section-gap);
 }
 .overview-page-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-8);
-  padding-top: var(--space-2);
 }
 .overview-page-header h1 {
   margin: var(--page-title-margin);
@@ -522,12 +521,15 @@
 .overview-class-card-foot {
   padding-top: var(--space-3);
 }
+/* 11.7: on the card grid the live state is a quiet status (dot + text), not a
+   badge repeated on every card; the topbar keeps the prominent pill. */
 .overview-class-card-foot .live-pill.compact {
-  padding: 0 var(--space-2);
-  border-color: color-mix(in srgb, var(--ds-accent) 36%, var(--ds-border));
-  background: color-mix(in srgb, var(--ds-accent) 9%, var(--ds-surface));
-  color: var(--ds-accent-strong);
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ds-accent-text);
   font-size: var(--font-size-2xs);
+  letter-spacing: .06em;
 }
 .overview-class-card-foot .live-pill.compact > span {
   background: var(--ds-accent);

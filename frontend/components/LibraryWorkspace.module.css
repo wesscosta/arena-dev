@@ -1,7 +1,7 @@
 .workspace {
   width: 100%;
   display: grid;
-  gap: var(--space-6, 1.5rem);
+  gap: var(--page-section-gap);
 }
 
 .heading,
@@ -42,7 +42,7 @@
   max-width: 760px;
   color: var(--ds-text-secondary, var(--muted));
   font-size: var(--font-size-page-description);
-  line-height: 1.55;
+  line-height: var(--line-normal);
 }
 
 .headingActions,
@@ -259,11 +259,14 @@
   color: var(--ds-accent-text);
 }
 
+/* 11.7: source, revision and date on one line instead of three. */
 .meta {
-  display: grid;
-  gap: .15rem;
-  text-align: right;
-  font-size: .82rem;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  white-space: nowrap;
+  color: var(--ds-text-secondary, var(--muted));
+  font-size: var(--font-size-xs);
 }
 
 .meta > span {

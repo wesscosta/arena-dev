@@ -28,6 +28,7 @@ test("theme is applied before the application paints", () => {
 
 test("light theme is defined by the semantic theme contract", () => {
   assert.match(themeContract, /html\[data-theme="light"\]/);
-  assert.match(themeContract, /--theme-canvas:\s*#f4f8f6/);
-  assert.match(themeContract, /--theme-surface-toolbar:\s*#ffffff/);
+  // 11.7: calmer light canvas and off-white surfaces (glare reduction).
+  assert.match(themeContract, /--theme-canvas:\s*#e9eeeb/);
+  assert.match(themeContract, /--theme-surface-toolbar:\s*#fbfcfb/);
 });
