@@ -114,20 +114,20 @@ class ClassroomAccessIT {
         String code = joinService.ensureCode(session.id()).code();
 
         HttpClient phone = HttpClient.newHttpClient();
-        var unknown = send(phone, "POST", "/api/join/" + code, "{\"identity\":\"Pedro Lima\"}", null, "192.168.10.30");
-        var ambiguous = send(phone, "POST", "/api/join/" + code, "{\"identity\":\"Maria Souza\"}", null, "192.168.10.30");
+        var unknown = send(phone, "POST", "/api/join/" + code, "{\"identity\":\"Pedro Lima\",\"rememberDevice\":false}", null, "192.168.10.30");
+        var ambiguous = send(phone, "POST", "/api/join/" + code, "{\"identity\":\"Maria Souza\",\"rememberDevice\":false}", null, "192.168.10.30");
         assertThat(unknown.statusCode()).isEqualTo(ambiguous.statusCode());
         assertThat(unknown.body()).contains("Não encontramos você nesta turma");
         assertThat(ambiguous.body()).contains("Não encontramos você nesta turma");
 
         for (int attempt = 0; attempt < 8; attempt++) {
-            send(phone, "POST", "/api/join/" + code, "{\"identity\":\"Tentativa " + attempt + "\"}", null, "192.168.10.30");
+            send(phone, "POST", "/api/join/" + code, "{\"identity\":\"Tentativa " + attempt + "\",\"rememberDevice\":false}", null, "192.168.10.30");
         }
-        var limited = send(phone, "POST", "/api/join/" + code, "{\"identity\":\"Outra\"}", null, "192.168.10.30");
+        var limited = send(phone, "POST", "/api/join/" + code, "{\"identity\":\"Outra\",\"rememberDevice\":false}", null, "192.168.10.30");
         assertThat(limited.statusCode()).isEqualTo(429);
 
         var classmate = send(phone, "POST", "/api/join/" + code,
-                "{\"identity\":\"AC1-" + suffix + "\"}", null, "192.168.10.31");
+                "{\"identity\":\"AC1-" + suffix + "\",\"rememberDevice\":false}", null, "192.168.10.31");
         assertThat(classmate.statusCode()).isEqualTo(200);
     }
 
