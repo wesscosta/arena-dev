@@ -314,7 +314,9 @@ test.describe("Classroom overview MVP contract", () => {
       expect(layout.profileRightGap, `profile not right-aligned at ${width}px`).toBeGreaterThanOrEqual(-1);
       expect(layout.profileRightGap).toBeLessThanOrEqual(18);
       expect(layout.filtersOneRow, `filters wrapped at ${width}px`).toBe(true);
-      expect(layout.firstCardHeight, `card has excess whitespace at ${width}px`).toBeLessThanOrEqual(170);
+      // 11.7: titles may wrap to a second line (~21px at --line-snug) instead of
+      // an ellipsis; the cap still catches padding/whitespace regressions.
+      expect(layout.firstCardHeight, `card has excess whitespace at ${width}px`).toBeLessThanOrEqual(192);
       expect(layout.cardTouchTarget).toBeGreaterThanOrEqual(44);
       const menuAction = page.getByRole("button", { name: `Ações de ${activeClassroom.name}` });
       await expect(menuAction).toBeVisible();
