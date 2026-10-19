@@ -18,6 +18,13 @@ export default function ArenaToolDrawer({ open, title, subtitle, size = "default
   const drawerRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
+  // Parents recreate onClose on every render (the Arena re-renders each second
+  // for the session clock); depending on it re-ran this effect and moved focus
+  // back to the close button while the teacher was typing.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -28,7 +35,7 @@ export default function ArenaToolDrawer({ open, title, subtitle, size = "default
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -63,7 +70,7 @@ export default function ArenaToolDrawer({ open, title, subtitle, size = "default
       window.removeEventListener("keydown", handleKeyDown);
       openerRef.current?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

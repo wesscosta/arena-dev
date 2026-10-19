@@ -147,6 +147,15 @@ class SessionSocketHandlerTimerTest {
         ordered.verify(gateway).registerParticipant(sessionId, participantId, socket);
         ordered.verify(gateway).send(socket, "RUNTIME_SNAPSHOT", sessionId, participantRuntimeSnapshot);
         ordered.verify(gateway).send(socket, "AUTH_OK", sessionId, connection);
+        // The connection view carries the civil name, so it reaches teachers only.
+        verify(gateway).broadcastTeachers(sessionId, "PARTICIPANT_CONNECTED", connection);
+        verify(gateway, never()).broadcast(eq(sessionId), eq("PARTICIPANT_CONNECTED"), any());
+
+        when(gateway.unregisterParticipant(sessionId, participantId, socket)).thenReturn(0);
+        when(joinService.markDisconnected(sessionId, token)).thenReturn(connection);
+        handler.afterConnectionClosed(socket, CloseStatus.NORMAL);
+        verify(gateway).broadcastTeachers(sessionId, "PARTICIPANT_DISCONNECTED", connection);
+        verify(gateway, never()).broadcast(eq(sessionId), eq("PARTICIPANT_DISCONNECTED"), any());
     }
 
     @Test

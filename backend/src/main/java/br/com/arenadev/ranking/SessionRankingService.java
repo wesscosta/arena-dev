@@ -144,12 +144,15 @@ public class SessionRankingService {
             StoredPresentation presentation,
             ProjectionData projection
     ) {
+        // The projected list never shows participants without score events: a
+        // public row of zeros exposes who has not participated (rc.4 audit).
+        // The teacher view keeps every participant.
+        List<RankingEntryView> scored = projection.entries().stream()
+                .filter(RankingEntryView::hasScoreEvents)
+                .toList();
         List<RankingEntryView> source = presentation.limit() == RankingLimit.TOP_5
-                ? projection.entries().stream()
-                    .filter(RankingEntryView::hasScoreEvents)
-                    .limit(5)
-                    .toList()
-                : projection.entries();
+                ? scored.stream().limit(5).toList()
+                : scored;
 
         List<PublicRankingEntryView> entries = source.stream()
                 .map(entry -> new PublicRankingEntryView(
@@ -283,7 +286,8 @@ public class SessionRankingService {
             RankingLimit limit
     ) {
         static StoredPresentation defaults() {
-            return new StoredPresentation(false, false, RankingLimit.TOP_5);
+            // Hidden and anonymized by default: projecting names is an explicit choice.
+            return new StoredPresentation(false, true, RankingLimit.TOP_5);
         }
 
         StoredPresentation normalized() {

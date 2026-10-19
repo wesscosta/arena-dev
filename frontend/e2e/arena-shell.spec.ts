@@ -306,6 +306,31 @@ for (const viewport of [
   });
 }
 
+// v0.11.0-rc.4 regression: the Arena re-renders every second (session clock);
+// the drawer focus effect used to re-run and pull focus to its close button.
+test("drawer da Arena mantém o foco no campo enquanto o relógio da sessão avança", async ({ browser }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 2);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+    await page.locator(".arena-nav-scroll").getByRole("button", { name: "Pontuação rápida" }).click();
+    const drawer = page.locator(".arena-tool-score");
+    await expect(drawer).toBeVisible();
+    const points = drawer.getByRole("spinbutton", { name: "Quantidade de XP (diferente de zero)" });
+    await points.fill("");
+    await page.keyboard.type("7");
+    await page.waitForTimeout(2_500);
+    await expect(points).toBeFocused();
+    await page.keyboard.type("5");
+    await expect(points).toHaveValue("75");
+  } finally {
+    await context.close();
+    await api.dispose();
+  }
+});
+
 test("Roster com um único participante permanece ancorado no topo do rail", async ({ browser }) => {
   const viewport = { width: 1440, height: 900 };
   const { api, csrfHeaders } = await authenticatedApi();

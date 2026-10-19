@@ -23,10 +23,10 @@ export default function AchievementsPage() {
     {!data ? <div className={styles.empty}>Carregando conquistas…</div> : <section className={styles.achievementView} aria-labelledby="achievement-summary">
       <div className={styles.achievementSummary}>
         <div><strong id="achievement-summary">{data.unlocked} de {data.total}</strong><span>conquistadas</span></div>
-        <div className={styles.achievementProgress} role="progressbar" aria-label={`\${data.unlocked} de \${data.total} conquistas`} aria-valuemin={0} aria-valuemax={data.total} aria-valuenow={data.unlocked}><span style={{ width: `\${data.total ? Math.round(data.unlocked * 100 / data.total) : 0}%` }} /></div>
+        <div className={styles.achievementProgress} role="progressbar" aria-label={`${data.unlocked} de ${data.total} conquistas`} aria-valuemin={0} aria-valuemax={data.total} aria-valuenow={data.unlocked}><span style={{ width: `${data.total ? Math.round(data.unlocked * 100 / data.total) : 0}%` }} /></div>
       </div>
       <div className={styles.achievementList}>
-        {data.items.map((item) => <article key={item.code} className={`\${styles.achievementRow} \${item.unlocked ? styles.achievementUnlocked : ""}`}>
+        {data.items.map((item) => <article key={item.code} className={`${styles.achievementRow} ${item.unlocked ? styles.achievementUnlocked : ""}`}>
           <span className={styles.achievementMark}><MilestoneIcon code={item.code} unlocked={item.unlocked} /></span>
           <div><h2>{item.title}</h2><p>{item.description}</p>{item.unlocked && <small>Conquistada</small>}</div>
         </article>)}

@@ -13,7 +13,8 @@
   [role="option"],
   [tabindex]:not([tabindex="-1"])
 ):focus-visible {
-  outline: var(--focus-width) solid var(--ds-accent);
+  /* --ds-accent-text: the light-theme fill (#22b978) is 2.5:1 on surfaces; 1.4.11 needs 3:1. */
+  outline: var(--focus-width) solid var(--ds-accent-text);
   outline-offset: var(--focus-offset);
 }
 

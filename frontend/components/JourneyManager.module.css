@@ -453,7 +453,7 @@
 .builderItemReadOnly .contentHandle { cursor:default; }
 .itemTitleInput,.itemDescriptionInput { border:0; border-radius:0; background:transparent; padding:.22rem .1rem; }
 .itemTitleInput { font-weight:760; }
-.itemTitleInput:focus,.itemDescriptionInput:focus { outline:0; box-shadow:0 1px 0 var(--accent); }
+.itemTitleInput:focus,.itemDescriptionInput:focus { box-shadow:0 1px 0 var(--accent); }
 .builderItemReadOnly { grid-template-columns:1.6rem minmax(0,1fr); }
 .builderItemReadOnly strong { font-size:.88rem; }
 .builderItemReadOnly p { margin:.16rem 0 0; color:var(--muted); font-size:.74rem; }

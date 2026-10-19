@@ -6,7 +6,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-arena}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-arena123}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      # Loopback only: on a classroom LAN a published database with the default
+      # password is reachable by every device on the Wi-Fi. Set POSTGRES_BIND
+      # to 0.0.0.0 only if another machine must reach it.
+      - "${POSTGRES_BIND:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -49,6 +52,9 @@ services:
       APP_INTEGRATIONS_NOTION_CLIENT_SECRET: ${APP_INTEGRATIONS_NOTION_CLIENT_SECRET:-}
       APP_INTEGRATIONS_NOTION_REDIRECT_URI: ${APP_INTEGRATIONS_NOTION_REDIRECT_URI:-http://localhost:8080/api/integrations/notion/oauth/callback}
       APP_INTEGRATIONS_CREDENTIAL_ENCRYPTION_KEY: ${APP_INTEGRATIONS_CREDENTIAL_ENCRYPTION_KEY:-}
+      ARENA_AI_API_KEY: ${ARENA_AI_API_KEY:-}
+      ARENA_AI_MODEL: ${ARENA_AI_MODEL:-gpt-5.6-luna}
+      ARENA_AI_BASE_URL: ${ARENA_AI_BASE_URL:-https://api.openai.com/v1}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:

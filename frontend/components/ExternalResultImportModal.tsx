@@ -48,6 +48,12 @@ export default function ExternalResultImportModal({ open, activity, students, on
     void fetchExternalResultImports(activity.id).then(setHistory).catch(() => setHistory([]));
   }, [open, activity?.id]);
 
+  // Keep the latest onClose without re-running the focus effect on each parent render.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
 
@@ -74,7 +80,7 @@ export default function ExternalResultImportModal({ open, activity, students, on
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -110,7 +116,7 @@ export default function ExternalResultImportModal({ open, activity, students, on
       window.removeEventListener("keydown", onKeyDown);
       previousActive?.focus({ preventScroll: true });
     };
-  }, [open, onClose]);
+  }, [open]);
 
   const needsFallbackMax = useMemo(() => report?.rows.some((row) => row.score !== undefined && row.percentage === undefined && row.maxScore === undefined) ?? false, [report]);
   const effectivePlatform = platform === "AUTO" ? report?.detectedPlatform ?? "GENERIC_CSV" : platform;
