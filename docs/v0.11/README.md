@@ -1,6 +1,6 @@
 # Arena Dev v0.11 — execução e evidências
 
-**Baseline publicada:** `v0.10.0`. **v0.11 tecnicamente encerrada:** 11.0–11.6 integradas à `main`, último merge `2c1e011`, CI 3/3 aprovado no SHA. **11.6 operacional NO-GO:** testes físicos, piloto, segurança e rollback pendentes. **Sem tag/release v0.11.0.** [Fechamento](11.6_TECHNICAL_CLOSURE_NO_GO_2026-10-10.md) · [v0.12](../ROADMAP_V0_12.md).
+**Baseline publicada:** `v0.10.0`. **v0.11 tecnicamente encerrada:** 11.0–11.6 integradas à `main`, último merge `2c1e011`, CI 3/3 aprovado no SHA. **11.6 operacional NO-GO:** testes físicos, piloto, segurança e rollback pendentes. **Sem tag/release estável v0.11.0.** Candidata congelada como pré-release **`v0.11.0-rc.1`** (19/10/2026), alvo dos 8 gates de campo. [Fechamento](11.6_TECHNICAL_CLOSURE_NO_GO_2026-10-10.md) · [v0.12](../ROADMAP_V0_12.md).
 
 ## 11.0 — itens entregues para revisão
 
@@ -46,6 +46,12 @@
 ## 11.7 — Coerência visual com o Design System atual
 
 - [Defeitos, causas, correções e evidência](11.7_COHERENCE_AA.md): papéis tipográficos, cor da turma por tema, textos abaixo de 12px nos painéis ao vivo. Sem redesign; axe e CSP `wss:` pendentes.
+
+## Congelamento da candidata
+
+1. A pré-release `v0.11.0-rc.1` congela o SHA da candidata. Gates de campo executam **somente** sobre esse SHA (ou uma `rc.N` posterior).
+2. Mudanças aceitas daqui em diante: **apenas defeitos encontrados nos gates**. Cada correção gera nova `rc.N` e reteste do que ela afeta.
+3. Publicação estável: após GO assinado, bump `0.11.0-rc.N` → `0.11.0`, backup V58, `release-gate.sh final --attestation` e tag `v0.11.0`.
 
 ## Disciplina de status
 

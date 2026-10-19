@@ -6,7 +6,8 @@
 | --- | --- | --- |
 | `v0.9.0` | Publicada, congelada; Flyway V48 | [`RELEASE_0_9.md`](RELEASE_0_9.md) |
 | `v0.10.0` | **Publicada**, Flyway V56, edição self-hosted docente único | [`RELEASE_0_10.md`](RELEASE_0_10.md) |
-| `main` | Código v0.11 tecnicamente integrado (`2c1e011`); sem release v0.11.0 | [CI](https://github.com/wesscosta/arena-dev/actions/runs/38098271861) |
+| `v0.11.0-rc.1` | **Pré-release candidata** (19/10/2026): v0.11 + ferramental de release + 11.7 (coerência visual, WCAG AA, contraste de texto AAA). **SHA congelado para os 8 gates de campo**; NO-GO para `0.11.0` | [Release notes](RELEASE_0_11.md) |
+| `main` | Candidata `v0.11.0-rc.1` integrada; sem release estável v0.11.0 | [11.7](v0.11/11.7_COHERENCE_AA.md) |
 | `feat/v0.10-learning-loop` | Origem histórica da integração v0.10 | PR [#35](https://github.com/wesscosta/arena-dev/pull/35), incorporada |
 
 **Fechamento (10/10):** o operador autorizou a publicação e declarou aprovados os testes manuais Safari/iOS, DevTools e demais gates; [registro e limites de evidência](v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md). A publicação foi condicionada ao CI do SHA estável, ao backup V56 e ao gate final na `main`.

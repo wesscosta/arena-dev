@@ -1,6 +1,6 @@
 # Arena Dev v0.11.0 — Material Presentation (candidata)
 
-**Status: candidata `0.11.0-rc.1`, NO-GO operacional. Não publicada; sem tag nem GitHub Release.** Desenvolvimento 11.0–11.6 integrado à `main` (merge `2c1e011`, [CI 3/3](https://github.com/wesscosta/arena-dev/actions/runs/38098271861)). A publicação depende dos oito gates de [homologação 11.6](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md) e do aceite assinado validado por `scripts/release/v011-readiness.py`. Escopo: self-hosted com um único operador docente.
+**Status: pré-release `v0.11.0-rc.1` (19/10/2026), NO-GO operacional para `0.11.0`.** A tag `v0.11.0-rc.1` é o **SHA congelado** sobre o qual rodam os gates de campo; qualquer correção posterior gera `rc.2` e repete os gates afetados. Sem release estável. Desenvolvimento 11.0–11.6 integrado à `main` (merge `2c1e011`, [CI 3/3](https://github.com/wesscosta/arena-dev/actions/runs/38098271861)). A publicação depende dos oito gates de [homologação 11.6](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md) e do aceite assinado validado por `scripts/release/v011-readiness.py`. Escopo: self-hosted com um único operador docente.
 
 ## Principais entregas da candidata
 
