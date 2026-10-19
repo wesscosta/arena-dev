@@ -48,18 +48,21 @@ async function createClassroom() {
   const classroomResponse = await api.post("/api/classrooms", { data: { name, code: null, themeColor: "amber", themeIcon: "code" }, headers });
   expect(classroomResponse.ok()).toBe(true);
   const classroom = await classroomResponse.json() as { id: string };
-  const student = await (await api.post("/api/students", { data: { registration: `WCAG-${Date.now()}`, name: "Aluno WCAG", nickname: "WCAG" }, headers })).json() as { id: string };
+  const registration = `WCAG-${Date.now()}`;
+  const student = await (await api.post("/api/students", { data: { registration, name: "Aluno WCAG", nickname: "WCAG" }, headers })).json() as { id: string };
   await api.post(`/api/classrooms/${classroom.id}/students/${student.id}`, { headers });
   const session = await api.post("/api/sessions", { data: { classroomId: classroom.id, title: "Sessão WCAG", presentStudentIds: [student.id] }, headers });
   expect(session.ok()).toBe(true);
+  const { id: sessionId } = await session.json() as { id: string };
+  const joinCode = await (await api.get(`/api/sessions/${sessionId}/join-code`)).json() as { code: string };
   await api.dispose();
-  return name;
+  return { name, registration, code: joinCode.code };
 }
 
 for (const theme of ["dark", "light"] as const) {
   test(`telas principais sem violações WCAG A/AA e contraste de texto AAA — tema ${theme}`, async ({ browser }) => {
     test.setTimeout(180_000);
-    const classroomName = await createClassroom();
+    const { name: classroomName } = await createClassroom();
     const context = await browser.newContext();
     await context.addInitScript((value) => localStorage.setItem("arena-dev-theme", value), theme);
     const page = await context.newPage();
@@ -121,6 +124,41 @@ for (const theme of ["dark", "light"] as const) {
     }
 
     await context.close();
+    expect(findings).toEqual({});
+  });
+
+  // v0.11.0-rc.3: student entry, student live session and projector.
+  test(`telas do aluno e do projetor sem violações WCAG A/AA e contraste de texto AAA — tema ${theme}`, async ({ browser }) => {
+    test.setTimeout(120_000);
+    const { name: classroomName, registration, code } = await createClassroom();
+    const findings: Record<string, unknown[]> = {};
+    const open = async () => {
+      const context = await browser.newContext();
+      await context.addInitScript((value) => localStorage.setItem("arena-dev-theme", value), theme);
+      return { context, page: await context.newPage() };
+    };
+    const check = async (page: Page, screen: string) => {
+      await page.waitForTimeout(400);
+      const result = await audit(page, `${theme}/${screen}`);
+      if (result.length) findings[screen] = result;
+    };
+
+    const student = await open();
+    await student.page.goto(`/join?code=${encodeURIComponent(code)}`);
+    await expect(student.page.getByText(classroomName, { exact: true })).toBeVisible();
+    await check(student.page, "aluno-entrada");
+    await student.page.getByPlaceholder("Matrícula ou nome").fill(registration);
+    await student.page.getByRole("button", { name: "Entrar na sessão" }).click();
+    await expect(student.page.getByText("Conectado", { exact: true })).toBeVisible();
+    await check(student.page, "aluno-sessao");
+    await student.context.close();
+
+    const projector = await open();
+    await projector.page.goto(`/projector?code=${encodeURIComponent(code)}`);
+    await expect(projector.page.getByText("Sincronizado", { exact: true })).toBeVisible({ timeout: 10_000 });
+    await check(projector.page, "projetor");
+    await projector.context.close();
+
     expect(findings).toEqual({});
   });
 }

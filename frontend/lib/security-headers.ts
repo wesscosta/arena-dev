@@ -6,9 +6,25 @@
  * eliminate all inline-XSS risk. 11.4 blocks external script injection,
  * frames/objects, external image beacons and unexpected form destinations.
  * A nonce-based dynamic rendering migration is a separate release gate.
+ * v0.11.0-rc.3: connect-src names the serving host instead of any wss:.
  */
-export function browserSecurityHeaders(configuredApiUrl?: string, development = false) {
-  const endpoints = new Set<string>();
+// Host header as sent by the browser: DNS name, IPv4 or bracketed IPv6, optional port.
+const REQUEST_HOST = /^(?:[a-z0-9-]+(?:\.[a-z0-9-]+)*|\[[0-9a-f:.]+\])(?::\d{1,5})?$/i;
+
+/**
+ * WebSocket origins of the host that served the page. The realtime client
+ * connects to the page origin (/ws is proxied by Next.js), so the policy names
+ * that exact host instead of allowing any wss: destination. Some WebKit
+ * versions do not treat ws/wss as implied by 'self', hence the explicit entry.
+ */
+export function sameHostWebSocketOrigins(requestHost?: string | null) {
+  if (!requestHost || !REQUEST_HOST.test(requestHost)) return [];
+  const host = requestHost.toLowerCase();
+  return [`ws://${host}`, `wss://${host}`];
+}
+
+export function contentSecurityPolicy(configuredApiUrl?: string, development = false, requestHost?: string | null) {
+  const endpoints = new Set<string>(sameHostWebSocketOrigins(requestHost));
   try {
     if (configuredApiUrl) {
       const parsed = new URL(configuredApiUrl);
@@ -28,8 +44,7 @@ export function browserSecurityHeaders(configuredApiUrl?: string, development = 
     endpoints.add("http://127.0.0.1:8080");
     endpoints.add("ws://127.0.0.1:8080");
   }
-  // Some WebKit versions do not treat wss as implied by 'self' on HTTPS.
-  const connections = ["'self'", "wss:", ...endpoints].join(" ");
+  const connections = ["'self'", ...endpoints].join(" ");
   const directives = [
     "default-src 'self'",
     "base-uri 'self'",
@@ -46,8 +61,12 @@ export function browserSecurityHeaders(configuredApiUrl?: string, development = 
     "worker-src 'self' blob:",
     "manifest-src 'self'",
   ];
+  return directives.join("; ");
+}
+
+/** Static headers for every route. The CSP is per request, set by proxy.ts. */
+export function browserSecurityHeaders() {
   return [
-    { key: "Content-Security-Policy", value: directives.join("; ") },
     { key: "X-Content-Type-Options", value: "nosniff" },
     { key: "Referrer-Policy", value: "no-referrer" },
     { key: "X-Frame-Options", value: "DENY" },

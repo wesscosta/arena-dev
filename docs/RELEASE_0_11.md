@@ -1,6 +1,6 @@
 # Arena Dev v0.11.0 — Material Presentation (candidata)
 
-**Status: pré-release `v0.11.0-rc.2` (19/10/2026), NO-GO operacional para `0.11.0`.** A `rc.2` substitui a `rc.1` antes de qualquer gate de campo, por correção de segurança do Next.js (abaixo). A tag `v0.11.0-rc.2` é o **SHA congelado** sobre o qual rodam os gates de campo; qualquer correção posterior gera `rc.2` e repete os gates afetados. Sem release estável. Desenvolvimento 11.0–11.6 integrado à `main` (merge `2c1e011`, [CI 3/3](https://github.com/wesscosta/arena-dev/actions/runs/38098271861)). A publicação depende dos oito gates de [homologação 11.6](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md) e do aceite assinado validado por `scripts/release/v011-readiness.py`. Escopo: self-hosted com um único operador docente.
+**Status: pré-release `v0.11.0-rc.3` (19/10/2026), NO-GO operacional para `0.11.0`.** A `rc.2` (segurança do Next.js) e a `rc.3` (CSP restrita ao próprio host) substituíram as candidatas anteriores antes de qualquer gate de campo. A tag `v0.11.0-rc.3` é o **SHA congelado** sobre o qual rodam os gates de campo; qualquer correção posterior gera uma nova `rc.N` e repete os gates afetados. Sem release estável. Desenvolvimento 11.0–11.6 integrado à `main` (merge `2c1e011`, [CI 3/3](https://github.com/wesscosta/arena-dev/actions/runs/38098271861)). A publicação depende dos oito gates de [homologação 11.6](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md) e do aceite assinado validado por `scripts/release/v011-readiness.py`. Escopo: self-hosted com um único operador docente.
 
 ## Principais entregas da candidata
 
@@ -11,6 +11,13 @@
 - Discovery editorial e de proveniência sem nova API/DDL; ADR-0068 apenas proposta (11.5).
 - Gate técnico 11.6: E2E com dois projetores, offline/reconexão/revogação e verificador fail-closed.
 - Coerência e acessibilidade (11.7): títulos e espaçamentos por papel tipográfico do Design System; cor da turma visível e adaptada ao tema claro; correções WCAG AA nos dois temas e contraste de texto em nível AAA (7:1) nos tokens do sistema, verificados por axe nos elementos mensuráveis; cores de turma em AA. **Mudança visual perceptível:** títulos de página a 30px e alinhados entre as páginas; controles de barra de ferramenta com 44px; tema claro menos luminoso; brilhos neon removidos; textos secundários mais contrastados; novo favicon e ícones da PWA com a marca da interface. [Detalhes](v0.11/11.7_COHERENCE_AA.md).
+
+## rc.3 — CSP restrita ao próprio host e varredura do aluno e do projetor
+
+- `connect-src` deixa de aceitar **qualquer** destino `wss:`. A política passa a ser montada por requisição em `frontend/proxy.ts` e lista só `ws://` e `wss://` do host que serviu a página (o cliente de tempo real sempre conecta na origem da página, e o `/ws` é repassado ao backend) e a origem configurada da API. `Host` malformado é descartado. `/api` e `/ws` ficam fora do proxy.
+- Prova automatizada: `e2e/csp-websocket.spec.ts`, em Chromium e WebKit, verifica o cabeçalho, bloqueia um WebSocket para host externo e não bloqueia o do próprio host. A confirmação em Safari/iOS físico fica no gate `ios_safari_physical`.
+- Varredura axe (A/AA e contraste de texto AAA) ampliada para a entrada do aluno, a sessão ao vivo do aluno e o projetor, nos dois temas.
+- Metadata `0.11.0-rc.3`.
 
 ## rc.2 — correção de segurança do Next.js
 
@@ -34,7 +41,7 @@ Os avisos do Next.js de 14/10/2026 cobrem a faixa `16.0.0`–`16.4.0`; a `rc.1` 
 ## Riscos residuais a decidir antes do GO
 
 - CSP mantém `script-src 'unsafe-inline'` (bootstrap do Next.js). Aceitar com mitigação registrada ou migrar para nonce em release própria.
-- `connect-src` permite qualquer host `wss:` por compatibilidade com WebKit. Somado ao `'unsafe-inline'`, um XSS inline teria um canal de saída para hosts arbitrários. Restringir às origens configuradas exige teste em Safari/iOS físico; incluir na revisão `security_privacy_authorization`.
+- ~~`connect-src` permite qualquer host `wss:`~~ **resolvido na rc.3**: só o host da página e a API configurada. Falta a confirmação em Safari/iOS físico (`ios_safari_physical`). Limite conhecido: atrás de um proxy reverso que reescreva o cabeçalho `Host`, o WebKit antigo depende de `'self'` cobrir `ws`/`wss`; o proxy deve preservar `Host`.
 - Direitos de material de terceiros dependem de responsável editorial/jurídico (ADR-0068 proposta).
 
 ## Publicação (somente após GO)

@@ -12,8 +12,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{
       source: "/:path*",
-      headers: browserSecurityHeaders(process.env.NEXT_PUBLIC_API_URL,
-        process.env.NODE_ENV !== "production"),
+      headers: browserSecurityHeaders(),
     }];
   },
   async rewrites() {
