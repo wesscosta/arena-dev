@@ -2593,3 +2593,41 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 .classroom-study-access > i b { position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:var(--text); transition:.2s ease; }
 .classroom-study-access > i.active { background:var(--accent); }
 .classroom-study-access > i.active b { transform:translateX(20px); background:white; }
+
+/* v0.11 / 11.7: Configurações and Gerenciar turma use the same page roles as
+   Turmas and Biblioteca (section titles, controls, 12px text minimum). */
+:is(.settings-page, .classroom-settings-page) :is(.settings-section-heading, .classroom-settings-section-heading) h3 {
+  font-size: var(--font-size-panel-title);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-title);
+}
+:is(.settings-page, .classroom-settings-page) :is(.settings-section-heading, .classroom-settings-section-heading) p {
+  font-size: var(--font-size-page-description);
+  line-height: var(--line-normal);
+}
+:is(.settings-page, .classroom-settings-page) :is(.panel-heading h3, .backup-card h3, .demo-block h3) {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-semibold);
+}
+:is(.settings-page, .classroom-settings-page) :is(.input, .select, select, textarea) {
+  min-height: var(--control-height);
+  border-radius: var(--control-radius);
+  font-size: var(--control-font);
+}
+:is(.settings-page, .classroom-settings-page) .button {
+  min-height: var(--control-height);
+  border-radius: var(--control-radius);
+  font-size: var(--button-font);
+  font-weight: var(--button-weight);
+}
+:is(.settings-page, .classroom-settings-page) .field > span {
+  color: var(--ds-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-semibold);
+}
+:is(.settings-page, .classroom-settings-page) :is(.classroom-icon-choice small, .classroom-status-summary span, .local-note p) {
+  font-size: var(--font-size-2xs);
+}
+:is(.settings-page, .classroom-settings-page) :is(.classroom-status-summary strong, .local-note strong) {
+  font-size: var(--font-size-sm);
+}

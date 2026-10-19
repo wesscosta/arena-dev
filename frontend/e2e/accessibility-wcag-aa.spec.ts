@@ -104,6 +104,10 @@ for (const theme of ["dark", "light"] as const) {
     await page.getByRole("button", { name: /^Biblioteca$/ }).first().click();
     await expect(page.getByRole("heading", { name: "Seus materiais" })).toBeVisible();
     await check("biblioteca");
+    await page.getByRole("button", { name: "Abrir menu do professor" }).click();
+    await page.getByRole("menuitem", { name: /Configurações/ }).click();
+    await expect(page.getByRole("heading", { name: "Professor e sistema" })).toBeVisible();
+    await check("configuracoes");
 
     await page.getByRole("button", { name: /^Turmas$/ }).first().click();
     await page.locator("article.overview-class-card").filter({ hasText: classroomName }).click();
