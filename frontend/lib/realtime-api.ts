@@ -1,3 +1,4 @@
+import { attachHeartbeat } from "./realtime-heartbeat";
 import { browserApiBaseUrl } from "./auth-api";
 import { apiRequest } from "./http/client";
 import { normalizeJoinCode } from "./app-state";
@@ -160,13 +161,10 @@ export function connectSessionSocket(
   participantToken?: string,
 ) {
   const socket = new WebSocket(sessionSocketUrl(sessionId));
-  let heartbeat: number | undefined;
   socket.addEventListener("open", () => {
     if (participantToken) socket.send(JSON.stringify({ type: "AUTH_PARTICIPANT", token: participantToken }));
-    heartbeat = window.setInterval(() => {
-      if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "PING" }));
-    }, 25000);
   });
+  attachHeartbeat(socket);
   socket.onmessage = (message) => {
     try {
       onEvent(JSON.parse(String(message.data)) as SessionRealtimeEvent);
@@ -174,6 +172,5 @@ export function connectSessionSocket(
       // Ignora mensagens que não pertencem ao contrato do Arena Dev.
     }
   };
-  socket.addEventListener("close", () => { if (heartbeat) window.clearInterval(heartbeat); });
   return socket;
 }

@@ -65,6 +65,7 @@ public class SessionSocketHandler extends TextWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession socket) throws Exception {
         UUID sessionId = resolveSessionId(socket.getUri());
         socket.getAttributes().put(ATTR_SESSION_ID, sessionId);
+        gateway.touch(socket);
 
         if (isProjectorSocket(socket.getUri())) {
             gateway.send(socket, "AUTH_REQUIRED", sessionId, Map.of(
@@ -87,6 +88,7 @@ public class SessionSocketHandler extends TextWebSocketHandler {
     protected void handleTextMessage(WebSocketSession socket, TextMessage message) {
         UUID sessionId = (UUID) socket.getAttributes().get(ATTR_SESSION_ID);
         if (sessionId == null) return;
+        gateway.touch(socket);
         try {
             enforceRateLimit(socket);
             @SuppressWarnings("unchecked")
@@ -270,6 +272,7 @@ public class SessionSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession socket, CloseStatus status) {
+        gateway.release(socket);
         UUID sessionId = (UUID) socket.getAttributes().get(ATTR_SESSION_ID);
         if (sessionId == null) return;
 

@@ -1,3 +1,4 @@
+import { attachHeartbeat } from "./realtime-heartbeat";
 import { browserApiBaseUrl } from "./auth-api";
 import { apiRequest } from "./http/client";
 import { normalizeJoinCode } from "./app-state";
@@ -49,19 +50,14 @@ export function connectProjectorSocket(
   onEvent: (event: SessionRealtimeEvent) => void,
 ) {
   const socket = new WebSocket(projectorSocketUrl(sessionId));
-  let heartbeat: number | undefined;
 
   socket.addEventListener("open", () => {
     socket.send(JSON.stringify({
       type: "AUTH_PROJECTOR",
       code: normalizeJoinCode(code),
     }));
-    heartbeat = window.setInterval(() => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type: "PING" }));
-      }
-    }, 25000);
   });
+  attachHeartbeat(socket);
 
   socket.onmessage = (message) => {
     try {
@@ -70,10 +66,6 @@ export function connectProjectorSocket(
       // Ignora frames que não pertencem ao contrato do Arena Dev.
     }
   };
-
-  socket.addEventListener("close", () => {
-    if (heartbeat) window.clearInterval(heartbeat);
-  });
 
   return socket;
 }
