@@ -71,6 +71,8 @@ for (const theme of ["dark", "light"] as const) {
     };
 
     await page.goto("/");
+    await expect(page.getByRole("button", { name: "Entrar", exact: true })).toBeVisible();
+    await check("login");
     await page.getByLabel("Usuário").fill(teacherUsername);
     await page.getByLabel("Senha").fill(teacherPassword);
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
