@@ -76,7 +76,7 @@
   padding: 7px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: #0b1612;
+  background: var(--ds-surface-raised);
   box-shadow: 0 24px 70px rgba(0, 0, 0, .46);
 }
 

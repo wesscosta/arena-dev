@@ -166,7 +166,7 @@
   place-items: center;
   border: 1px solid rgba(88, 243, 167, .28);
   border-radius: 9px;
-  background: #10251d;
+  background: var(--surface-3);
   color: var(--ds-accent-text);
   font-size: 9px;
   font-weight: 900;

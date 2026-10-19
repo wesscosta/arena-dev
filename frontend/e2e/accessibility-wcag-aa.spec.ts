@@ -79,6 +79,10 @@ for (const theme of ["dark", "light"] as const) {
     const card = page.locator("article.overview-class-card").filter({ hasText: classroomName });
     await expect(card).toBeVisible();
     await check("turmas");
+    await page.getByRole("button", { name: "Abrir menu do professor" }).click();
+    await expect(page.getByRole("menu")).toBeVisible();
+    await check("menu-professor");
+    await page.keyboard.press("Escape");
 
     await card.click();
     await expect(page.getByTestId("classroom-home-hero")).toBeVisible();
