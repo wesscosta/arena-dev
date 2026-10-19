@@ -81,7 +81,7 @@ html[data-theme="light"] {
   --theme-sticky-bottom: rgba(244, 248, 246, .94);
   --theme-avatar-start: #e4f3eb;
   --theme-avatar-end: #d6ebe0;
-  --theme-avatar-text: #275c44;
+  --theme-avatar-text: #1d4a36;
   --theme-shadow-panel: 0 12px 34px rgba(24, 56, 42, .06);
   --theme-shadow-elevated: 0 20px 55px rgba(24, 56, 42, .10);
 }

@@ -501,7 +501,7 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
         : <div className={styles.list}>{resources.map((resource) =>
           <button className={styles.row} type="button" key={resource.id} onClick={() => { setSelected(resource); setViewMode("reading"); }}>
             <span className={styles.rowMain}><strong>{resource.title}</strong><small>{resource.summary || "Sem descrição."}</small><span className={styles.rowTags}>{resource.subject && <b>{resource.subject}</b>}{resource.tags.slice(0, 3).map((value) => <i key={value}>{value}</i>)}{resource.tags.length > 3 && <i>+{resource.tags.length - 3}</i>}</span></span>
-            <span className={styles.meta}><span>{sourceName(resource)}</span><b>r{resource.revision}</b><small>{new Date(resource.updatedAt).toLocaleDateString("pt-BR")}</small></span><span aria-hidden="true">→</span>
+            <span className={styles.meta}><span>{sourceName(resource)}</span><b title={`Revisão ${resource.revision} do material`}>Revisão {resource.revision}</b><small>{new Date(resource.updatedAt).toLocaleDateString("pt-BR")}</small></span><span aria-hidden="true">→</span>
           </button>
         )}</div>}
     </section>

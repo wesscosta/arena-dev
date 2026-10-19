@@ -465,8 +465,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
   display: grid;
   place-items: center;
   border: 1px solid rgba(88,243,167,.2);
-  background: linear-gradient(145deg,#183128,#10231c);
-  color: var(--accent-2);
+  background: linear-gradient(145deg,var(--theme-avatar-start),var(--theme-avatar-end));
+  color: var(--theme-avatar-text);
   font-weight: 900;
 }
 
@@ -832,8 +832,10 @@ button:disabled { cursor: not-allowed; opacity: .45; }
   place-items: center;
   border: 1px solid rgba(88,243,167,.2);
   border-radius: 9px;
-  background: linear-gradient(145deg,#183128,#10231c);
-  color: var(--accent-2);
+  /* 11.7: theme avatar tokens; the fixed dark gradient left the letter at
+     1.5:1 in the light theme. */
+  background: linear-gradient(145deg,var(--theme-avatar-start),var(--theme-avatar-end));
+  color: var(--theme-avatar-text);
   font-size: 11px;
   font-weight: 900;
 }
