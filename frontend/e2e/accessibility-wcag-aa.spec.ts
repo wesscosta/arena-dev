@@ -83,6 +83,11 @@ for (const theme of ["dark", "light"] as const) {
     await expect(page.getByRole("menu")).toBeVisible();
     await check("menu-professor");
     await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "+ Nova turma" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await check("modal-nova-turma");
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
 
     await card.click();
     await expect(page.getByTestId("classroom-home-hero")).toBeVisible();
