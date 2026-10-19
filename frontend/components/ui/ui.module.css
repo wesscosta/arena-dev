@@ -53,7 +53,7 @@
 
 .danger {
   border-color: rgba(255, 120, 128, .35);
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 .danger:hover:not(:disabled) {
@@ -93,11 +93,11 @@
 .iconButton:hover:not(:disabled) {
   border-color: rgba(88, 243, 167, .28);
   background: rgba(88, 243, 167, .055);
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
 }
 
 .iconButtonDanger {
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 .badge {
@@ -129,7 +129,7 @@
 .badgeSuccess {
   border-color: rgba(88, 243, 167, .25);
   background: rgba(88, 243, 167, .065);
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
 }
 
 .badgeWarning {
@@ -141,7 +141,7 @@
 .badgeDanger {
   border-color: rgba(255, 120, 128, .28);
   background: rgba(255, 90, 105, .06);
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 .tabsRoot {
@@ -226,7 +226,7 @@
   padding: var(--space-2);
   border: var(--border-width) solid var(--ds-border);
   border-radius: var(--radius-md);
-  background: #0b1612;
+  background: var(--ds-surface);
   box-shadow: var(--shadow-popover);
 }
 
@@ -251,17 +251,17 @@
 }
 
 .menuItemDanger {
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 .menuItemIcon {
   display: grid;
   place-items: center;
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
 }
 
 .menuItemDanger .menuItemIcon {
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 .menuItemCopy strong,
@@ -354,7 +354,7 @@
 }
 
 .fieldError {
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 .card {
@@ -395,7 +395,7 @@
 }
 
 .emptyStateIcon {
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
   font-size: var(--font-size-2xl);
 }
 
@@ -496,10 +496,11 @@
   line-height: var(--line-normal);
 }
 
-/* High-contrast profile actions on dark and light themes. */
-.menuPopover { opacity: 1; isolation: isolate; background: #10231c; border-color: #496c5b; color: #f4fff9; box-shadow: 0 16px 42px rgba(0,0,0,.55); }
-.menuItem { opacity: 1; color: #f4fff9; }
-.menuItem:hover:not(:disabled), .menuItem:focus-visible { background: #254a3a; }
-.menuItemCopy small { color: #d2e7dc; }
-.menuItemDanger, .menuItemDanger .menuItemIcon { color: #ffb7bc; }
+/* 11.7: high-contrast profile actions that follow the theme (the fixed dark
+   popover clashed with the light theme). Text tokens are AAA in both. */
+.menuPopover { opacity: 1; isolation: isolate; background: var(--ds-surface); border-color: var(--theme-border-strong); color: var(--ds-text-primary); box-shadow: 0 16px 42px rgba(0,0,0,.28); }
+.menuItem { opacity: 1; color: var(--ds-text-primary); }
+.menuItem:hover:not(:disabled), .menuItem:focus-visible { background: color-mix(in srgb, var(--ds-accent) 12%, var(--ds-surface)); }
+.menuItemCopy small { color: var(--ds-text-secondary); }
+.menuItemDanger, .menuItemDanger .menuItemIcon { color: var(--ds-danger-text); }
 @media (max-width: 48rem) { .menuPopover { width: min(19rem, calc(100vw - 2rem)); min-width: 0; max-width: calc(100vw - 2rem); } }

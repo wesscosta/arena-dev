@@ -16,7 +16,7 @@
   font-size: 11px;
   font-weight: 850;
   letter-spacing: .11em;
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 .heading h2 {
   margin: 5px 0 0;
@@ -28,7 +28,7 @@
   border: 1px solid currentColor;
   border-radius: 999px;
   padding: 6px 9px;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   white-space: nowrap;
 }
 .target {
@@ -92,7 +92,7 @@
   border-radius: 9px;
   background: color-mix(in srgb,var(--accent) 12%,var(--surface));
   font-weight: 900;
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 .marker {
   font-size: 12px;

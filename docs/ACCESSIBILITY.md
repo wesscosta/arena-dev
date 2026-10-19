@@ -82,10 +82,13 @@ Baseline da paleta principal em `surface`:
 
 | Token | Cor | Resultado mínimo esperado |
 |---|---|---|
-| texto | `#f3f7f5` | AA texto normal |
-| muted | `#8ea39a` | AA texto normal |
-| accent | `#58f3a7` | AA texto normal |
+| texto | `#f3f7f5` | AAA texto normal |
+| muted (secundário) | `#a3b7ae` escuro / `#3a4a43` claro | AAA texto normal (v0.11 / 11.7) |
+| terciário | `#99ada4` escuro / `#3f5048` claro | AAA texto normal (v0.11 / 11.7) |
+| accent como texto (`--accent-text`) | `#58f3a7` escuro / `#085236` claro | AAA texto normal (v0.11 / 11.7) |
 | danger | `#ff6b73` | AA texto normal |
+
+**v0.11 / 11.7:** contraste de texto dos tokens do sistema em nível AAA (7:1), verificado por axe (`color-contrast-enhanced`) nas telas cobertas por `e2e/accessibility-wcag-aa.spec.ts`. **Exceção documentada:** as 8 cores de turma escolhidas pelo professor ficam em AA (≥ 4,5:1). Isso não é conformidade AAA do produto: critérios como 2.2.3 (sem limite de tempo) conflitam com Timer, Quiz e Buzzer.
 
 Transparências e estados compostos ainda precisam de inspeção visual porque o
 contraste final depende do fundo efetivo.

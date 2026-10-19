@@ -32,21 +32,21 @@
 }
 
 .eyebrow {
-  color: var(--accent);
-  font-size: .63rem;
+  color: var(--ds-accent-text);
+  font-size: var(--font-size-eyebrow);
   font-weight: 800;
-  letter-spacing: .12em;
+  letter-spacing: var(--tracking-eyebrow);
 }
 
 .header h2 {
   margin: .2rem 0 .12rem;
-  font-size: 1.25rem;
+  font-size: var(--font-size-panel-title);
 }
 
 .header p {
   margin: 0;
   color: var(--muted);
-  font-size: .72rem;
+  font-size: var(--font-size-xs);
   line-height: 1.45;
 }
 

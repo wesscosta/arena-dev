@@ -26,8 +26,16 @@ const v010Contract = readFileSync(
   resolve(root, "scripts/release/verify-v0.10-contract.sh"),
   "utf8",
 );
+const v011Contract = readFileSync(
+  resolve(root, "scripts/release/verify-v0.11-contract.sh"),
+  "utf8",
+);
 const rollbackRehearsal = readFileSync(
   resolve(root, "scripts/release/rehearse-v09-v010-rollback.sh"),
+  "utf8",
+);
+const v011RollbackRehearsal = readFileSync(
+  resolve(root, "scripts/release/rehearse-v010-v011-rollback.sh"),
   "utf8",
 );
 const license = readFileSync(resolve(root, "LICENSE"), "utf8");
@@ -45,7 +53,7 @@ test("release manifests and version derivation stay aligned", () => {
   const version = backendVersion();
 
   assert.equal(pkg.version, version);
-  assert.match(version, /^0\.10\.0(?:-(?:rc|beta)\.[0-9]+)?$/);
+  assert.match(version, /^0\.11\.0(?:-(?:rc|beta)\.[0-9]+)?$/);
 
   assert.equal(lock.version, version);
   assert.equal(lock.packages[""]?.version, version);
@@ -56,7 +64,9 @@ test("release manifests and version derivation stay aligned", () => {
   assert.match(gate, /artifactId>arena-dev-api/);
 });
 
-test("release gate uses v0.10/V56 without dropping v0.9/V48 and v0.8/V38 checks", () => {
+test("release gate uses v0.11/V58 without dropping v0.10/V56, v0.9/V48 and v0.8/V38 checks", () => {
+  assert.match(gate, /verify-v0\.11-contract\.sh/);
+  assert.match(gate, /expected_schema_version=58/);
   assert.match(gate, /verify-v0\.10-contract\.sh/);
   assert.match(gate, /expected_schema_version=56/);
   assert.match(gate, /verify-v0\.9-contract\.sh/);
@@ -75,6 +85,33 @@ test("release gate uses v0.10/V56 without dropping v0.9/V48 and v0.8/V38 checks"
   assert.match(v010Contract, /learner_confidence/);
   assert.match(v09Contract, /V48__learning_core_release_gate\.sql/);
   assert.match(v09Contract, /physicalLegacyRemovalReady/);
+});
+
+test("final v0.11 release requires 0.11.0, the signed 11.6 attestation and a V58 backup", () => {
+  assert.match(gate, /RELEASE_VERSION" == "0\.11\.0"/);
+  assert.match(gate, /--attestation/);
+  assert.match(gate, /v011-readiness\.py/);
+  assert.match(gate, /--candidate "\$head_sha"/);
+  assert.match(gate, /--ci-run-id "\$run_id"/);
+  assert.match(v011Contract, /verify-v0\.10-contract\.sh/);
+  assert.match(v011Contract, /\{57\.\.58\}/);
+  assert.match(v011Contract, /--check-template/);
+  assert.match(v011Contract, /0\\\.11\\\.0/);
+  assert.match(verifier, /arena_material_publications/);
+  assert.match(verifier, /uq_arena_material_active_session/);
+  assert.match(verifier, /arena_material_section_commands/);
+});
+
+test("v0.10-to-v0.11 rollback uses immutable tag, synthetic fixtures and isolated backup", () => {
+  assert.match(v011RollbackRehearsal, /git archive v0\.10\.0 backend\//);
+  assert.match(v011RollbackRehearsal, /docker network create/);
+  assert.match(v011RollbackRehearsal, /CANDIDATE_IMAGE_FROM_CURRENT_SOURCE=ok/);
+  assert.match(v011RollbackRehearsal, /sha256sum --check v56\.dump\.sha256/);
+  assert.match(v011RollbackRehearsal, /UPGRADE_V56_TO_V58_PRESERVES_IDS_AND_XP/);
+  assert.match(v011RollbackRehearsal, /BACKWARD_RESTORE_V56_AND_ORIGINAL_V010_API_READY/);
+  assert.match(v011RollbackRehearsal, /trap cleanup EXIT/);
+  assert.doesNotMatch(v011RollbackRehearsal, /docker compose down/);
+  assert.doesNotMatch(v011RollbackRehearsal, /restore-postgres\.sh/);
 });
 
 test("final v0.10 release cannot ship prerelease metadata or missing backup", () => {

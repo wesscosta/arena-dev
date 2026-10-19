@@ -18,22 +18,22 @@
 
 .eyebrow {
   display: block;
-  color: var(--accent);
-  font-size: 8px;
+  color: var(--ds-accent-text);
+  font-size: var(--font-size-eyebrow);
   font-weight: 900;
-  letter-spacing: .14em;
+  letter-spacing: var(--tracking-eyebrow);
 }
 
 .header h3 {
   margin: 5px 0 4px;
-  font-size: 19px;
+  font-size: var(--font-size-panel-title);
   letter-spacing: -.025em;
 }
 
 .header p {
   margin: 0;
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--font-size-xs);
 }
 
 .progress {
@@ -51,7 +51,7 @@
 }
 
 .progress span {
-  font-size: 11px;
+  font-size: var(--font-size-2xs);
 }
 
 .timeline {
@@ -82,7 +82,7 @@
   border-radius: 8px;
   background: rgba(255, 255, 255, .035);
   color: #71877d;
-  font-size: 8px;
+  font-size: var(--font-size-2xs);
   font-weight: 900;
 }
 
@@ -95,7 +95,7 @@
 }
 
 .timelineItem strong {
-  font-size: 8px;
+  font-size: var(--font-size-2xs);
   text-transform: uppercase;
   letter-spacing: .06em;
 }
@@ -103,7 +103,7 @@
 .timelineItem small {
   margin-top: 2px;
   color: var(--muted);
-  font-size: 7px;
+  font-size: var(--font-size-2xs);
 }
 
 .timelineItem.current {
@@ -113,7 +113,7 @@
 
 .timelineItem.current > span {
   background: rgba(88, 243, 167, .13);
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 
 .timelineItem.past {
@@ -137,7 +137,7 @@
 }
 
 .ready > span {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 28px;
 }
 
@@ -149,7 +149,7 @@
   max-width: 550px;
   margin: 0 0 8px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: var(--font-size-2xs);
   line-height: 1.5;
 }
 
@@ -169,8 +169,8 @@
 }
 
 .currentHead > div > span {
-  color: var(--accent);
-  font-size: 8px;
+  color: var(--ds-accent-text);
+  font-size: var(--font-size-2xs);
   font-weight: 900;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -189,7 +189,7 @@
 
 .currentHead > strong small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
 }
 
 .teacherNote {
@@ -199,8 +199,8 @@
 }
 
 .teacherNote strong {
-  font-size: 8px;
-  color: var(--accent);
+  font-size: var(--font-size-2xs);
+  color: var(--ds-accent-text);
   text-transform: uppercase;
   letter-spacing: .08em;
 }
@@ -208,7 +208,7 @@
 .teacherNote p {
   margin: 4px 0 0;
   color: #a7bbb2;
-  font-size: 9px;
+  font-size: var(--font-size-2xs);
   line-height: 1.5;
 }
 
@@ -217,7 +217,7 @@
   padding: 22px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: #09120f;
+  background: var(--ds-surface-subtle);
   white-space: pre-wrap;
   font-size: 16px;
   line-height: 1.65;
@@ -243,7 +243,7 @@
   border-radius: 999px;
   padding: 5px 8px;
   color: var(--muted);
-  font-size: 8px;
+  font-size: var(--font-size-2xs);
 }
 
 .question pre {
@@ -251,8 +251,8 @@
   padding: 13px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #07100d;
-  font-size: 10px;
+  background: var(--ds-surface-inset);
+  font-size: var(--font-size-2xs);
 }
 
 .options,
@@ -274,7 +274,7 @@
 
 .options b,
 .pollOptions b {
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 
 .interactionPreview {
@@ -284,8 +284,8 @@
 }
 
 .interactionPreview > span {
-  color: var(--accent);
-  font-size: 8px;
+  color: var(--ds-accent-text);
+  font-size: var(--font-size-2xs);
   font-weight: 900;
   letter-spacing: .1em;
 }
@@ -299,7 +299,7 @@
   border: 1px solid rgba(255, 188, 88, .2);
   border-radius: 9px;
   color: #d9b976;
-  font-size: 9px;
+  font-size: var(--font-size-2xs);
 }
 
 .controls {
@@ -317,7 +317,7 @@
 
 .controls > div span {
   color: var(--muted);
-  font-size: 8px;
+  font-size: var(--font-size-2xs);
 }
 
 @media (max-width: 680px) {

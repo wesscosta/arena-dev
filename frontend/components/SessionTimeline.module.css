@@ -100,7 +100,7 @@
 
 .error {
   border-style: solid;
-  color: #ff9da3;
+  color: var(--ds-danger-text);
 }
 
 @media (max-width: 42rem) {

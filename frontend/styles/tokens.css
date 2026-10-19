@@ -16,6 +16,30 @@
   --font-size-3xl: 1.875rem;
   --font-size-display: clamp(2rem, 3vw, 2.75rem);
 
+  /* 11.7 — papéis tipográficos: cada cabeçalho usa um papel, não um tamanho
+     próprio. Alterar o papel ajusta todas as telas de uma vez. */
+  --font-size-page-title: var(--font-size-3xl);
+  --font-size-section-title: var(--font-size-2xl);
+  --font-size-dynamic-title: clamp(1.5rem, 1.8vw, 2rem);
+  --font-size-panel-title: var(--font-size-xl);
+  --font-size-eyebrow: var(--font-size-2xs);
+  --font-size-page-description: var(--font-size-sm);
+  --tracking-title: -0.035em;
+  --tracking-eyebrow: 0.12em;
+  --page-title-margin: var(--space-2) 0 var(--space-1);
+  /* Gap between page header and the first content block on top-level pages. */
+  --page-section-gap: var(--space-6);
+  /* Page widths: lists use the full content width; forms are narrower. */
+  --page-max-width: 1500px;
+  --page-form-width: 1180px;
+  /* 11.7: one control size for fields and buttons in page toolbars.
+     Fields use 16px text (also avoids iOS zoom on focus). */
+  --control-height: var(--control-md);
+  --control-radius: var(--radius-sm);
+  --control-font: var(--font-size-md);
+  --button-font: var(--font-size-sm);
+  --button-weight: var(--font-semibold);
+
   --line-tight: 1.15;
   --line-snug: 1.3;
   --line-normal: 1.5;
@@ -63,6 +87,7 @@
   --ds-text-secondary: var(--muted);
   --ds-accent: var(--accent);
   --ds-accent-strong: var(--accent-2, var(--accent));
+  --ds-accent-text: var(--accent-text, var(--accent));
   --ds-accent-contrast: var(--theme-accent-contrast);
   --ds-surface: var(--surface);
   --ds-surface-raised: var(--surface-2, var(--surface));

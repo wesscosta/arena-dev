@@ -54,7 +54,7 @@ function workerHarness() {
     networkCalls: () => networkCalls };
 }
 
-test("v0.9 cached join is deleted on v0.10 activation; only neutral offline page is served", async () => {
+test("legacy cached join is deleted on current activation; only neutral offline page is served", async () => {
   const w = workerHarness();
   await (await w.open("arena-dev-shell-v0.8-join-fix-1")).put("/join",
     new Response("LEGACY_JOIN_HTML_AND_OLD_CHUNKS"));
@@ -68,8 +68,10 @@ test("v0.9 cached join is deleted on v0.10 activation; only neutral offline page
   assert.equal(w.storage.has("arena-dev-shell-v0.8-join-fix-1"), false);
   assert.equal(w.storage.has("arena-dev-static-v0.8-join-fix-1"), false);
   assert.equal(w.storage.has("other-project-cache"), true);
-  const newCache = [...w.storage.keys()].find((name) => name.startsWith("arena-dev-shell-v0.10-"));
+  const newCache = [...w.storage.keys()].find((name) => name.startsWith("arena-dev-shell-v0.11-"));
   assert.ok(newCache);
+  // 11.7: the new shell icons are precached with the current version.
+  assert.equal(w.storage.get(newCache)?.has("/icons/arena-maskable-512.png"), true);
   assert.equal(w.storage.get(newCache)?.has("/join"), false);
   assert.equal(w.storage.get(newCache)?.has("/offline.html"), true);
   w.setOffline(true);

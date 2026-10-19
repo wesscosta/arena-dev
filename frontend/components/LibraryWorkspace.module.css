@@ -1,7 +1,7 @@
 .workspace {
   width: 100%;
   display: grid;
-  gap: var(--space-6, 1.5rem);
+  gap: var(--page-section-gap);
 }
 
 .heading,
@@ -21,17 +21,18 @@
 .detailHead > div:first-child > span,
 .modal > div > span,
 .usageHeading > div > span {
-  font-size: var(--font-size-2xs, .75rem);
+  font-size: var(--font-size-eyebrow);
   font-weight: 800;
-  letter-spacing: .12em;
-  color: var(--ds-accent, var(--accent));
+  letter-spacing: var(--tracking-eyebrow);
+  color: var(--ds-accent-text);
 }
 
 .heading h2,
 .detailHead h2 {
-  margin: .3rem 0 .5rem;
-  font-size: clamp(1.8rem, 3vw, 2.7rem);
-  line-height: 1.08;
+  margin: var(--page-title-margin);
+  font-size: var(--font-size-page-title);
+  line-height: var(--line-tight);
+  letter-spacing: var(--tracking-title);
 }
 
 .heading p,
@@ -40,7 +41,8 @@
   margin: 0;
   max-width: 760px;
   color: var(--ds-text-secondary, var(--muted));
-  line-height: 1.55;
+  font-size: var(--font-size-page-description);
+  line-height: var(--line-normal);
 }
 
 .headingActions,
@@ -62,26 +64,28 @@
 .secondaryAction,
 .clearFilters,
 .usageRow button {
-  min-height: var(--control-md, 2.75rem);
+  min-height: var(--control-height);
   border: 1px solid var(--ds-border, var(--border));
-  border-radius: var(--radius-sm, .5rem);
+  border-radius: var(--control-radius);
   padding: 0 .95rem;
   background: var(--ds-surface-control, var(--surface));
   color: var(--ds-text-primary, var(--text));
   font: inherit;
-  font-weight: 650;
+  font-size: var(--button-font);
+  font-weight: var(--button-weight);
   cursor: pointer;
 }
 
 .primary {
-  min-height: var(--control-md, 2.75rem);
+  min-height: var(--control-height);
   border: 1px solid var(--ds-accent, var(--accent)) !important;
-  border-radius: var(--radius-sm, .5rem);
+  border-radius: var(--control-radius);
   padding: 0 1rem;
   background: var(--ds-accent, var(--accent)) !important;
   color: var(--ds-accent-contrast, #06120d) !important;
   font: inherit;
-  font-weight: 800;
+  font-size: var(--button-font);
+  font-weight: var(--button-weight);
   cursor: pointer;
 }
 
@@ -120,6 +124,14 @@
   flex: 1;
 }
 
+/* Toolbar fields share the page control size (other forms keep padding). */
+.search input,
+.filterBar select {
+  height: var(--control-height);
+  padding-block: 0;
+  font-size: var(--control-font);
+}
+
 .search input,
 .editor input,
 .editor textarea,
@@ -151,7 +163,7 @@
 .activeContentTab {
   border-color: var(--ds-accent, var(--accent)) !important;
   background: var(--ds-surface-interactive, var(--surface-2)) !important;
-  color: var(--ds-accent, var(--accent)) !important;
+  color: var(--ds-accent-text) !important;
 }
 
 .filterBar {
@@ -254,14 +266,17 @@
 
 .rowTags b,
 .detailMetadata b {
-  color: var(--ds-accent, var(--accent));
+  color: var(--ds-accent-text);
 }
 
+/* 11.7: source, revision and date on one line instead of three. */
 .meta {
-  display: grid;
-  gap: .15rem;
-  text-align: right;
-  font-size: .82rem;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  white-space: nowrap;
+  color: var(--ds-text-secondary, var(--muted));
+  font-size: var(--font-size-xs);
 }
 
 .meta > span {
@@ -405,7 +420,7 @@
 .markdown table { width: 100%; border-collapse: collapse; margin: 1em 0; }
 .markdown th,
 .markdown td { border: 1px solid var(--ds-border, var(--border)); padding: .55rem .7rem; text-align: left; }
-.markdown a { color: var(--ds-accent, var(--accent)); text-decoration: underline; text-underline-offset: 2px; }
+.markdown a { color: var(--ds-accent-text); text-decoration: underline; text-underline-offset: 2px; }
 
 .detailMetadata {
   margin-top: .75rem;
@@ -473,7 +488,7 @@
 }
 
 .externalResource a {
-  color: var(--ds-accent, var(--accent));
+  color: var(--ds-accent-text);
   font-weight: 750;
 }
 
@@ -601,7 +616,7 @@
 }
 
 .mapNode small {
-  color: var(--ds-accent, var(--accent));
+  color: var(--ds-accent-text);
   font-family: var(--font-family-mono, monospace);
 }
 
@@ -679,7 +694,7 @@
 }
 
 .snapshotLocked { color: var(--ds-warning-text, #b7791f); }
-.snapshotCurrent { color: var(--ds-accent, var(--accent)); }
+.snapshotCurrent { color: var(--ds-accent-text); }
 
 .importSourceGrid {
   display: grid;

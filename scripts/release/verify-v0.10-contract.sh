@@ -46,10 +46,11 @@ grep -q 'createPortal' frontend/components/arena/live/ArenaContextualMaterial.ts
 grep -q 'createPortal' frontend/components/learning/TeacherLearningOverview.tsx || \
   fail "painel pedagógico pode voltar a ser recortado pelo cabeçalho"
 
-# Prevent accidental 0.9.0 artifacts; allow a later stable 0.10.0 release
-# only after the independent final release gate approves main/CI/backup.
-node -e 'const v=require("./frontend/package.json").version; if(!/^0\.10\.0(?:-(?:rc|beta)\.[0-9]+)?$/.test(v)) process.exit(1)' || \
-  fail "artefatos v0.10 devem identificar 0.10.0 ou uma candidata 0.10.0-rc.N"
+# Prevent accidental 0.9.0 artifacts. The v0.11 line reuses this baseline and
+# enforces its own exact version in verify-v0.11-contract.sh; the final release
+# gate still approves main/CI/backup independently.
+node -e 'const v=require("./frontend/package.json").version; if(!/^0\.1[01]\.0(?:-(?:rc|beta)\.[0-9]+)?$/.test(v)) process.exit(1)' || \
+  fail "artefatos devem identificar 0.10.0/0.11.0 ou uma candidata 0.10.0-rc.N/0.11.0-rc.N"
 
 printf 'Contrato mínimo v0.10 verificado: baseline v0.9 + Flyway V49–V56, %s.\n' \
   "$(node -p 'require("./frontend/package.json").version')"

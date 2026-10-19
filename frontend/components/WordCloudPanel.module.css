@@ -24,7 +24,7 @@
 }
 
 .eyebrow {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .12em;
@@ -159,11 +159,11 @@
 }
 
 .collecting {
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 
 .revealed {
-  color: #e5b94d;
+  color: var(--ds-warning-text);
 }
 
 .closed {
@@ -220,7 +220,7 @@
 }
 
 .preview b {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: .55em;
 }
 
@@ -317,7 +317,7 @@
   padding:.4rem .62rem;
   border:1px solid color-mix(in srgb,var(--accent) 28%,var(--border));
   border-radius:999px;
-  color:var(--accent);
+  color:var(--ds-accent-text);
   font-size:.62rem;
   font-weight:800;
   letter-spacing:.08em;
@@ -380,7 +380,7 @@
 .previewCloudOrb em,
 .previewCloudOrb small {
   position:absolute;
-  color:var(--accent);
+  color:var(--ds-accent-text);
   font-style:normal;
 }
 .previewCloudOrb span { left:17%;top:26%;font-size:1.05rem;font-weight:800; }
@@ -407,7 +407,7 @@
   gap:.6rem;
 }
 .participationHead strong {
-  color:var(--accent);
+  color:var(--ds-accent-text);
   font-size:1rem;
 }
 .participationTrack {
@@ -436,7 +436,7 @@
   background:color-mix(in srgb,var(--surface) 90%,transparent);
 }
 .roundPolicy span {
-  color:var(--accent);
+  color:var(--ds-accent-text);
   font-size:.66rem;
   font-weight:750;
 }
@@ -477,7 +477,7 @@
   text-shadow:0 0 1rem color-mix(in srgb,var(--accent) 18%,transparent);
 }
 .liveShell .preview .topTerm {
-  color:var(--accent);
+  color:var(--ds-accent-text);
   text-shadow:0 0 1.2rem color-mix(in srgb,var(--accent) 30%,transparent);
 }
 .liveShell .empty {
@@ -492,7 +492,7 @@
   place-items:center;
   border-radius:50%;
   background:color-mix(in srgb,var(--accent) 9%,transparent);
-  color:var(--accent);
+  color:var(--ds-accent-text);
   font-size:1.6rem;
 }
 .liveShell .empty strong {

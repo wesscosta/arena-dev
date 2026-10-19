@@ -154,13 +154,7 @@
   padding: var(--space-6);
   overflow: hidden;
   text-align: center;
-  background:
-    radial-gradient(
-      circle at 50% 48%,
-      rgba(88, 243, 167, .07),
-      transparent 34%
-    ),
-    var(--ds-surface);
+  background: var(--ds-surface);
 }
 
 .arena-main-card::before {
@@ -168,12 +162,8 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(
-      145deg,
-      rgba(88, 243, 167, .035),
-      transparent 40%
-    );
+  /* 11.7: ornamental accent sheen removed (v0.12 identity forbids it). */
+  background: none;
 }
 
 .arena-main-card > * {
@@ -750,7 +740,7 @@
 .arena-cockpit-nav-group > button.active {
   border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
   background: color-mix(in srgb, var(--accent) 11%, var(--surface));
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 .arena-cockpit-main {
   min-width: 0;
@@ -854,7 +844,7 @@
   place-items: center;
   border: 1px dashed color-mix(in srgb, var(--accent) 32%, var(--border));
   border-radius: 50%;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 1.1rem;
 }
 .draw-result-stats {
@@ -867,7 +857,7 @@
   border-left: 1px solid var(--border);
 }
 .draw-result-stats strong {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 1rem;
 }
 .draw-result-stats span {
@@ -917,7 +907,6 @@
 .arena-session-code-card {
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
   background:
-    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--accent) 5%, transparent), transparent 45%),
     color-mix(in srgb, var(--surface) 94%, #02100c);
   box-shadow: 0 1.4rem 3.8rem rgba(0, 0, 0, .12);
 }
@@ -951,7 +940,7 @@
   background: color-mix(in srgb, var(--surface-2) 86%, transparent);
   color: var(--text);
   font: inherit;
-  font-size: .72rem;
+  font-size:var(--font-size-2xs);
   font-weight: 700;
   cursor: pointer;
 }
@@ -1025,7 +1014,7 @@
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
   border-radius: 50%;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: .6rem;
 }
 .draw-policy-hint {
@@ -1066,7 +1055,7 @@
   padding: .14rem .35rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent) 10%, transparent);
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: .6rem;
   text-align: center;
 }
@@ -1144,7 +1133,7 @@
 .draw-coverage-ring strong {
   position: relative;
   z-index: 1;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: .68rem;
 }
 .selected-student-bar {
@@ -1178,7 +1167,7 @@
   font-size: .62rem;
 }
 .selected-student-copy em {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-style: normal;
 }
 .selected-student-name-row {
@@ -1585,7 +1574,6 @@
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
   border-radius: var(--radius-lg);
   background:
-    radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 44%),
     color-mix(in srgb, var(--surface) 95%, #04110d);
   box-shadow: 0 1.4rem 3.8rem rgba(0, 0, 0, .12);
 }
@@ -1619,7 +1607,7 @@
 .buzzer-status-badge.open {
   border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
   background: color-mix(in srgb, var(--accent) 10%, transparent);
-  color: var(--accent);
+  color: var(--ds-accent-text);
   box-shadow: 0 0 1.25rem color-mix(in srgb, var(--accent) 14%, transparent);
 }
 .buzzer-status-badge.closed {
@@ -1664,7 +1652,7 @@
   place-items: center;
   border-radius: 50%;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 2rem;
 }
 .buzzer-orb strong {
@@ -1706,7 +1694,7 @@
 }
 .buzzer-metrics span {
   color: var(--muted);
-  font-size: .56rem;
+  font-size:var(--font-size-2xs);
 }
 .buzzer-ranking-card {
   min-width: 0;
@@ -1750,7 +1738,7 @@
   font-size: .72rem;
   font-weight: 800;
 }
-.buzzer-podium-row.winner .buzzer-position { color: var(--accent); }
+.buzzer-podium-row.winner .buzzer-position { color: var(--ds-accent-text); }
 .buzzer-avatar-fallback {
   width: 2rem;
   aspect-ratio: 1;
@@ -1758,7 +1746,7 @@
   place-items: center;
   border-radius: 50%;
   background: color-mix(in srgb, var(--accent) 13%, var(--surface-2));
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-weight: 800;
 }
 .buzzer-student-copy {
@@ -1786,7 +1774,7 @@
   border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
   border-radius: 8px;
   background: color-mix(in srgb, var(--accent) 8%, transparent);
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font: inherit;
   font-size: .56rem;
   font-weight: 800;
@@ -1807,7 +1795,7 @@
   place-items: center;
   border-radius: 50%;
   background: color-mix(in srgb, var(--accent) 9%, transparent);
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 1.55rem;
 }
 .buzzer-empty-state strong { font-size: .8rem; }
@@ -1860,7 +1848,6 @@
   border:1px solid color-mix(in srgb,var(--accent) 18%,var(--border));
   border-radius:var(--radius-lg);
   background:
-    radial-gradient(circle at 50% 18%,color-mix(in srgb,var(--accent) 7%,transparent),transparent 44%),
     color-mix(in srgb,var(--surface) 95%,#06100d);
   box-shadow:0 1.4rem 3.8rem rgba(0,0,0,.14);
 }
@@ -1902,7 +1889,7 @@
 .boss-phase-badge.active {
   border-color:color-mix(in srgb,var(--accent) 36%,var(--border));
   background:color-mix(in srgb,var(--accent) 8%,transparent);
-  color:var(--accent);
+  color:var(--ds-accent-text);
 }
 .boss-phase-badge.defeated {
   border-color:color-mix(in srgb,#d8ae43 40%,var(--border));
@@ -1985,7 +1972,7 @@
   place-items:center;
   border-radius:50%;
   background:color-mix(in srgb,var(--accent) 10%,transparent);
-  color:var(--accent);
+  color:var(--ds-accent-text);
   font-size:1.85rem;
 }
 .boss-core-label {
@@ -2004,7 +1991,7 @@
   white-space:nowrap;
 }
 .boss-core small {
-  color:var(--accent);
+  color:var(--ds-accent-text);
   font-size:.62rem;
   font-weight:750;
 }
@@ -2075,7 +2062,7 @@
 }
 .boss-session-metrics span {
   color:var(--muted);
-  font-size:.54rem;
+  font-size:var(--font-size-2xs);
 }
 .boss-victory-banner {
   position:relative;
@@ -2162,7 +2149,7 @@
   cursor:not-allowed;
 }
 .boss-attacks button > span {
-  color:var(--accent);
+  color:var(--ds-accent-text);
   font-size:1.1rem;
 }
 .boss-attacks button strong {
@@ -2242,7 +2229,7 @@
 .boss-hp-presets button.active {
   border-color:color-mix(in srgb,var(--accent) 48%,var(--border));
   background:color-mix(in srgb,var(--accent) 8%,transparent);
-  color:var(--accent);
+  color:var(--ds-accent-text);
 }
 .boss-start-button {
   min-height:2.8rem;
@@ -2332,7 +2319,7 @@
 .arena-back-to-class:hover,
 .arena-back-to-class:focus-visible {
   border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
-  color: var(--accent);
+  color: var(--ds-accent-text);
   background: color-mix(in srgb, var(--accent) 5%, transparent);
 }
 
@@ -2366,7 +2353,7 @@
 }
 
 .arena-session-elapsed > span {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: .95rem;
 }
 
@@ -2636,7 +2623,7 @@
 .arena-session-code-row > button:hover:not(:disabled),
 .arena-session-code-row > button:focus-visible {
   border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 
 .arena-session-code-row > button:disabled {
@@ -2765,7 +2752,7 @@
   place-items: center;
   border: 2px solid color-mix(in srgb, var(--accent) 78%, white 8%);
   border-radius: 50%;
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 1.25rem;
   font-weight: 900;
   box-shadow: 0 0 1.2rem color-mix(in srgb, var(--accent) 15%, transparent);
@@ -2951,7 +2938,7 @@
   place-items: center;
   border-radius: .65rem;
   background: color-mix(in srgb, var(--accent) 13%, var(--surface-2));
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: .85rem;
 }
 
@@ -2965,7 +2952,7 @@
 }
 
 .arena-nav-arena-card strong {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: var(--font-size-sm);
 }
 
@@ -3342,7 +3329,7 @@
 .draw-history-popover > summary:focus-visible,
 .draw-history-popover[open] > summary {
   border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
-  color: var(--accent);
+  color: var(--ds-accent-text);
   background: color-mix(in srgb, var(--accent) 7%, var(--surface-2));
 }
 
@@ -3787,7 +3774,7 @@
 }
 
 .arena-session-qr-eyebrow {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: var(--font-size-xs);
   font-weight: 850;
   letter-spacing: .12em;
@@ -3858,7 +3845,7 @@
 }
 
 .draw-coverage-ring > span {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: .66rem;
 }
 
@@ -3937,7 +3924,7 @@
 }
 
 .draw-coverage-ring > span {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: .64rem;
 }
 
@@ -3968,7 +3955,7 @@
 .draw-history-inline[open] > summary {
   border: 0;
   background: transparent;
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 
 .draw-history-inline .draw-history-menu {
@@ -4161,7 +4148,7 @@
 
 .arena-participant-filter button.active {
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
-  color: var(--accent);
+  color: var(--ds-accent-text);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
@@ -4191,7 +4178,7 @@
 .smart-draw-settings {
   min-height: 2.15rem;
   padding: .42rem .72rem;
-  font-size: .7rem;
+  font-size:var(--font-size-2xs);
 }
 
 /* Contextual student picker reads as a chip instead of a form field. */
@@ -4272,7 +4259,7 @@ html[data-theme="dark"] [role="dialog"] select:focus {
 .arena-tool-roster-badges > span.online {
   border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
   background: color-mix(in srgb, var(--accent) 7%, var(--surface));
-  color: var(--accent);
+  color: var(--ds-accent-text);
 }
 
 .arena-dynamic-workspace {
@@ -4463,7 +4450,7 @@ html[data-theme="dark"] [role="dialog"] select:focus {
 }
 .arena-projector-toggle[data-active="true"] {
   border-color: var(--ds-accent, var(--accent));
-  color: var(--ds-accent, var(--accent));
+  color: var(--ds-accent-text);
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
 }
 .arena-projector-toggle[data-active="true"] .arena-projector-toggle-indicator { background: currentColor; }

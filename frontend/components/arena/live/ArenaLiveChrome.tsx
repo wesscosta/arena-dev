@@ -25,7 +25,13 @@ export type ArenaGlyphName =
   | "ranking"
   | "score"
   | "material"
-  | "evidence";
+  | "evidence"
+  // 11.7: shared with the teacher shell (classroom tabs and global nav).
+  | "home"
+  | "activities"
+  | "journeys"
+  | "history"
+  | "classrooms";
 
 export function ArenaGlyph({ name }: { name: ArenaGlyphName }) {
   const common = {
@@ -53,6 +59,11 @@ export function ArenaGlyph({ name }: { name: ArenaGlyphName }) {
       {name === "score" && <><circle {...common} cx="12" cy="12" r="8" /><path {...common} d="M12 8v8M8 12h8" /></>}
       {name === "material" && <><path {...common} d="M4 5a3 3 0 0 1 3-2h13v17H7a3 3 0 0 0-3 2V5Z" /><path {...common} d="M4 19a3 3 0 0 1 3-2h13M8 7h8M8 11h6" /></>}
       {name === "evidence" && <><path {...common} d="M4 19V5M4 19h16M8 15l4-4 3 2 5-6" /><circle {...common} cx="20" cy="7" r="1" /></>}
+      {name === "home" && <path {...common} d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1v-8Z" />}
+      {name === "activities" && <><path {...common} d="M10 6h10M10 12h10M10 18h10" /><path {...common} d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17" /></>}
+      {name === "journeys" && <><circle {...common} cx="6" cy="18" r="2" /><circle {...common} cx="18" cy="6" r="2" /><path {...common} d="M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6" /></>}
+      {name === "history" && <><path {...common} d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5" /><path {...common} d="M3.5 3.5v5h5M12 7.5V12l3 2" /></>}
+      {name === "classrooms" && <><rect {...common} x="4" y="4" width="7" height="7" rx="1.5" /><rect {...common} x="13" y="4" width="7" height="7" rx="1.5" /><rect {...common} x="4" y="13" width="7" height="7" rx="1.5" /><rect {...common} x="13" y="13" width="7" height="7" rx="1.5" /></>}
       {name === "arena" && <><path {...common} d="M7 9h10a4 4 0 0 1 3.7 5.5l-1 2.5a2 2 0 0 1-3.2.8L14.8 16H9.2l-1.7 1.8a2 2 0 0 1-3.2-.8l-1-2.5A4 4 0 0 1 7 9Z" /><path {...common} d="M8 12v3M6.5 13.5h3M16 12h.01M18 14h.01" /></>}
     </svg>
   );

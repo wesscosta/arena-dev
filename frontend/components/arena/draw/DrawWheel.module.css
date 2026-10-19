@@ -167,12 +167,12 @@
 }
 
 .commandIcon {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 1.35rem;
 }
 
 .commandHub strong {
-  color: var(--accent);
+  color: var(--ds-accent-text);
   font-size: 1.02rem;
   letter-spacing: .06em;
 }

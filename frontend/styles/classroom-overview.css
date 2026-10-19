@@ -41,32 +41,36 @@
   box-shadow: var(--ds-shadow-panel);
 }
 .topbar-global-nav-item.active > span {
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
 }
 .overview-page {
-  gap: var(--space-5);
+  gap: var(--page-section-gap);
 }
 .overview-page-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-8);
-  padding-top: var(--space-2);
 }
 .overview-page-header h1 {
-  margin: var(--space-2) 0 var(--space-1);
-  font-size: var(--font-size-3xl);
-  letter-spacing: -0.035em;
+  margin: var(--page-title-margin);
+  font-size: var(--font-size-page-title);
+  line-height: var(--line-tight);
+  letter-spacing: var(--tracking-title);
 }
 .overview-page-header p {
   max-width: 42rem;
   margin: 0;
   color: var(--ds-text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-page-description);
   line-height: var(--line-normal);
 }
 .overview-new-classroom {
   flex: 0 0 auto;
+  min-height: var(--control-height);
+  border-radius: var(--control-radius);
+  font-size: var(--button-font);
+  font-weight: var(--button-weight);
 }
 .overview-metrics {
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -89,12 +93,18 @@
   gap: var(--space-3);
 }
 .segmented-control {
+  box-sizing: border-box;
+  min-height: var(--control-height);
+  padding: 3px;
   border-color: var(--ds-border);
+  border-radius: var(--control-radius);
   background: var(--ds-surface-control);
 }
 .segmented-control button {
-  min-height: var(--control-sm);
+  min-height: calc(var(--control-height) - 8px);
   color: var(--ds-text-secondary);
+  font-size: var(--button-font);
+  font-weight: var(--button-weight);
 }
 .segmented-control button span {
   color: var(--ds-text-tertiary);
@@ -104,10 +114,13 @@
   color: var(--ds-text-primary);
 }
 .segmented-control button.active span {
-  color: var(--ds-accent);
+  color: var(--ds-accent-text);
 }
 .overview-search {
+  box-sizing: border-box;
   min-width: 0;
+  min-height: var(--control-height);
+  border-radius: var(--control-radius);
   border-color: var(--ds-border);
   background: var(--ds-surface-control);
 }
@@ -121,7 +134,7 @@
 }
 .overview-search input {
   color: var(--ds-text-primary);
-  font-size: var(--font-size-sm);
+  font-size: var(--control-font);
 }
 .overview-search button {
   border: 0;
@@ -131,8 +144,10 @@
 .overview-sort {
   min-width: 0;
   width: 100%;
-  height: var(--control-md);
-  font-size: var(--font-size-xs);
+  height: var(--control-height);
+  border-radius: var(--control-radius);
+  font-size: var(--control-font);
+  font-weight: var(--font-regular);
 }
 .overview-results-meta {
   min-height: 1.75rem;
@@ -271,10 +286,11 @@
   height: 2.5rem;
   display: grid;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--ds-accent) 24%, var(--ds-border));
+  /* 11.7: the chosen classroom colour identifies the card in the list. */
+  border: 1px solid color-mix(in srgb, var(--classroom-accent, var(--ds-accent)) 45%, var(--ds-border));
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--ds-accent) 8%, var(--ds-surface));
-  color: var(--ds-accent-strong);
+  background: color-mix(in srgb, var(--classroom-tint, var(--ds-accent)) 16%, var(--ds-surface));
+  color: var(--classroom-accent, var(--ds-accent-strong));
   font-size: var(--font-size-sm);
   font-weight: var(--font-black);
 }
@@ -282,12 +298,17 @@
 .overview-class-identity h3 {
   min-height: 0;
   margin: 0 0 var(--space-1);
+  /* 11.7: up to two lines; one-line ellipsis hid what distinguishes
+     similar class names. */
+  display: -webkit-box;
   overflow: hidden;
   color: var(--ds-text-primary);
   font-size: var(--font-size-md);
   line-height: var(--line-snug);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 .overview-class-card p {
   margin: 0;
@@ -520,12 +541,15 @@
 .overview-class-card-foot {
   padding-top: var(--space-3);
 }
+/* 11.7: on the card grid the live state is a quiet status (dot + text), not a
+   badge repeated on every card; the topbar keeps the prominent pill. */
 .overview-class-card-foot .live-pill.compact {
-  padding: 0 var(--space-2);
-  border-color: color-mix(in srgb, var(--ds-accent) 36%, var(--ds-border));
-  background: color-mix(in srgb, var(--ds-accent) 9%, var(--ds-surface));
-  color: var(--ds-accent-strong);
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ds-accent-text);
   font-size: var(--font-size-2xs);
+  letter-spacing: .06em;
 }
 .overview-class-card-foot .live-pill.compact > span {
   background: var(--ds-accent);

@@ -5,16 +5,26 @@
   min-height: 0;
   padding: var(--space-6);
   overflow: hidden;
-  border-color: color-mix(in srgb, var(--classroom-accent, var(--accent)) 28%, var(--ds-border));
+  border-color: color-mix(in srgb, var(--classroom-accent, var(--accent)) 40%, var(--ds-border));
   border-radius: var(--radius-xl);
   background:
     linear-gradient(
       120deg,
-      color-mix(in srgb, var(--classroom-accent, var(--accent)) 7%, var(--ds-surface)) 0%,
+      color-mix(in srgb, var(--classroom-tint, var(--accent)) 12%, var(--ds-surface)) 0%,
       transparent 58%
     ),
     var(--ds-surface);
   box-shadow: var(--shadow);
+}
+
+/* Solid identity stripe: the tint alone (about 1.1:1) was nearly invisible. */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--classroom-accent, var(--accent));
+  pointer-events: none;
 }
 
 .watermark {
@@ -45,11 +55,11 @@
 }
 
 .identity h2 {
-  margin: var(--space-2) 0 0;
+  margin: var(--page-title-margin);
   max-width: none;
-  font-size: clamp(2rem, 3vw, 2.65rem);
-  line-height: 1.05;
-  letter-spacing: -0.045em;
+  font-size: var(--font-size-page-title);
+  line-height: var(--line-tight);
+  letter-spacing: var(--tracking-title);
 }
 .manageButton {
   position: relative;
@@ -71,7 +81,7 @@
   border-radius: var(--radius-lg);
   background: color-mix(
     in srgb,
-    var(--classroom-accent, var(--accent)) 4%,
+    var(--classroom-tint, var(--accent)) 4%,
     var(--ds-surface-inset)
   );
 }
@@ -80,7 +90,7 @@
   border-color: color-mix(in srgb, var(--classroom-accent, var(--accent)) 38%, var(--ds-border));
   background: color-mix(
     in srgb,
-    var(--classroom-accent, var(--accent)) 7%,
+    var(--classroom-tint, var(--accent)) 7%,
     var(--ds-surface-inset)
   );
 }
@@ -148,7 +158,7 @@
   border-radius: var(--radius-md);
   color: #07110d;
   text-align: left;
-  box-shadow: 0 0.75rem 2rem rgba(49, 225, 137, 0.11);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
   transition:
     transform var(--motion-fast) var(--ease-standard),
     background var(--motion-fast) var(--ease-standard),
@@ -163,26 +173,26 @@
 
 .sessionActionStart {
   border-color: rgba(102, 255, 184, 0.58);
-  background: linear-gradient(180deg, #58f3a7 0%, #43cf8d 100%);
+  background: var(--accent);
 }
 
 .sessionActionStart:hover:not(:disabled),
 .sessionActionStart:focus-visible {
   border-color: rgba(122, 255, 193, 0.72);
-  background: linear-gradient(180deg, #6af8b6 0%, #4cda99 100%);
-  box-shadow: 0 1rem 2.5rem rgba(88, 243, 167, 0.19);
+  background: color-mix(in srgb, var(--accent) 86%, #ffffff);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .sessionActionResume {
   border-color: rgba(91, 241, 169, 0.58);
-  background: linear-gradient(180deg, #47dda0 0%, #2fbf83 100%);
+  background: var(--accent);
 }
 
 .sessionActionResume:hover:not(:disabled),
 .sessionActionResume:focus-visible {
   border-color: rgba(115, 255, 191, 0.72);
-  background: linear-gradient(180deg, #58ebb0 0%, #39cc8e 100%);
-  box-shadow: 0 1rem 2.5rem rgba(66, 211, 149, 0.21);
+  background: color-mix(in srgb, var(--accent) 86%, #ffffff);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .sessionActionDisabled {
