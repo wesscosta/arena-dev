@@ -2614,7 +2614,10 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
   border-radius: var(--control-radius);
   font-size: var(--control-font);
 }
-:is(.settings-page, .classroom-settings-page) .button {
+:is(.settings-page, .classroom-settings-page) :is(.input, .select, select) {
+  padding-block: 0;
+}
+:is(.settings-page, .classroom-settings-page) :is(.button, .integration-provider-actions button) {
   min-height: var(--control-height);
   border-radius: var(--control-radius);
   font-size: var(--button-font);
@@ -2625,7 +2628,7 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
   font-size: var(--font-size-xs);
   font-weight: var(--font-semibold);
 }
-:is(.settings-page, .classroom-settings-page) :is(.classroom-icon-choice small, .classroom-status-summary span, .local-note p) {
+:is(.settings-page, .classroom-settings-page) :is(.classroom-icon-choice small, .classroom-status-summary span, .classroom-delete-impact span, .local-note p) {
   font-size: var(--font-size-2xs);
 }
 :is(.settings-page, .classroom-settings-page) :is(.classroom-status-summary strong, .local-note strong) {
