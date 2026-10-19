@@ -20,9 +20,9 @@ html[data-theme="dark"] {
   --theme-surface-hover: rgba(255, 255, 255, .035);
   --theme-surface-interactive: rgba(255, 255, 255, .018);
   --theme-text-primary: #f3f7f5;
-  --theme-text-secondary: #8ea39a;
-  /* 11.7: >= 4.5:1 on raised/tinted dark surfaces (was 4.2:1). */
-  --theme-text-tertiary: #83998f;
+  /* 11.7: text tokens reach WCAG AAA (>= 7:1) on raised/tinted surfaces. */
+  --theme-text-secondary: #a3b7ae;
+  --theme-text-tertiary: #99ada4;
   --theme-border: rgba(255, 255, 255, .09);
   --theme-border-subtle: rgba(255, 255, 255, .055);
   --theme-border-strong: rgba(255, 255, 255, .18);
@@ -59,9 +59,9 @@ html[data-theme="light"] {
   --theme-surface-hover: rgba(20, 46, 35, .045);
   --theme-surface-interactive: rgba(20, 46, 35, .025);
   --theme-text-primary: #13231c;
-  /* 11.7: AA on tinted light panels (secondary was 4.27:1, tertiary 3.0-3.5:1). */
-  --theme-text-secondary: #55685f;
-  --theme-text-tertiary: #5a6d65;
+  /* 11.7: text tokens reach WCAG AAA (>= 7:1) on tinted light panels. */
+  --theme-text-secondary: #3a4a43;
+  --theme-text-tertiary: #3f5048;
   --theme-border: rgba(20, 46, 35, .13);
   --theme-border-subtle: rgba(20, 46, 35, .075);
   --theme-border-strong: rgba(20, 46, 35, .22);
@@ -69,12 +69,12 @@ html[data-theme="light"] {
   --theme-accent-strong: #0d6f48;
   --theme-accent-contrast: #06150e;
   /* The light accent (#22b978) is a fill colour; as text it was 2.2-2.5:1. */
-  --theme-accent-text: #0d6f48;
+  --theme-accent-text: #085236;
   --theme-danger: #d84f5a;
   --theme-danger-fill: #fff0f1;
-  --theme-danger-text: #a93640;
+  --theme-danger-text: #8c2a33;
   --theme-warning: #b87b08;
-  --theme-warning-text: #8a5d08;
+  --theme-warning-text: #6b4705;
   --theme-topbar: rgba(248, 252, 250, .90);
   --theme-sticky-top: rgba(244, 248, 246, .98);
   --theme-sticky-bottom: rgba(244, 248, 246, .94);

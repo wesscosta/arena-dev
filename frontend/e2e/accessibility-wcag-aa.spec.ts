@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 // v0.11 / 11.7: automated WCAG 2.2 A/AA sweep of the main teacher screens in
-// both themes. Automation does not replace the manual VoiceOver/keyboard gate.
+// both themes, plus AAA text contrast (color-contrast-enhanced, 7:1). The
+// teacher-chosen classroom colours (.classroom-accent-scope) are a documented
+// AA-only exception. Automation does not replace the manual VoiceOver gate.
 const axeSource = readFileSync(resolve(process.cwd(), "node_modules/axe-core/axe.min.js"), "utf8");
 const apiBaseUrl = process.env.E2E_API_URL ?? "http://127.0.0.1:8080";
 const teacherUsername = process.env.E2E_TEACHER_USERNAME ?? "professor";
@@ -14,11 +16,15 @@ type AxeFinding = { id: string; impact: string; nodes: Array<{ target: string[];
 async function audit(page: Page, screen: string) {
   await page.addScriptTag({ content: axeSource });
   const results = await page.evaluate(async () => {
-    const engine = (window as unknown as { axe: { run: (context: Document, options: object) =>
+    const engine = (window as unknown as { axe: { run: (context: object, options: object) =>
       Promise<{ violations: AxeFinding[] }> } }).axe;
-    return engine.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } });
+    const aa = await engine.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } });
+    const aaa = await engine.run({ include: [["body"]], exclude: [[".classroom-accent-scope"]] },
+      { runOnly: { type: "rule", values: ["color-contrast-enhanced"] } });
+    return { violations: [...aa.violations, ...aaa.violations] };
   });
-  const blocking = results.violations.filter((item) => item.impact === "serious" || item.impact === "critical");
+  const blocking = results.violations.filter((item) =>
+    item.id === "color-contrast-enhanced" || item.impact === "serious" || item.impact === "critical");
   const summary = blocking.map((item) => ({ id: item.id, impact: item.impact,
     targets: item.nodes.slice(0, 3).map((node) => `${node.target.join(" ")} — ${node.any[0]?.message ?? ""}`) }));
   console.log(`WCAG ${screen}: ${JSON.stringify(summary)}`);
@@ -44,7 +50,7 @@ async function createClassroom() {
 }
 
 for (const theme of ["dark", "light"] as const) {
-  test(`telas principais sem violações serious/critical WCAG A/AA — tema ${theme}`, async ({ browser }) => {
+  test(`telas principais sem violações WCAG A/AA e contraste de texto AAA — tema ${theme}`, async ({ browser }) => {
     test.setTimeout(180_000);
     const classroomName = await createClassroom();
     const context = await browser.newContext();
