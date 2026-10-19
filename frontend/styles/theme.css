@@ -66,7 +66,8 @@ html[data-theme="light"] {
   --theme-border-subtle: rgba(20, 46, 35, .075);
   --theme-border-strong: rgba(20, 46, 35, .22);
   --theme-accent: #22b978;
-  --theme-accent-strong: #0d6f48;
+  /* 11.7: mostly used as text (e.g. live pill); AAA on tinted light fills. */
+  --theme-accent-strong: #085236;
   --theme-accent-contrast: #06150e;
   /* The light accent (#22b978) is a fill colour; as text it was 2.2-2.5:1. */
   --theme-accent-text: #085236;
