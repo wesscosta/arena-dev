@@ -10,7 +10,7 @@
 - UX responsiva, foco/rolagem, CSP e segurança do frontend, WebKit emulado em CI (11.4).
 - Discovery editorial e de proveniência sem nova API/DDL; ADR-0068 apenas proposta (11.5).
 - Gate técnico 11.6: E2E com dois projetores, offline/reconexão/revogação e verificador fail-closed.
-- Coerência e acessibilidade (11.7): títulos e espaçamentos por papel tipográfico do Design System; cor da turma visível e adaptada ao tema claro; correções WCAG AA nos dois temas e contraste de texto em nível AAA (7:1) nos tokens do sistema, verificados por axe nos elementos mensuráveis; cores de turma em AA. **Mudança visual perceptível:** títulos de página passam a 30px em todas as telas; textos secundários e terciários ficam mais contrastados (mais claros no escuro, mais escuros no claro). [Detalhes](v0.11/11.7_COHERENCE_AA.md).
+- Coerência e acessibilidade (11.7): títulos e espaçamentos por papel tipográfico do Design System; cor da turma visível e adaptada ao tema claro; correções WCAG AA nos dois temas e contraste de texto em nível AAA (7:1) nos tokens do sistema, verificados por axe nos elementos mensuráveis; cores de turma em AA. **Mudança visual perceptível:** títulos de página a 30px e alinhados entre as páginas; controles de barra de ferramenta com 44px; tema claro menos luminoso; brilhos neon removidos; textos secundários mais contrastados; novo favicon e ícones da PWA com a marca da interface. [Detalhes](v0.11/11.7_COHERENCE_AA.md).
 
 ## Compatibilidade e implantação
 
