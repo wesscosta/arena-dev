@@ -1,6 +1,6 @@
 # Arena Dev v0.11.0 — Material Presentation (candidata)
 
-**Status: pré-release `v0.11.0-rc.3` (19/10/2026), NO-GO operacional para `0.11.0`.** A `rc.2` (segurança do Next.js) e a `rc.3` (CSP restrita ao próprio host) substituíram as candidatas anteriores antes de qualquer gate de campo. A tag `v0.11.0-rc.3` é o **SHA congelado** sobre o qual rodam os gates de campo; qualquer correção posterior gera uma nova `rc.N` e repete os gates afetados. Sem release estável. Desenvolvimento 11.0–11.6 integrado à `main` (merge `2c1e011`, [CI 3/3](https://github.com/wesscosta/arena-dev/actions/runs/38098271861)). A publicação depende dos oito gates de [homologação 11.6](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md) e do aceite assinado validado por `scripts/release/v011-readiness.py`. Escopo: self-hosted com um único operador docente.
+**Status: pré-release `v0.11.0-rc.4` (19/10/2026), NO-GO operacional para `0.11.0`.** A `rc.2` (segurança do Next.js), a `rc.3` (CSP restrita ao próprio host) e a `rc.4` (correções da auditoria) substituíram as candidatas anteriores antes de qualquer gate de campo. A tag `v0.11.0-rc.4` é o **SHA congelado** sobre o qual rodam os gates de campo; qualquer correção posterior gera uma nova `rc.N` e repete os gates afetados. Sem release estável. Desenvolvimento 11.0–11.6 integrado à `main` (merge `2c1e011`, [CI 3/3](https://github.com/wesscosta/arena-dev/actions/runs/38098271861)). A publicação depende dos oito gates de [homologação 11.6](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md) e do aceite assinado validado por `scripts/release/v011-readiness.py`. Escopo: self-hosted com um único operador docente.
 
 ## Principais entregas da candidata
 
@@ -11,6 +11,26 @@
 - Discovery editorial e de proveniência sem nova API/DDL; ADR-0068 apenas proposta (11.5).
 - Gate técnico 11.6: E2E com dois projetores, offline/reconexão/revogação e verificador fail-closed.
 - Coerência e acessibilidade (11.7): títulos e espaçamentos por papel tipográfico do Design System; cor da turma visível e adaptada ao tema claro; correções WCAG AA nos dois temas e contraste de texto em nível AAA (7:1) nos tokens do sistema, verificados por axe nos elementos mensuráveis; cores de turma em AA. **Mudança visual perceptível:** títulos de página a 30px e alinhados entre as páginas; controles de barra de ferramenta com 44px; tema claro menos luminoso; brilhos neon removidos; textos secundários mais contrastados; novo favicon e ícones da PWA com a marca da interface. [Detalhes](v0.11/11.7_COHERENCE_AA.md).
+
+## rc.4 — correções da auditoria de 19/10/2026
+
+A [auditoria da rc.3](https://app.notion.com/p/3fef3eb198c381148bdcf38b4cdee1ab) (desenvolvimento, solução, UX/UI e game design) achou defeitos que os gates de campo pegariam. A rc.4 corrige os de esforço pequeno:
+
+| Defeito | Correção |
+| --- | --- |
+| Foco roubado a cada segundo nos drawers da Arena (o relógio da sessão re-renderiza o `ArenaView` e o efeito do drawer devolvia o foco ao botão fechar); provável causa do teste de Spotlight instável no CI da rc.3 | `onClose` guardado em ref no `ArenaToolDrawer`, no modal de resultados externos e no assistente de Jornada; E2E de regressão digita no drawer de Pontuação enquanto o relógio avança |
+| Nome civil do aluno enviado a todos os celulares em `PARTICIPANT_CONNECTED/DISCONNECTED` | eventos só para o professor (`broadcastTeachers`), com teste de audiência |
+| Postgres do perfil de desenvolvimento publicado em todas as interfaces com a senha padrão, e o README orienta esse perfil na LAN | porta ligada a `127.0.0.1` por padrão (`POSTGRES_BIND`) |
+| Anel de foco no tema claro com ~2,5:1 (WCAG 1.4.11 exige 3:1) e campos que anulavam o contorno | anel com `--ds-accent-text`; campos com contorno visível em `:focus-visible` |
+| Página de Conquistas com template literals escapados (barra, `aria-label` e estado quebrados) | corrigida; teste impede `\${` escapado no código |
+| Texto técnico no celular do aluno durante o sorteio ("definido pelo backend") | texto de orientação ao aluno |
+| Status de conexão do aluno com 8px | 12px, anunciado (`role="status"`) |
+| Ranking "Todos" projetava quem tinha zero ponto; anonimização desligada por padrão | o projetor mostra só quem já pontuou; anonimizado por padrão; texto explica que o XP soma participação e acertos |
+| Variáveis `ARENA_AI_*` não chegavam ao container | repassadas no `compose.yaml` |
+
+Fica para a v0.12: mostrar "você foi chamado(a)" só ao sorteado (exige uma visão do palco por participante). Itens maiores da auditoria seguem em "Riscos residuais" e no roadmap.
+
+**Correção de registro:** a rc.1 a rc.3 afirmavam "WCAG AA nos dois temas". Isso valia para contraste de texto e para as regras medidas pelo axe, não para o indicador de foco no tema claro, corrigido nesta rc.
 
 ## rc.3 — CSP restrita ao próprio host e varredura do aluno e do projetor
 
@@ -43,6 +63,7 @@ Os avisos do Next.js de 14/10/2026 cobrem a faixa `16.0.0`–`16.4.0`; a `rc.1` 
 - CSP mantém `script-src 'unsafe-inline'` (bootstrap do Next.js). Aceitar com mitigação registrada ou migrar para nonce em release própria.
 - ~~`connect-src` permite qualquer host `wss:`~~ **resolvido na rc.3**: só o host da página e a API configurada. Falta a confirmação em Safari/iOS físico (`ios_safari_physical`). Limite conhecido: atrás de um proxy reverso que reescreva o cabeçalho `Host`, o WebKit antigo depende de `'self'` cobrir `ws`/`wss`; o proxy deve preservar `Host`.
 - Direitos de material de terceiros dependem de responsável editorial/jurídico (ADR-0068 proposta).
+- Da auditoria de 19/10 (antes do GO): anonimização/eliminação de aluno e retenção (LGPD); entrada do aluno sem rate limit e com enumeração por mensagem; envio de WebSocket sem backpressure e PONG ignorado (a confirmar); rate limit de login com chave pelo IP do proxy (a confirmar); runbook e backup automático antes do upgrade; observabilidade mínima.
 
 ## Publicação (somente após GO)
 

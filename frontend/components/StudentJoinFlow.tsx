@@ -499,7 +499,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
           <div className="student-live-view">
             <div className="student-live-top">
               <div><span className="student-live-kicker">{access.classroomName}</span><h1>{access.displayName}</h1><p>{access.sessionTitle}</p></div>
-              <span className={`student-connection ${socketState}`}><i />{socketState === "online" ? "Conectado" : socketState === "connecting" ? "Conectando" : socketState === "reconnecting" ? "Reconectando" : "Offline"}</span>
+              <span className={`student-connection ${socketState}`} role="status" aria-live="polite"><i aria-hidden="true" />{socketState === "online" ? "Conectado" : socketState === "connecting" ? "Conectando…" : socketState === "reconnecting" ? "Reconectando…" : "Offline"}</span>
             </div>
 
             {!browserOnline && (
@@ -843,7 +843,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
               <div className="student-buzzer-state open">
                 <span className="student-buzzer-label">SORTEIO</span>
                 <h2>{liveStage.primary.displayName || "Aluno sorteado"}</h2>
-                <p>O resultado foi definido pelo backend e está sincronizado com o palco da aula.</p>
+                <p>Foi chamado(a) para participar agora. Acompanhe a orientação do professor.</p>
               </div>
             ) : liveStage.primary.type === "BUZZER" ? (
               <div className={`student-buzzer-state ${buzzer.status.toLowerCase()}`}>

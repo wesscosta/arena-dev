@@ -151,6 +151,52 @@ class SessionRankingServiceTest {
     }
 
     @Test
+    void publicAllListOmitsParticipantsWithoutScoreEvents() {
+        Fixture fixture = fixture();
+        Student maria = student("Maria Clara");
+        Student joao = student("João Pedro");
+        List<SessionParticipant> participants = List.of(
+                participant(fixture.session, maria),
+                participant(fixture.session, joao)
+        );
+        when(fixture.participantRepository.findBySessionIdOrderByStudentNameAsc(fixture.sessionId))
+                .thenReturn(participants);
+        List<ScoreEvent> events = List.of(score(maria, 90));
+        when(fixture.scoreEventRepository.findBySessionIdOrderByCreatedAtAsc(fixture.sessionId))
+                .thenReturn(events);
+        names(fixture, maria, joao);
+
+        SessionDynamic dynamic = mock(SessionDynamic.class);
+        when(dynamic.getStateJson())
+                .thenReturn("{\"visible\":true,\"anonymized\":false,\"limit\":\"ALL\"}");
+        when(fixture.dynamicRepository.findBySessionIdAndType(fixture.sessionId, DynamicType.RANKING))
+                .thenReturn(Optional.of(dynamic));
+
+        var state = fixture.service.publicState(fixture.sessionId);
+
+        assertThat(state.entries())
+                .extracting(SessionRankingService.PublicRankingEntryView::score)
+                .containsExactly(90);
+        assertThat(fixture.service.state(fixture.sessionId).entries()).hasSize(2);
+    }
+
+    @Test
+    void defaultPresentationIsHiddenAndAnonymized() {
+        Fixture fixture = fixture();
+        when(fixture.participantRepository.findBySessionIdOrderByStudentNameAsc(fixture.sessionId))
+                .thenReturn(List.of());
+        when(fixture.scoreEventRepository.findBySessionIdOrderByCreatedAtAsc(fixture.sessionId))
+                .thenReturn(List.of());
+        when(fixture.dynamicRepository.findBySessionIdAndType(fixture.sessionId, DynamicType.RANKING))
+                .thenReturn(Optional.empty());
+
+        var presentation = fixture.service.state(fixture.sessionId).presentation();
+
+        assertThat(presentation.visible()).isFalse();
+        assertThat(presentation.anonymized()).isTrue();
+    }
+
+    @Test
     void presentationUpdatePersistsTheChoiceAndNotifiesTeacherAndProjector() {
         Fixture fixture = fixture();
         when(fixture.session.getStatus()).thenReturn(SessionStatus.ACTIVE);

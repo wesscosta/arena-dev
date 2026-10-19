@@ -176,7 +176,8 @@ public class SessionSocketHandler extends TextWebSocketHandler {
             SessionJoinService.ParticipantConnectionView view = connections == 1
                     ? joinService.markConnected(sessionId, token)
                     : SessionJoinService.ParticipantConnectionView.from(participant);
-            gateway.broadcast(sessionId, "PARTICIPANT_CONNECTED", view);
+            // The view carries the civil name: teachers only (ADR-0028), never other students.
+            gateway.broadcastTeachers(sessionId, "PARTICIPANT_CONNECTED", view);
             gateway.send(
                     socket,
                     "RUNTIME_SNAPSHOT",
@@ -288,7 +289,7 @@ public class SessionSocketHandler extends TextWebSocketHandler {
             if (remaining == 0) {
                 try {
                     SessionJoinService.ParticipantConnectionView participant = joinService.markDisconnected(sessionId, token);
-                    gateway.broadcast(sessionId, "PARTICIPANT_DISCONNECTED", participant);
+                    gateway.broadcastTeachers(sessionId, "PARTICIPANT_DISCONNECTED", participant);
                 } catch (RuntimeException ignored) {
                     // A sessão ou o token podem ter sido encerrados/liberados.
                 }

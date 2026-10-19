@@ -116,7 +116,7 @@ Uma UI nova só é considerada pronta quando:
 
 - possui nome acessível;
 - pode ser operada por teclado;
-- foco é visível;
+- foco é visível, com contraste mínimo de 3:1 contra a superfície nos dois temas (WCAG 1.4.11; o anel usa `--ds-accent-text`, e campos não podem anular `outline` sem substituto equivalente);
 - estado não depende somente de cor;
 - hierarquia de heading é coerente;
 - alterações assíncronas importantes são anunciadas;

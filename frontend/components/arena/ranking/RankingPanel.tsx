@@ -26,7 +26,7 @@ export default function RankingPanel({
   const [draftViewMode, setDraftViewMode] = useState<RankingLimit | null>(null);
   const [draftAnonymized, setDraftAnonymized] = useState<boolean | null>(null);
   const viewMode = draftViewMode ?? state?.presentation.limit ?? "TOP_5";
-  const anonymized = draftAnonymized ?? state?.presentation.anonymized ?? false;
+  const anonymized = draftAnonymized ?? state?.presentation.anonymized ?? true;
 
   const visibleEntries = useMemo(() => {
     if (!state) return [];
@@ -57,7 +57,7 @@ export default function RankingPanel({
               ? `${state.scoredParticipantCount} participante(s) pontuado(s)`
               : "Ainda sem pontuação"}
           </strong>
-          <small>O ranking representa participação nesta aula, não domínio de aprendizagem.</small>
+          <small>O ranking soma o XP desta aula (participação e acertos registrados), não mede domínio de aprendizagem. No projetor aparecem só participantes já pontuados.</small>
         </div>
         <span
           className={projected ? styles.publicStatus : styles.privateStatus}

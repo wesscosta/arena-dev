@@ -1,12 +1,12 @@
 # Arena Dev v0.12 — Redesign e Active Learning | roadmap
 
-**Estado (19/10/2026):** em **auditoria e design Figma-first**, com [issue #48 de acompanhamento](https://github.com/wesscosta/arena-dev/issues/48); não implementado, não homologado. A v0.11 está na pré-release `v0.11.0-rc.3`; a `0.11.0` ainda exige o GO operacional da 11.6.
+**Estado (19/10/2026):** em **auditoria e design Figma-first**, com [issue #48 de acompanhamento](https://github.com/wesscosta/arena-dev/issues/48); não implementado, não homologado. A v0.11 está na pré-release `v0.11.0-rc.4`; a `0.11.0` ainda exige o GO operacional da 11.6.
 **Fonte de verdade:** as decisões de produto e design da v0.12 vivem no Notion ([auditoria Figma-first e gate de implementação](https://app.notion.com/p/3f9f3eb198c38136b319e5807170f8bf)); este arquivo resume o que afeta o repositório.
 **Figma:** [ARENA — Redesign UX v0.12 · Transportta](https://www.figma.com/design/gWMkarPwmeFY15jr0Tr6DN). A exploração é referência visual editável, **não** especificação funcional aprovada.
 
 ## 0. Gate Figma-first (decisão de 14/10/2026)
 
-A v0.12 é conduzida como **auditoria e design no Figma primeiro**. O código da v0.12 parte da baseline **`v0.11.0-rc.3`** e não recebe mudanças da v0.12 até aprovação explícita do Design System e dos três pilotos. A 11.7 corrigiu defeitos contra o Design System atual (tokens de papel, controles de 44px, contraste AAA de texto); não é a nova linguagem visual e serve de ponto de partida para a migração.
+A v0.12 é conduzida como **auditoria e design no Figma primeiro**. O código da v0.12 parte da baseline **`v0.11.0-rc.4`** e não recebe mudanças da v0.12 até aprovação explícita do Design System e dos três pilotos. A 11.7 corrigiu defeitos contra o Design System atual (tokens de papel, controles de 44px, contraste AAA de texto); não é a nova linguagem visual e serve de ponto de partida para a migração.
 
 **Processo:** Figma → revisão de UX/UI → protótipo → aceite explícito → código → testes.
 
@@ -107,6 +107,8 @@ As alternativas podem ser reavaliadas e rejeitadas por falta de benefício. Não
 6. Métricas com interpretação correta; evitar números demonstrativos apresentados como dados reais.
 7. Histórico de alterações visuais, CI regressivo, aceite pedagógico e plano de rollback.
 8. Escopo da v0.11 preservado sem novas funcionalidades nessa release.
+
+**Insumo da auditoria de 19/10/2026** ([Notion](https://app.notion.com/p/3fef3eb198c381148bdcf38b4cdee1ab)): estado na URL e decomposição do `ArenaApp` junto das telas piloto; SPI de mecânicas ao vivo; tokens em 3 camadas com lint bloqueando literais; identidade clara sem neon e fonte auto-hospedada; presets de gamificação por sessão e metas coletivas; "você foi chamado(a)" só para o sorteado; migrar testes de regex para comportamento.
 
 **Próxima ação da v0.12:** obter acesso ao Figma suficiente para o inventário completo (A0), depois validar identidade, Design System e os três pilotos, incluindo Jornada em mapa e linha do tempo e D12-JR-CODE-01. O gate de código permanece fechado. O desenvolvimento Active Learning avançará depois de decisões explicitamente aprovadas, não em paralelo por padrão.
 
