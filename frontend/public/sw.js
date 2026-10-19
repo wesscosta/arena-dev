@@ -1,5 +1,6 @@
 /* PWA shell only. The backend, student tokens and interaction state are NEVER cached. */
-const VERSION = "v0.10-pwa-gate-1";
+// v0.11: new shell icons; a new version invalidates the cached purple icon.
+const VERSION = "v0.11-pwa-icons-1";
 const CACHE_PREFIX = "arena-dev-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${VERSION}`;
 const STATIC_CACHE = `${CACHE_PREFIX}static-${VERSION}`;
@@ -9,6 +10,8 @@ const SHELL_URLS = [
   "/manifest.webmanifest",
   "/icons/arena-192.png",
   "/icons/arena-512.png",
+  "/icons/arena-maskable-512.png",
+  "/icons/arena.svg",
 ];
 
 self.addEventListener("install", (event) => {

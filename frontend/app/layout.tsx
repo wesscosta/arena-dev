@@ -10,12 +10,16 @@ export const metadata: Metadata = {
   description: "Gamificação para turmas de Desenvolvimento de Sistemas",
   applicationName: "Arena Dev",
   manifest: "/manifest.webmanifest",
+  // 11.7: icons repeat the in-app brand mark (green square, dark "A"); the
+  // previous purple diamond did not belong to the product identity.
   icons: {
     icon: [
+      { url: "/icons/arena.svg", type: "image/svg+xml" },
+      { url: "/icons/arena-32.png", sizes: "32x32", type: "image/png" },
       { url: "/icons/arena-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/arena-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: "/icons/arena-192.png",
+    apple: { url: "/icons/arena-apple-180.png", sizes: "180x180" },
   },
   appleWebApp: {
     capable: true,
@@ -28,7 +32,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0b1020",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#08100e" },
+    { media: "(prefers-color-scheme: light)", color: "#e9eeeb" },
+  ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
