@@ -24,10 +24,15 @@ export const test = base.extend<BrowserErrorOptions & { browserErrorGuard: void 
   allowedBrowserErrors: [[], { option: true }],
   browserErrorGuard: [async ({ browser, context, allowedBrowserErrors }, use) => {
     const errors: string[] = [];
+    // Init scripts that seed localStorage also run on about:blank, where
+    // storage access throws; only the app's own documents are guarded.
+    const appPage = (page: Page) => page.url() !== "about:blank";
     const watchPage = (page: Page) => {
-      page.on("pageerror", (error) => errors.push(`pageerror em ${page.url()}: ${error.message}`));
+      page.on("pageerror", (error) => {
+        if (appPage(page)) errors.push(`pageerror em ${page.url()}: ${error.message}`);
+      });
       page.on("console", (message) => {
-        if (message.type() === "error") errors.push(`console em ${page.url()}: ${message.text()}`);
+        if (message.type() === "error" && appPage(page)) errors.push(`console em ${page.url()}: ${message.text()}`);
       });
     };
     const watchContext = async (target: BrowserContext) => {
