@@ -1,29 +1,20 @@
 package br.com.arenadev.integration.persistence;
 
+import br.com.arenadev.support.SharedPostgres;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Testcontainers
 class IntegrationPersistenceMigrationIT {
-    @Container
-    static final PostgreSQLContainer POSTGRESQL = new PostgreSQLContainer("postgres:17-alpine")
-            .withDatabaseName("arena_dev_v26_test")
-            .withUsername("arena_test")
-            .withPassword("arena_test");
-
     @Test
     void migratesLegacyV25LinksWithoutLosingIdentity() {
         var dataSource = new DriverManagerDataSource(
-                POSTGRESQL.getJdbcUrl(), POSTGRESQL.getUsername(), POSTGRESQL.getPassword()
+                SharedPostgres.jdbcUrl(IntegrationPersistenceMigrationIT.class), SharedPostgres.username(), SharedPostgres.password()
         );
 
         Flyway.configure()

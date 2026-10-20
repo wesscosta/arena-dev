@@ -1,5 +1,6 @@
 package br.com.arenadev;
 
+import br.com.arenadev.support.SharedPostgres;
 import br.com.arenadev.classroom.ClassroomService;
 import br.com.arenadev.classroom.StudentService;
 import br.com.arenadev.session.SessionJoinService;
@@ -10,9 +11,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -30,7 +28,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * through the Next.js proxy (loopback/Compose), which forwards the real client
  * in X-Forwarded-For; limits apply per client, not per proxy.
  */
-@Testcontainers
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
@@ -40,17 +37,9 @@ import static org.assertj.core.api.Assertions.assertThat;
         }
 )
 class ClassroomAccessIT {
-    @Container
-    private static final PostgreSQLContainer POSTGRESQL = new PostgreSQLContainer("postgres:17-alpine")
-            .withDatabaseName("arena_dev_access_test")
-            .withUsername("arena_test")
-            .withPassword("arena_test");
-
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRESQL::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRESQL::getUsername);
-        registry.add("spring.datasource.password", POSTGRESQL::getPassword);
+        SharedPostgres.register(registry, ClassroomAccessIT.class);
     }
 
     @LocalServerPort

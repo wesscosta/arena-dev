@@ -1,4 +1,4 @@
-import { expect, request, test } from "@playwright/test";
+import { expect, request, test } from "./fixtures";
 
 const apiBaseUrl = process.env.E2E_API_URL ?? "http://127.0.0.1:8080";
 const username = process.env.E2E_TEACHER_USERNAME ?? "professor";

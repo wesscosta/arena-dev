@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 // This suite is intentionally backend-independent: no class or session fixtures are created.
 // It exercises the cascade responsible for the reported iPhone layout regressions.

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 // Browser geometry without credentials/fixtures: the active CSS cascade must not
 // bring back the old two-tier horizontal navigation on mobile.

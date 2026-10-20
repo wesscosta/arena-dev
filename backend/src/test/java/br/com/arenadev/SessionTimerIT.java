@@ -1,5 +1,6 @@
 package br.com.arenadev;
 
+import br.com.arenadev.support.SharedPostgres;
 import br.com.arenadev.classroom.ClassroomService;
 import br.com.arenadev.realtime.SessionRealtimeGateway;
 import br.com.arenadev.session.SessionService;
@@ -10,9 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -28,20 +26,11 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@Testcontainers
 @SpringBootTest
 class SessionTimerIT {
-    @Container
-    private static final PostgreSQLContainer POSTGRESQL = new PostgreSQLContainer("postgres:17-alpine")
-            .withDatabaseName("arena_dev_timer_test")
-            .withUsername("arena_test")
-            .withPassword("arena_test");
-
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRESQL::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRESQL::getUsername);
-        registry.add("spring.datasource.password", POSTGRESQL::getPassword);
+        SharedPostgres.register(registry, SessionTimerIT.class);
     }
 
     @Autowired
