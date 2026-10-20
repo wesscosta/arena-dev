@@ -221,7 +221,7 @@ printf 'Executando gate frontend...\n'
   npm test
   npm run typecheck
   npm run build
-  npx playwright install chromium
+  npx playwright install chromium webkit
 )
 
 docker compose config --quiet
@@ -276,9 +276,11 @@ ready_health="$(docker compose --project-name "$compose_project" exec -T backend
 [[ "$ready_health" == *'"status":"UP"'* && "$ready_health" == *'"database":"UP"'* ]] || \
   fail "health de readiness inválido: $ready_health"
 
+# Same projects as CI: every flow in Chromium, the iOS-like WebKit subset only.
 (
   cd frontend
-  npm run test:e2e
+  npm run test:e2e -- --project=chromium
+  npm run test:e2e -- --project=webkit-mobile --grep 'v0.11 / 11.[246]'
 )
 
 cleanup_stack
