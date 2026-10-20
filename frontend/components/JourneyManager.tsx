@@ -9,7 +9,7 @@ import {
   createJourney,
   fetchJourneys,
   publishJourney,
-  updateJourney,
+  saveJourneyContentsToLibrary, updateJourney,
   fetchJourneyRedemption,
   enableJourneyRedemption,
   regenerateJourneyRedemption,
@@ -284,6 +284,22 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
     } finally { setBusy(false); }
   }
 
+  async function saveContentsToLibrary() {
+    if (!draft?.id || busy) return;
+    setBusy(true);
+    try {
+      const result = await saveJourneyContentsToLibrary(draft.id);
+      const parts = [
+        result.created === 1 ? "1 conteúdo salvo na Biblioteca" : `${result.created} conteúdos salvos na Biblioteca`,
+        result.alreadyInLibrary ? `${result.alreadyInLibrary} já estava${result.alreadyInLibrary === 1 ? "" : "m"} lá` : "",
+        result.withoutContent ? `${result.withoutContent} sem conteúdo` : "",
+      ].filter(Boolean);
+      notify(`${parts.join(" · ")}. A Jornada não foi alterada.`);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível salvar os conteúdos na Biblioteca.", "error");
+    } finally { setBusy(false); }
+  }
+
   // A setting, not structure: it also changes after publishing, saved at once.
   async function changeCopyProtection(copyProtected: boolean) {
     if (!draft?.id || busy) return;
@@ -373,7 +389,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
                   {draft.id && <a className={styles.secondary} href={`/learn/journeys/${draft.id}?preview=teacher`}>Ver jornada</a>}
                   {draft.status === "DRAFT" && <button className={styles.primary} type="button" disabled={busy} onClick={() => void save()}>{busy ? "Salvando..." : "Salvar"}</button>}
                   {draft.id && draft.status === "DRAFT" && <button className={styles.ghost} type="button" disabled={busy || draft.stages.length === 0} onClick={() => void publish()}>Publicar</button>}
-                  <div className={styles.moreActions}><button className={styles.secondary} type="button" aria-label="Mais ações" aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}>•••</button>{moreOpen && <div className={styles.moreMenu}><button type="button" onClick={() => { setDraft(null); setMoreOpen(false); }}>Fechar painel</button>{draft.id && draft.status !== "ARCHIVED" && <button className={styles.moreDanger} type="button" disabled={busy} onClick={() => { setMoreOpen(false); void archive(); }}>Arquivar jornada</button>}</div>}</div>
+                  <div className={styles.moreActions}><button className={styles.secondary} type="button" aria-label="Mais ações" aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}>•••</button>{moreOpen && <div className={styles.moreMenu}><button type="button" onClick={() => { setDraft(null); setMoreOpen(false); }}>Fechar painel</button>{draft.id && draft.stages.length > 0 && <button type="button" disabled={busy} onClick={() => { setMoreOpen(false); void saveContentsToLibrary(); }}>Salvar conteúdos na Biblioteca</button>}{draft.id && draft.status !== "ARCHIVED" && <button className={styles.moreDanger} type="button" disabled={busy} onClick={() => { setMoreOpen(false); void archive(); }}>Arquivar jornada</button>}</div>}</div>
                 </div>
               </div>
 
