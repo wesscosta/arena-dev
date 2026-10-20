@@ -24,6 +24,9 @@ import java.util.*;
 
 @Service
 public class MechanicsService {
+    // A state row that no longer parses falls back to the empty state, as before;
+    // the warning makes that visible instead of silently resetting a mechanic.
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MechanicsService.class);
     private final ClassSessionRepository sessionRepository;
     private final SessionParticipantRepository participantRepository;
     private final SessionDynamicRepository dynamicRepository;
@@ -76,9 +79,7 @@ public class MechanicsService {
 
     @Transactional
     public DrawResult draw(UUID sessionId) {
-        ClassSession session = sessionRepository.findByIdForUpdate(sessionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
-        if (session.getStatus() != SessionStatus.ACTIVE) throw new IllegalArgumentException("Sessão não está ativa.");
+        ClassSession session = lockActiveSession(sessionId);
         drawProtocolGuard.requireLegacyAllowed(sessionId);
         List<UUID> present = presentStudentIds(sessionId);
         if (present.isEmpty()) throw new IllegalArgumentException("Não há alunos presentes para o sorteio.");
@@ -134,7 +135,7 @@ public class MechanicsService {
             throw new IllegalArgumentException("Apresentação do sorteio é obrigatória.");
         }
 
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = lockActiveSession(sessionId);
         DrawState state = readState(
                 sessionId,
                 DynamicType.QUICK_DRAW,
@@ -159,7 +160,7 @@ public class MechanicsService {
 
     @Transactional
     public GroupsResult organizeGroups(UUID sessionId, int groupSize) {
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = lockActiveSession(sessionId);
         if (groupSize < 1 || groupSize > 12) throw new IllegalArgumentException("Tamanho de grupo inválido.");
         List<String> ids = presentStudentIds(sessionId).stream().map(UUID::toString).toList();
         if (ids.isEmpty()) throw new IllegalArgumentException("Não há alunos presentes para organizar.");
@@ -184,7 +185,7 @@ public class MechanicsService {
 
     @Transactional
     public GroupsResult setGroups(UUID sessionId, List<List<UUID>> requestedGroups) {
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = lockActiveSession(sessionId);
         List<UUID> present = presentStudentIds(sessionId);
         validateManualGroups(present, requestedGroups);
 
@@ -269,7 +270,7 @@ public class MechanicsService {
 
     @Transactional
     public RuntimeView startBoss(UUID sessionId, String name, int maxHp) {
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = lockActiveSession(sessionId);
         if (maxHp < 10) throw new IllegalArgumentException("O Boss precisa ter ao menos 10 HP.");
         String normalizedName = name == null || name.isBlank() ? "Boss" : name.trim();
         BossState boss = new BossState(normalizedName, maxHp, maxHp);
@@ -288,7 +289,7 @@ public class MechanicsService {
 
     @Transactional
     public RuntimeView damageBoss(UUID sessionId, int amount) {
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = lockActiveSession(sessionId);
         if (amount <= 0) throw new IllegalArgumentException("O dano precisa ser maior que zero.");
         BossState boss = readState(sessionId, DynamicType.BOSS_BATTLE, BossState.class, null);
         if (boss == null) throw new IllegalArgumentException("Nenhum Boss está ativo nesta sessão.");
@@ -313,7 +314,7 @@ public class MechanicsService {
 
     @Transactional
     public RuntimeView setArenaSource(UUID sessionId, UUID activityId) {
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = lockActiveSession(sessionId);
         if (activityId == null) {
             saveState(
                     session,
@@ -364,7 +365,7 @@ public class MechanicsService {
 
     @Transactional
     public ArenaQuestionResult nextArenaQuestion(UUID sessionId) {
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = lockActiveSession(sessionId);
         ArenaState state = readArenaState(sessionId);
 
         if (state.currentStepId() != null) {
@@ -428,7 +429,7 @@ public class MechanicsService {
 
     @Transactional
     public RuntimeView restartArenaQuestions(UUID sessionId) {
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = lockActiveSession(sessionId);
         ArenaState state = readArenaState(sessionId);
 
         if (state.currentStepId() != null) {
@@ -460,7 +461,7 @@ public class MechanicsService {
 
     @Transactional
     public LiveFlowResult startLiveFlow(UUID sessionId) {
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = lockActiveSession(sessionId);
         ArenaState state = readArenaState(sessionId);
         Activity activity = requireFlowActivity(session, state);
 
@@ -484,7 +485,7 @@ public class MechanicsService {
 
     @Transactional
     public LiveFlowResult nextLiveFlow(UUID sessionId) {
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = lockActiveSession(sessionId);
         ArenaState state = readArenaState(sessionId);
         Activity activity = requireFlowActivity(session, state);
 
@@ -512,7 +513,7 @@ public class MechanicsService {
 
     @Transactional
     public LiveFlowResult previousLiveFlow(UUID sessionId) {
-        ClassSession session = requireActiveSession(sessionId);
+        ClassSession session = lockActiveSession(sessionId);
         ArenaState state = readArenaState(sessionId);
         Activity activity = requireFlowActivity(session, state);
 
@@ -891,8 +892,14 @@ public class MechanicsService {
         return sessionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
     }
 
-    private ClassSession requireActiveSession(UUID id) {
-        ClassSession session = requireSession(id);
+    /**
+     * Every mutation here is read-modify-write on the session's JSON state, so it
+     * locks the session row first: concurrent clicks (or two teacher tabs) are
+     * applied one after the other instead of overwriting each other.
+     */
+    private ClassSession lockActiveSession(UUID id) {
+        ClassSession session = sessionRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
         if (session.getStatus() != SessionStatus.ACTIVE) throw new IllegalArgumentException("Sessão não está ativa.");
         return session;
     }
@@ -902,7 +909,10 @@ public class MechanicsService {
                 .map(SessionDynamic::getStateJson)
                 .map(json -> {
                     try { return objectMapper.readValue(json, klass); }
-                    catch (RuntimeException ex) { return fallback; }
+                    catch (RuntimeException ex) {
+                        log.warn("Unreadable {} state for session {}; using the empty state.", type, sessionId, ex);
+                        return fallback;
+                    }
                 }).orElse(fallback);
     }
 
@@ -920,7 +930,10 @@ public class MechanicsService {
 
     private <T> T readJson(String value, TypeReference<T> type, T fallback) {
         try { return objectMapper.readValue(value, type); }
-        catch (RuntimeException ex) { return fallback; }
+        catch (RuntimeException ex) {
+            log.warn("Unreadable stored JSON ({}); using the default.", type.getType(), ex);
+            return fallback;
+        }
     }
 
     private static List<List<String>> balancedGroups(List<String> sourceIds, int groupSize, List<List<List<String>>> priorRuns) {

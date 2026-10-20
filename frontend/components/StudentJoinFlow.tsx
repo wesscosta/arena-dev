@@ -17,6 +17,7 @@ import {
 } from "@/lib/realtime-api";
 import { deviceClaimStorageKey, normalizeJoinCode, restoreStudentAccess, studentAccessStorageKey } from "@/lib/app-state";
 import { emptyLiveStageState, type LiveStageState } from "@/lib/live-stage-api";
+import { stageFromEvent } from "@/lib/material-section-sync";
 import {
   emptyWordCloudParticipantState,
   sendWordCloudSubmission,
@@ -181,9 +182,9 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
         setSocketState("online");
         setError("");
       }
+      setLiveStage((shown) => stageFromEvent(shown, event));
       if (event.type === "RUNTIME_SNAPSHOT") {
         const runtime = event.payload as ParticipantRuntimeSnapshot;
-        setLiveStage(runtime.stage);
         setBuzzer(runtime.buzzer);
         setBuzzerParticipant(runtime.buzzerParticipant);
         setWordCloud(runtime.wordCloud);
@@ -195,7 +196,6 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
         setLearningCheckParticipant(runtime.learningCheckParticipant ?? emptyLearningCheckParticipantState());
         setBoss(runtime.boss ?? null);
       }
-      if (event.type === "LIVE_STAGE_STATE") setLiveStage(event.payload as LiveStageState);
       if (event.type === "BUZZER_STATE") setBuzzer(event.payload as PublicBuzzerState);
       if (event.type === "BUZZER_PARTICIPANT_STATE") setBuzzerParticipant(event.payload as BuzzerParticipantState);
       if (event.type === "BOSS_STATE") setBoss(event.payload as PublicBossState);

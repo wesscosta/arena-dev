@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { normalizeJoinCode } from "@/lib/app-state";
-import { reconcileStageVersion } from "@/lib/material-section-sync";
+import { reconcileStageVersion, stageFromEvent } from "@/lib/material-section-sync";
 import ProjectedMaterialReader from "@/components/ProjectedMaterialReader";
 import {
   fetchPublicPresentedMaterial, type PublicPresentedMaterial,
@@ -233,7 +233,7 @@ export default function ProjectorView() {
 
         if (event.type === "RUNTIME_SNAPSHOT") {
           const runtime = event.payload as PublicRuntimeSnapshot;
-          setLiveStage((previous) => reconcileStageVersion(previous, runtime.stage));
+          setLiveStage((previous) => stageFromEvent(previous, event));
           setBuzzerState(runtime.buzzer);
           setTimerState({
             ...runtime.timer,
@@ -249,7 +249,7 @@ export default function ProjectorView() {
         }
 
         if (event.type === "LIVE_STAGE_STATE") {
-          setLiveStage((previous) => reconcileStageVersion(previous, event.payload as LiveStageState));
+          setLiveStage((previous) => stageFromEvent(previous, event));
           return;
         }
 

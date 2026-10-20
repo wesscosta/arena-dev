@@ -1,5 +1,6 @@
 import { apiRequest } from "./http/client";
 import { normalizeJoinCode } from "./app-state";
+import { HttpApiError } from "./http/errors";
 
 export type QuizStatus = "READY" | "OPEN" | "LOCKED" | "REVEALED" | "CLOSED";
 export type QuizQuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE";
@@ -60,9 +61,9 @@ export type QuizParticipantState = {
 };
 
 
-export class QuizApiError extends Error {
-  constructor(message: string, public readonly status: number) {
-    super(message);
+export class QuizApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "QuizApiError";
   }
 }

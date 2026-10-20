@@ -1,4 +1,5 @@
 import { apiRequest } from "./http/client";
+import { HttpApiError } from "./http/errors";
 
 export type LearningResourceFormat = "MARKDOWN" | "PLAIN_TEXT" | "LINK";
 export type LearningResourceSourceType =
@@ -98,12 +99,9 @@ export type LibraryResourceUsage = {
   journeys: LibraryJourneyUsage[];
 };
 
-export class LearningResourceApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
-    super(message);
+export class LearningResourceApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "LearningResourceApiError";
   }
 }

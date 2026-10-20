@@ -26,10 +26,3 @@ export function lockBodyScroll() {
     }
   };
 }
-
-export function resetBodyScrollLock() {
-  if (typeof document === "undefined") return;
-  lockCount = 0;
-  document.body.style.overflow = previousOverflow;
-  document.body.style.paddingRight = previousPaddingRight;
-}

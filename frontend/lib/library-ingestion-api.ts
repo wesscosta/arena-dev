@@ -56,12 +56,6 @@ export type LibraryIngestionCapabilities = {
   notionConfigured: boolean;
 };
 
-export function fetchLibraryIngestionCapabilities() {
-  return apiRequest<LibraryIngestionCapabilities>(
-    "/api/library/ingestion/capabilities",
-  );
-}
-
 export function previewLibraryImport(input: LibraryImportRequest) {
   return apiRequest<LibraryImportPreview>("/api/library/ingestion/preview", {
     method: "POST",

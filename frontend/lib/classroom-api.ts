@@ -1,14 +1,11 @@
 import type { Classroom, ClassroomThemeColor, ClassroomThemeIcon, Enrollment, Student } from "./types";
 import { apiRequest } from "./http/client";
+import { HttpApiError } from "./http/errors";
 
 
-export class ArenaApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-    public readonly fields?: Record<string, string>,
-  ) {
-    super(message);
+export class ArenaApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "ArenaApiError";
   }
 }

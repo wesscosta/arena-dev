@@ -1,4 +1,4 @@
-import type { GameSession, ScoreEvent, Student } from "./types";
+import type { ScoreEvent } from "./types";
 
 export const LEVELS = [
   { name: "Aprendiz", min: 0, max: 99 },
@@ -24,39 +24,6 @@ export function getLevelProgress(xp: number) {
   if (!Number.isFinite(level.max)) return 100;
   const width = level.max - level.min + 1;
   return Math.max(0, Math.min(100, ((xp - level.min) / width) * 100));
-}
-
-export function weightedDraw(students: Student[], session: GameSession): Student | undefined {
-  if (!students.length) return undefined;
-
-  const eligible = students.length > 1 && session.lastDrawnStudentId
-    ? students.filter((student) => student.id !== session.lastDrawnStudentId)
-    : students;
-
-  const pool = eligible.length ? eligible : students;
-  const weighted = pool.map((student) => {
-    const count = session.drawCounts[student.id] ?? 0;
-    return { student, weight: 1 / Math.pow(count + 1, 1.35) };
-  });
-
-  const total = weighted.reduce((sum, item) => sum + item.weight, 0);
-  let cursor = Math.random() * total;
-
-  for (const item of weighted) {
-    cursor -= item.weight;
-    if (cursor <= 0) return item.student;
-  }
-
-  return weighted.at(-1)?.student;
-}
-
-export function shuffle<T>(items: T[]): T[] {
-  const result = [...items];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
 }
 
 export function createBalancedGroups(studentIds: string[], groupSize: number, priorGroups: string[][][]) {

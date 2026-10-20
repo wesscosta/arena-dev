@@ -1,4 +1,5 @@
 import { apiRequest } from "./http/client";
+import { HttpApiError } from "./http/errors";
 
 export type LiveStageType =
   | "IDLE"
@@ -56,9 +57,9 @@ export type ActivateLiveStageInput = {
 };
 
 
-export class LiveStageApiError extends Error {
-  constructor(message: string, public readonly status: number) {
-    super(message);
+export class LiveStageApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "LiveStageApiError";
   }
 }
@@ -94,11 +95,5 @@ export function activateLiveStage(sessionId: string, input: ActivateLiveStageInp
   return liveStageRequest<LiveStageState>(`/api/sessions/${sessionId}/stage`, {
     method: "PUT",
     body: JSON.stringify(input),
-  });
-}
-
-export function clearLiveStage(sessionId: string) {
-  return liveStageRequest<LiveStageState>(`/api/sessions/${sessionId}/stage/idle`, {
-    method: "POST",
   });
 }

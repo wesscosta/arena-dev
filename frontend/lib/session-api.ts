@@ -1,15 +1,11 @@
-import { fetchSessionMechanics } from "./mechanics-api";
-import type { Classroom, GameSession, SessionParticipant, SessionRuntimeState } from "./types";
+import type { GameSession, SessionParticipant, SessionRuntimeState } from "./types";
 import { apiRequest } from "./http/client";
+import { HttpApiError } from "./http/errors";
 
 
-export class SessionApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-    public readonly fields?: Record<string, string>,
-  ) {
-    super(message);
+export class SessionApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "SessionApiError";
   }
 }
@@ -83,38 +79,6 @@ export async function fetchSessionParticipants(sessionId: string): Promise<Sessi
   const rows = await sessionRequest<ParticipantView[]>(`/api/sessions/${sessionId}/participants`);
   return rows.map((row) => mapParticipant(sessionId, row));
 }
-
-export async function fetchSessionDomain(
-  classrooms: Classroom[],
-): Promise<{ sessions: GameSession[]; sessionParticipants: SessionParticipant[] }> {
-  const sessionGroups = await Promise.all(
-    classrooms.map((classroom) => sessionRequest<SessionView[]>(`/api/sessions?classroomId=${encodeURIComponent(classroom.id)}`)),
-  );
-  const sessionViews = sessionGroups.flat();
-  const activeSessionViews = sessionViews.filter((session) => session.status === "ACTIVE" && !session.endedAt);
-  const [participantGroups, mechanics] = await Promise.all([
-    Promise.all(activeSessionViews.map((session) => fetchSessionParticipants(session.id))),
-    Promise.all(activeSessionViews.map((session) => fetchSessionMechanics(session.id))),
-  ]);
-  const sessionParticipants = participantGroups.flat();
-  const mechanicsBySession = new Map(mechanics.map((item) => [item.sessionId, item]));
-  const participantsBySession = new Map<string, SessionParticipant[]>();
-  for (const participant of sessionParticipants) {
-    const rows = participantsBySession.get(participant.sessionId) ?? [];
-    rows.push(participant);
-    participantsBySession.set(participant.sessionId, rows);
-  }
-
-  return {
-    sessions: sessionViews.map((session) => mapSession(
-      session,
-      participantsBySession.get(session.id) ?? [],
-      mechanicsBySession.get(session.id),
-    )),
-    sessionParticipants,
-  };
-}
-
 
 export async function releaseParticipantDevice(sessionId: string, participantId: string): Promise<SessionParticipant> {
   const row = await sessionRequest<ParticipantView>(`/api/sessions/${sessionId}/participants/${participantId}/release-device`, { method: "POST" });

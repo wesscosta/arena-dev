@@ -1,10 +1,11 @@
-import type { Activity, ActivityQuestion, ActivityResource, Classroom } from "./types";
+import type { Activity, ActivityQuestion, ActivityResource } from "./types";
 import { apiRequest } from "./http/client";
+import { HttpApiError } from "./http/errors";
 
 
-export class ActivityApiError extends Error {
-  constructor(message: string, public readonly status: number, public readonly fields?: Record<string, string>) {
-    super(message);
+export class ActivityApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "ActivityApiError";
   }
 }
@@ -65,12 +66,6 @@ function mapActivity(row: ActivityView): Activity {
 export async function fetchActivities(classroomId: string): Promise<Activity[]> {
   const rows = await activityRequest<ActivityView[]>(`/api/activities?classroomId=${encodeURIComponent(classroomId)}`);
   return rows.map(mapActivity);
-}
-
-export async function fetchActivityDomain(classrooms: Classroom[]): Promise<Activity[]> {
-  if (!classrooms.length) return [];
-  const groups = await Promise.all(classrooms.map((classroom) => fetchActivities(classroom.id)));
-  return groups.flat();
 }
 
 export async function createActivity(input: ActivityUpsertInput): Promise<Activity> {

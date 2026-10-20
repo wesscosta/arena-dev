@@ -1,11 +1,12 @@
 import type { ScoreEvent, Student } from "./types";
 import type { ExternalResultPlatform, ParsedExternalResultRow } from "./external-results";
 import { apiRequest } from "./http/client";
+import { HttpApiError } from "./http/errors";
 
 
-export class ExternalResultsApiError extends Error {
-  constructor(message: string, public readonly status: number) {
-    super(message);
+export class ExternalResultsApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "ExternalResultsApiError";
   }
 }

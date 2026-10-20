@@ -1,11 +1,12 @@
 import { secureId } from "@/lib/secure-id";
-import type { Classroom, ScoreCategory, ScoreEvent, ScoreSource } from "./types";
+import type { ScoreCategory, ScoreEvent, ScoreSource } from "./types";
 import { apiRequest } from "./http/client";
+import { HttpApiError } from "./http/errors";
 
 
-export class ScoreApiError extends Error {
-  constructor(message: string, public readonly status: number, public readonly fields?: Record<string, string>) {
-    super(message);
+export class ScoreApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "ScoreApiError";
   }
 }
@@ -68,12 +69,6 @@ function mapEvent(row: ScoreEventView): ScoreEvent {
 export async function fetchScoreEvents(classroomId: string): Promise<ScoreEvent[]> {
   const rows = await scoreRequest<ScoreEventView[]>(`/api/score-events?classroomId=${encodeURIComponent(classroomId)}`);
   return rows.map(mapEvent);
-}
-
-export async function fetchScoreDomain(classrooms: Classroom[]): Promise<ScoreEvent[]> {
-  if (!classrooms.length) return [];
-  const groups = await Promise.all(classrooms.map((classroom) => fetchScoreEvents(classroom.id)));
-  return groups.flat();
 }
 
 export async function createScoreEvent(input: CreateScoreEventInput): Promise<ScoreEvent> {

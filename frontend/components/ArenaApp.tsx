@@ -2554,11 +2554,18 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     setSelectedId(currentSession?.lastDrawnStudentId);
   }, [currentSession?.id, currentSession?.lastDrawnStudentId]);
 
+  // Every mechanics update builds a new groups array, so compare by value, and
+  // never overwrite a composition the teacher has not saved yet (rc.6).
+  const savedGroupsKey = JSON.stringify(currentSession?.groups ?? []);
+  const groupsSessionId = useRef(currentSession?.id);
   useEffect(() => {
-    setGroups(currentSession?.groups ?? []);
+    const sessionChanged = groupsSessionId.current !== currentSession?.id;
+    groupsSessionId.current = currentSession?.id;
+    if (groupsDirty && !sessionChanged) return;
+    setGroups(JSON.parse(savedGroupsKey) as string[][]);
     setGroupSize(currentSession?.groupSize ?? 2);
     setGroupsDirty(false);
-  }, [currentSession?.id, currentSession?.groups, currentSession?.groupSize]);
+  }, [currentSession?.id, savedGroupsKey, currentSession?.groupSize, groupsDirty]);
 
   async function startSession() {
     if (!presentIds.length || sessionBusy) return;

@@ -28,6 +28,7 @@ import java.util.UUID;
 
 @Service
 public class LiveStageService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(LiveStageService.class);
     private final ClassSessionRepository sessionRepository;
     private final SessionParticipantRepository participantRepository;
     private final SessionDynamicRepository dynamicRepository;
@@ -535,7 +536,8 @@ public class LiveStageService {
                 .map(raw -> {
                     try {
                         return json.readValue(raw, StoredState.class);
-                    } catch (RuntimeException ignored) {
+                    } catch (RuntimeException error) {
+                        log.warn("Unreadable live stage for session {}; showing an idle stage.", sessionId, error);
                         return StoredState.idle();
                     }
                 })
@@ -579,6 +581,7 @@ public class LiveStageService {
         try {
             return value == null ? LiveStageType.IDLE : LiveStageType.valueOf(value);
         } catch (IllegalArgumentException ignored) {
+            log.warn("Unknown live stage type {}; showing an idle stage.", value);
             return LiveStageType.IDLE;
         }
     }
