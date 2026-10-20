@@ -25,8 +25,8 @@ type BrowserErrorOptions = {
  */
 export const test = base.extend<BrowserErrorOptions & { browserErrorGuard: void }>({
   // eslint-disable-next-line no-empty-pattern -- Playwright fixtures must destructure.
-  allowedBrowserErrors: async ({}, use) => { await use([]); },
-  browserErrorGuard: [async ({ browser, context, allowedBrowserErrors }, use) => {
+  allowedBrowserErrors: async ({}, provide) => { await provide([]); },
+  browserErrorGuard: [async ({ browser, context, allowedBrowserErrors }, provide) => {
     const errors: string[] = [];
     // Init scripts that seed localStorage also run on about:blank, where
     // storage access throws; only the app's own documents are guarded.
@@ -58,7 +58,7 @@ export const test = base.extend<BrowserErrorOptions & { browserErrorGuard: void 
       return created;
     };
     try {
-      await use();
+      await provide();
     } finally {
       browser.newContext = newContext;
     }
