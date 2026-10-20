@@ -59,6 +59,28 @@ async function createClassroom() {
   return { name, registration, code: joinCode.code };
 }
 
+// rc.7: a Journey whose content has text, inline code and a code block, so the
+// student reader is swept in both themes (it was never covered before).
+async function createJourneyWithCode() {
+  const api = await request.newContext({ baseURL: apiBaseUrl });
+  const { token } = await (await api.get("/api/auth/csrf")).json() as { token: string };
+  const headers = { "X-XSRF-TOKEN": token };
+  expect((await api.post("/api/auth/login", { data: { username: teacherUsername, password: teacherPassword }, headers })).ok()).toBe(true);
+  const classroom = await (await api.post("/api/classrooms", { data: { name: `Turma Leitor ${Date.now()}`, code: null }, headers })).json() as { id: string };
+  const body = "# Verificar ambiente\n\nExecute no terminal e confira as versões com `--version`:\n\n```bash\npython --version\ngit --version\n```\n\n> Se necessário, use `python3`.";
+  const material = await api.post("/api/library/resources", { data: {
+    title: "Verificar ambiente", body, format: "MARKDOWN", sourceType: "MANUAL", language: "pt-BR" }, headers });
+  expect(material.ok()).toBe(true);
+  const { id: resourceId } = await material.json() as { id: string };
+  const journey = await api.post("/api/journeys", { data: { classroomId: classroom.id, title: "Jornada WCAG", stages: [{
+    title: "Etapa 01. Verificar ambiente", unlockRule: "IMMEDIATE", completionRule: "MANUAL", sectionTitle: "Pré-requisitos",
+    itemType: "CONTENT", learningResourceId: resourceId }] }, headers });
+  expect(journey.ok()).toBe(true);
+  const created = await journey.json() as { id: string; stages: Array<{ id: string }> };
+  await api.dispose();
+  return { journeyId: created.id, contentId: created.stages[0].id };
+}
+
 for (const theme of ["dark", "light"] as const) {
   test(`telas principais sem violações WCAG A/AA e contraste de texto AAA — tema ${theme}`, async ({ browser }) => {
     test.setTimeout(180_000);
@@ -166,6 +188,37 @@ for (const theme of ["dark", "light"] as const) {
     await expect.poll(() => qr.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth)).toBeGreaterThan(0);
     await check(projector.page, "projetor");
     await projector.context.close();
+
+    expect(findings).toEqual({});
+  });
+
+  test(`área de estudos e leitor de conteúdo sem violações WCAG A/AA e contraste AAA — tema ${theme}`, async ({ browser }) => {
+    test.setTimeout(120_000);
+    const { journeyId, contentId } = await createJourneyWithCode();
+    const context = await browser.newContext();
+    await context.addInitScript((value) => localStorage.setItem("arena-dev-theme", value), theme);
+    const page = await context.newPage();
+    const findings: Record<string, unknown[]> = {};
+    const check = async (screen: string) => {
+      await page.waitForTimeout(400);
+      const result = await audit(page, `${theme}/${screen}`);
+      if (result.length) findings[screen] = result;
+    };
+
+    await page.goto("/");
+    await page.getByLabel("Usuário").fill(teacherUsername);
+    await page.getByLabel("Senha").fill(teacherPassword);
+    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Abrir menu do professor" })).toBeVisible();
+
+    await page.goto(`/learn/journeys/${journeyId}?preview=teacher`);
+    await expect(page.getByText("Prévia do professor")).toBeVisible();
+    await check("jornada-previa");
+    await page.goto(`/learn/journeys/${journeyId}/content/${contentId}?preview=teacher`);
+    const codeBlock = page.locator("pre").first();
+    await expect(codeBlock).toContainText("python --version");
+    await check("leitor-conteudo");
+    await context.close();
 
     expect(findings).toEqual({});
   });

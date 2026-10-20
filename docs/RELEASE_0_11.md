@@ -1,6 +1,6 @@
 # Arena Dev v0.11.0 — Material Presentation (candidata)
 
-**Status: pré-release `v0.11.0-rc.6` (20/10/2026), NO-GO operacional para `0.11.0`.** A rc.6 substitui a rc.5 antes de qualquer gate de campo, com três bugs de sala achados na [auditoria SOLID](https://app.notion.com/p/3fff3eb198c38142964fe89bb9be729e). Os 8 gates rodam na tag `v0.11.0-rc.6`; não há tag `v0.11.0` nem release estável antes do aceite assinado validado por `release-gate.sh final --attestation`.
+**Status: pré-release `v0.11.0-rc.7` (20/10/2026), NO-GO operacional para `0.11.0`.** A rc.7 substitui a rc.6 antes de qualquer gate de campo: contraste da área de estudos nos dois temas e ajustes de uso vistos pelo professor. Os 8 gates rodam na tag `v0.11.0-rc.7`; não há tag `v0.11.0` nem release estável antes do aceite assinado validado por `release-gate.sh final --attestation`.
 
 ## Principais entregas da candidata
 
@@ -11,6 +11,13 @@
 - Discovery editorial e de proveniência sem nova API/DDL; ADR-0068 apenas proposta (11.5).
 - Gate técnico 11.6: E2E com dois projetores, offline/reconexão/revogação e verificador fail-closed.
 - Coerência e acessibilidade (11.7): títulos e espaçamentos por papel tipográfico do Design System; cor da turma visível e adaptada ao tema claro; correções WCAG AA nos dois temas e contraste de texto em nível AAA (7:1) nos tokens do sistema, verificados por axe nos elementos mensuráveis; cores de turma em AA. **Mudança visual perceptível:** títulos de página a 30px e alinhados entre as páginas; controles de barra de ferramenta com 44px; tema claro menos luminoso; brilhos neon removidos; textos secundários mais contrastados; novo favicon e ícones da PWA com a marca da interface. [Detalhes](v0.11/11.7_COHERENCE_AA.md).
+
+## rc.7 — área de estudos legível nos dois temas e ajustes do professor (20/10/2026)
+
+- **Contraste do `/learn` (Jornadas, leitor e prévia do professor).** O CSS da área do aluno tinha 150 cores fixas do tema escuro e definia texto quase branco para toda a área; no tema claro, código e a barra de prévia ficavam sem contraste. As cores viraram variáveis: o escuro usa tons medidos para pelo menos 7:1 (antes alguns cinzas tinham 3,1–6,9:1) e o claro usa os tokens do tema. Blocos de código ficam escuros nos dois temas. A varredura WCAG A/AA e de contraste AAA passou a cobrir a prévia da Jornada e o leitor, nos dois temas; ela reprovava os dois temas antes da correção e passa sem violações depois.
+- **Adicionar material a uma Jornada.** A turma aparecia como grupo vazio e não clicável quando não tinha Jornada em rascunho. Agora Jornadas publicadas aparecem desabilitadas com o motivo e, sem rascunho, a tela explica o que fazer.
+- **Impedir cópia.** A chave aparece também em Jornada publicada (salva na hora) e não quebra mais a linha nos editores.
+- **Salvar conteúdos na Biblioteca.** Nova ação no menu da Jornada: cada etapa vira um material independente na Biblioteca, sem alterar a Jornada; o que já está na Biblioteca é pulado e a proteção contra cópia é herdada. Duplicar uma Jornada inteira como modelo fica para a v0.12.
 
 ## rc.6 — bugs de sala da auditoria SOLID (20/10/2026)
 
