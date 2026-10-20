@@ -12,6 +12,9 @@ const EXPECTED_BROWSER_NOISE = [
   // Only raised after a test calls context.setOffline(true); whether a request
   // is in flight at that moment depends on timing, so it is allowed everywhere.
   /Failed to load resource: net::ERR_INTERNET_DISCONNECTED/,
+  // WebKit's own service worker update check fails while offline and reports
+  // it as a page error; PwaRuntime already catches every promise it starts.
+  /\/sw\.js due to access control checks/,
 ];
 
 type BrowserErrorOptions = {
