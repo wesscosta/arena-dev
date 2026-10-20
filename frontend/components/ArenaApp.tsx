@@ -1436,7 +1436,7 @@ function StudentManager({
       setAnonymizeTarget(null);
       setAnonymizeConfirmation("");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setBusy(false);
     }
