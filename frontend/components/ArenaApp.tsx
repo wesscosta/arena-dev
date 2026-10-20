@@ -19,6 +19,7 @@ import { useArenaScoring } from "@/components/arena/live/useArenaScoring";
 import { useArenaToolState } from "@/components/arena/live/useArenaToolState";
 import ArenaContextualMaterial from "@/components/arena/live/ArenaContextualMaterial";
 import TeacherLearningOverview from "@/components/learning/TeacherLearningOverview";
+import TeacherSessionSettings from "@/components/TeacherSessionSettings";
 import WheelParticipantSelector from "@/components/arena/selection/WheelParticipantSelector";
 import {
   presentationToSelectorMode,
@@ -171,6 +172,11 @@ function errorMessage(error: unknown) {
 export default function ArenaApp() {
   const [data, setData] = useState<ArenaData>(EMPTY_DATA);
   const [teacherSession, setTeacherSession] = useState<TeacherSession | null | undefined>(undefined);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const teacherSessionRef = useRef(teacherSession);
+  useEffect(() => {
+    teacherSessionRef.current = teacherSession;
+  }, [teacherSession]);
   const [hydrated, setHydrated] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [classroomTab, setClassroomTab] = useState<ClassroomTab>("home");
@@ -185,7 +191,12 @@ export default function ArenaApp() {
     void fetchTeacherSession()
       .then((session) => { if (!cancelled) setTeacherSession(session); })
       .catch(() => { if (!cancelled) setTeacherSession(null); });
-    const requireAuth = () => setTeacherSession(null);
+    // A 401 after the teacher was already in (session expired mid-class)
+    // re-authenticates in place instead of dropping the open screen.
+    const requireAuth = () => {
+      if (teacherSessionRef.current) setSessionExpired(true);
+      else setTeacherSession(null);
+    };
     window.addEventListener("arena-auth-required", requireAuth);
     return () => { cancelled = true; window.removeEventListener("arena-auth-required", requireAuth); };
   }, []);
@@ -348,6 +359,12 @@ export default function ArenaApp() {
         Pular para o conteúdo principal
       </a>
       <LiveRegion>{toast}</LiveRegion>
+      {sessionExpired && (
+        <TeacherLogin
+          mode="dialog"
+          onAuthenticated={(session) => { setTeacherSession(session); setSessionExpired(false); }}
+        />
+      )}
       <main id="main-content" className="main-area" tabIndex={-1}>
         <header className={`topbar app-topbar contextual-topbar ${view === "arena" && currentSession ? "arena-root-topbar-hidden" : ""}`}>
           <button
@@ -765,6 +782,17 @@ export default function ArenaApp() {
                   <div className="settings-theme-note">
                     A preferência é salva localmente. “Sistema” acompanha automaticamente mudanças entre claro e escuro.
                   </div>
+                </Panel>
+              </section>
+
+              <section className="settings-session-section">
+                <div className="settings-section-heading">
+                  <span className="eyebrow accent">ACESSO</span>
+                  <h3>Duração do acesso</h3>
+                  <p>Por quanto tempo o login do professor continua válido sem uso.</p>
+                </div>
+                <Panel title="Sessão do professor" subtitle="Vale em qualquer dispositivo">
+                  <TeacherSessionSettings />
                 </Panel>
               </section>
 

@@ -10,13 +10,17 @@ cd "$PROJECT_ROOT"
 fail() { printf 'ERRO: %s\n' "$*" >&2; exit 1; }
 "$SCRIPT_DIR/verify-v0.10-contract.sh"
 
-for n in {57..58}; do
+# The v0.11 schema line: V57-V58 (material presentation) plus the additive
+# pre-GO hardening of rc.5 (V59 teacher preferences). Anything later belongs
+# to the next line.
+V011_LAST_MIGRATION=59
+for ((n = 57; n <= V011_LAST_MIGRATION; n++)); do
   migrations=(backend/src/main/resources/db/migration/V${n}__*.sql)
   [[ -f "${migrations[0]}" && ${#migrations[@]} -eq 1 ]] || \
     fail "migration V${n} ausente ou duplicada"
 done
-extra=(backend/src/main/resources/db/migration/V59__*.sql)
-[[ ! -e "${extra[0]}" ]] || fail "V59 pertence a uma linha posterior; o contrato v0.11 termina em V58"
+extra=(backend/src/main/resources/db/migration/V$((V011_LAST_MIGRATION + 1))__*.sql)
+[[ ! -e "${extra[0]}" ]] || fail "V$((V011_LAST_MIGRATION + 1)) pertence a uma linha posterior; o contrato v0.11 termina em V${V011_LAST_MIGRATION}"
 
 required=(
   backend/src/main/java/br/com/arenadev/learning/presentation/MaterialPublicationController.java
@@ -57,5 +61,5 @@ python3 scripts/release/v011-readiness.py \
 node -e 'const v=require("./frontend/package.json").version; if(!/^0\.11\.0(?:-(?:rc|beta)\.[0-9]+)?$/.test(v)) process.exit(1)' || \
   fail "artefatos v0.11 devem identificar 0.11.0 ou uma candidata 0.11.0-rc.N"
 
-printf 'Contrato mínimo v0.11 verificado: baseline v0.10 + Flyway V57–V58, %s.\n' \
-  "$(node -p 'require("./frontend/package.json").version')"
+printf 'Contrato mínimo v0.11 verificado: baseline v0.10 + Flyway V57–V%s, %s.\n' \
+  "$V011_LAST_MIGRATION" "$(node -p 'require("./frontend/package.json").version')"

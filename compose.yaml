@@ -31,6 +31,7 @@ services:
       APP_ALLOWED_ORIGIN_PATTERNS: ${APP_ALLOWED_ORIGIN_PATTERNS:-http://*:[3000]}
       APP_TEACHER_USERNAME: ${APP_TEACHER_USERNAME:-professor}
       APP_TEACHER_PASSWORD: ${APP_TEACHER_PASSWORD:-arena-dev-change-me}
+      APP_TEACHER_SESSION_TIMEOUT_MINUTES: ${APP_TEACHER_SESSION_TIMEOUT_MINUTES:-240}
       APP_LOGIN_RATE_LIMIT_MAX_FAILURES: ${APP_LOGIN_RATE_LIMIT_MAX_FAILURES:-5}
       APP_LOGIN_RATE_LIMIT_WINDOW_SECONDS: ${APP_LOGIN_RATE_LIMIT_WINDOW_SECONDS:-60}
       APP_LOGIN_RATE_LIMIT_BLOCK_SECONDS: ${APP_LOGIN_RATE_LIMIT_BLOCK_SECONDS:-300}
@@ -56,7 +57,9 @@ services:
       ARENA_AI_MODEL: ${ARENA_AI_MODEL:-gpt-5.6-luna}
       ARENA_AI_BASE_URL: ${ARENA_AI_BASE_URL:-https://api.openai.com/v1}
     ports:
-      - "${BACKEND_PORT:-8080}:8080"
+      # Loopback only: browsers reach /api and /ws through the frontend proxy,
+      # which forwards the real client address (trusted only from Compose).
+      - "${BACKEND_BIND:-127.0.0.1}:${BACKEND_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy

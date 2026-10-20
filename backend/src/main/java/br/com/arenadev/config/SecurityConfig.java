@@ -61,6 +61,21 @@ public class SecurityConfig {
         );
     }
 
+    /** Failed student identifications per client and join code (enumeration, impersonation attempts). */
+    @Bean
+    LoginRateLimitService joinRateLimitService(
+            @Value("${app.security.join-rate-limit.max-failures:10}") int maxFailures,
+            @Value("${app.security.join-rate-limit.window-seconds:60}") long windowSeconds,
+            @Value("${app.security.join-rate-limit.block-seconds:60}") long blockSeconds
+    ) {
+        return new LoginRateLimitService(
+                maxFailures,
+                Duration.ofSeconds(windowSeconds),
+                Duration.ofSeconds(blockSeconds),
+                Clock.systemUTC()
+        );
+    }
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http

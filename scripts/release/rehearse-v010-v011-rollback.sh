@@ -114,8 +114,9 @@ docker exec "$db" pg_dump -U arena -d arena_rollback -Fc --no-owner --no-privile
 printf 'PRE_UPGRADE_BACKUP_SHA256=ok\n'
 docker stop "$old" >/dev/null
 start_api "$candidate" "$candidateimage"
-[[ "$(psql_sql "$flyway_max")" == 58 ]] || fail "Flyway upgrade V58 não finalizado"
-[[ "$(psql_sql "$flyway_count")" == 58 ]] || fail "histórico Flyway após upgrade inconsistente"
+candidate_max="$(ls backend/src/main/resources/db/migration | sed -n 's/^V\([0-9]*\)__.*/\1/p' | sort -n | tail -1)"
+[[ "$(psql_sql "$flyway_max")" == "$candidate_max" ]] || fail "Flyway upgrade V${candidate_max} não finalizado"
+[[ "$(psql_sql "$flyway_count")" == "$candidate_max" ]] || fail "histórico Flyway após upgrade inconsistente"
 [[ "$(psql_sql "select to_regclass('public.arena_material_publications') is not null and to_regclass('public.arena_material_section_commands') is not null")" == 't' ]] || fail "novas tabelas V57/V58 ausentes"
 [[ "$(psql_sql "select count(*) from pg_indexes where schemaname='public' and tablename='arena_material_publications' and indexname='uq_arena_material_active_session'")" == 1 ]] || fail "unicidade da apresentação ativa V57 ausente"
 [[ "$(psql_sql "$fingerprint_sql")" == "$original" ]] || fail "registros/XP foram alterados pelo upgrade"
