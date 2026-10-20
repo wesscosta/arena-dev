@@ -1,5 +1,7 @@
 package br.com.arenadev.realtime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -18,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 public class SessionRealtimeGateway {
@@ -39,6 +42,10 @@ public class SessionRealtimeGateway {
     /** Clients ping every 25 s; two missed pings mean a half-open connection. */
     static final Duration IDLE_LIMIT = Duration.ofSeconds(60);
     private static final String TOMCAT_BLOCKING_SEND_TIMEOUT = "org.apache.tomcat.websocket.BLOCKING_SEND_TIMEOUT";
+    private static final Logger log = LoggerFactory.getLogger(SessionRealtimeGateway.class);
+    private final AtomicLong framesSent = new AtomicLong();
+    private final AtomicLong closedSlow = new AtomicLong();
+    private final AtomicLong closedIdle = new AtomicLong();
     private final JsonMapper json;
 
     public SessionRealtimeGateway(JsonMapper json) {
@@ -186,7 +193,11 @@ public class SessionRealtimeGateway {
         try {
             outbound.computeIfAbsent(socket, SessionRealtimeGateway::decorate)
                     .sendMessage(new TextMessage(body));
+            framesSent.incrementAndGet();
         } catch (SessionLimitExceededException slow) {
+            closedSlow.incrementAndGet();
+            log.info("realtime closing slow socket session={} reason={}",
+                    socket.getAttributes().get("arena.sessionId"), slow.getMessage());
             close(socket, CloseStatus.SESSION_NOT_RELIABLE);
         } catch (IOException ignored) {
             // A desconexão será tratada no ciclo do WebSocket.
@@ -229,6 +240,10 @@ public class SessionRealtimeGateway {
             close(socket, CloseStatus.SESSION_NOT_RELIABLE);
             closed++;
         }
+        if (closed > 0) {
+            closedIdle.addAndGet(closed);
+            log.info("realtime closed {} idle socket(s)", closed);
+        }
         return closed;
     }
 
@@ -239,6 +254,31 @@ public class SessionRealtimeGateway {
             // Already gone; afterConnectionClosed releases the registrations.
         }
     }
+
+    /** Live counts for the teacher diagnostics view; no personal data. */
+    public Diagnostics diagnostics(UUID sessionId) {
+        Map<UUID, Set<WebSocketSession>> byParticipant = participantSockets.getOrDefault(sessionId, Map.of());
+        int participantSocketsCount = byParticipant.values().stream().mapToInt(Set::size).sum();
+        return new Diagnostics(
+                teacherSockets.getOrDefault(sessionId, Set.of()).size(),
+                byParticipant.size(),
+                participantSocketsCount,
+                projectorSockets.getOrDefault(sessionId, Set.of()).size(),
+                framesSent.get(),
+                closedSlow.get(),
+                closedIdle.get()
+        );
+    }
+
+    public record Diagnostics(
+            int teacherSockets,
+            int connectedParticipants,
+            int participantSockets,
+            int projectorSockets,
+            long framesSentSinceStart,
+            long slowSocketsClosedSinceStart,
+            long idleSocketsClosedSinceStart
+    ) {}
 
     public record RealtimeEvent(String type, UUID sessionId, String occurredAt, Object payload) {}
 }

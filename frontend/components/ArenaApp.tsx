@@ -66,7 +66,7 @@ import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-q
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { useModalKeyboard } from "@/lib/use-modal-keyboard";
-import { ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName } from "@/lib/classroom-api";
+import { anonymizeStudent, ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName } from "@/lib/classroom-api";
 import { createSession as createSessionApi, fetchSessionParticipants, finishSession as finishSessionApi, releaseParticipantDevice, setParticipantPresence } from "@/lib/session-api";
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
 import { fetchActivitySteps, replaceActivitySteps } from "@/lib/activity-step-api";
@@ -1312,6 +1312,8 @@ function StudentManager({
   showPageHeader?: boolean;
 }) {
   const [entryMode, setEntryMode] = useState<"add" | "import" | null>(null);
+  const [anonymizeTarget, setAnonymizeTarget] = useState<{ id: string; name: string } | null>(null);
+  const [anonymizeConfirmation, setAnonymizeConfirmation] = useState("");
   const [name, setName] = useState("");
   const [preferredName, setPreferredName] = useState("");
   const [preferredDrafts, setPreferredDrafts] = useState<
@@ -1418,6 +1420,22 @@ function StudentManager({
       await removeEnrollment(classroomId, studentId);
       await refreshClassroomDomain(classroomId);
       notify("Aluno removido da turma.");
+    } catch (error) {
+      notify(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmAnonymize() {
+    if (busy || !anonymizeTarget) return;
+    setBusy(true);
+    try {
+      await anonymizeStudent(anonymizeTarget.id, anonymizeConfirmation);
+      await refreshClassroomDomain(classroomId);
+      notify("Dados pessoais do aluno removidos. O histórico da turma foi preservado.");
+      setAnonymizeTarget(null);
+      setAnonymizeConfirmation("");
     } catch (error) {
       notify(errorMessage(error));
     } finally {
@@ -1671,6 +1689,15 @@ function StudentManager({
                       >
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5" /></svg>
                       </button>
+                      <button
+                        type="button"
+                        className="student-row-action danger"
+                        aria-label={`Apagar dados pessoais de ${student.name}`}
+                        title="Apagar dados pessoais (LGPD)"
+                        onClick={() => { setAnonymizeConfirmation(""); setAnonymizeTarget({ id: student.id, name: student.name }); }}
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 19c0-2.8-2.7-5-6-5s-6 2.2-6 5M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M16 9l5 5M21 9l-5 5" /></svg>
+                      </button>
                     </div>
                   </div>
                 );
@@ -1678,6 +1705,44 @@ function StudentManager({
             </div>
           )}
         </section>
+      )}
+
+      {anonymizeTarget && (
+        <Modal
+          open
+          title="Apagar dados pessoais"
+          subtitle="Ação definitiva"
+          onClose={() => { if (!busy) setAnonymizeTarget(null); }}
+        >
+          <div className="stack-lg">
+            <p>
+              Nome, matrícula, apelido, aparelhos lembrados e vínculos com o Teams de <strong>{anonymizeTarget.name}</strong> serão apagados.
+              O histórico da turma (XP, participação e evidências) continua, sob um nome genérico como “Aluno removido”.
+              Respostas escritas pelo aluno continuam como evidência de aprendizagem.
+            </p>
+            <label className="field">
+              <span>Digite o nome do aluno para confirmar</span>
+              <input
+                className="input"
+                autoComplete="off"
+                spellCheck={false}
+                value={anonymizeConfirmation}
+                onChange={(event) => setAnonymizeConfirmation(event.target.value)}
+              />
+            </label>
+            <div className="confirm-actions">
+              <button type="button" className="button ghost" disabled={busy} onClick={() => setAnonymizeTarget(null)}>Cancelar</button>
+              <button
+                type="button"
+                className="button danger-outline"
+                disabled={busy || anonymizeConfirmation.trim().toLowerCase() !== anonymizeTarget.name.trim().toLowerCase()}
+                onClick={() => { void confirmAnonymize(); }}
+              >
+                {busy ? "Apagando…" : "Apagar dados pessoais"}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {entryMode === "add" && (

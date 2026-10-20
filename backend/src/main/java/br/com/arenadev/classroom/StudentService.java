@@ -68,7 +68,8 @@ public class StudentService {
             String name,
             String nickname,
             boolean active,
-            Instant createdAt
+            Instant createdAt,
+            boolean anonymized
     ) {
         static StudentView from(Student student) {
             return new StudentView(
@@ -77,7 +78,8 @@ public class StudentService {
                     student.getName(),
                     student.getNickname(),
                     student.isActive(),
-                    student.getCreatedAt()
+                    student.getCreatedAt(),
+                    student.isAnonymized()
             );
         }
     }

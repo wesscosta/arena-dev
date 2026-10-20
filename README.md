@@ -251,6 +251,13 @@ Liveness: `http://localhost:8080/api/health/live`
 
 Em acesso pela rede local, compartilhe apenas o frontend, por exemplo `http://<IP-DA-MAQUINA>:3000`. No perfil Docker de desenvolvimento, o browser usa essa mesma origem para `/api/*` e `/ws/*`, e o Next.js encaminha as requisições para o backend pela rede interna do Compose. Assim, Join, Learn e tempo real não dependem de a porta `:8080` estar acessível no dispositivo do aluno. O banco e o backend de desenvolvimento escutam só em `127.0.0.1` (`POSTGRES_BIND`, `BACKEND_BIND`); os aparelhos da sala usam apenas o frontend. Não exponha o banco na rede da sala, porque a senha padrão de `.env.example` é pública.
 
+## Dados dos alunos
+
+- **O que é guardado:** nome, matrícula, apelido e nome na turma; participação, XP, respostas e evidências das aulas; aparelhos lembrados (hash do token, 180 dias); vínculos com o Teams quando a integração é usada. Não são guardados IP, navegador nem localização.
+- **Apagar dados de um aluno:** Turma → Alunos → "Apagar dados pessoais". Nome, matrícula, apelido, aparelhos lembrados e vínculos externos são removidos; o histórico da turma (XP, participação, evidências) continua sob "Aluno removido". A ação é definitiva e exige digitar o nome. Respostas escritas pelo aluno permanecem como evidência de aprendizagem.
+- **Backups contêm dados pessoais.** Para cifrar e rotacionar: `scripts/release/backup-postgres.sh --encrypt-to <chave-pública-age> --keep 14` (ou `BACKUP_AGE_RECIPIENT` e `BACKUP_KEEP`). Para restaurar um `.age`, defina `BACKUP_AGE_IDENTITY` com a chave privada.
+- **Retenção sugerida:** ao fim do período letivo, apague os dados dos alunos que saíram e mantenha só os backups necessários.
+
 ## Gates de desenvolvimento
 
 Backend:
