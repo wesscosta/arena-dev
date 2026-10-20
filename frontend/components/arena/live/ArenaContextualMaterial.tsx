@@ -20,8 +20,9 @@ import {
 import styles from "./ArenaContextualMaterial.module.css";
 import { DialogCloseButton } from "@/components/ui";
 import { ArenaGlyph } from "@/components/arena/live/ArenaLiveChrome";
+import type { Notify } from "@/components/ui";
 
-type Props = { sessionId: string; notify: (message: string) => void };
+type Props = { sessionId: string; notify: Notify };
 
 /** Teacher-only placement. Does not publish material to student/projector or advance steps. */
 export default function ArenaContextualMaterial({ sessionId, notify }: Props) {

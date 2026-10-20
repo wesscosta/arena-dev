@@ -36,6 +36,12 @@ export function fetchProjectorSnapshot(code: string): Promise<ProjectorSnapshot>
   );
 }
 
+/** Join QR for the projector footer; public like the projector snapshot. */
+export function projectorQrImageUrl(code: string, baseUrl: string) {
+  const params = new URLSearchParams({ baseUrl });
+  return `${browserApiBaseUrl()}/api/projector/${encodeURIComponent(normalizeJoinCode(code))}/qr?${params.toString()}`;
+}
+
 export function projectorSocketUrl(sessionId: string) {
   const api = new URL(browserApiBaseUrl());
   api.protocol = api.protocol === "https:" ? "wss:" : "ws:";

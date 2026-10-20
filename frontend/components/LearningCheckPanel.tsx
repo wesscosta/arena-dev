@@ -20,13 +20,14 @@ import DynamicHeader from "@/components/arena/dynamics/DynamicHeader";
 import QuestionComposer from "@/components/arena/dynamics/QuestionComposer";
 import LearningCyclePanel from "./learning/LearningCyclePanel";
 import LearningErrorClinicPanel from "./learning/LearningErrorClinicPanel";
+import type { Notify } from "@/components/ui";
 
 type Props = {
   sessionId: string;
   state: LearningCheckState;
   onStateChange: (state: LearningCheckState) => void;
   presentCount: number;
-  notify: (message: string) => void;
+  notify: Notify;
   onOpenGroups: () => void;
 };
 
@@ -123,7 +124,7 @@ export default function LearningCheckPanel({
       setNewTargetTitle("");
       notify("Objetivo de aprendizagem criado e selecionado.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível criar o objetivo de aprendizagem.");
+      notify(error instanceof Error ? error.message : "Não foi possível criar o objetivo de aprendizagem.", "error");
     } finally {
       setTargetBusy(false);
     }
@@ -163,7 +164,7 @@ export default function LearningCheckPanel({
       setCreating(false);
       notify("Verificação preparada. Abra as respostas quando a turma estiver pronta.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível preparar a verificação.");
+      notify(error instanceof Error ? error.message : "Não foi possível preparar a verificação.", "error");
     } finally {
       setBusy(false);
     }
@@ -181,7 +182,7 @@ export default function LearningCheckPanel({
       onStateChange(next);
       notify(success);
     } catch (error) {
-      notify(error instanceof Error ? error.message : fallback);
+      notify(error instanceof Error ? error.message : fallback, "error");
     } finally {
       setBusy(false);
     }

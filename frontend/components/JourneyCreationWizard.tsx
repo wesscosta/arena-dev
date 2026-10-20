@@ -14,6 +14,7 @@ import { fetchIntegrationConnections, fetchNotionPages, startNotionOAuth, type N
 import styles from "./JourneyCreationWizard.module.css";
 import { DialogCloseButton } from "@/components/ui";
 import DraftReviewWorkspace from "./DraftReviewWorkspace";
+import type { Notify } from "@/components/ui";
 
 type Props = {
   open: boolean;
@@ -21,7 +22,7 @@ type Props = {
   onClose: () => void;
   onBlank: () => void;
   onUseDraft: (draft: ContentDraft) => Promise<void> | void;
-  notify: (message: string) => void;
+  notify: Notify;
 };
 
 type Mode = "choose" | "ai" | "template" | "import" | "preview";
@@ -142,7 +143,7 @@ export default function JourneyCreationWizard({
       setDraft(result);
       setMode("preview");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível preparar a jornada.");
+      notify(error instanceof Error ? error.message : "Não foi possível preparar a jornada.", "error");
     } finally {
       setBusy(false);
     }
@@ -156,7 +157,7 @@ export default function JourneyCreationWizard({
       setDraft(result);
       setMode("preview");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível analisar o arquivo.");
+      notify(error instanceof Error ? error.message : "Não foi possível analisar o arquivo.", "error");
     } finally {
       setBusy(false);
       setDragOver(false);
@@ -304,10 +305,10 @@ export default function JourneyCreationWizard({
                 {notionConnected ? <>
                   <div className={styles.structureHint}><strong>Workspace conectado</strong><span>Escolha uma página autorizada. A Arena importa um snapshot e preserva sua hierarquia para revisão.</span><small>Alterações posteriores no Notion não modificam a jornada automaticamente.</small></div>
                   <label><span>Buscar página</span><input value={notionQuery} onChange={(event)=>setNotionQuery(event.target.value)} placeholder="Python, Django, Banco de Dados..." /></label>
-                  <button type="button" className={styles.secondary} disabled={notionLoading} onClick={()=>{setNotionLoading(true);void fetchNotionPages(notionQuery).then(setNotionPages).catch((e)=>notify(e instanceof Error?e.message:"Falha ao buscar páginas do Notion.")).finally(()=>setNotionLoading(false));}}>{notionLoading?"Buscando...":"Buscar"}</button>
+                  <button type="button" className={styles.secondary} disabled={notionLoading} onClick={()=>{setNotionLoading(true);void fetchNotionPages(notionQuery).then(setNotionPages).catch((e)=>notify(e instanceof Error?e.message:"Falha ao buscar páginas do Notion.", "error")).finally(()=>setNotionLoading(false));}}>{notionLoading?"Buscando...":"Buscar"}</button>
                   <div className={styles.notionPages}>{notionPages.map((page)=><button key={page.id} type="button" className={styles.notionPage} disabled={busy} onClick={()=>void preview({source:"NOTION",sourceUrl:page.url,sourceLabel:page.title})}><strong>{page.title}</strong><small>Importar página</small></button>)}{!notionLoading && notionPages.length===0 && <small className={styles.emptyPages}>Nenhuma página autorizada encontrada.</small>}</div>
                   <div className={styles.sourceHint}>Você também pode usar a aba Link para colar diretamente a URL de uma página já autorizada.</div>
-                </> : <div className={styles.notionConnect}><strong>Conecte seu Notion para importar páginas</strong><p>Autorize o Arena Dev a acessar somente as páginas que você escolher. Nenhum token precisa ser copiado manualmente.</p><button type="button" className={styles.primary} onClick={()=>void startNotionOAuth().then(({authorizationUrl})=>window.location.assign(authorizationUrl)).catch((e)=>notify(e instanceof Error?e.message:"Falha ao iniciar conexão com Notion."))}>Conectar Notion</button></div>}
+                </> : <div className={styles.notionConnect}><strong>Conecte seu Notion para importar páginas</strong><p>Autorize o Arena Dev a acessar somente as páginas que você escolher. Nenhum token precisa ser copiado manualmente.</p><button type="button" className={styles.primary} onClick={()=>void startNotionOAuth().then(({authorizationUrl})=>window.location.assign(authorizationUrl)).catch((e)=>notify(e instanceof Error?e.message:"Falha ao iniciar conexão com Notion.", "error"))}>Conectar Notion</button></div>}
               </div>
             )}
             {importMode === "url" && (

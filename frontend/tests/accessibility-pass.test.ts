@@ -57,7 +57,7 @@ test("application exposes skip navigation and main landmark", () => {
 
   assert.match(source, /href="#main-content"/);
   assert.match(source, /id="main-content"/);
-  assert.match(source, /<LiveRegion>\{toast\}<\/LiveRegion>/);
+  assert.match(source, /<Toast toast=\{toast\} onDismiss=\{dismissToast\} \/>/);
 });
 
 test("menu supports directional keyboard navigation and focus return", () => {

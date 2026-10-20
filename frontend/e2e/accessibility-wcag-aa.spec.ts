@@ -147,6 +147,10 @@ for (const theme of ["dark", "light"] as const) {
     await student.page.goto(`/join?code=${encodeURIComponent(code)}`);
     await expect(student.page.getByText(classroomName, { exact: true })).toBeVisible();
     await check(student.page, "aluno-entrada");
+    await student.page.getByPlaceholder("Matrícula ou nome").fill("ninguem-com-este-nome");
+    await student.page.getByRole("button", { name: "Entrar na sessão" }).click();
+    await expect(student.page.getByRole("alert").filter({ hasText: "Não encontramos você nesta turma" })).toBeVisible();
+    await check(student.page, "aluno-entrada-erro");
     await student.page.getByPlaceholder("Matrícula ou nome").fill(registration);
     await student.page.getByRole("button", { name: "Entrar na sessão" }).click();
     await expect(student.page.getByText("Conectado", { exact: true })).toBeVisible();
@@ -156,6 +160,10 @@ for (const theme of ["dark", "light"] as const) {
     const projector = await open();
     await projector.page.goto(`/projector?code=${encodeURIComponent(code)}`);
     await expect(projector.page.getByText("Sincronizado", { exact: true })).toBeVisible({ timeout: 10_000 });
+    // rc.5: students scan the footer QR instead of typing the address.
+    const qr = projector.page.getByAltText(`QR Code para entrar na sessão ${code}`);
+    await expect(qr).toBeVisible();
+    await expect.poll(() => qr.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth)).toBeGreaterThan(0);
     await check(projector.page, "projetor");
     await projector.context.close();
 

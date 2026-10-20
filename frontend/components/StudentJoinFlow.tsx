@@ -890,7 +890,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
           </div>
         )}
 
-        {error && <div className="student-error">{error}</div>}
+        {error && <div className="student-error" role="alert">{error}</div>}
       </section>
     </main>
   );

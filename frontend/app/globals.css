@@ -2658,3 +2658,9 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 .teacher-relogin-backdrop h2 { margin: 0 0 var(--space-2); font-size: var(--font-size-panel-title); }
 .teacher-session-settings { display: grid; gap: var(--space-2); }
 
+
+/* Errors stay until dismissed (components/ui/Toast.tsx). */
+.toast{display:flex;align-items:center;gap:10px;max-width:min(440px,calc(100vw - 32px));line-height:1.45}
+.toast-error{background:#2a1316;border-color:rgba(255,107,115,.55);color:#ffe3e5;padding-right:8px}
+.toast-error>button{flex:none;color:inherit}
+@media (max-width:640px){.toast{right:16px;left:16px;bottom:16px;max-width:none}}

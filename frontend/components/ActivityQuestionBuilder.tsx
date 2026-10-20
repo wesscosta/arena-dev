@@ -14,6 +14,7 @@ import {
 } from "@/lib/activity-questions";
 import { uid } from "@/lib/store";
 import type { ActivityQuestion, QuestionDifficulty, QuestionType } from "@/lib/types";
+import type { Notify } from "@/components/ui";
 
 type Tab = "manual" | "import" | "ai";
 
@@ -26,7 +27,7 @@ export default function ActivityQuestionBuilder({
   questions: ActivityQuestion[];
   setQuestions: (questions: ActivityQuestion[]) => void;
   defaultTheme: string;
-  notify: (message: string) => void;
+  notify: Notify;
 }) {
   const [tab, setTab] = useState<Tab>("ai");
   const [manualType, setManualType] = useState<QuestionType>("MULTIPLE_CHOICE");
@@ -172,7 +173,7 @@ export default function ActivityQuestionBuilder({
       setGeneratedPrompt(prompt);
       notify("Prompt copiado. Cole na IA de sua preferência.");
     } catch {
-      notify("Não foi possível copiar automaticamente. Selecione o prompt e copie manualmente.");
+      notify("Não foi possível copiar automaticamente. Selecione o prompt e copie manualmente.", "error");
     }
   }
 

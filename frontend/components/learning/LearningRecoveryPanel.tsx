@@ -6,10 +6,11 @@ import { linkArenaContextMaterial } from "@/lib/arena-context-material-api";
 import { recoveryGuidance } from "@/lib/learning-recovery";
 import type { LearningCycleComparison } from "@/lib/learning-cycle-api";
 import styles from "./LearningRecoveryPanel.module.css";
+import type { Notify } from "@/components/ui";
 
 export default function LearningRecoveryPanel({ sessionId, targetTitle, comparison, notify }: {
   sessionId: string; targetTitle: string; comparison: LearningCycleComparison;
-  notify: (message: string) => void;
+  notify: Notify;
 }) {
   const guidance = useMemo(() => recoveryGuidance(comparison), [comparison]);
   const [materials, setMaterials] = useState<LearningResource[]>([]);

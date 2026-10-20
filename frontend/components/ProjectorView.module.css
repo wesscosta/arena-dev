@@ -308,6 +308,20 @@
   color: #8ea39a;
 }
 
+.footerJoin {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footerQr {
+  width: 96px;
+  height: 96px;
+  border-radius: 8px;
+  background: #fff;
+  padding: 4px;
+}
+
 .footer div span,
 .footer div strong {
   display: block;
@@ -327,7 +341,11 @@
 
 .footer p {
   margin: 0;
-  font-size: 12px;
+  font-size: 16px;
+}
+
+.footer p b {
+  color: #dcfbea;
 }
 
 .footer small {

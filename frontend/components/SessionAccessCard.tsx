@@ -3,6 +3,7 @@
 import { joinQrImageUrl, type JoinCode } from "@/lib/realtime-api";
 import { isLoopbackBaseUrl, sessionJoinUrl } from "@/lib/session-access";
 import styles from "./SessionAccessCard.module.css";
+import type { Notify } from "@/components/ui";
 
 type RealtimeStatus = "offline" | "connecting" | "online";
 
@@ -10,7 +11,7 @@ type Props = {
   sessionId: string;
   joinCode: JoinCode | null;
   publicBaseUrl: string;
-  notify: (message: string) => void;
+  notify: Notify;
   realtimeStatus?: RealtimeStatus;
   connectedCount?: number;
   presentCount?: number;
@@ -69,7 +70,7 @@ export default function SessionAccessCard({
       await navigator.clipboard.writeText(joinUrl);
       notify("Link de entrada copiado.");
     } catch {
-      notify("Não foi possível copiar o link automaticamente.");
+      notify("Não foi possível copiar o link automaticamente.", "error");
     }
   }
 
