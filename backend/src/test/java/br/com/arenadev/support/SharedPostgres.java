@@ -14,12 +14,18 @@ import java.util.Set;
  * class. Classes stay as isolated as with their own container (each one
  * starts on an empty, freshly migrated schema) without paying a container
  * start per class. Testcontainers' reaper removes the server when the JVM ends.
+ *
+ * Spring keeps up to 32 test contexts cached, each with its own pool against
+ * this one server. Pools keep the default size (concurrency tests rely on it)
+ * but shrink to one idle connection once their class is done, and the server
+ * allows 32 x 10 connections even if every cached pool were busy at once.
  */
 public final class SharedPostgres {
     private static final PostgreSQLContainer SERVER = new PostgreSQLContainer("postgres:17-alpine")
             .withDatabaseName("arena_it")
             .withUsername("arena_test")
-            .withPassword("arena_test");
+            .withPassword("arena_test")
+            .withCommand("postgres", "-c", "max_connections=500");
     private static final Set<String> CREATED = new HashSet<>();
 
     static {
@@ -34,6 +40,8 @@ public final class SharedPostgres {
         registry.add("spring.datasource.url", () -> url);
         registry.add("spring.datasource.username", SERVER::getUsername);
         registry.add("spring.datasource.password", SERVER::getPassword);
+        registry.add("spring.datasource.hikari.minimum-idle", () -> "1");
+        registry.add("spring.datasource.hikari.idle-timeout", () -> "10000");
     }
 
     public static synchronized String jdbcUrl(Class<?> testClass) {
