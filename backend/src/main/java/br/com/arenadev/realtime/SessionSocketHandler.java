@@ -6,6 +6,8 @@ import br.com.arenadev.stage.LiveStageService;
 import br.com.arenadev.timer.SessionTimerService;
 import br.com.arenadev.wordcloud.WordCloudService;
 import br.com.arenadev.poll.PollService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -21,6 +23,9 @@ import java.util.UUID;
 
 @Component
 public class SessionSocketHandler extends TextWebSocketHandler {
+    // Connection lifecycle at INFO with ids only (never names): the evidence
+    // for the classroom network gates (drops, reconnects, auth failures).
+    private static final Logger log = LoggerFactory.getLogger(SessionSocketHandler.class);
     private static final String ATTR_SESSION_ID = "arena.sessionId";
     private static final String ATTR_PARTICIPANT_ID = "arena.participantId";
     private static final String ATTR_TOKEN = "arena.participantToken";
@@ -78,6 +83,7 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         // O professor chega autenticado pela sessão HTTP; o aluno autentica no primeiro frame.
         if (socket.getPrincipal() != null) {
             gateway.registerTeacher(sessionId, socket);
+            log.info("realtime connect role=TEACHER session={}", sessionId);
             sendTeacherState(socket, sessionId);
         } else {
             gateway.send(socket, "AUTH_REQUIRED", sessionId, Map.of("message", "Autentique o participante neste canal."));
@@ -154,6 +160,7 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         synchronized (socket) {
             gateway.registerProjector(sessionId, socket);
             socket.getAttributes().put(ATTR_PROJECTOR, true);
+            log.info("realtime connect role=PROJECTOR session={}", sessionId);
             gateway.send(
                     socket,
                     "RUNTIME_SNAPSHOT",
@@ -175,6 +182,8 @@ public class SessionSocketHandler extends TextWebSocketHandler {
             int connections = gateway.registerParticipant(sessionId, participant.getId(), socket);
             socket.getAttributes().put(ATTR_TOKEN, token);
             socket.getAttributes().put(ATTR_PARTICIPANT_ID, participant.getId());
+            log.info("realtime connect role=PARTICIPANT session={} participant={} sockets={}",
+                    sessionId, participant.getId(), connections);
             SessionJoinService.ParticipantConnectionView view = connections == 1
                     ? joinService.markConnected(sessionId, token)
                     : SessionJoinService.ParticipantConnectionView.from(participant);
@@ -198,6 +207,7 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         String message = error.getMessage() == null
                 ? "Não foi possível autenticar este canal."
                 : error.getMessage();
+        log.info("realtime auth rejected session={} reason={}", sessionId, error.getClass().getSimpleName());
         gateway.send(socket, "AUTH_FAILED", sessionId, Map.of("message", message));
         try {
             if (socket.isOpen()) {
@@ -275,6 +285,11 @@ public class SessionSocketHandler extends TextWebSocketHandler {
         gateway.release(socket);
         UUID sessionId = (UUID) socket.getAttributes().get(ATTR_SESSION_ID);
         if (sessionId == null) return;
+        log.info("realtime disconnect session={} participant={} projector={} code={}",
+                sessionId,
+                socket.getAttributes().get(ATTR_PARTICIPANT_ID),
+                Boolean.TRUE.equals(socket.getAttributes().get(ATTR_PROJECTOR)),
+                status.getCode());
 
         if (Boolean.TRUE.equals(socket.getAttributes().get(ATTR_PROJECTOR))) {
             gateway.unregisterProjector(sessionId, socket);
@@ -302,6 +317,8 @@ public class SessionSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void handleTransportError(WebSocketSession socket, Throwable exception) throws Exception {
+        log.warn("realtime transport error session={} error={}",
+                socket.getAttributes().get(ATTR_SESSION_ID), exception.getClass().getSimpleName());
         if (socket.isOpen()) socket.close(CloseStatus.SERVER_ERROR);
     }
 

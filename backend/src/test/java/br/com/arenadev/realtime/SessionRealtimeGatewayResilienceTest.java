@@ -69,6 +69,23 @@ class SessionRealtimeGatewayResilienceTest {
     }
 
     @Test
+    void diagnosticsCountSocketsByRoleWithoutPersonalData() {
+        UUID sessionId = UUID.randomUUID();
+        gateway.registerTeacher(sessionId, socket("teacher"));
+        gateway.registerProjector(sessionId, socket("projector"));
+        UUID participant = UUID.randomUUID();
+        gateway.registerParticipant(sessionId, participant, socket("phone"));
+        gateway.registerParticipant(sessionId, participant, socket("tablet"));
+
+        var diagnostics = gateway.diagnostics(sessionId);
+
+        assertThat(diagnostics.teacherSockets()).isEqualTo(1);
+        assertThat(diagnostics.projectorSockets()).isEqualTo(1);
+        assertThat(diagnostics.connectedParticipants()).isEqualTo(1);
+        assertThat(diagnostics.participantSockets()).isEqualTo(2);
+    }
+
+    @Test
     void releasedSocketIsNotSweptAgain() throws Exception {
         WebSocketSession socket = socket("released");
         gateway.touch(socket);
