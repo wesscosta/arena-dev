@@ -32,6 +32,9 @@ public class Student {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(name = "anonymized_at")
+    private Instant anonymizedAt;
+
     protected Student() {
     }
 
@@ -65,7 +68,27 @@ public class Student {
         return createdAt;
     }
 
+    public Instant getAnonymizedAt() {
+        return anonymizedAt;
+    }
+
+    public boolean isAnonymized() {
+        return anonymizedAt != null;
+    }
+
+    /** Replaces personal data by a stable pseudonym; the row and its history stay. */
+    void anonymize(String pseudonym, Instant at) {
+        this.registration = null;
+        this.name = pseudonym;
+        this.nickname = null;
+        this.active = false;
+        this.anonymizedAt = at;
+    }
+
     public void update(String registration, String name, String nickname, boolean active) {
+        if (anonymizedAt != null) {
+            throw new IllegalArgumentException("Aluno anonimizado não pode ser editado.");
+        }
         this.registration = registration;
         this.name = name;
         this.nickname = nickname;

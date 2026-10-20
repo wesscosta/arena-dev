@@ -20,9 +20,11 @@ import java.util.UUID;
 @RequestMapping("/api/students")
 public class StudentController {
     private final StudentService service;
+    private final StudentAnonymizationService anonymization;
 
-    public StudentController(StudentService service) {
+    public StudentController(StudentService service, StudentAnonymizationService anonymization) {
         this.service = service;
+        this.anonymization = anonymization;
     }
 
     @GetMapping
@@ -50,6 +52,18 @@ public class StudentController {
                 request.nickname(),
                 request.active()
         );
+    }
+
+    /** Irreversible: replaces personal data by a pseudonym and keeps the class history. */
+    @PostMapping("/{id}/anonymize")
+    public StudentService.StudentView anonymize(
+            @PathVariable UUID id,
+            @Valid @RequestBody AnonymizeRequest request
+    ) {
+        return anonymization.anonymize(id, request.confirmation());
+    }
+
+    public record AnonymizeRequest(@NotBlank String confirmation) {
     }
 
     public record StudentRequest(String registration, @NotBlank String name, String nickname) {
