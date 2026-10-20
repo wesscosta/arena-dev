@@ -1885,3 +1885,37 @@ test("v0.11 / 11.4: CSP, Markdown inerte, modal responsivo e navegação por tec
     await api.dispose();
   }
 });
+
+test("v0.11.0-rc.6: grupos não salvos sobrevivem a outra atualização da Arena", async ({ browser }) => {
+  const { api, csrfHeaders } = await authenticatedApi();
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+
+  try {
+    const fixture = await createArenaFixture(api, csrfHeaders, 4);
+    await openArena(page, fixture.classroomName, fixture.sessionTitle);
+
+    await selectArenaNavigation(page, "Organizar turma");
+    const drawer = page.getByRole("dialog", { name: "Organizar turma" });
+    await drawer.getByRole("button", { name: "Organizar turma", exact: true }).click();
+    await expect(drawer.locator(".group-card")).toHaveCount(2);
+    await drawer.getByRole("button", { name: "+ Novo grupo" }).click();
+    await expect(drawer.locator(".group-card")).toHaveCount(3);
+    await expect(drawer.getByRole("button", { name: "Salvar composição" })).toBeEnabled();
+    await drawer.getByRole("button", { name: "Fechar ferramenta" }).click();
+
+    // Any other mechanics update replaces the session's runtime state.
+    await page.getByRole("button", { name: /Ajustes/ }).click();
+    const settings = page.getByRole("dialog", { name: "Configurações do Sorteio" });
+    await settings.locator("label").filter({ hasText: "Roleta" }).click();
+    await expect(settings.getByRole("radio", { name: /Roleta/ })).toBeChecked();
+    await settings.getByRole("button", { name: "Fechar ferramenta" }).click();
+
+    await selectArenaNavigation(page, "Organizar turma");
+    await expect(drawer.locator(".group-card")).toHaveCount(3);
+    await expect(drawer.getByRole("button", { name: "Salvar composição" })).toBeEnabled();
+  } finally {
+    await context.close();
+    await api.dispose();
+  }
+});
