@@ -98,7 +98,7 @@ jobs:
 
       - name: Validate release metadata and scripts
         run: |
-          bash -n scripts/release/*.sh
+          bash -n scripts/release/*.sh scripts/arena.sh
           scripts/release/check-metadata.sh --require-license
           if [[ -f backend/src/main/resources/db/migration/V56__manual_score_create_idempotency.sql || -f backend/src/main/resources/db/migration/V55__learner_confidence_opt_in.sql ]]; then
             scripts/release/verify-v0.10-contract.sh
@@ -108,7 +108,7 @@ jobs:
 
       - name: Verify fail-closed v0.11 operational acceptance template
         run: |
-          python3 -m unittest discover -s scripts/release/tests -p 'test_v011_readiness.py' -v
+          python3 -m unittest discover -s scripts/release/tests -p 'test_*.py' -v
           python3 scripts/release/v011-readiness.py --attestation docs/v0.11/11.6_ACCEPTANCE_TEMPLATE.json --check-template
 
       - name: Install locked frontend dependencies

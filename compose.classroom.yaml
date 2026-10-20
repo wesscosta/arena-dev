@@ -1,0 +1,14 @@
+# Classroom profile (scripts/arena.sh): only the frontend is reachable on the
+# LAN; database and backend stay inside the Compose network. Services restart
+# with the machine (laptop reboot between lessons).
+services:
+  postgres:
+    ports: !reset []
+    restart: unless-stopped
+  backend:
+    ports: !reset []
+    restart: unless-stopped
+  frontend:
+    ports: !override
+      - "${FRONTEND_BIND:-0.0.0.0}:${FRONTEND_PORT:-3000}:3000"
+    restart: unless-stopped
