@@ -6,7 +6,7 @@ Este índice separa **fontes operacionais vigentes**, **propostas**, **diários 
 
 | Pergunta | Fonte |
 | --- | --- |
-| Qual versão está publicada? | [Estado atual](STATUS_ATUAL.md) e [release v0.10.0](RELEASE_0_10.md); candidata NO-GO [v0.11.0-rc.4](RELEASE_0_11.md) |
+| Qual versão está publicada? | [Estado atual](STATUS_ATUAL.md) e [release v0.10.0](RELEASE_0_10.md); candidata NO-GO [v0.11.0-rc.5](RELEASE_0_11.md) |
 | O que está planejado e o que ficou fora? | [Roadmap v0.10](ROADMAP_V0_10.md), [plano técnico](v0.10/IMPLEMENTATION_PLAN.md) |
 | O que foi executado? | [Diário de execução](v0.10/EXECUTION_STATUS.md) (registros datados, não estado automático) |
 | Qual o aceite da v0.10? | [Registro do operador](v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md), [checklist histórico](v0.10/RELEASE_CANDIDATE_CHECKLIST.md) e [gate técnico](RELEASE_0_10.md) |

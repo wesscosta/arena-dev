@@ -1,6 +1,6 @@
 # Arena Dev v0.11.0 — Material Presentation (candidata)
 
-**Status: pré-release `v0.11.0-rc.4` (19/10/2026), NO-GO operacional para `0.11.0`.** A `rc.2` (segurança do Next.js), a `rc.3` (CSP restrita ao próprio host) e a `rc.4` (correções da auditoria) substituíram as candidatas anteriores antes de qualquer gate de campo. A tag `v0.11.0-rc.4` é o **SHA congelado** sobre o qual rodam os gates de campo; qualquer correção posterior gera uma nova `rc.N` e repete os gates afetados. Sem release estável. Desenvolvimento 11.0–11.6 integrado à `main` (merge `2c1e011`, [CI 3/3](https://github.com/wesscosta/arena-dev/actions/runs/38098271861)). A publicação depende dos oito gates de [homologação 11.6](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md) e do aceite assinado validado por `scripts/release/v011-readiness.py`. Escopo: self-hosted com um único operador docente.
+**Status: pré-release `v0.11.0-rc.5` (20/10/2026), NO-GO operacional para `0.11.0`.** A `rc.2` (segurança do Next.js), a `rc.3` (CSP restrita ao próprio host), a `rc.4` (correções da auditoria) e a `rc.5` (robustez de sala) substituíram as candidatas anteriores antes de qualquer gate de campo. A tag `v0.11.0-rc.5` é o **SHA congelado** sobre o qual rodam os gates de campo; qualquer correção posterior gera uma nova `rc.N` e repete os gates afetados. Sem release estável. Desenvolvimento 11.0–11.6 integrado à `main` (merge `2c1e011`, [CI 3/3](https://github.com/wesscosta/arena-dev/actions/runs/38098271861)). A publicação depende dos oito gates de [homologação 11.6](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md) e do aceite assinado validado por `scripts/release/v011-readiness.py`. Escopo: self-hosted com um único operador docente.
 
 ## Principais entregas da candidata
 
@@ -11,6 +11,23 @@
 - Discovery editorial e de proveniência sem nova API/DDL; ADR-0068 apenas proposta (11.5).
 - Gate técnico 11.6: E2E com dois projetores, offline/reconexão/revogação e verificador fail-closed.
 - Coerência e acessibilidade (11.7): títulos e espaçamentos por papel tipográfico do Design System; cor da turma visível e adaptada ao tema claro; correções WCAG AA nos dois temas e contraste de texto em nível AAA (7:1) nos tokens do sistema, verificados por axe nos elementos mensuráveis; cores de turma em AA. **Mudança visual perceptível:** títulos de página a 30px e alinhados entre as páginas; controles de barra de ferramenta com 44px; tema claro menos luminoso; brilhos neon removidos; textos secundários mais contrastados; novo favicon e ícones da PWA com a marca da interface. [Detalhes](v0.11/11.7_COHERENCE_AA.md).
+
+## rc.5 — robustez de sala (20/10/2026)
+
+Sete PRs planejados a partir da [auditoria da rc.3](https://app.notion.com/p/3fef3eb198c381148bdcf38b4cdee1ab), todos antes dos gates de campo, porque cada um afeta pelo menos um gate. Flyway passa a **V60**.
+
+| Área | Mudança | Gate afetado |
+| --- | --- | --- |
+| Tempo real | Envio por socket com limite de tempo (3s) e buffer (512 KB); cliente lento é desconectado e reconcilia por snapshot; varredura fecha sockets sem atividade há 60s; cliente envia PING a cada 25s e reconecta sem resposta em 10s | `network_degraded_two_projectors` |
+| Sessão do professor | Duração configurável pelo professor em Configurações (30 a 720 min, padrão 4h, V59); sessão expirada abre novo login sem perder a tela | `teacher_pedagogical_pilot` |
+| Limites de entrada | Login e entrada do aluno com limite por cliente; IP real só de proxies internos; mensagem única para aluno inexistente ou ambíguo | `teacher_pedagogical_pilot` |
+| Dados dos alunos | "Apagar dados pessoais" troca nome, matrícula e apelido por pseudônimo e apaga aparelhos lembrados e vínculos externos, preservando o XP (V60); backup cifrado com `age` e rotação | `backup_restore_rollback` |
+| Observabilidade | Logs de conexão e fechamento por lentidão ou inatividade; `GET /api/diagnostics/sessions/{id}`; estado inválido vira 409 | todos (evidência) |
+| Operação | `scripts/arena.sh` (install, upgrade, backup, restore, status), perfil de sala só com o frontend na rede, HTTPS opcional com Caddy; README "Operação em sala" | `release_owner_go_nogo` |
+| Feedback | Erros ficam na tela até serem fechados e são anunciados como alerta; QR e endereço completo no rodapé do projetor; aula ao vivo primeiro no `/learn` | `teacher_pedagogical_pilot` |
+| CI | Teste que só passa na repetição falha; E2E falha em erro de console, de script ou de CSP; tabela evento → público; um Postgres por JVM nos testes de integração | todos |
+
+Fica para a v0.12: "Tentar de novo" em cada erro e "você foi chamado(a)" só para o sorteado.
 
 ## rc.4 — correções da auditoria de 19/10/2026
 
