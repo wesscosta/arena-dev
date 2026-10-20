@@ -41,10 +41,10 @@ class ContentCopyProtectionIT {
         assertThat(journey.copyProtected()).isFalse();
         assertThat(study.previewContent(journey.id(), contentId).copyProtected()).isFalse();
 
-        // Draft edits may rebuild stages, so read the content id from each result.
+        // Draft edits rebuild stages; read the stored Journey for the new content id.
         var protectedJourney = journeys.update(journey.id(), input(classroomId, material.id(), true));
         assertThat(protectedJourney.copyProtected()).isTrue();
-        UUID protectedContentId = protectedJourney.stages().getFirst().id();
+        UUID protectedContentId = journeys.get(journey.id()).stages().getFirst().id();
         assertThat(study.previewContent(journey.id(), protectedContentId).copyProtected()).isTrue();
 
         // Omitting the setting on a later edit keeps it.
