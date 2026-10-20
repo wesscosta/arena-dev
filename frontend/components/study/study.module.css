@@ -150,7 +150,7 @@
 /* Code blocks stay dark in both themes: technical content reads best there. */
 .shell .readerMarkdown pre{background:#0f1915;border-color:#2a3b33;color:#e6f1ec}
 .shell .readerMarkdown pre code{color:inherit}
-:global(html[data-theme="light"]) .shell :is(.readerPrimary,.brandMark,.studyMarkerCOMPLETED){color:#fff}
+:global(html[data-theme="light"]) .shell :is(.readerPrimary,.brandMark,.studyMarkerCOMPLETED){color:#fff!important}
 
 /* Student Shell Style Guide v1 — authoritative accessibility layer */
 .shell{
