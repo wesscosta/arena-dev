@@ -20,6 +20,8 @@
 | Boss, questões da Arena e roteiro liam e gravavam o estado sem trava: cliques rápidos ou duas abas perdiam um dano | toda alteração de dinâmica trava a sessão antes de ler e gravar, como o sorteio já fazia | `teacher_pedagogical_pilot` |
 | O celular do aluno aplicava atualizações de palco na ordem de chegada; com rede ruim podia voltar a um palco antigo | `stageFromEvent`, compartilhado com o projetor, aplica o palco na ordem do `stageVersion` | `network_degraded_two_projectors` |
 
+**Nova opção do professor — impedir cópia do conteúdo (Flyway V61).** Uma chave na Jornada e outra no material da Biblioteca. O conteúdo fica protegido no leitor do aluno quando qualquer uma está ligada; um material protegido continua protegido em qualquer Jornada que o use. Bloqueia seleção, copiar, recortar, arrastar e o menu do botão direito no texto e no código; campos de resposta continuam aceitando colar. Desligada por padrão e alterável depois de publicar. Desencoraja a cópia, mas não a impede (captura de tela e ferramentas do navegador continuam funcionando). Antecipa o requisito D12-JR-CODE-01 da v0.12, ampliado para todo o conteúdo e para o material.
+
 Também: estado salvo ilegível continua caindo no padrão, mas registra aviso no log; os erros de API do frontend estendem `HttpApiError`; oito funções sem uso removidas. Cada bug tem teste novo (`MechanicsConcurrencyIT`, E2E de grupos não salvos, `stage-from-event.test.ts`). Desenho (estado tipado, divisão do `MechanicsService`, interface de dinâmicas, cliente de socket único, decomposição do `ArenaApp`) fica para as bases da v0.12.
 
 ## rc.5 — robustez de sala (20/10/2026)

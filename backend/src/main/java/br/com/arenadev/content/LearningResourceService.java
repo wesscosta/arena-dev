@@ -233,6 +233,7 @@ public class LearningResourceService {
                 clean(input.sourceLabel())
         );
         resource.updateSemanticMetadata(canonical.subject(), canonical.tags(), canonical.language());
+        if (input.copyProtected() != null) resource.changeCopyProtection(input.copyProtected());
         recordDerived(resource, canonical);
         return canonical;
     }
@@ -340,6 +341,7 @@ public class LearningResourceService {
                 resource.getOutlineParserVersion(),
                 outline(resource),
                 resource.isLibraryVisible(),
+                resource.isCopyProtected(),
                 resource.getRevision(),
                 resource.getArchivedAt(),
                 resource.getCreatedAt(),
@@ -409,6 +411,7 @@ public class LearningResourceService {
             String language
     ) {}
 
+    /** copyProtected null keeps the current value on update and means off on create. */
     public record LibraryResourceInput(
             String title,
             String summary,
@@ -419,8 +422,15 @@ public class LearningResourceService {
             String sourceLabel,
             String subject,
             List<String> tags,
-            String language
-    ) {}
+            String language,
+            Boolean copyProtected
+    ) {
+        public LibraryResourceInput(String title, String summary, String body, LearningResourceFormat format,
+                                    LearningResourceSourceType sourceType, String sourceUrl, String sourceLabel,
+                                    String subject, List<String> tags, String language) {
+            this(title, summary, body, format, sourceType, sourceUrl, sourceLabel, subject, tags, language, null);
+        }
+    }
 
     public record ImportedLibraryResourceInput(
             String title,
@@ -458,6 +468,7 @@ public class LearningResourceService {
             String outlineParserVersion,
             List<CanonicalDocument.Section> outline,
             boolean libraryVisible,
+            boolean copyProtected,
             int revision,
             Instant archivedAt,
             Instant createdAt,

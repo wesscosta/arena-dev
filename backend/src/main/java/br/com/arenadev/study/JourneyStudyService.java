@@ -240,7 +240,8 @@ public class JourneyStudyService {
                 stage.getResourceSnapshotFormat() != null ? stage.getResourceSnapshotBody() : resource == null ? null : resource.getBody(),
                 stage.getResourceSnapshotFormat() != null ? stage.getResourceSnapshotFormat() : resource == null ? null : resource.getFormat().name(),
                 stage.getResourceSnapshotFormat() != null ? stage.getResourceSnapshotSourceUrl() : resource == null ? null : resource.getSourceUrl(),
-                stage.getResourceSnapshotFormat() != null ? stage.getResourceSnapshotSourceLabel() : resource == null ? null : resource.getSourceLabel()
+                stage.getResourceSnapshotFormat() != null ? stage.getResourceSnapshotSourceLabel() : resource == null ? null : resource.getSourceLabel(),
+                stage.getJourney().isCopyProtected() || (resource != null && resource.isCopyProtected())
         );
     }
 
@@ -272,7 +273,8 @@ public class JourneyStudyService {
     public record JourneyStudyView(UUID id, String title, String description, JourneyProgressSummary progress, List<JourneyModuleView> modules, List<AchievementService.AchievementView> newlyUnlockedAchievements) {}
     public record JourneyModuleView(UUID id, String title, String description, List<JourneyContentView> contents) {}
     public record JourneyContentView(UUID id, String title, String description, StudyState state, UUID resourceId, boolean hasExternalSource) {}
-    public record JourneyContentDetailView(UUID id, String title, String description, StudyState state, UUID resourceId, String body, String format, String sourceUrl, String sourceLabel) {}
+    /** copyProtected: the Journey or the linked material forbids copying in the reader. */
+    public record JourneyContentDetailView(UUID id, String title, String description, StudyState state, UUID resourceId, String body, String format, String sourceUrl, String sourceLabel, boolean copyProtected) {}
     private record Projection(Map<UUID, StudyState> states, JourneyProgressSummary progress, boolean started, Instant lastStudiedAt) {}
     private record ProgressState(Instant completedAt, Instant updatedAt) {}
     private record AccessContext(Enrollment enrollment, StudentJourneyAccess redeemed) {

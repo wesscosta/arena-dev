@@ -43,6 +43,8 @@ export type JourneyContentDetailView = JourneyContentView & {
   format: string | null;
   sourceUrl: string | null;
   sourceLabel: string | null;
+  /** The Journey or the linked material forbids copying in the reader. */
+  copyProtected: boolean;
 };
 
 export class StudyApiError extends HttpApiError {

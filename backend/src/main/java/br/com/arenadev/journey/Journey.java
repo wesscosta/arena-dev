@@ -29,6 +29,9 @@ public class Journey {
     @Column(nullable = false, length = 20)
     private JourneyStatus status = JourneyStatus.DRAFT;
 
+    @Column(name = "copy_protected", nullable = false)
+    private boolean copyProtected = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -58,6 +61,14 @@ public class Journey {
         this.description = description;
         this.updatedAt = Instant.now();
     }
+
+    /** Students cannot copy this Journey's content in the reader. */
+    public void changeCopyProtection(boolean copyProtected) {
+        this.copyProtected = copyProtected;
+        this.updatedAt = Instant.now();
+    }
+
+    public boolean isCopyProtected() { return copyProtected; }
 
     public void publish() {
         if (stages.isEmpty()) throw new IllegalStateException("A jornada precisa ter ao menos uma etapa antes de ser publicada.");

@@ -40,6 +40,8 @@ export type LearningResource = {
   outlineParserVersion: string | null;
   outline: ContentOutlineNode[];
   libraryVisible: boolean;
+  /** Students cannot copy this material in the reader, in any Journey that uses it. */
+  copyProtected: boolean;
   revision: number;
   archivedAt: string | null;
   createdAt: string;
@@ -58,6 +60,7 @@ export type LearningResourceInput = {
   subject?: string;
   tags?: string[];
   language?: string;
+  copyProtected?: boolean;
 };
 
 export type LibraryResourceInput = Omit<LearningResourceInput, "classroomId">;

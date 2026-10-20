@@ -31,6 +31,8 @@ export type Journey = {
   stages: JourneyStage[];
   createdAt: string;
   updatedAt: string;
+  /** Students cannot copy this Journey's content in the reader. */
+  copyProtected: boolean;
 };
 
 export type JourneyStageInput = {
@@ -51,6 +53,7 @@ export type JourneyInput = {
   title: string;
   description?: string;
   stages: JourneyStageInput[];
+  copyProtected?: boolean;
 };
 
 
