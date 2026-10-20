@@ -1,5 +1,6 @@
 package br.com.arenadev.dashboard;
 
+import br.com.arenadev.support.SharedPostgres;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -7,9 +8,6 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -21,18 +19,12 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties={"app.teacher.username=dashboard-teacher","app.teacher.password=dashboard-test-password"})
 class DashboardBootstrapIT {
-    @Container
-    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine")
-            .withDatabaseName("dashboard_bootstrap_test").withUsername("arena_test").withPassword("arena_test");
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url",POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username",POSTGRES::getUsername);
-        registry.add("spring.datasource.password",POSTGRES::getPassword);
+        SharedPostgres.register(registry, DashboardBootstrapIT.class);
     }
     @Autowired JdbcTemplate jdbc;
     @Autowired DashboardBootstrapService service;

@@ -1,5 +1,6 @@
 package br.com.arenadev.interaction;
 
+import br.com.arenadev.support.SharedPostgres;
 import br.com.arenadev.classroom.Classroom;
 import br.com.arenadev.classroom.ClassroomRepository;
 import br.com.arenadev.learning.Provenance;
@@ -13,29 +14,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@Testcontainers
 @SpringBootTest
 class InteractionRunIT {
-    @Container
-    private static final PostgreSQLContainer POSTGRESQL = new PostgreSQLContainer("postgres:17-alpine")
-            .withDatabaseName("arena_interaction_run_test")
-            .withUsername("arena_test")
-            .withPassword("arena_test");
-
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRESQL::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRESQL::getUsername);
-        registry.add("spring.datasource.password", POSTGRESQL::getPassword);
+        SharedPostgres.register(registry, InteractionRunIT.class);
     }
 
     @Autowired

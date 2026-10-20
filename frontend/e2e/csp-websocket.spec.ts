@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures";
 
 // The "v0.11 / 11.6" prefix keeps this test in the WebKit CI run.
 async function socketViolation(page: Page, url: string) {

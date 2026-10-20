@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 // Playwright's isolated fixture uses plain class names; map CSS Modules :global()
 // to browser-ready selectors (Next.js does this transform in the application).

@@ -4,7 +4,9 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
+  // Retries collect a trace, but a test that only passes on retry fails CI.
   retries: process.env.CI ? 2 : 0,
+  failOnFlakyTests: Boolean(process.env.CI),
   workers: 1,
   reporter: [
     ["list"],

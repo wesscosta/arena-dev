@@ -1,4 +1,4 @@
-import { expect, request, test, type APIRequestContext, type APIResponse, type Browser, type Page } from "@playwright/test";
+import { expect, request, test, type APIRequestContext, type APIResponse, type Browser, type Page } from "./fixtures";
 
 type ClassroomView = { id: string; name: string };
 type StudentView = { id: string; name: string; nickname: string | null };

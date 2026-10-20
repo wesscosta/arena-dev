@@ -1,5 +1,6 @@
 package br.com.arenadev;
 
+import br.com.arenadev.support.SharedPostgres;
 import br.com.arenadev.classroom.ClassroomService;
 import br.com.arenadev.classroom.StudentService;
 import br.com.arenadev.dynamic.MechanicsService;
@@ -17,9 +18,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.List;
 import java.util.Set;
@@ -27,20 +25,11 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Testcontainers
 @SpringBootTest
 class SessionEventIT {
-    @Container
-    private static final PostgreSQLContainer POSTGRESQL = new PostgreSQLContainer("postgres:17-alpine")
-            .withDatabaseName("arena_dev_session_event_test")
-            .withUsername("arena_test")
-            .withPassword("arena_test");
-
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRESQL::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRESQL::getUsername);
-        registry.add("spring.datasource.password", POSTGRESQL::getPassword);
+        SharedPostgres.register(registry, SessionEventIT.class);
     }
 
     @Autowired private ClassroomService classroomService;
@@ -135,7 +124,6 @@ class SessionEventIT {
                 .extracting(SessionEventService.SessionEventView::eventType)
                 .containsExactly(SessionEventType.BUZZER_CLOSED, SessionEventType.BUZZER_OPENED);
     }
-
 
     @Test
     void recordsNaturalTimerExpirationOnceAsSystemEvent() {

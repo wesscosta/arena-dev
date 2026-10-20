@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { expect, request, test, type APIRequestContext, type APIResponse, type Page } from "@playwright/test";
+import { expect, request, test, type APIRequestContext, type APIResponse, type Page } from "./fixtures";
 
 type ClassroomView = { id: string; name: string };
 type StudentView = { id: string };

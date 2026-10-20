@@ -1,5 +1,6 @@
 package br.com.arenadev.scoring;
 
+import br.com.arenadev.support.SharedPostgres;
 import br.com.arenadev.classroom.ClassroomService;
 import br.com.arenadev.classroom.StudentService;
 import br.com.arenadev.session.SessionService;
@@ -8,9 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.Set;
 import java.util.UUID;
@@ -20,16 +18,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.*;
 
-@Testcontainers
 @SpringBootTest
 class ManualScoreIdempotencyIT {
-    @Container
-    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine")
-            .withDatabaseName("arena_manual_score_test").withUsername("arena_test").withPassword("arena_test");
     @DynamicPropertySource static void db(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
+        SharedPostgres.register(registry, ManualScoreIdempotencyIT.class);
     }
     @Autowired ClassroomService classrooms;
     @Autowired StudentService students;

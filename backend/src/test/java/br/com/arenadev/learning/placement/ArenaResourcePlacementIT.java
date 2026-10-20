@@ -1,5 +1,6 @@
 package br.com.arenadev.learning.placement;
 
+import br.com.arenadev.support.SharedPostgres;
 import br.com.arenadev.classroom.ClassroomService;
 import br.com.arenadev.content.LearningResourceFormat;
 import br.com.arenadev.content.LearningResourceService;
@@ -11,9 +12,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -28,20 +26,12 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@Testcontainers
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties={"app.teacher.username=placement-test","app.teacher.password=placement-test-secret"})
 class ArenaResourcePlacementIT {
-    @Container
-    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine")
-            .withDatabaseName("arena_placement_test")
-            .withUsername("arena_test").withPassword("arena_test");
-
     @DynamicPropertySource
     static void db(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url",POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username",POSTGRES::getUsername);
-        registry.add("spring.datasource.password",POSTGRES::getPassword);
+        SharedPostgres.register(registry, ArenaResourcePlacementIT.class);
     }
 
     @Autowired ArenaResourcePlacementService placements;

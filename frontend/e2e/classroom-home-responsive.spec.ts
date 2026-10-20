@@ -5,7 +5,7 @@ import {
   type APIRequestContext,
   type APIResponse,
   type Page,
-} from "@playwright/test";
+} from "./fixtures";
 
 type ClassroomView = { id: string; name: string };
 type StudentView = { id: string };

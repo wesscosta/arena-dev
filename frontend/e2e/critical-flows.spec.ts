@@ -6,7 +6,7 @@ import {
   type APIResponse,
   type Browser,
   type Page,
-} from "@playwright/test";
+} from "./fixtures";
 
 type ClassroomView = { id: string; name: string };
 type StudentView = { id: string; name: string; nickname: string | null };
