@@ -1,12 +1,12 @@
 # Arena Dev v0.12 — Redesign e Active Learning | roadmap
 
-**Estado (19/10/2026):** em **auditoria e design Figma-first**, com [issue #48 de acompanhamento](https://github.com/wesscosta/arena-dev/issues/48); não implementado, não homologado. A v0.11 está na pré-release `v0.11.0-rc.4`; a `0.11.0` ainda exige o GO operacional da 11.6.
+**Estado (20/10/2026):** em **auditoria e design Figma-first**, com [issue #48 de acompanhamento](https://github.com/wesscosta/arena-dev/issues/48); não implementado, não homologado. A v0.11 está na pré-release `v0.11.0-rc.5`; a `0.11.0` ainda exige o GO operacional da 11.6.
 **Fonte de verdade:** as decisões de produto e design da v0.12 vivem no Notion ([auditoria Figma-first e gate de implementação](https://app.notion.com/p/3f9f3eb198c38136b319e5807170f8bf)); este arquivo resume o que afeta o repositório.
 **Figma:** [ARENA — Redesign UX v0.12 · Transportta](https://www.figma.com/design/gWMkarPwmeFY15jr0Tr6DN). A exploração é referência visual editável, **não** especificação funcional aprovada.
 
 ## 0. Gate Figma-first (decisão de 14/10/2026)
 
-A v0.12 é conduzida como **auditoria e design no Figma primeiro**. O código da v0.12 parte da baseline **`v0.11.0-rc.4`** e não recebe mudanças da v0.12 até aprovação explícita do Design System e dos três pilotos. A 11.7 corrigiu defeitos contra o Design System atual (tokens de papel, controles de 44px, contraste AAA de texto); não é a nova linguagem visual e serve de ponto de partida para a migração.
+A v0.12 é conduzida como **auditoria e design no Figma primeiro**. O código da v0.12 parte da baseline **`v0.11.0-rc.5`** e não recebe mudanças da v0.12 até aprovação explícita do Design System e dos três pilotos. A 11.7 corrigiu defeitos contra o Design System atual (tokens de papel, controles de 44px, contraste AAA de texto); não é a nova linguagem visual e serve de ponto de partida para a migração.
 
 **Processo:** Figma → revisão de UX/UI → protótipo → aceite explícito → código → testes.
 
