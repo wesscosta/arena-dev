@@ -7,7 +7,12 @@ export * from "@playwright/test";
  * expired code, 409 to a conflict) still make the browser log "Failed to load
  * resource". They are asserted by the tests themselves, not by this guard.
  */
-const EXPECTED_BROWSER_NOISE = [/Failed to load resource: the server responded with a status of 4\d\d/];
+const EXPECTED_BROWSER_NOISE = [
+  /Failed to load resource: the server responded with a status of 4\d\d/,
+  // Only raised after a test calls context.setOffline(true); whether a request
+  // is in flight at that moment depends on timing, so it is allowed everywhere.
+  /Failed to load resource: net::ERR_INTERNET_DISCONNECTED/,
+];
 
 type BrowserErrorOptions = {
   /**

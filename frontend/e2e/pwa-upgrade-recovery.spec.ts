@@ -4,9 +4,7 @@ const apiBaseUrl = process.env.E2E_API_URL ?? "http://127.0.0.1:8080";
 const username = process.env.E2E_TEACHER_USERNAME ?? "professor";
 const password = process.env.E2E_TEACHER_PASSWORD ?? "arena-dev-change-me";
 
-test("PWA instala shell seguro; offline não reutiliza HTML antigo nem dados da API", async ({ browser, allowedBrowserErrors }) => {
-  // The context goes offline on purpose.
-  allowedBrowserErrors.push(/net::ERR_INTERNET_DISCONNECTED/);
+test("PWA instala shell seguro; offline não reutiliza HTML antigo nem dados da API", async ({ browser }) => {
   const context = await browser.newContext({ serviceWorkers: "allow" });
   const page = await context.newPage();
   try {
