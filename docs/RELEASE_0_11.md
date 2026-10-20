@@ -1,8 +1,6 @@
-# Arena Dev v0.11.0 — Material Presentation (aguardando homologação)
+# Arena Dev v0.11.0 — Material Presentation (candidata)
 
-**Status: versão `0.11.0` preparada na `main` (20/10/2026), aguardando homologação de campo.** O código é o da pré-release `v0.11.0-rc.5`; a `main` difere dela só nos metadados `0.11.0` e no gate de release, que passou a rodar os mesmos projetos Playwright da CI. Não há tag `v0.11.0` nem release estável: ambas só existem depois dos 8 gates de campo na rc.5 e do aceite assinado validado por `release-gate.sh final --attestation`. Defeito em gate gera `rc.6`, e a `main` volta a uma versão `-rc`.
-
-**Status: pré-release `v0.11.0-rc.5` (20/10/2026), NO-GO operacional para `0.11.0`.** A `rc.2` (segurança do Next.js), a `rc.3` (CSP restrita ao próprio host), a `rc.4` (correções da auditoria) e a `rc.5` (robustez de sala) substituíram as candidatas anteriores antes de qualquer gate de campo. A tag `v0.11.0-rc.5` é o **SHA congelado** sobre o qual rodam os gates de campo; qualquer correção posterior gera uma nova `rc.N` e repete os gates afetados. Sem release estável. Desenvolvimento 11.0–11.6 integrado à `main` (merge `2c1e011`, [CI 3/3](https://github.com/wesscosta/arena-dev/actions/runs/38098271861)). A publicação depende dos oito gates de [homologação 11.6](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md) e do aceite assinado validado por `scripts/release/v011-readiness.py`. Escopo: self-hosted com um único operador docente.
+**Status: pré-release `v0.11.0-rc.6` (20/10/2026), NO-GO operacional para `0.11.0`.** A rc.6 substitui a rc.5 antes de qualquer gate de campo, com três bugs de sala achados na [auditoria SOLID](https://app.notion.com/p/3fff3eb198c38142964fe89bb9be729e). Os 8 gates rodam na tag `v0.11.0-rc.6`; não há tag `v0.11.0` nem release estável antes do aceite assinado validado por `release-gate.sh final --attestation`.
 
 ## Principais entregas da candidata
 
@@ -13,6 +11,18 @@
 - Discovery editorial e de proveniência sem nova API/DDL; ADR-0068 apenas proposta (11.5).
 - Gate técnico 11.6: E2E com dois projetores, offline/reconexão/revogação e verificador fail-closed.
 - Coerência e acessibilidade (11.7): títulos e espaçamentos por papel tipográfico do Design System; cor da turma visível e adaptada ao tema claro; correções WCAG AA nos dois temas e contraste de texto em nível AAA (7:1) nos tokens do sistema, verificados por axe nos elementos mensuráveis; cores de turma em AA. **Mudança visual perceptível:** títulos de página a 30px e alinhados entre as páginas; controles de barra de ferramenta com 44px; tema claro menos luminoso; brilhos neon removidos; textos secundários mais contrastados; novo favicon e ícones da PWA com a marca da interface. [Detalhes](v0.11/11.7_COHERENCE_AA.md).
+
+## rc.6 — bugs de sala da auditoria SOLID (20/10/2026)
+
+| Bug | Correção | Gate afetado |
+| --- | --- | --- |
+| Grupos montados e ainda não salvos eram apagados por qualquer outra atualização da Arena (sorteio, Boss, troca de apresentação) | a composição só é trocada quando o conteúdo salvo muda e nunca enquanto há edição não salva | `teacher_pedagogical_pilot` |
+| Boss, questões da Arena e roteiro liam e gravavam o estado sem trava: cliques rápidos ou duas abas perdiam um dano | toda alteração de dinâmica trava a sessão antes de ler e gravar, como o sorteio já fazia | `teacher_pedagogical_pilot` |
+| O celular do aluno aplicava atualizações de palco na ordem de chegada; com rede ruim podia voltar a um palco antigo | `stageFromEvent`, compartilhado com o projetor, aplica o palco na ordem do `stageVersion` | `network_degraded_two_projectors` |
+
+**Nova opção do professor — impedir cópia do conteúdo (Flyway V61).** Uma chave na Jornada e outra no material da Biblioteca. O conteúdo fica protegido no leitor do aluno quando qualquer uma está ligada; um material protegido continua protegido em qualquer Jornada que o use. Bloqueia seleção, copiar, recortar, arrastar e o menu do botão direito no texto e no código; campos de resposta continuam aceitando colar. Desligada por padrão e alterável depois de publicar. Desencoraja a cópia, mas não a impede (captura de tela e ferramentas do navegador continuam funcionando). Antecipa o requisito D12-JR-CODE-01 da v0.12, ampliado para todo o conteúdo e para o material.
+
+Também: estado salvo ilegível continua caindo no padrão, mas registra aviso no log; os erros de API do frontend estendem `HttpApiError`; oito funções sem uso removidas. Cada bug tem teste novo (`MechanicsConcurrencyIT`, E2E de grupos não salvos, `stage-from-event.test.ts`). Desenho (estado tipado, divisão do `MechanicsService`, interface de dinâmicas, cliente de socket único, decomposição do `ArenaApp`) fica para as bases da v0.12.
 
 ## rc.5 — robustez de sala (20/10/2026)
 

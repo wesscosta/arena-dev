@@ -9,6 +9,17 @@ export function reconcileStageVersion(current: LiveStageState, incoming: LiveSta
   return incoming;
 }
 
+/**
+ * Stage carried by a realtime frame, applied in stageVersion order. Shared by
+ * the projector and the student phone so a late frame never rolls either back.
+ */
+export function stageFromEvent(shown: LiveStageState, event: { type: string; payload: unknown }): LiveStageState {
+  if (event.type === "LIVE_STAGE_STATE") return reconcileStageVersion(shown, event.payload as LiveStageState);
+  if (event.type !== "RUNTIME_SNAPSHOT") return shown;
+  const stage = (event.payload as { stage?: LiveStageState | null } | null)?.stage;
+  return stage ? reconcileStageVersion(shown, stage) : shown;
+}
+
 /** Preserve canonical parser order, including nested and repeated headings. */
 export function flattenMaterialOutline(nodes: ContentOutlineNode[]): ContentOutlineNode[] {
   return nodes.flatMap((node) => [node, ...flattenMaterialOutline(node.children)]);

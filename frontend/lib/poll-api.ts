@@ -1,4 +1,5 @@
 import { apiRequest } from "./http/client";
+import { HttpApiError } from "./http/errors";
 
 export type PollStatus = "OPEN" | "REVEALED" | "CLOSED";
 
@@ -40,9 +41,9 @@ export type CreatePollInput = {
 };
 
 
-export class PollApiError extends Error {
-  constructor(message: string, public readonly status: number) {
-    super(message);
+export class PollApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "PollApiError";
   }
 }

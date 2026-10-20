@@ -4,11 +4,12 @@ import type {
   ActivityStepType,
   PollOption,
 } from "./types";
+import { HttpApiError } from "./http/errors";
 
 
-export class ActivityStepApiError extends Error {
-  constructor(message: string, public readonly status: number) {
-    super(message);
+export class ActivityStepApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "ActivityStepApiError";
   }
 }

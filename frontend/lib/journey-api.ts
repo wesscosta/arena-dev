@@ -1,4 +1,5 @@
 import { apiRequest } from "./http/client";
+import { HttpApiError } from "./http/errors";
 
 export type JourneyStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type JourneyUnlockRule = "IMMEDIATE" | "PREVIOUS_STAGE_COMPLETED";
@@ -30,6 +31,8 @@ export type Journey = {
   stages: JourneyStage[];
   createdAt: string;
   updatedAt: string;
+  /** Students cannot copy this Journey's content in the reader. */
+  copyProtected: boolean;
 };
 
 export type JourneyStageInput = {
@@ -50,12 +53,13 @@ export type JourneyInput = {
   title: string;
   description?: string;
   stages: JourneyStageInput[];
+  copyProtected?: boolean;
 };
 
 
-export class JourneyApiError extends Error {
-  constructor(message: string, public readonly status: number) {
-    super(message);
+export class JourneyApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "JourneyApiError";
   }
 }

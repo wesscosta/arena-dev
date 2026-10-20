@@ -60,6 +60,7 @@ public class JourneyService {
         Classroom classroom = requireClassroom(input.classroomId());
         Journey journey = new Journey(classroom, input.title().trim());
         journey.update(input.title().trim(), clean(input.description()));
+        journey.changeCopyProtection(Boolean.TRUE.equals(input.copyProtected()));
         applyStages(journey, input.stages());
         return toView(journeyRepository.save(journey));
     }
@@ -72,6 +73,8 @@ public class JourneyService {
             throw new IllegalArgumentException("A jornada não pode ser movida para outra turma.");
         }
         journey.update(input.title().trim(), clean(input.description()));
+        // A setting, not structure: it can change after publishing.
+        if (input.copyProtected() != null) journey.changeCopyProtection(input.copyProtected());
         if (journey.getStatus() == JourneyStatus.DRAFT) {
             applyStages(journey, input.stages());
         } else if (input.stages() != null && !sameStageShape(journey, input.stages())) {
@@ -451,7 +454,8 @@ public class JourneyService {
                                 && stage.getResourceSnapshotRevision() != null
                                 && stage.getLearningResource().getRevision() > stage.getResourceSnapshotRevision()
                 )).toList(),
-                journey.getCreatedAt(), journey.getUpdatedAt()
+                journey.getCreatedAt(), journey.getUpdatedAt(),
+                journey.isCopyProtected()
         );
     }
 
@@ -462,7 +466,12 @@ public class JourneyService {
 
     private static String clean(String value) { return value == null || value.isBlank() ? null : value.trim(); }
 
-    public record JourneyInput(UUID classroomId, String title, String description, List<StageInput> stages) {}
+    /** copyProtected null keeps the current value on update and means off on create. */
+    public record JourneyInput(UUID classroomId, String title, String description, List<StageInput> stages, Boolean copyProtected) {
+        public JourneyInput(UUID classroomId, String title, String description, List<StageInput> stages) {
+            this(classroomId, title, description, stages, null);
+        }
+    }
     public record StageInput(
             String id,
             String title,
@@ -475,7 +484,7 @@ public class JourneyService {
             JourneyItemType itemType,
             UUID learningResourceId
     ) {}
-    public record JourneyView(UUID id, UUID classroomId, String title, String description, JourneyStatus status, List<StageView> stages, Instant createdAt, Instant updatedAt) {}
+    public record JourneyView(UUID id, UUID classroomId, String title, String description, JourneyStatus status, List<StageView> stages, Instant createdAt, Instant updatedAt, boolean copyProtected) {}
     public record StageView(
             UUID id,
             int position,

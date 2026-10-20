@@ -2,6 +2,7 @@ import { attachHeartbeat } from "./realtime-heartbeat";
 import { browserApiBaseUrl } from "./auth-api";
 import { apiRequest } from "./http/client";
 import { normalizeJoinCode } from "./app-state";
+import { HttpApiError } from "./http/errors";
 
 export type JoinCode = {
   code: string;
@@ -71,9 +72,9 @@ export type SessionRealtimeEvent = {
 };
 
 
-export class RealtimeApiError extends Error {
-  constructor(message: string, public readonly status: number) {
-    super(message);
+export class RealtimeApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "RealtimeApiError";
   }
 }

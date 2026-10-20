@@ -40,6 +40,7 @@ type Draft = {
   title: string;
   description: string;
   status: Journey["status"];
+  copyProtected: boolean;
   stages: DraftStage[];
 };
 
@@ -49,6 +50,7 @@ function toDraft(journey: Journey): Draft {
     title: journey.title,
     description: journey.description ?? "",
     status: journey.status,
+    copyProtected: journey.copyProtected,
     stages: journey.stages.map((stage) => ({
       id: stage.id,
       title: stage.title,
@@ -65,7 +67,7 @@ function toDraft(journey: Journey): Draft {
 }
 
 function emptyDraft(): Draft {
-  return { title: "", description: "", status: "DRAFT", stages: [] };
+  return { title: "", description: "", status: "DRAFT", copyProtected: false, stages: [] };
 }
 
 function statusLabel(status: Journey["status"]) {
@@ -252,6 +254,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
       classroomId,
       title: draft.title.trim(),
       description: draft.description.trim() || undefined,
+      copyProtected: draft.copyProtected,
       stages: draft.stages.map((stage, index) => ({
         id: stage.id,
         title: stage.title.trim(),
@@ -375,6 +378,12 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
                     <div className={styles.fields}>
                       <label className={styles.field}><span>Título</span><input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Ex.: Fundamentos de Backend" /></label>
                       <label className={`${styles.field} ${styles.full}`}><span>Descrição</span><textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Objetivo e contexto da jornada." /></label>
+                      <label className={`${styles.field} ${styles.full} ${styles.copyToggle}`}>
+                        <input type="checkbox" checked={draft.copyProtected} onChange={(event) => setDraft({ ...draft, copyProtected: event.target.checked })} />
+                        <span>Impedir cópia do conteúdo
+                          <small>Os alunos não conseguem selecionar, copiar nem usar o botão direito no leitor. Desencoraja a cópia, mas não impede captura de tela.</small>
+                        </span>
+                      </label>
                     </div>
                   )}
 

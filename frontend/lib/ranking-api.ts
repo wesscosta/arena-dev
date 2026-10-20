@@ -1,4 +1,5 @@
 import { apiRequest } from "./http/client";
+import { HttpApiError } from "./http/errors";
 
 export type RankingLimit = "TOP_5" | "ALL";
 
@@ -52,9 +53,9 @@ export type RankingPresentationInput = {
   limit?: RankingLimit;
 };
 
-export class RankingApiError extends Error {
-  constructor(message: string, public readonly status: number) {
-    super(message);
+export class RankingApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "RankingApiError";
   }
 }

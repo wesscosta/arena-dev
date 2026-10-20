@@ -12,9 +12,9 @@ fail() { printf 'ERRO: %s\n' "$*" >&2; exit 1; }
 
 # The v0.11 schema line: V57-V58 (material presentation) plus the additive
 # pre-GO hardening of rc.5 (V59 teacher preferences, V60 student
-# anonymization). Anything later belongs
-# to the next line.
-V011_LAST_MIGRATION=60
+# anonymization) and rc.6 (V61 content copy protection). Anything later
+# belongs to the next line.
+V011_LAST_MIGRATION=61
 for ((n = 57; n <= V011_LAST_MIGRATION; n++)); do
   migrations=(backend/src/main/resources/db/migration/V${n}__*.sql)
   [[ -f "${migrations[0]}" && ${#migrations[@]} -eq 1 ]] || \

@@ -89,6 +89,9 @@ public class LearningResource {
     @Column(name = "library_visible", nullable = false)
     private boolean libraryVisible = false;
 
+    @Column(name = "copy_protected", nullable = false)
+    private boolean copyProtected = false;
+
     @Column(nullable = false)
     private int revision = 1;
 
@@ -207,6 +210,11 @@ public class LearningResource {
     public String getOutlineJson() { return outlineJson; }
     public String getOutlineParserVersion() { return outlineParserVersion; }
     public boolean isLibraryVisible() { return libraryVisible; }
+
+    /** Students cannot copy this material in the reader, in any Journey that uses it. */
+    public void changeCopyProtection(boolean copyProtected) { this.copyProtected = copyProtected; }
+
+    public boolean isCopyProtected() { return copyProtected; }
     public int getRevision() { return revision; }
     public Instant getArchivedAt() { return archivedAt; }
     public Instant getCreatedAt() { return createdAt; }

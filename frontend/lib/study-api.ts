@@ -1,5 +1,6 @@
 import { apiRequest } from "./http/client";
 import { deviceClaimStorageKey } from "./app-state";
+import { HttpApiError } from "./http/errors";
 
 export type StudyState = "COMPLETED" | "CURRENT" | "LOCKED";
 export type JourneyProgressSummary = { completedContents: number; totalContents: number; percent: number };
@@ -42,10 +43,15 @@ export type JourneyContentDetailView = JourneyContentView & {
   format: string | null;
   sourceUrl: string | null;
   sourceLabel: string | null;
+  /** The Journey or the linked material forbids copying in the reader. */
+  copyProtected: boolean;
 };
 
-export class StudyApiError extends Error {
-  constructor(message: string, public readonly status: number) { super(message); this.name = "StudyApiError"; }
+export class StudyApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
+    this.name = "StudyApiError";
+  }
 }
 
 function studyRequest<T>(path: string, token: string, init?: RequestInit): Promise<T> {

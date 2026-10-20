@@ -4,6 +4,7 @@ import { apiRequest } from "./http/client";
 import { normalizeJoinCode } from "./app-state";
 import type { SessionRealtimeEvent } from "./realtime-api";
 import type { PublicRuntimeSnapshot } from "./runtime-snapshot";
+import { HttpApiError } from "./http/errors";
 
 export type ProjectorSnapshot = {
   sessionId: string;
@@ -16,9 +17,9 @@ export type ProjectorSnapshot = {
 };
 
 
-export class ProjectorApiError extends Error {
-  constructor(message: string, public readonly status: number) {
-    super(message);
+export class ProjectorApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "ProjectorApiError";
   }
 }

@@ -46,6 +46,7 @@ type Editor = {
   sourceType: LearningResourceSourceType;
   sourceUrl: string;
   sourceLabel: string;
+  copyProtected: boolean;
 };
 
 const EMPTY_EDITOR: Editor = {
@@ -59,6 +60,7 @@ const EMPTY_EDITOR: Editor = {
   sourceType: "MANUAL",
   sourceUrl: "",
   sourceLabel: "",
+  copyProtected: false,
 };
 const EMPTY_FACETS: LibraryFacets = { subjects: [], tags: [], languages: [] };
 
@@ -174,6 +176,7 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
       sourceType: resource.sourceType,
       sourceUrl: resource.sourceUrl ?? "",
       sourceLabel: resource.sourceLabel ?? "",
+      copyProtected: resource.copyProtected,
     } : { ...EMPTY_EDITOR });
   }
 
@@ -198,6 +201,7 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
         sourceType: editor.sourceType,
         sourceUrl: editor.sourceUrl.trim() || undefined,
         sourceLabel: editor.sourceLabel.trim() || undefined,
+        copyProtected: editor.copyProtected,
       };
       const saved = editor.id
         ? await updateLibraryResource(editor.id, input)
@@ -371,6 +375,12 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
             <label><span>Idioma</span><input value={editor.language} placeholder="pt-BR" onChange={(e) => setEditor({ ...editor, language: e.target.value })} /></label>
           </div>
           <label className={styles.fullField}><span>Descrição</span><input value={editor.summary} onChange={(e) => setEditor({ ...editor, summary: e.target.value })} /></label>
+          <label className={`${styles.fullField} ${styles.copyToggle}`}>
+            <input type="checkbox" checked={editor.copyProtected} onChange={(e) => setEditor({ ...editor, copyProtected: e.target.checked })} />
+            <span>Impedir cópia do conteúdo
+              <small>Vale em qualquer Jornada que use este material. Os alunos não conseguem selecionar, copiar nem usar o botão direito no leitor.</small>
+            </span>
+          </label>
           {editor.format === "LINK" ? (
             <div className={styles.editorMeta}>
               <label><span>URL</span><input value={editor.sourceUrl} onChange={(e) => setEditor({ ...editor, sourceUrl: e.target.value })} placeholder="https://..." /></label>

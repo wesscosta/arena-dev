@@ -1,4 +1,5 @@
 import { apiRequest } from "./http/client";
+import { HttpApiError } from "./http/errors";
 
 export type TimerStatus = "READY" | "RUNNING" | "PAUSED" | "FINISHED" | "CANCELLED";
 
@@ -31,9 +32,9 @@ export type CreateTimerInput = {
 };
 
 
-export class TimerApiError extends Error {
-  constructor(message: string, public readonly status: number) {
-    super(message);
+export class TimerApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "TimerApiError";
   }
 }

@@ -1,4 +1,5 @@
 import { apiRequest } from "./http/client";
+import { HttpApiError } from "./http/errors";
 
 export type LearningResourceFormat = "MARKDOWN" | "PLAIN_TEXT" | "LINK";
 export type LearningResourceSourceType =
@@ -39,6 +40,8 @@ export type LearningResource = {
   outlineParserVersion: string | null;
   outline: ContentOutlineNode[];
   libraryVisible: boolean;
+  /** Students cannot copy this material in the reader, in any Journey that uses it. */
+  copyProtected: boolean;
   revision: number;
   archivedAt: string | null;
   createdAt: string;
@@ -57,6 +60,7 @@ export type LearningResourceInput = {
   subject?: string;
   tags?: string[];
   language?: string;
+  copyProtected?: boolean;
 };
 
 export type LibraryResourceInput = Omit<LearningResourceInput, "classroomId">;
@@ -98,12 +102,9 @@ export type LibraryResourceUsage = {
   journeys: LibraryJourneyUsage[];
 };
 
-export class LearningResourceApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
-    super(message);
+export class LearningResourceApiError extends HttpApiError {
+  constructor(message: string, status: number, fields?: Record<string, string>) {
+    super(message, status, fields);
     this.name = "LearningResourceApiError";
   }
 }
