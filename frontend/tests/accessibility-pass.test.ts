@@ -91,7 +91,9 @@ test("participant Spotlight manages focus and exposes its result to assistive te
   const source = read("components/arena/selection/ParticipantSelectionExperience.tsx");
 
   assert.match(source, /spotlightRef\.current\?\.focus/);
-  assert.match(source, /drawButtonRef\.current\?\.focus/);
+  // rc.7: focus returns once the draw command is enabled, not in a single frame.
+  assert.match(source, /focusReturnPendingRef/);
+  assert.match(source, /button\.focus\(\{ preventScroll: true \}\)/);
   assert.match(source, /aria-labelledby="spotlight-participant-name"/);
   assert.match(source, /aria-describedby="spotlight-participant-guidance"/);
   assert.match(source, /aria-live="assertive"/);
