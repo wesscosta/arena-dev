@@ -168,6 +168,12 @@ if (( EXPECTED_SCHEMA_VERSION >= 59 )); then
     --command "select to_regclass('public.teacher_preferences') is not null")"
   [[ "$teacher_preferences" == "t" ]] || fail "restore V59 perdeu as preferências do professor"
 fi
+if (( EXPECTED_SCHEMA_VERSION >= 60 )); then
+  anonymized_column="$(docker exec "$CONTAINER_NAME" \
+    psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE" \
+    --command "select count(*) from information_schema.columns where table_name = 'students' and column_name = 'anonymized_at'")"
+  [[ "$anonymized_column" -eq 1 ]] || fail "restore V60 perdeu a marca de aluno anonimizado"
+fi
 
 semantic_columns="$(docker exec "$CONTAINER_NAME"   psql --tuples-only --no-align --username "$CHECK_USER" --dbname "$CHECK_DATABASE"   --command "select count(*) from information_schema.columns where table_schema='public' and table_name='learning_resources' and column_name in ('library_visible','revision','archived_at','subject','language','content_sha256','outline_json','outline_parser_version')")"
 [[ "$semantic_columns" -eq 8 ]] || fail "LearningResource não contém o contrato completo da Biblioteca semântica"

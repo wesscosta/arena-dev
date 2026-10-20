@@ -38,6 +38,7 @@ type StudentView = {
   nickname: string | null;
   active: boolean;
   createdAt: string;
+  anonymized?: boolean;
 };
 
 type EnrollmentView = {
@@ -170,6 +171,15 @@ export async function createStudent(input: { name: string; nickname?: string; re
       nickname: input.nickname || null,
       registration: input.registration || null,
     }),
+  });
+  return mapStudent(result);
+}
+
+/** Irreversible: replaces the student's personal data by a pseudonym and keeps the class history. */
+export async function anonymizeStudent(studentId: string, confirmation: string): Promise<Student> {
+  const result = await classroomRequest<StudentView>(`/api/students/${studentId}/anonymize`, {
+    method: "POST",
+    body: JSON.stringify({ confirmation }),
   });
   return mapStudent(result);
 }
