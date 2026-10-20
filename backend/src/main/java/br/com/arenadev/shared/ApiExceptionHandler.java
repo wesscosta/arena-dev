@@ -20,6 +20,8 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ApiExceptionHandler.class);
+
     @ExceptionHandler(LoginRateLimitExceededException.class)
     public ResponseEntity<Map<String, Object>> tooManyLoginAttempts(LoginRateLimitExceededException exception) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
@@ -58,6 +60,19 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ScoreConflictException.class)
     public ResponseEntity<Map<String, Object>> scoreConflict(ScoreConflictException exception) {
         return response(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    /**
+     * Domain services throw IllegalStateException without a cause for state
+     * conflicts ("Somente entregas enviadas podem entrar em correção."): 409
+     * with the message. With a cause it is an internal failure (serialization,
+     * provider, crypto): 500 with a generic message, logged with the stack.
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, Object>> illegalState(IllegalStateException exception) {
+        if (exception.getCause() == null) return response(HttpStatus.CONFLICT, exception.getMessage());
+        log.error("Falha interna não tratada", exception);
+        return response(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno. Tente novamente; se persistir, verifique os logs do servidor.");
     }
 
     @ExceptionHandler({IllegalArgumentException.class, DataIntegrityViolationException.class})
