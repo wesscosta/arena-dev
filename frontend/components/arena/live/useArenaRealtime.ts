@@ -16,12 +16,13 @@ import { fetchQuizState, type QuizState } from "@/lib/quiz-api";
 import { emptyLearningCheckState, fetchLearningCheckState, type LearningCheckState } from "@/lib/learning-check-api";
 import { fetchSessionRanking, type SessionRankingState } from "@/lib/ranking-api";
 import { reconnectDelayMs } from "@/lib/runtime-snapshot";
+import type { Notify } from "@/components/ui";
 
 type ArenaRealtimeStatus = "offline" | "connecting" | "online";
 
 type UseArenaRealtimeInput = {
   sessionId?: string;
-  notify: (message: string) => void;
+  notify: Notify;
   onSelectedStudent: (studentId: string) => void;
   onParticipantsChanged: (sessionId: string) => void;
 };

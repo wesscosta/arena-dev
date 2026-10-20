@@ -23,11 +23,12 @@ import styles from "./JourneyManager.module.css";
 import { DialogCloseButton } from "@/components/ui";
 import { useModalKeyboard } from "@/lib/use-modal-keyboard";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
+import type { Notify } from "@/components/ui";
 
 type Props = {
   classroomId: string;
   classroomName: string;
-  notify: (message: string) => void;
+  notify: Notify;
 };
 
 type DraftStage = JourneyStageInput & {
@@ -102,7 +103,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
     setLoading(true);
     void fetchJourneys(classroomId)
       .then((rows) => { if (active) setJourneys(rows); })
-      .catch((error) => { if (active) notify(error instanceof Error ? error.message : "Não foi possível carregar as jornadas."); })
+      .catch((error) => { if (active) notify(error instanceof Error ? error.message : "Não foi possível carregar as jornadas.", "error"); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [classroomId, notify]);
@@ -138,7 +139,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
       setDraft(toDraft(saved));
         notify("Estrutura criada como rascunho. Revise antes de publicar.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível criar a jornada a partir do rascunho.");
+      notify(error instanceof Error ? error.message : "Não foi possível criar a jornada a partir do rascunho.", "error");
       throw error;
     } finally {
       setBusy(false);
@@ -167,7 +168,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
     setLibraryTargetModule(sectionTitle);
     setLibraryOpen(true);
     try { setLibraryResources(await fetchContentLibrary()); }
-    catch (error) { notify(error instanceof Error ? error.message : "Não foi possível carregar a Biblioteca."); }
+    catch (error) { notify(error instanceof Error ? error.message : "Não foi possível carregar a Biblioteca.", "error"); }
   }
 
   function addFromLibrary(resource: LearningResource) {
@@ -276,7 +277,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
       setDraft(toDraft(saved));
       notify(draft.id ? "Jornada atualizada." : "Jornada criada como rascunho.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível salvar a jornada.");
+      notify(error instanceof Error ? error.message : "Não foi possível salvar a jornada.", "error");
     } finally { setBusy(false); }
   }
 
@@ -293,7 +294,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
       setDraft(toDraft(published));
       notify("Jornada publicada. A estrutura agora está protegida para preservar o progresso dos alunos.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível publicar a jornada.");
+      notify(error instanceof Error ? error.message : "Não foi possível publicar a jornada.", "error");
     } finally { setBusy(false); }
   }
 
@@ -306,7 +307,7 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
       setDraft(toDraft(archived));
       notify("Jornada arquivada.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível arquivar a jornada.");
+      notify(error instanceof Error ? error.message : "Não foi possível arquivar a jornada.", "error");
     } finally { setBusy(false); }
   }
 
@@ -365,8 +366,8 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
                       <div className={styles.redemptionBox}>
                         <div><span>ACESSO POR CÓDIGO</span><strong>{redemption?.active && redemption.code ? redemption.code : "Não disponibilizado"}</strong><small>{redemption?.redeemedCount ?? 0} resgate(s) · o código adiciona a Jornada ao perfil do aluno.</small></div>
                         <div className={styles.redemptionActions}>
-                          {!redemption?.active && <button type="button" className={styles.secondary} disabled={busy} onClick={async()=>{if(!draft.id)return;setBusy(true);try{setRedemption(await enableJourneyRedemption(draft.id));notify("Código da Jornada disponibilizado.");}catch(e){notify(e instanceof Error?e.message:"Não foi possível gerar o código.");}finally{setBusy(false);}}}>Gerar código</button>}
-                          {redemption?.active && <><button type="button" className={styles.secondary} disabled={busy} onClick={async()=>{if(!draft.id||!window.confirm("Gerar um novo código? O anterior deixará de aceitar novos resgates."))return;setBusy(true);try{setRedemption(await regenerateJourneyRedemption(draft.id));notify("Código regenerado. Acessos existentes foram preservados.");}catch(e){notify(e instanceof Error?e.message:"Não foi possível regenerar o código.");}finally{setBusy(false);}}}>Regenerar</button><button type="button" className={styles.ghost} disabled={busy} onClick={async()=>{if(!draft.id)return;setBusy(true);try{await disableJourneyRedemption(draft.id);setRedemption(redemption?{...redemption,active:false}:null);notify("Novos resgates foram desativados. Acessos existentes permanecem.");}catch(e){notify(e instanceof Error?e.message:"Não foi possível desativar o código.");}finally{setBusy(false);}}}>Desativar</button></>}
+                          {!redemption?.active && <button type="button" className={styles.secondary} disabled={busy} onClick={async()=>{if(!draft.id)return;setBusy(true);try{setRedemption(await enableJourneyRedemption(draft.id));notify("Código da Jornada disponibilizado.");}catch(e){notify(e instanceof Error?e.message:"Não foi possível gerar o código.", "error");}finally{setBusy(false);}}}>Gerar código</button>}
+                          {redemption?.active && <><button type="button" className={styles.secondary} disabled={busy} onClick={async()=>{if(!draft.id||!window.confirm("Gerar um novo código? O anterior deixará de aceitar novos resgates."))return;setBusy(true);try{setRedemption(await regenerateJourneyRedemption(draft.id));notify("Código regenerado. Acessos existentes foram preservados.");}catch(e){notify(e instanceof Error?e.message:"Não foi possível regenerar o código.", "error");}finally{setBusy(false);}}}>Regenerar</button><button type="button" className={styles.ghost} disabled={busy} onClick={async()=>{if(!draft.id)return;setBusy(true);try{await disableJourneyRedemption(draft.id);setRedemption(redemption?{...redemption,active:false}:null);notify("Novos resgates foram desativados. Acessos existentes permanecem.");}catch(e){notify(e instanceof Error?e.message:"Não foi possível desativar o código.", "error");}finally{setBusy(false);}}}>Desativar</button></>}
                         </div>
                       </div>
                     </div>

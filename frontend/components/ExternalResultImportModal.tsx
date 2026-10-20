@@ -6,6 +6,7 @@ import { applyStudentOverrides, fetchExternalResultImports, importExternalResult
 import type { Activity, ScoreEvent, Student } from "@/lib/types";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { DialogCloseButton } from "@/components/ui";
+import type { Notify } from "@/components/ui";
 
 type Props = {
   open: boolean;
@@ -13,7 +14,7 @@ type Props = {
   students: Student[];
   onClose: () => void;
   onImported: (events: ScoreEvent[]) => void;
-  notify: (message: string) => void;
+  notify: Notify;
 };
 
 function dateTime(value: string) {
@@ -136,7 +137,7 @@ export default function ExternalResultImportModal({ open, activity, students, on
     } catch (error) {
       setReport(undefined);
       setPreview(undefined);
-      notify(error instanceof Error ? error.message : "Não foi possível ler o relatório.");
+      notify(error instanceof Error ? error.message : "Não foi possível ler o relatório.", "error");
     }
   }
 
@@ -164,7 +165,7 @@ export default function ExternalResultImportModal({ open, activity, students, on
       else if (result.unresolvedCount || result.duplicateStudentCount || result.scoreIssueCount) notify("Revise as linhas destacadas antes de importar.");
       else notify("Relatório validado. O XP pode ser importado.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Falha ao validar o relatório.");
+      notify(error instanceof Error ? error.message : "Falha ao validar o relatório.", "error");
     } finally {
       setBusy(false);
     }
@@ -187,7 +188,7 @@ export default function ExternalResultImportModal({ open, activity, students, on
       notify(`Relatório importado: ${result.matchedCount} aluno(s), ${events.length} lançamento(s) de XP.`);
       onClose();
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Falha ao importar o relatório.");
+      notify(error instanceof Error ? error.message : "Falha ao importar o relatório.", "error");
     } finally {
       setBusy(false);
     }

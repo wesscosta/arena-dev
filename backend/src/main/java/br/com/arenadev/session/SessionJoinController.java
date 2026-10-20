@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URI;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -60,12 +59,10 @@ public class SessionJoinController {
             @RequestParam(defaultValue = "280") int size
     ) {
         SessionJoinService.JoinCodeView joinCode = joinService.ensureCode(sessionId);
-        String normalizedBase = validateBaseUrl(baseUrl);
-        String joinUrl = normalizedBase + "/join?code=" + joinCode.code();
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .contentType(MediaType.IMAGE_PNG)
-                .body(qrCodeService.png(joinUrl, size));
+                .body(qrCodeService.joinPng(baseUrl, joinCode.code(), size));
     }
 
     @GetMapping("/api/join/{code}")
@@ -137,20 +134,6 @@ public class SessionJoinController {
                 participant.getId(),
                 request.answer()
         );
-    }
-
-    private static String validateBaseUrl(String raw) {
-        try {
-            URI uri = URI.create(raw == null ? "" : raw.trim());
-            if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
-                    || uri.getHost() == null) {
-                throw new IllegalArgumentException("Endereço público inválido para o QR Code.");
-            }
-            String base = uri.toString();
-            return base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
-        } catch (IllegalArgumentException error) {
-            throw new IllegalArgumentException("Endereço público inválido para o QR Code.");
-        }
     }
 
     public record JoinRequest(@NotBlank String identity, boolean rememberDevice) {

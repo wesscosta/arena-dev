@@ -10,6 +10,7 @@ import {
 import {
   connectProjectorSocket,
   fetchProjectorSnapshot,
+  projectorQrImageUrl,
   type ProjectorSnapshot,
 } from "@/lib/projector-api";
 import type { SessionRealtimeEvent } from "@/lib/realtime-api";
@@ -76,6 +77,8 @@ function slideLines(content: string) {
 export default function ProjectorView() {
   const [code, setCode] = useState("");
   const [draftCode, setDraftCode] = useState("");
+  // Address the devices already reach this projector on; read after mount.
+  const [origin, setOrigin] = useState("");
   const [snapshot, setSnapshot] = useState<ProjectorSnapshot | null>(null);
   const [timerState, setTimerState] = useState<TimerState>({ timer: null });
   const [wordCloudState, setWordCloudState] = useState<WordCloudState>({ round: null });
@@ -102,6 +105,7 @@ export default function ProjectorView() {
     );
     setCode(initial);
     setDraftCode(initial);
+    setOrigin(window.location.origin);
   }, []);
 
   // Only the actual projector tab may acknowledge activation. The teacher
@@ -880,11 +884,18 @@ export default function ProjectorView() {
       </section>
 
       <footer className={styles.footer}>
-        <div>
-          <span>Código da sessão</span>
-          <strong>{snapshot.code}</strong>
+        <div className={styles.footerJoin}>
+          {origin && (
+            // eslint-disable-next-line @next/next/no-img-element -- PNG generated per session by the API.
+            <img className={styles.footerQr} src={projectorQrImageUrl(snapshot.code, origin)}
+              width={96} height={96} alt={`QR Code para entrar na sessão ${snapshot.code}`} />
+          )}
+          <div>
+            <span>Código da sessão</span>
+            <strong>{snapshot.code}</strong>
+          </div>
         </div>
-        <p>Alunos podem usar este código em <b>/join</b>.</p>
+        <p>Aponte a câmera para o QR ou acesse <b>{origin}/join</b></p>
         <small>Visualização pública · somente leitura</small>
         {showMaterial && showTimerOverlay && timer && status && (
           <strong className={styles.materialFooterTimer} role="timer"

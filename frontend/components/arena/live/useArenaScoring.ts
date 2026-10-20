@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { secureId } from "@/lib/secure-id";
 import { createScoreEvent, ScoreApiError } from "@/lib/score-api";
 import type { ScoreCategory, ScoreEvent } from "@/lib/types";
+import type { Notify } from "@/components/ui";
 
 type ArenaScoringContext = {
   classroomId: string;
@@ -12,7 +13,7 @@ type ArenaScoringContext = {
   questionId?: string;
   selectedStudentId?: string;
   onScoreEvent: (event: ScoreEvent) => void;
-  notify: (message: string) => void;
+  notify: Notify;
 };
 
 type AddScoreOptions = {
@@ -57,7 +58,7 @@ export function useArenaScoring({
     };
     const key = JSON.stringify(command);
     if (pendingRef.current && pendingRef.current.key !== key) {
-      notify("Há um XP com resultado incerto. Reenvie primeiro o mesmo lançamento ou atualize a página e confira o histórico antes de iniciar outro.");
+      notify("Há um XP com resultado incerto. Reenvie primeiro o mesmo lançamento ou atualize a página e confira o histórico antes de iniciar outro.", "error");
       return false;
     }
     const requestId = pendingRef.current?.id ?? secureId();
@@ -79,9 +80,9 @@ export function useArenaScoring({
       // 4xx definitively rejects the command; transport/5xx could have committed it.
       if (error instanceof ScoreApiError && error.status >= 400 && error.status < 500) {
         pendingRef.current = null;
-        notify(error.message);
+        notify(error.message, "error");
       } else {
-        notify("Resultado do XP incerto. Confira o histórico ou repita exatamente o mesmo lançamento: a chave evita duplicação.");
+        notify("Resultado do XP incerto. Confira o histórico ou repita exatamente o mesmo lançamento: a chave evita duplicação.", "error");
       }
       return false;
     } finally {

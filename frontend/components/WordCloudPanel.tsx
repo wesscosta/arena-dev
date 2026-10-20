@@ -15,12 +15,13 @@ import DynamicHeader from "@/components/arena/dynamics/DynamicHeader";
 import QuestionComposer from "@/components/arena/dynamics/QuestionComposer";
 import ToggleField from "@/components/arena/dynamics/ToggleField";
 import DynamicSection from "@/components/arena/dynamics/DynamicSection";
+import type { Notify } from "@/components/ui";
 
 type Props = {
   sessionId: string;
   state: WordCloudState;
   onStateChange: (state: WordCloudState) => void;
-  notify: (message: string) => void;
+  notify: Notify;
   joinCode: JoinCode | null;
   publicBaseUrl: string;
   realtimeStatus: "offline" | "connecting" | "online";
@@ -80,7 +81,7 @@ export default function WordCloudPanel({
       setPrompt("");
       notify("Nuvem de Palavras aberta para participação.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível criar a Nuvem de Palavras.");
+      notify(error instanceof Error ? error.message : "Não foi possível criar a Nuvem de Palavras.", "error");
     } finally {
       setBusy(false);
     }
@@ -94,7 +95,7 @@ export default function WordCloudPanel({
       onStateChange(next);
       notify("Respostas reveladas.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível revelar as respostas.");
+      notify(error instanceof Error ? error.message : "Não foi possível revelar as respostas.", "error");
     } finally {
       setBusy(false);
     }
@@ -114,7 +115,7 @@ export default function WordCloudPanel({
       onStateChange(await closeWordCloud(sessionId, round.id));
       notify("Rodada da Nuvem de Palavras encerrada.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível encerrar a rodada.");
+      notify(error instanceof Error ? error.message : "Não foi possível encerrar a rodada.", "error");
     } finally {
       setBusy(false);
     }

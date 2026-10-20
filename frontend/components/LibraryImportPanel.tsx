@@ -11,11 +11,12 @@ import {
 import type { LearningResource } from "@/lib/learning-resource-api";
 import { ContentOutlineView } from "./LibraryContentViews";
 import styles from "./LibraryWorkspace.module.css";
+import type { Notify } from "@/components/ui";
 
 type Props = {
   onCancel: () => void;
   onImported: (resource: LearningResource) => void;
-  notify: (message: string) => void;
+  notify: Notify;
 };
 
 function splitTags(value: string) {
@@ -107,7 +108,7 @@ export default function LibraryImportPanel({
       notify(
         error instanceof Error
           ? error.message
-          : "Não foi possível analisar o material.",
+          : "Não foi possível analisar o material.", "error",
       );
     } finally {
       setBusy(false);
@@ -150,7 +151,7 @@ export default function LibraryImportPanel({
       notify(
         error instanceof Error
           ? error.message
-          : "Não foi possível recalcular a estrutura.",
+          : "Não foi possível recalcular a estrutura.", "error",
       );
     } finally {
       setBusy(false);
@@ -179,7 +180,7 @@ export default function LibraryImportPanel({
       notify(
         error instanceof Error
           ? error.message
-          : "Não foi possível importar o material.",
+          : "Não foi possível importar o material.", "error",
       );
     } finally {
       setBusy(false);
