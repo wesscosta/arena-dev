@@ -626,6 +626,12 @@ test("Spotlight move o foco para o resultado e devolve ao comando após resolver
     const confirm = page.getByTestId("spotlight-reveal")
       .getByRole("button", { name: "Confirmar sem XP", exact: true });
     await expect(confirm).toBeFocused();
+    // rc.7: a slow state refresh keeps the command disabled after the Spotlight
+    // closes (as on CI); focus must still come back once it is enabled.
+    await page.route("**/api/sessions/*/draw-attempts/state", async (route) => {
+      if (route.request().method() === "GET") await new Promise((resolve) => setTimeout(resolve, 1200));
+      await route.continue();
+    });
     await page.keyboard.press("Enter");
 
     await expect(page.getByTestId("spotlight-reveal")).toBeHidden();
