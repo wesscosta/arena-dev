@@ -257,7 +257,9 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
     try {
       const groups = await Promise.all(classrooms.map(async (classroom) => {
         const rows = await fetchJourneys(classroom.id);
-        return rows.filter((row) => row.status === "DRAFT")
+        // Published Journeys are listed too, disabled, so a classroom never shows
+        // up as an empty, unclickable group.
+        return rows.filter((row) => row.status !== "ARCHIVED")
           .map((row) => ({ ...row, classroomName: classroom.name }));
       }));
       setJourneys(groups.flat());
@@ -478,10 +480,18 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
               <div><span>REUTILIZAR MATERIAL</span><h3 id="reuse-title">Adicionar a uma Jornada</h3><p>Somente Jornadas em rascunho podem receber novos conteúdos.</p></div>
               <DialogCloseButton ref={reuseCloseRef} label="Fechar reutilização de material" onClick={() => setReuseOpen(false)} />
             </header>
-            <label><span>Jornada</span><select value={targetJourneyId} onChange={(e) => { setTargetJourneyId(e.target.value); setTargetModule(""); }}>
-              <option value="">Selecionar Jornada...</option>
-              {classrooms.map((classroom) => <optgroup key={classroom.id} label={classroom.name}>{journeys.filter((journey) => journey.classroomId === classroom.id).map((journey) => <option key={journey.id} value={journey.id}>{journey.title}</option>)}</optgroup>)}
-            </select></label>
+            {journeys.some((journey) => journey.status === "DRAFT") ? (
+              <label><span>Jornada</span><select value={targetJourneyId} onChange={(e) => { setTargetJourneyId(e.target.value); setTargetModule(""); }}>
+                <option value="">Selecionar Jornada...</option>
+                {classrooms.filter((classroom) => journeys.some((journey) => journey.classroomId === classroom.id)).map((classroom) =>
+                  <optgroup key={classroom.id} label={`Turma: ${classroom.name}`}>{journeys.filter((journey) => journey.classroomId === classroom.id).map((journey) =>
+                    <option key={journey.id} value={journey.id} disabled={journey.status !== "DRAFT"}>
+                      {journey.status === "DRAFT" ? journey.title : `${journey.title} (publicada, não recebe conteúdo)`}
+                    </option>)}</optgroup>)}
+              </select></label>
+            ) : (
+              <p className={styles.reuseEmpty} role="status">Nenhuma Jornada em rascunho. Crie uma Jornada na turma (ela começa como rascunho) e volte para adicionar este material.</p>
+            )}
             {targetJourney && <label><span>Módulo</span><select value={targetModule} onChange={(e) => setTargetModule(e.target.value)}><option value="">Adicionar ao módulo final</option>{modules.map((module) => <option key={module} value={module}>{module}</option>)}</select></label>}
             <div className={styles.editorActions}><button type="button" onClick={() => setReuseOpen(false)}>Cancelar</button><button className={styles.primary} type="button" disabled={!targetJourneyId || busy} onClick={() => void addToJourney()}>Adicionar snapshot</button></div>
           </section>

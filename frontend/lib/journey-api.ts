@@ -52,7 +52,8 @@ export type JourneyInput = {
   classroomId: string;
   title: string;
   description?: string;
-  stages: JourneyStageInput[];
+  /** Omit to keep the structure, e.g. when changing a setting of a published Journey. */
+  stages?: JourneyStageInput[];
   copyProtected?: boolean;
 };
 

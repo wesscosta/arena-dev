@@ -50,7 +50,7 @@ function toDraft(journey: Journey): Draft {
     title: journey.title,
     description: journey.description ?? "",
     status: journey.status,
-    copyProtected: journey.copyProtected,
+    copyProtected: journey.copyProtected ?? false,
     stages: journey.stages.map((stage) => ({
       id: stage.id,
       title: stage.title,
@@ -284,6 +284,22 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
     } finally { setBusy(false); }
   }
 
+  // A setting, not structure: it also changes after publishing, saved at once.
+  async function changeCopyProtection(copyProtected: boolean) {
+    if (!draft?.id || busy) return;
+    setBusy(true);
+    try {
+      const saved = await updateJourney(draft.id, {
+        classroomId, title: draft.title, description: draft.description || undefined, copyProtected,
+      });
+      setJourneys((current) => current.map((journey) => journey.id === saved.id ? saved : journey));
+      setDraft(toDraft(saved));
+      notify(copyProtected ? "Cópia do conteúdo desativada para os alunos." : "Cópia do conteúdo liberada para os alunos.");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível alterar a proteção contra cópia.", "error");
+    } finally { setBusy(false); }
+  }
+
   async function publish() {
     if (!draft?.id || draft.status !== "DRAFT" || busy) return;
     if (selected && JSON.stringify(toDraft(selected)) !== JSON.stringify(draft)) {
@@ -365,6 +381,12 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
                     <div className={styles.publishedSummary}>
                       <div className={styles.publishedTitle}><strong>{draft.title}</strong><span className={`${styles.status} ${styles[draft.status.toLowerCase()]}`}>{statusLabel(draft.status)}</span></div>
                       <p>{draft.description || "Sem descrição."}</p>
+                      <label className={`${styles.field} ${styles.copyToggle}`}>
+                        <input type="checkbox" checked={draft.copyProtected} disabled={busy} onChange={(event) => void changeCopyProtection(event.target.checked)} />
+                        <span>Impedir cópia do conteúdo
+                          <small>Vale imediatamente para os alunos. Desencoraja a cópia, mas não impede captura de tela.</small>
+                        </span>
+                      </label>
                       <div className={styles.publishedMeta}><span>{stageGroups.length} {stageGroups.length === 1 ? "módulo" : "módulos"}</span><span>{draft.stages.length} {draft.stages.length === 1 ? "conteúdo" : "conteúdos"}</span></div>
                       <div className={styles.redemptionBox}>
                         <div><span>ACESSO POR CÓDIGO</span><strong>{redemption?.active && redemption.code ? redemption.code : "Não disponibilizado"}</strong><small>{redemption?.redeemedCount ?? 0} resgate(s) · o código adiciona a Jornada ao perfil do aluno.</small></div>
