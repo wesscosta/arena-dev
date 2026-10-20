@@ -11,7 +11,7 @@
 | `v0.11.0-rc.3` | Substituída pela rc.4 antes dos gates de campo (19/10/2026): CSP `connect-src` restrita ao próprio host e varredura axe do aluno e do projetor | [Release notes](RELEASE_0_11.md) |
 | `v0.11.0-rc.2` | Substituída pela rc.3 antes dos gates de campo (19/10/2026): `next@16.4.2` (avisos de segurança de 14/10) e otimizador de imagens desligado | [Release notes](RELEASE_0_11.md) |
 | `v0.11.0-rc.1` | Substituída pela rc.2 antes dos gates de campo (19/10/2026): v0.11 + ferramental de release + 11.7 (coerência visual, WCAG AA, contraste de texto AAA). | [Release notes](RELEASE_0_11.md) |
-| `main` | Candidata `v0.11.0-rc.5` integrada; sem release estável v0.11.0 | [11.7](v0.11/11.7_COHERENCE_AA.md) |
+| `main` | Versão `0.11.0` preparada, **aguardando homologação de campo** na rc.5; sem tag nem release estável até o aceite | [11.7](v0.11/11.7_COHERENCE_AA.md) |
 | `v0.12` | **Figma-first**: só auditoria e design; o código parte da baseline `v0.11.0-rc.5` e não recebe mudanças da v0.12 até aprovação explícita do design | [Roadmap v0.12](ROADMAP_V0_12.md) |
 | `feat/v012-ramuvi-pro-cards` | Tentativa descartada como implementação (PR [#54](https://github.com/wesscosta/arena-dev/pull/54), draft, não mesclar); preservada para recuperação seletiva | [Decisão 14/10](https://app.notion.com/p/3f9f3eb198c38136b319e5807170f8bf) |
 | `feat/v0.10-learning-loop` | Origem histórica da integração v0.10; branch removida após o merge (19/10) | PR [#35](https://github.com/wesscosta/arena-dev/pull/35), incorporada |
