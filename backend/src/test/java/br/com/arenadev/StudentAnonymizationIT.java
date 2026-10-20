@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class StudentAnonymizationIT {
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
-        SharedPostgres.register(registry, history.class);
+        SharedPostgres.register(registry, StudentAnonymizationIT.class);
     }
 
     @Autowired private ClassroomService classroomService;
