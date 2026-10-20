@@ -30,8 +30,9 @@ import styles from "./LibraryWorkspace.module.css";
 import { DialogCloseButton } from "@/components/ui";
 import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { useModalKeyboard } from "@/lib/use-modal-keyboard";
+import type { Notify } from "@/components/ui";
 
-type Props = { classrooms: Classroom[]; notify: (message: string) => void };
+type Props = { classrooms: Classroom[]; notify: Notify };
 type ViewMode = "reading" | "structure" | "map";
 type Editor = {
   id?: string;
@@ -120,7 +121,7 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
       const rows = await fetchContentLibrary({ query, archived, subject, tag, language, sort });
       setResources(rows);
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível carregar a Biblioteca.");
+      notify(error instanceof Error ? error.message : "Não foi possível carregar a Biblioteca.", "error");
     } finally {
       setLoading(false);
     }
@@ -214,7 +215,7 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
             : "Material criado na Biblioteca.",
       );
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível salvar o material.");
+      notify(error instanceof Error ? error.message : "Não foi possível salvar o material.", "error");
     } finally { setBusy(false); }
   }
 
@@ -227,7 +228,7 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
       await loadLibrary();
       notify("Material arquivado. Snapshots existentes foram preservados.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível arquivar.");
+      notify(error instanceof Error ? error.message : "Não foi possível arquivar.", "error");
     } finally { setBusy(false); }
   }
 
@@ -240,7 +241,7 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
       await loadLibrary();
       notify("Material restaurado.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível restaurar.");
+      notify(error instanceof Error ? error.message : "Não foi possível restaurar.", "error");
     } finally { setBusy(false); }
   }
 
@@ -257,7 +258,7 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
       }));
       setJourneys(groups.flat());
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível carregar as Jornadas.");
+      notify(error instanceof Error ? error.message : "Não foi possível carregar as Jornadas.", "error");
     }
   }
 
@@ -300,7 +301,7 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
       setUsage(await fetchLibraryResourceUsage(selected.id));
       notify(`Material adicionado como snapshot da revisão ${selected.revision}.`);
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível adicionar à Jornada.");
+      notify(error instanceof Error ? error.message : "Não foi possível adicionar à Jornada.", "error");
     } finally { setBusy(false); }
   }
 
@@ -312,7 +313,7 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
       setUsage(await fetchLibraryResourceUsage(selected.id));
       notify(`Snapshot atualizado para a revisão ${selected.revision}.`);
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível atualizar o snapshot.");
+      notify(error instanceof Error ? error.message : "Não foi possível atualizar o snapshot.", "error");
     } finally { setBusy(false); }
   }
 

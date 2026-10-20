@@ -7,6 +7,7 @@ import {
   readProjectorPresence,
   requestProjectorClose,
 } from "@/lib/projector-window-control";
+import type { Notify } from "@/components/ui";
 
 type ProjectorControl = {
   projecting: boolean;
@@ -17,7 +18,7 @@ type ProjectorControl = {
 /** A session-scoped toggle for projector tabs opened in this browser/origin.
  * The teacher's control reflects a live acknowledgement from the projector,
  * never the unverified result of window.open() with noopener. */
-export function useProjectorControl(code: string | undefined, notify: (message: string) => void): ProjectorControl {
+export function useProjectorControl(code: string | undefined, notify: Notify): ProjectorControl {
   const [projecting, setProjecting] = useState(false);
   const [pending, setPending] = useState(false);
   const pendingSinceRef = useRef<number | null>(null);

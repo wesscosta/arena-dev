@@ -5,11 +5,12 @@ import { secureId } from "@/lib/secure-id";
 import { useEffect, useState } from "react";
 import { annotateErrorClinic, fetchErrorClinic, type ErrorClinicView } from "@/lib/learning-error-clinic-api";
 import styles from "./LearningErrorClinicPanel.module.css";
+import type { Notify } from "@/components/ui";
 
 type Props = {
   sessionId: string;
   runId: string;
-  notify: (message: string) => void;
+  notify: Notify;
 };
 
 export default function LearningErrorClinicPanel({ sessionId, runId, notify }: Props) {
@@ -48,7 +49,7 @@ export default function LearningErrorClinicPanel({ sessionId, runId, notify }: P
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "Não foi possível registrar a análise.";
       setError(message);
-      notify(message);
+      notify(message, "error");
     } finally { setBusy(false); }
   }
 

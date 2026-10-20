@@ -10,5 +10,7 @@ export { default as LiveRegion } from "./LiveRegion";
 export { Menu, MenuItem } from "./Menu";
 export { default as RadioCard } from "./RadioCard";
 export { default as Tabs } from "./Tabs";
+export { default as Toast } from "./Toast";
+export type { Notify, ToastMessage, ToastTone } from "./Toast";
 export type { TabItem } from "./Tabs";
 export { default as DialogCloseButton } from "./DialogCloseButton";

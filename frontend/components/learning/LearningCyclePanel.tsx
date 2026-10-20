@@ -15,12 +15,13 @@ import {
   type InterventionType,
 } from "@/lib/learning-cycle-api";
 import styles from "./LearningCyclePanel.module.css";
+import type { Notify } from "@/components/ui";
 
 type Props = {
   sessionId: string;
   state: LearningCheckState;
   onStateChange: (state: LearningCheckState) => void;
-  notify: (message: string) => void;
+  notify: Notify;
   onOpenGroups: () => void;
 };
 
@@ -105,7 +106,7 @@ export default function LearningCyclePanel({
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "Ação indisponível.";
       setError(message);
-      notify(message);
+      notify(message, "error");
     } finally {
       setBusy(false);
     }

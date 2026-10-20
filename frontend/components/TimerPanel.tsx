@@ -23,12 +23,13 @@ import {
   timerRemainingSeconds,
   timerStatusLabel,
 } from "@/lib/timer-clock";
+import type { Notify } from "@/components/ui";
 
 type Props = {
   sessionId: string;
   state: TimerState;
   onStateChange: (state: TimerState) => void;
-  notify: (message: string) => void;
+  notify: Notify;
 };
 
 type DurationPart = "hours" | "minutes" | "seconds";
@@ -78,7 +79,7 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
         if (active) onStateChange(next);
       })
       .catch((error) => {
-        if (active) notify(message(error));
+        if (active) notify(message(error), "error");
       });
     return () => {
       active = false;
@@ -163,7 +164,7 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
       if (options.openFocus) setFocusOpen(true);
       if (options.closeFocus) setFocusOpen(false);
     } catch (error) {
-      notify(message(error));
+      notify(message(error), "error");
     } finally {
       setBusy(false);
     }
@@ -182,7 +183,7 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
       setNowMs(Date.now());
       notify(`Timer de ${formatTimer(durationSeconds)} preparado.`);
     } catch (error) {
-      notify(message(error));
+      notify(message(error), "error");
     } finally {
       setBusy(false);
     }
@@ -202,7 +203,7 @@ export default function TimerPanel({ sessionId, state, onStateChange, notify }: 
       setNowMs(Date.now());
       if (openFocusOnStart) setFocusOpen(true);
     } catch (error) {
-      notify(message(error));
+      notify(message(error), "error");
     } finally {
       setBusy(false);
     }

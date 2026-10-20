@@ -16,6 +16,7 @@ import {
 import styles from "./QuizPanel.module.css";
 import DynamicHeader from "@/components/arena/dynamics/DynamicHeader";
 import DynamicSection from "@/components/arena/dynamics/DynamicSection";
+import type { Notify } from "@/components/ui";
 
 type Props = {
   sessionId: string;
@@ -24,7 +25,7 @@ type Props = {
   questions: ActivityQuestion[];
   presentCount: number;
   joinCode: JoinCode | null;
-  notify: (message: string) => void;
+  notify: Notify;
   canAdvanceFlow?: boolean;
   onContinue?: () => Promise<void>;
 };
@@ -99,7 +100,7 @@ export default function QuizPanel({
       onStateChange(await action());
       notify(successMessage);
     } catch (error) {
-      notify(error instanceof Error ? error.message : fallback);
+      notify(error instanceof Error ? error.message : fallback, "error");
     } finally {
       setBusy(false);
     }
@@ -150,7 +151,7 @@ export default function QuizPanel({
         notify("Quiz encerrado. Escolha explicitamente a próxima ação da aula.");
       }
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível continuar a condução.");
+      notify(error instanceof Error ? error.message : "Não foi possível continuar a condução.", "error");
     } finally {
       setBusy(false);
     }
@@ -169,7 +170,7 @@ export default function QuizPanel({
       setPedagogyMode(null);
       notify("Nova rodada preparada com a mesma questão. Abra as respostas quando decidir.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível preparar uma nova tentativa.");
+      notify(error instanceof Error ? error.message : "Não foi possível preparar uma nova tentativa.", "error");
     } finally {
       setBusy(false);
     }

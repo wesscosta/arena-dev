@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import TeacherLogin from "@/components/TeacherLogin";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import ActivityStepEditor from "@/components/ActivityStepEditor";
@@ -57,10 +57,13 @@ import {
   DialogCloseButton,
   Menu,
   MenuItem,
-  LiveRegion,
   Tabs,
+  Toast,
   type BreadcrumbItem,
+  type Notify,
   type TabItem,
+  type ToastMessage,
+  type ToastTone,
 } from "@/components/ui";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
@@ -181,7 +184,9 @@ export default function ArenaApp() {
   const [view, setView] = useState<View>("dashboard");
   const [classroomTab, setClassroomTab] = useState<ClassroomTab>("home");
   const [classroomSettingsIntent, setClassroomSettingsIntent] = useState<"general" | "delete">("general");
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const toastSeq = useRef(0);
+  const dismissToast = useCallback(() => setToast(null), []);
   const [apiError, setApiError] = useState("");
   const [arenaActivityId, setArenaActivityId] = useState<string | undefined>();
   const [themePreference, setThemePreferenceState] = useState<ThemePreference>("system");
@@ -234,12 +239,6 @@ export default function ArenaApp() {
   useEffect(() => {
     if (hydrated) saveData(data);
   }, [data, hydrated]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = window.setTimeout(() => setToast(""), 2500);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
 
   useEffect(() => {
     const initial = loadThemePreference();
@@ -303,8 +302,9 @@ export default function ArenaApp() {
     [classStudents, data.scoreEvents, activeClassroomId],
   );
 
-  function notify(message: string) {
-    setToast(message);
+  function notify(message: string, tone: ToastTone = "info") {
+    toastSeq.current += 1;
+    setToast({ id: toastSeq.current, text: message, tone });
   }
 
   function patch(updater: (current: ArenaData) => ArenaData) {
@@ -358,7 +358,6 @@ export default function ArenaApp() {
       <a className="skip-link" href="#main-content">
         Pular para o conteúdo principal
       </a>
-      <LiveRegion>{toast}</LiveRegion>
       {sessionExpired && (
         <TeacherLogin
           mode="dialog"
@@ -600,7 +599,7 @@ export default function ArenaApp() {
                           }));
                           notify("Lançamento revertido com auditoria preservada.");
                         } catch (error) {
-                          notify(errorMessage(error));
+                          notify(errorMessage(error), "error");
                         }
                       })();
                     }}
@@ -814,7 +813,7 @@ export default function ArenaApp() {
         </section>
       </main>
 
-      {toast && <div className="toast">{toast}</div>}
+      <Toast toast={toast} onDismiss={dismissToast} />
     </div>
   );
 }
@@ -823,7 +822,7 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
   data: ArenaData;
   onSelectClassroom: (classroomId: string) => void;
   onManageClassroom: (classroomId: string, intent: "general" | "delete") => void;
-  notify: (message: string) => void;
+  notify: Notify;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
   const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
@@ -890,7 +889,7 @@ function OverviewView({ data, onSelectClassroom, onManageClassroom, notify, refr
       await refreshClassroomDomain(classroom.id);
       notify(classroom.active ? "Turma desativada." : "Turma reativada.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setOpenCardMenuId(null);
     }
@@ -1281,7 +1280,7 @@ function ClassroomHome({ classroom, data, students, currentSession, onOpenArena,
 function StudentsView({ data, classroomId, notify, refreshClassroomDomain }: {
   data: ArenaData;
   classroomId: string;
-  notify: (message: string) => void;
+  notify: Notify;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
   return (
@@ -1306,7 +1305,7 @@ function StudentManager({
 }: {
   data: ArenaData;
   classroomId: string;
-  notify: (message: string) => void;
+  notify: Notify;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
   showSummary?: boolean;
   showPageHeader?: boolean;
@@ -1365,7 +1364,7 @@ function StudentManager({
       }
       return true;
     } catch (error) {
-      if (!silent) notify(errorMessage(error));
+      if (!silent) notify(errorMessage(error), "error");
       return false;
     } finally {
       if (!silent) setBusy(false);
@@ -1419,7 +1418,7 @@ function StudentManager({
       await refreshClassroomDomain(classroomId);
       notify("Aluno removido da turma.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setBusy(false);
     }
@@ -1439,7 +1438,7 @@ function StudentManager({
       setEditingStudentId(null);
       notify("Nome de exibição atualizado.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setBusy(false);
     }
@@ -1455,7 +1454,7 @@ function StudentManager({
         active ? "Aluno inativado na turma." : "Aluno reativado na turma.",
       );
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setBusy(false);
     }
@@ -1808,7 +1807,7 @@ function ClassroomCreateModal({ data, onClose, onCreated, notify, refreshClassro
   data: ArenaData;
   onClose: () => void;
   onCreated: (classroomId: string) => void;
-  notify: (message: string) => void;
+  notify: Notify;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
   const [step, setStep] = useState<1 | 2>(1);
@@ -1827,7 +1826,7 @@ function ClassroomCreateModal({ data, onClose, onCreated, notify, refreshClassro
       setStep(2);
       notify("Turma criada. Agora inclua os alunos ou conclua por enquanto.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setBusy(false);
     }
@@ -1876,7 +1875,7 @@ function ClassroomManagementPage({
   initialAction?: "general" | "delete";
   onBack: () => void;
   onDeleted: () => void;
-  notify: (message: string) => void;
+  notify: Notify;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
   const [name, setName] = useState(classroom.name);
@@ -1931,7 +1930,7 @@ function ClassroomManagementPage({
       await refreshClassroomDomain(classroom.id);
       notify("Configurações da turma salvas.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setBusy(false);
     }
@@ -1954,7 +1953,7 @@ function ClassroomManagementPage({
       notify(archived ? "Turma arquivada. O histórico foi preservado." : "Turma reativada.");
       setManagementAction(null);
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setBusy(false);
     }
@@ -1978,7 +1977,7 @@ function ClassroomManagementPage({
         ? "Espaço de estudo disponibilizado aos alunos."
         : "As Jornadas foram ocultadas. O progresso dos alunos foi preservado.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setBusy(false);
     }
@@ -1993,7 +1992,7 @@ function ClassroomManagementPage({
       notify("Turma excluída definitivamente. Os cadastros globais dos alunos foram preservados.");
       onDeleted();
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setBusy(false);
     }
@@ -2271,7 +2270,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
   onLogout: () => void;
   onSessionEnded: () => void;
   patch: (updater: (current: ArenaData) => ArenaData) => void;
-  notify: (message: string) => void;
+  notify: Notify;
 }) {
   const [presentIds, setPresentIds] = useState<string[]>(students.map((s) => s.id));
   const [title, setTitle] = useState(`Aula · ${todayTitle()}`);
@@ -2408,7 +2407,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
             ? mergeSessionMechanics(session, runtime) : session),
         }));
       })
-      .catch((error) => { if (active) notify(errorMessage(error)); });
+      .catch((error) => { if (active) notify(errorMessage(error), "error"); });
     return () => { active = false; };
   }, [currentSession?.id]);
 
@@ -2444,7 +2443,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         if (active) setLiveFlowState(flow);
       })
       .catch((error) => {
-        if (active) notify(errorMessage(error));
+        if (active) notify(errorMessage(error), "error");
       });
 
     return () => {
@@ -2522,7 +2521,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       resetNavigation(activityId ? "runbook" : "draw");
       notify("Arena iniciada. Sessão e mecânicas estão no PostgreSQL.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setSessionBusy(false);
     }
@@ -2560,7 +2559,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         onSessionEnded();
       }, 0);
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setSessionBusy(false);
     }
@@ -2582,7 +2581,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         } : session),
       }));
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setPresenceBusyId(undefined);
     }
@@ -2599,7 +2598,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }));
       notify(`Dispositivo de ${participant.displayName || participant.preferredName || participant.nickname || participant.name} liberado.`);
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setPresenceBusyId(undefined);
     }
@@ -2609,7 +2608,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
     try {
       const result = await drawSession.draw();
       if (result) setSelectedId(result.studentId);
-    } catch (error) { notify(errorMessage(error)); }
+    } catch (error) { notify(errorMessage(error), "error"); }
   }
 
   async function resolveParticipant(outcome: "CONFIRMED" | "PASSED" | "VOIDED", points?: number) {
@@ -2625,17 +2624,17 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }
       notify(outcome === "CONFIRMED" ? (points == null ? "Participação confirmada sem XP." : `Participação confirmada: +${points} XP.`)
         : outcome === "PASSED" ? "Vez passada sem pontuação." : "Sorteio anulado; participante volta a ficar elegível.");
-    } catch (error) { notify(errorMessage(error)); }
+    } catch (error) { notify(errorMessage(error), "error"); }
   }
 
   async function changeDrawPolicy(policy: "ROUND_ROBIN_SHUFFLED" | "BALANCED_WEIGHTED") {
     try { await drawSession.changePolicy(policy); }
-    catch (error) { notify(errorMessage(error)); }
+    catch (error) { notify(errorMessage(error), "error"); }
   }
 
   async function startNextDrawRound() {
     try { await drawSession.nextRound(); }
-    catch (error) { notify(errorMessage(error)); }
+    catch (error) { notify(errorMessage(error), "error"); }
   }
 
   async function changeDrawPresentation(mode: ParticipantSelectorMode) {
@@ -2661,7 +2660,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           : "Apresentação do sorteio alterada para Grid + Spotlight.",
       );
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setDrawPresentationBusy(false);
     }
@@ -2695,7 +2694,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       );
     } catch (error) {
       setActivityId(currentSession.activityId ?? "");
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setMechanicsBusy(false);
     }
@@ -2725,7 +2724,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       applyLiveFlowResult(await startLiveFlow(currentSession.id));
       notify("Roteiro ao Vivo iniciado.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setLiveFlowBusy(false);
     }
@@ -2753,7 +2752,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
         );
       }
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setLiveFlowBusy(false);
     }
@@ -2775,7 +2774,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }));
       if (result.completed) notify("Todas as questões desta atividade já foram apresentadas.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setMechanicsBusy(false);
     }
@@ -2794,7 +2793,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }));
       notify("Sequência de questões reiniciada.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setMechanicsBusy(false);
     }
@@ -2815,7 +2814,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }));
       notify(groupSize === 1 ? "Organização individual ativada." : `${result.groups.length} grupo(s) organizado(s) com histórico persistido.`);
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setMechanicsBusy(false);
     }
@@ -2863,7 +2862,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }));
       notify("Composição dos grupos salva.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setMechanicsBusy(false);
     }
@@ -2882,7 +2881,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       }));
       notify("Boss iniciado e persistido.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setMechanicsBusy(false);
     }
@@ -2900,7 +2899,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
           : session),
       }));
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setMechanicsBusy(false);
     }
@@ -2914,7 +2913,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       setJoinCode(next);
       notify("Novo código da sessão gerado. O anterior foi invalidado.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setRealtimeBusy(false);
     }
@@ -2928,7 +2927,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       setBuzzerState(state);
       if (open) setSelectedId(undefined);
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setRealtimeBusy(false);
     }
@@ -2944,7 +2943,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       await navigator.clipboard.writeText(joinCode.code);
       notify("Código da sessão copiado.");
     } catch {
-      notify("Não foi possível copiar o código automaticamente.");
+      notify("Não foi possível copiar o código automaticamente.", "error");
     }
   }
 
@@ -2955,7 +2954,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
       const next = await updateRankingPresentation(currentSession.id, input);
       setRankingState(next);
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setRankingBusy(false);
     }
@@ -3196,7 +3195,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 <h2>Verificar estado do sorteio</h2>
                 <p>A conexão falhou durante um comando. Ele pode ter sido registrado no servidor. Não repita o sorteio nem conceda XP até conferir o estado atualizado.</p>
                 <button type="button" className="button secondary" onClick={() => {
-                  void drawSession.refresh().catch(() => notify("Ainda sem conexão. Tente sincronizar ao reconectar."));
+                  void drawSession.refresh().catch(() => notify("Ainda sem conexão. Tente sincronizar ao reconectar.", "error"));
                 }}>Sincronizar sorteio</button>
               </section>
             ) : drawSession.error ? (
@@ -3205,7 +3204,7 @@ function ArenaView({ data, classroomId, students, currentSession, sessionPartici
                 <p>{errorMessage(drawSession.error)}</p>
                 <p>Se a sessão começou com o sorteio de outra versão, conclua-a antes de usar o novo formato com confirmação.</p>
                 <button type="button" className="button secondary" onClick={() => {
-                  void drawSession.refresh().catch((error) => notify(errorMessage(error)));
+                  void drawSession.refresh().catch((error) => notify(errorMessage(error), "error"));
                 }}>Tentar novamente</button>
               </section>
             ) : selectorMode === "grid-spotlight" ? (
@@ -3928,7 +3927,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
   students: Student[];
   onUseInArena: (activityId: string) => void;
   patch: (updater: (current: ArenaData) => ArenaData) => void;
-  notify: (message: string) => void;
+  notify: Notify;
 }) {
   type ActivityModal = "editor" | "delivery" | "import" | "external-results" | null;
   type EditorTab = "general" | "questions" | "flow";
@@ -4035,7 +4034,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
       try {
         new URL(resourceUrl.trim());
       } catch {
-        notify("Informe um link externo válido.");
+        notify("Informe um link externo válido.", "error");
         return false;
       }
     }
@@ -4062,7 +4061,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
       if (closeAfter) setModal(null);
       return saved;
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
       return undefined;
     } finally {
       setActivityBusy(false);
@@ -4077,7 +4076,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
       setStepsActivityId(activityIdToLoad);
       setStepsDirty(false);
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setStepsLoading(false);
     }
@@ -4101,7 +4100,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
 
     const errors = validateActivitySteps(activitySteps, questions);
     if (errors.length) {
-      notify(errors[0]);
+      notify(errors[0], "error");
       return;
     }
 
@@ -4113,7 +4112,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
       setStepsDirty(false);
       notify("Roteiro ao Vivo salvo no PostgreSQL.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setActivityBusy(false);
     }
@@ -4164,7 +4163,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
       setModal(null);
       notify(`XP persistido para ${delivered.length} aluno(s).`);
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     }
   }
 
@@ -4204,7 +4203,7 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
       setModal(null);
       notify(`Atividade "${source.title}" copiada para ${classroomName} no PostgreSQL.`);
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setActivityBusy(false);
     }
@@ -4452,7 +4451,7 @@ function HistoryView({ classroomId, events, students, onReverse }: { classroomId
 function BackupView({ data, setData, notify, refreshClassroomDomain }: {
   data: ArenaData;
   setData: React.Dispatch<React.SetStateAction<ArenaData>>;
-  notify: (message: string) => void;
+  notify: Notify;
   refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
 }) {
   const [busy, setBusy] = useState(false);
@@ -4476,7 +4475,7 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
         if (!Array.isArray(parsed.classrooms) || !Array.isArray(parsed.activities)) throw new Error();
         notify("Snapshot válido. A restauração direta foi desativada porque o núcleo agora é autoritativo no PostgreSQL; a restauração server-side entra em um incremento próprio.");
       } catch {
-        notify("Arquivo de snapshot inválido.");
+        notify("Arquivo de snapshot inválido.", "error");
       }
     };
     reader.readAsText(file);
@@ -4510,7 +4509,7 @@ function BackupView({ data, setData, notify, refreshClassroomDomain }: {
       }));
       notify("Demonstração criada no PostgreSQL, incluindo XP.");
     } catch (error) {
-      notify(errorMessage(error));
+      notify(errorMessage(error), "error");
     } finally {
       setBusy(false);
     }

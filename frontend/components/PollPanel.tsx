@@ -9,12 +9,13 @@ import DynamicHeader from "@/components/arena/dynamics/DynamicHeader";
 import QuestionComposer from "@/components/arena/dynamics/QuestionComposer";
 import ToggleField from "@/components/arena/dynamics/ToggleField";
 import DynamicSection from "@/components/arena/dynamics/DynamicSection";
+import type { Notify } from "@/components/ui";
 
 type Props = {
   sessionId: string;
   state: PollState;
   onStateChange: (state: PollState) => void;
-  notify: (message: string) => void;
+  notify: Notify;
   joinCode: JoinCode | null;
   publicBaseUrl: string;
   realtimeStatus: "offline" | "connecting" | "online";
@@ -60,7 +61,7 @@ export default function PollPanel({ sessionId, state, onStateChange, notify, joi
       setOptions(["", ""]);
       notify("Votação aberta para a turma.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível abrir a votação.");
+      notify(error instanceof Error ? error.message : "Não foi possível abrir a votação.", "error");
     } finally { setBusy(false); }
   }
 
@@ -68,7 +69,7 @@ export default function PollPanel({ sessionId, state, onStateChange, notify, joi
     if (!round || busy) return;
     setBusy(true);
     try { onStateChange(await revealPoll(sessionId, round.id)); notify("Resultados revelados para a turma."); }
-    catch (error) { notify(error instanceof Error ? error.message : "Não foi possível revelar os resultados."); }
+    catch (error) { notify(error instanceof Error ? error.message : "Não foi possível revelar os resultados.", "error"); }
     finally { setBusy(false); }
   }
 
@@ -80,7 +81,7 @@ export default function PollPanel({ sessionId, state, onStateChange, notify, joi
     }
     setBusy(true);
     try { onStateChange(await closePoll(sessionId, round.id)); notify("Votação encerrada."); }
-    catch (error) { notify(error instanceof Error ? error.message : "Não foi possível encerrar a votação."); }
+    catch (error) { notify(error instanceof Error ? error.message : "Não foi possível encerrar a votação.", "error"); }
     finally { setBusy(false); }
   }
 
