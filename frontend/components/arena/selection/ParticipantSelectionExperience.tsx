@@ -67,12 +67,18 @@ export default function ParticipantSelectionExperience({
   const drawButtonRef = useRef<HTMLButtonElement | null>(null);
   const spotlightRef = useRef<HTMLDivElement | null>(null);
   const previousPhaseRef = useRef<ParticipantSelectionPhase>(phase);
+  // After the Spotlight resolves, focus returns to the draw command. The command
+  // may still be disabled while the result is saved (slow networks), and a
+  // disabled button cannot take focus, so the return waits until it is enabled.
+  const focusReturnPendingRef = useRef(false);
+  const drawDisabled = busy || phase === "revealed" || presentStudentIds.length === 0;
 
   useEffect(() => {
     const previousPhase = previousPhaseRef.current;
     previousPhaseRef.current = phase;
 
     if (phase === "revealed" && selectedStudentId) {
+      focusReturnPendingRef.current = false;
       window.requestAnimationFrame(() => {
         spotlightRef.current?.focus({ preventScroll: true });
       });
@@ -80,13 +86,20 @@ export default function ParticipantSelectionExperience({
     }
 
     if (previousPhase === "revealed" && phase === "ready") {
-      window.requestAnimationFrame(() => {
-        if (!drawButtonRef.current?.disabled) {
-          drawButtonRef.current?.focus({ preventScroll: true });
-        }
-      });
+      focusReturnPendingRef.current = true;
     }
   }, [phase, selectedStudentId]);
+
+  useEffect(() => {
+    if (!focusReturnPendingRef.current || drawDisabled) return;
+    const frame = window.requestAnimationFrame(() => {
+      const button = drawButtonRef.current;
+      if (!button || button.disabled) return;
+      focusReturnPendingRef.current = false;
+      button.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [phase, drawDisabled]);
 
   useEffect(() => {
     if (phase !== "revealed" || !selectedStudentId) return;
@@ -159,7 +172,7 @@ export default function ParticipantSelectionExperience({
             type="button"
             className={styles.drawButton}
             onClick={onDraw}
-            disabled={busy || phase === "revealed" || presentStudentIds.length === 0}
+            disabled={drawDisabled}
           >
             {phase === "selecting" ? "Selecionando..." : "Sortear participante"}
           </button>
