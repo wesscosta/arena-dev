@@ -251,6 +251,30 @@ Liveness: `http://localhost:8080/api/health/live`
 
 Em acesso pela rede local, compartilhe apenas o frontend, por exemplo `http://<IP-DA-MAQUINA>:3000`. No perfil Docker de desenvolvimento, o browser usa essa mesma origem para `/api/*` e `/ws/*`, e o Next.js encaminha as requisições para o backend pela rede interna do Compose. Assim, Join, Learn e tempo real não dependem de a porta `:8080` estar acessível no dispositivo do aluno. O banco e o backend de desenvolvimento escutam só em `127.0.0.1` (`POSTGRES_BIND`, `BACKEND_BIND`); os aparelhos da sala usam apenas o frontend. Não exponha o banco na rede da sala, porque a senha padrão de `.env.example` é pública.
 
+## Operação em sala
+
+Para usar com uma turma, prefira `scripts/arena.sh` ao `docker compose` direto. Ele usa o perfil de sala (`compose.yaml` + `compose.classroom.yaml`): só o frontend fica acessível na rede, Postgres e backend ficam sem porta publicada, e os serviços reiniciam sozinhos.
+
+```bash
+scripts/arena.sh install     # cria o .env com senhas aleatórias e sobe tudo
+scripts/arena.sh status      # serviços, saúde e endereço para os alunos
+scripts/arena.sh backup      # aceita --keep N e --encrypt-to <chave-age>
+scripts/arena.sh upgrade     # backup, git pull, rebuild e conferência de saúde
+scripts/arena.sh restore ARQUIVO
+```
+
+O `install` mostra a senha do professor uma única vez; depois ela fica só no `.env` (permissão 600). O script recusa subir com as senhas de exemplo do `.env.example`. Se o banco já foi criado com a senha antiga, trocar `POSTGRES_PASSWORD` no `.env` não muda a senha dentro do volume: faça backup, recrie o volume e restaure.
+
+HTTPS é opcional (`ARENA_HTTPS=1` e `ARENA_HOSTNAME` no `.env`). Ele acrescenta `compose.https.yaml`, um Caddy com certificado próprio na porta 443. Serve para a PWA instalar o service worker nos celulares. O custo é que cada aparelho precisa confiar no certificado raiz, exportado com `scripts/arena.sh https-ca arena-ca.crt`. Sem isso, o navegador mostra alerta de segurança. Em HTTP o Arena funciona normalmente, só sem instalação como app.
+
+Roteiro:
+
+- **Antes da aula:** `scripts/arena.sh status`, confira "Saúde: OK", projete o endereço `/join` e teste a entrada com um celular.
+- **Durante a aula:** se um aluno perder a conexão, a página reconecta sozinha. Se a máquina reiniciar, os serviços voltam sozinhos; confira com `status`.
+- **Depois da aula:** `scripts/arena.sh backup` (com `BACKUP_KEEP`, os backups antigos são apagados).
+- **Atualização:** fora do horário de aula, `scripts/arena.sh upgrade`. Se a nova versão não ficar saudável, o script mostra o commit anterior e o backup para voltar.
+- **Restauração:** `scripts/arena.sh restore ARQUIVO` valida o dump num Postgres temporário, faz um backup de segurança e só então substitui o banco.
+
 ## Gates de desenvolvimento
 
 Backend:

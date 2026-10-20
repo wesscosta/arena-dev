@@ -1,0 +1,26 @@
+# Optional HTTPS for the classroom profile (ARENA_HTTPS=1 in .env).
+# Phones only install the PWA service worker over HTTPS. Caddy issues a
+# certificate from its own local CA for ARENA_HOSTNAME (an IP or LAN name);
+# export the CA with `scripts/arena.sh https-ca arena-ca.crt` and trust it on
+# each device once.
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    command: caddy reverse-proxy --from "https://${ARENA_HOSTNAME:?defina ARENA_HOSTNAME no .env}" --to frontend:3000 --internal-certs
+    ports:
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+    depends_on:
+      frontend:
+        condition: service_healthy
+    restart: unless-stopped
+  frontend:
+    ports: !reset []
+  backend:
+    environment:
+      APP_FRONTEND_URL: https://${ARENA_HOSTNAME}
+      APP_ALLOWED_ORIGIN_PATTERNS: https://${ARENA_HOSTNAME}
+
+volumes:
+  caddy_data:
