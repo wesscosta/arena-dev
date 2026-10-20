@@ -21,7 +21,9 @@ async function socketViolation(page: Page, url: string) {
   }, url);
 }
 
-test("v0.11 / 11.6 rc.3 CSP: WebSockets only to the serving host", async ({ page }) => {
+test("v0.11 / 11.6 rc.3 CSP: WebSockets only to the serving host", async ({ page, allowedBrowserErrors }) => {
+  // The blocked exfiltration socket is what this test proves.
+  allowedBrowserErrors.push(/exfiltration\.example\.invalid/);
   const response = await page.goto("/");
   const policy = response?.headers()["content-security-policy"] ?? "";
   const host = new URL(page.url()).host;

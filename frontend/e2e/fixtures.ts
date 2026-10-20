@@ -10,7 +10,10 @@ export * from "@playwright/test";
 const EXPECTED_BROWSER_NOISE = [/Failed to load resource: the server responded with a status of 4\d\d/];
 
 type BrowserErrorOptions = {
-  /** Per-test allowance for errors a test provokes on purpose (e.g. going offline). */
+  /**
+   * Errors a test provokes on purpose (going offline, aborting a response,
+   * probing the CSP). The test pushes the exact pattern it expects.
+   */
   allowedBrowserErrors: RegExp[];
 };
 
@@ -21,7 +24,8 @@ type BrowserErrorOptions = {
  * later assertion happens to depend on it.
  */
 export const test = base.extend<BrowserErrorOptions & { browserErrorGuard: void }>({
-  allowedBrowserErrors: [[], { option: true }],
+  // eslint-disable-next-line no-empty-pattern -- Playwright fixtures must destructure.
+  allowedBrowserErrors: async ({}, use) => { await use([]); },
   browserErrorGuard: [async ({ browser, context, allowedBrowserErrors }, use) => {
     const errors: string[] = [];
     // Init scripts that seed localStorage also run on about:blank, where

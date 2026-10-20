@@ -953,7 +953,9 @@ test("Painel pedagógico conserva o cockpit e explica ausência de evidências e
   } finally { await api.dispose(); }
 });
 
-test("perda da resposta HTTP depois do commit do sorteio exige reconciliação e não duplica XP", async ({ browser }) => {
+test("perda da resposta HTTP depois do commit do sorteio exige reconciliação e não duplica XP", async ({ browser, allowedBrowserErrors }) => {
+  // The test aborts the committed response on purpose.
+  allowedBrowserErrors.push(/Failed to load resource: net::ERR_FAILED/);
   test.setTimeout(100_000);
   const { api, csrfHeaders } = await authenticatedApi();
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
