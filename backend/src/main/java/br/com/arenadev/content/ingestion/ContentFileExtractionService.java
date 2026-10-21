@@ -12,7 +12,6 @@ import java.util.Locale;
 @Service
 public class ContentFileExtractionService {
     private static final long MAX_FILE_BYTES = 20L * 1024L * 1024L;
-    private static final int MAX_EXTRACTED_CHARACTERS = 120_000;
     private static final List<String> SUPPORTED_EXTENSIONS = List.of(
             ".md", ".markdown", ".txt", ".pdf", ".doc", ".docx", ".ppt", ".pptx"
     );
@@ -20,7 +19,10 @@ public class ContentFileExtractionService {
     private final Tika tika = new Tika();
 
     public ContentFileExtractionService() {
-        tika.setMaxStringLength(MAX_EXTRACTED_CHARACTERS);
+        // One character past the limit: Tika truncates silently, so a longer
+        // extraction is how an oversized file is detected and refused instead
+        // of losing its end without the teacher noticing.
+        tika.setMaxStringLength(ContentIngestionLimits.MAX_ANALYSIS_CHARACTERS + 1);
     }
 
     public ExtractedFile extract(MultipartFile file) {
@@ -39,6 +41,10 @@ public class ContentFileExtractionService {
 
         try {
             String text = tika.parseToString(file.getInputStream());
+            if (text.length() > ContentIngestionLimits.MAX_ANALYSIS_CHARACTERS) {
+                throw new IllegalArgumentException("O arquivo tem mais de 1 milhão de caracteres de texto, o limite por análise. "
+                        + "Divida o material em partes e importe cada uma separadamente.");
+            }
             String normalized = normalize(text);
             if (normalized.isBlank()) {
                 throw new IllegalArgumentException("Não foi possível identificar texto útil neste arquivo.");
@@ -73,7 +79,7 @@ public class ContentFileExtractionService {
 
     private static String normalize(String value) {
         if (value == null) return "";
-        String cleaned = value
+        return value
                 .replace("\u0000", "")
                 .replace("\r\n", "\n")
                 .replace('\r', '\n')
@@ -81,8 +87,6 @@ public class ContentFileExtractionService {
                 .replaceAll("[ ]{2,}", " ")
                 .replaceAll("\\n{4,}", "\n\n\n")
                 .trim();
-        if (cleaned.length() <= MAX_EXTRACTED_CHARACTERS) return cleaned;
-        return cleaned.substring(0, MAX_EXTRACTED_CHARACTERS);
     }
 
     public record ExtractedFile(

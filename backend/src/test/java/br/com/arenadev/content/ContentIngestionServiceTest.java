@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 class ContentIngestionServiceTest {
@@ -384,5 +385,24 @@ class ContentIngestionServiceTest {
         UUID id = UUID.randomUUID();
         when(classrooms.existsById(id)).thenReturn(true);
         return id;
+    }
+
+    @Test
+    void analysesMaterialsAboveTheFormerLimitAndExplainsTheNewOne() {
+        StringBuilder markdown = new StringBuilder("# Livro\n\n");
+        for (int section = 1; markdown.length() < 300_000; section++) {
+            markdown.append("## Capítulo ").append(section).append("\n\n")
+                    .append("Banco de dados organiza e armazena dados para leitura. ".repeat(40)).append("\n\n");
+        }
+        var draft = service.preview(new ContentIngestionService.PreviewRequest(
+                classroom(), ContentIngestionSource.MARKDOWN, null, null, null, markdown.toString(), null, "livro.md"));
+        assertThat(draft.sections()).isNotEmpty();
+
+        String tooLong = "a".repeat(ContentIngestionLimits.MAX_ANALYSIS_CHARACTERS + 1);
+        assertThatThrownBy(() -> service.preview(new ContentIngestionService.PreviewRequest(
+                classroom(), ContentIngestionSource.TEXT, "Livro", null, null, tooLong, null, null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("1.000.001 caracteres")
+                .hasMessageContaining("limite por análise é de 1 milhão");
     }
 }

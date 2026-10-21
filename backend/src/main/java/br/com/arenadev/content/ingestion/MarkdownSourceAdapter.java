@@ -56,7 +56,7 @@ public class MarkdownSourceAdapter implements ContentSourceAdapter {
     private static String requireContent(String value) {
         String content = clean(value);
         if (content == null) throw new IllegalArgumentException("Forneça o conteúdo a ser analisado.");
-        if (content.length() > 120_000) throw new IllegalArgumentException("O conteúdo excede o limite de 120 mil caracteres por análise.");
+        ContentIngestionLimits.requireWithinAnalysisLimit(content);
         return content;
     }
     private static String clean(String value) { return value == null || value.isBlank() ? null : value.trim(); }

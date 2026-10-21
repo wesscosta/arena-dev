@@ -119,4 +119,25 @@ class ContentFileExtractionServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Formato não suportado");
     }
+
+    @Test
+    void refusesAFileLongerThanTheAnalysisLimitInsteadOfCuttingItsEnd() {
+        String text = "Banco de dados organiza informação. ".repeat(30_000);
+        var file = new MockMultipartFile("file", "livro.txt", "text/plain", text.getBytes(StandardCharsets.UTF_8));
+
+        assertThatThrownBy(() -> service.extract(file))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("mais de 1 milhão de caracteres");
+    }
+
+    @Test
+    void keepsTheEndOfAFileAboveTheFormerLimit() {
+        String text = "Banco de dados organiza informação. ".repeat(5_000) + "FIM DO MATERIAL";
+        var file = new MockMultipartFile("file", "apostila.txt", "text/plain", text.getBytes(StandardCharsets.UTF_8));
+
+        var extracted = service.extract(file);
+
+        assertThat(extracted.content().length()).isGreaterThan(120_000);
+        assertThat(extracted.content()).endsWith("FIM DO MATERIAL");
+    }
 }
