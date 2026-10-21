@@ -72,13 +72,19 @@ async function createJourneyWithCode() {
     title: "Verificar ambiente", body, format: "MARKDOWN", sourceType: "MANUAL", language: "pt-BR" }, headers });
   expect(material.ok()).toBe(true);
   const { id: resourceId } = await material.json() as { id: string };
+  const second = await api.post("/api/library/resources", { data: {
+    title: "Configurar o editor", body: "# Configurar o editor\n\nInstale a extensão de Python.", format: "MARKDOWN", sourceType: "MANUAL", language: "pt-BR" }, headers });
+  expect(second.ok()).toBe(true);
+  const { id: secondResourceId } = await second.json() as { id: string };
   const journey = await api.post("/api/journeys", { data: { classroomId: classroom.id, title: "Jornada WCAG", stages: [{
     title: "Etapa 01. Verificar ambiente", unlockRule: "IMMEDIATE", completionRule: "MANUAL", sectionTitle: "Pré-requisitos",
-    itemType: "CONTENT", learningResourceId: resourceId }] }, headers });
+    itemType: "CONTENT", learningResourceId: resourceId }, {
+    title: "Etapa 02. Configurar o editor", unlockRule: "IMMEDIATE", completionRule: "MANUAL", sectionTitle: "Pré-requisitos",
+    itemType: "CONTENT", learningResourceId: secondResourceId }] }, headers });
   expect(journey.ok()).toBe(true);
   const created = await journey.json() as { id: string; stages: Array<{ id: string }> };
   await api.dispose();
-  return { journeyId: created.id, contentId: created.stages[0].id };
+  return { journeyId: created.id, contentId: created.stages[0].id, nextContentId: created.stages[1].id };
 }
 
 for (const theme of ["dark", "light"] as const) {
@@ -226,8 +232,8 @@ for (const theme of ["dark", "light"] as const) {
 
 // rc.7: the preview bar spans the reading column and "Editar jornada" opens
 // that Journey in its classroom instead of the start screen.
-test("prévia do professor ocupa a coluna e Editar jornada abre a Jornada certa", async ({ browser }) => {
-  const { journeyId, contentId } = await createJourneyWithCode();
+test("prévia do professor ocupa a coluna, setas navegam e Editar jornada abre a Jornada certa", async ({ browser }) => {
+  const { journeyId, contentId, nextContentId } = await createJourneyWithCode();
   const context = await browser.newContext({ viewport: { width: 1920, height: 900 } });
   const page = await context.newPage();
   await page.goto("/");
@@ -246,6 +252,16 @@ test("prévia do professor ocupa a coluna e Editar jornada abre a Jornada certa"
   const viewportHeight = page.viewportSize()!.height;
   expect(footerBox && footerBox.y + footerBox.height > viewportHeight - 140).toBe(true);
   await expect(page.getByText("Conteúdo de estudo", { exact: true })).toHaveCount(0);
+
+  // Arrow keys walk the Journey like the footer links.
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByText("Conteúdo 1 de 2")).toBeVisible();
+  await page.keyboard.press("ArrowRight");
+  await expect(page).toHaveURL(new RegExp(`/content/${nextContentId}\\?preview=teacher`));
+  await expect(page.getByRole("heading", { level: 1, name: "Configurar o editor" })).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page).toHaveURL(new RegExp(`/content/${contentId}\\?preview=teacher`));
+  await expect(page.getByText("Conteúdo 1 de 2")).toBeVisible();
 
   await page.getByRole("link", { name: "Editar jornada" }).click();
   await expect(page.getByRole("textbox", { name: "Título", exact: true })).toHaveValue("Jornada WCAG");
