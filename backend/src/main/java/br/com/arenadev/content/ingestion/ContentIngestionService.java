@@ -386,9 +386,7 @@ public class ContentIngestionService {
     private String requireContent(PreviewRequest request) {
         String content = clean(request.content());
         if (content == null) throw new IllegalArgumentException("Forneça o conteúdo a ser analisado.");
-        if (content.length() > 120_000) {
-            throw new IllegalArgumentException("O conteúdo excede o limite de 120 mil caracteres por análise.");
-        }
+        ContentIngestionLimits.requireWithinAnalysisLimit(content);
         return content;
     }
 
