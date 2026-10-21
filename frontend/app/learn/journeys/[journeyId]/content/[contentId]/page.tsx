@@ -44,6 +44,27 @@ export default function ContentReaderPage() {
     return { previous: index > 0 ? flat[index - 1] : null, next: index >= 0 && index < flat.length - 1 ? flat[index + 1] : null, position: index + 1, total: flat.length, moduleTitle: flat[index]?.moduleTitle || "Jornada" };
   }, [data, contentId]);
 
+  // Left/right arrows walk the Journey like the footer links do. The right arrow
+  // only follows a link that is already there; it never concludes a content,
+  // because completion records progress and must stay a deliberate click.
+  const previousHref = navigation.previous ? `/learn/journeys/${journeyId}/content/${navigation.previous.id}${teacherPreview ? "?preview=teacher" : ""}` : null;
+  const nextHref = navigation.next && (teacherPreview || (data?.content.state === "COMPLETED" && navigation.next.state !== "LOCKED"))
+    ? `/learn/journeys/${journeyId}/content/${navigation.next.id}${teacherPreview ? "?preview=teacher" : ""}`
+    : null;
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) return;
+      if (arrowKeysBelongToTarget(event.target)) return;
+      const href = event.key === "ArrowLeft" ? previousHref : nextHref;
+      if (!href) return;
+      event.preventDefault();
+      router.push(href);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [previousHref, nextHref, router]);
+
   async function conclude() {
     if (!data || completing) return;
     setCompleting(true);
@@ -71,8 +92,20 @@ export default function ContentReaderPage() {
     </div>
     {error && <div className={styles.error}>{error}</div>}
     <footer className={styles.readerFooter}>
-      <div>{navigation.previous ? <Link href={`/learn/journeys/${journeyId}/content/${navigation.previous.id}${teacherPreview ? "?preview=teacher" : ""}`}><span>Anterior</span><strong>← {navigation.previous.title}</strong></Link> : <span />}</div>
-      <div>{teacherPreview ? (navigation.next ? <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}/content/${navigation.next.id}?preview=teacher`}>Próximo conteúdo →</Link> : <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}?preview=teacher`}>Voltar à jornada</Link>) : data.content.state === "COMPLETED" ? (navigation.next && navigation.next.state !== "LOCKED" ? <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}/content/${navigation.next.id}`}>Próximo conteúdo →</Link> : <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}`}>Voltar à jornada</Link>) : <button type="button" className={styles.readerPrimary} disabled={completing} onClick={conclude}>{completing ? "Concluindo…" : navigation.next ? "Concluir e continuar →" : "Concluir conteúdo"}</button>}</div>
+      <div>{previousHref ? <Link href={previousHref} aria-keyshortcuts="ArrowLeft"><span>Anterior</span><strong>← {navigation.previous!.title}</strong></Link> : <span />}</div>
+      <div>{teacherPreview ? (navigation.next ? <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}/content/${navigation.next.id}?preview=teacher`} aria-keyshortcuts="ArrowRight">Próximo conteúdo →</Link> : <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}?preview=teacher`}>Voltar à jornada</Link>) : data.content.state === "COMPLETED" ? (navigation.next && navigation.next.state !== "LOCKED" ? <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}/content/${navigation.next.id}`} aria-keyshortcuts="ArrowRight">Próximo conteúdo →</Link> : <Link className={styles.readerPrimary} href={`/learn/journeys/${journeyId}`}>Voltar à jornada</Link>) : <button type="button" className={styles.readerPrimary} disabled={completing} onClick={conclude}>{completing ? "Concluindo…" : navigation.next ? "Concluir e continuar →" : "Concluir conteúdo"}</button>}</div>
     </footer>
   </div>;
+}
+
+// Arrows keep their own meaning in form fields, editable text, and anything
+// that scrolls sideways (wide code blocks and tables).
+function arrowKeysBelongToTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable || target.closest("input, textarea, select, [role='slider'], [role='tablist']")) return true;
+  for (let element: HTMLElement | null = target; element && element !== document.body; element = element.parentElement) {
+    const overflowX = window.getComputedStyle(element).overflowX;
+    if ((overflowX === "auto" || overflowX === "scroll") && element.scrollWidth > element.clientWidth) return true;
+  }
+  return false;
 }
