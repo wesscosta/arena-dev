@@ -407,6 +407,9 @@ public class ContentIngestionService {
     private static String summarize(String value, int max) {
         String text = value == null ? "" : value
                 .replaceAll("(?s)```.*?```", " ")
+                // Table rows and horizontal rules never read as prose.
+                .replaceAll("(?m)^\\s*\\|.*\\|\\s*$", " ")
+                .replaceAll("(?m)^\\s*[-*_]{3,}\\s*$", " ")
                 .replaceAll("(?m)^#{1,6}\\s+", "")
                 .replaceAll("(?m)^\\s*>\\s?", "")
                 .replaceAll("(?m)^\\s*[-*+]\\s+", "")

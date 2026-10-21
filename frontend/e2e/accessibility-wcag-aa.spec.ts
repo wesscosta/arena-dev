@@ -244,7 +244,7 @@ test("prévia do professor ocupa a coluna e Editar jornada abre a Jornada certa"
   expect(barBox && footerBox && Math.abs(barBox.width - footerBox.width) <= 2).toBe(true);
 
   await page.getByRole("link", { name: "Editar jornada" }).click();
-  await expect(page.getByRole("textbox", { name: "Título" })).toHaveValue("Jornada WCAG");
+  await expect(page.getByRole("textbox", { name: "Título", exact: true })).toHaveValue("Jornada WCAG");
   await expect(page).not.toHaveURL(/journey=/);
   await context.close();
 });

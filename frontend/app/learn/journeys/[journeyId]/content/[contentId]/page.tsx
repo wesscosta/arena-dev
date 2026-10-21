@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import JourneyContentReader from "@/components/study/JourneyContentReader";
 import { completeStudyContent, fetchStudyContent, fetchStudyJourney, fetchTeacherContentPreview, fetchTeacherStudyPreview, startStudyContent, studyDeviceClaims, type JourneyContentDetailView, type JourneyStudyView } from "@/lib/study-api";
 import styles from "@/components/study/study.module.css";
-import { studyExcerpt } from "@/lib/study-excerpt";
+import { isExcerptOfBody, studyExcerpt } from "@/lib/study-excerpt";
 
 type ReaderData = { token: string; journey: JourneyStudyView; content: JourneyContentDetailView };
 
@@ -63,10 +63,10 @@ export default function ContentReaderPage() {
     {teacherPreview && <div className={styles.teacherPreviewBar}><span><strong>Prévia do professor</strong> · leitura sem registrar progresso</span><a href={`/?journey=${journeyId}`}>Editar jornada</a></div>}
     <header className={styles.readerTopbar}>
       <Link href={`/learn/journeys/${journeyId}${teacherPreview ? "?preview=teacher" : ""}`}>← {navigation.moduleTitle}</Link>
-      <span>{navigation.position} / {navigation.total}</span>
+      <span>Conteúdo {navigation.position} de {navigation.total}</span>
     </header>
     <div className={styles.readerScaled}>
-      <div className={styles.readerHeading}><p className={styles.eyebrow}>Conteúdo de estudo</p><h1>{data.content.title}</h1>{studyExcerpt(data.content.description, 220) && <p>{studyExcerpt(data.content.description, 220)}</p>}</div>
+      <div className={styles.readerHeading}><p className={styles.eyebrow}>Conteúdo de estudo</p><h1>{data.content.title}</h1>{studyExcerpt(data.content.description, 220) && !isExcerptOfBody(data.content.description, data.content.body) && <p>{studyExcerpt(data.content.description, 220)}</p>}</div>
       <JourneyContentReader content={data.content} />
     </div>
     {error && <div className={styles.error}>{error}</div>}
