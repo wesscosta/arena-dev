@@ -73,7 +73,7 @@ async function createJourneyWithCode() {
   expect(material.ok()).toBe(true);
   const { id: resourceId } = await material.json() as { id: string };
   const second = await api.post("/api/library/resources", { data: {
-    title: "Configurar o editor", body: "# Configurar o editor\n\nInstale a extensão de Python.", format: "MARKDOWN", sourceType: "MANUAL", language: "pt-BR" }, headers });
+    title: "Configurar o editor", body: "Instale a extensão de Python no editor.", format: "MARKDOWN", sourceType: "MANUAL", language: "pt-BR" }, headers });
   expect(second.ok()).toBe(true);
   const { id: secondResourceId } = await second.json() as { id: string };
   const journey = await api.post("/api/journeys", { data: { classroomId: classroom.id, title: "Jornada WCAG", stages: [{
