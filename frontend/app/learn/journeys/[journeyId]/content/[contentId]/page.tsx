@@ -66,7 +66,7 @@ export default function ContentReaderPage() {
       <span>Conteúdo {navigation.position} de {navigation.total}</span>
     </header>
     <div className={styles.readerScaled}>
-      <div className={styles.readerHeading}><p className={styles.eyebrow}>Conteúdo de estudo</p><h1>{data.content.title}</h1>{studyExcerpt(data.content.description, 220) && !isExcerptOfBody(data.content.description, data.content.body) && <p>{studyExcerpt(data.content.description, 220)}</p>}</div>
+      <div className={styles.readerHeading}><h1>{data.content.title}</h1>{studyExcerpt(data.content.description, 220) && !isExcerptOfBody(data.content.description, data.content.body) && <p>{studyExcerpt(data.content.description, 220)}</p>}</div>
       <JourneyContentReader content={data.content} />
     </div>
     {error && <div className={styles.error}>{error}</div>}

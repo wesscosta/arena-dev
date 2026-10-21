@@ -340,3 +340,9 @@
 /* v0.11.0-rc.6: copy protection chosen by the teacher. */
 .readerProtected .readerMarkdown,.readerProtected .readerPlainText{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .readerProtectedNote{margin:0 0 20px;font-size:.85rem;color:var(--muted,#a7b0c0)}
+/* v0.11.0-rc.7: a short content keeps the reader navigation at the foot of the study area; a long one grows and scrolls normally. */
+.studyWorkspace:has(.readerView){display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+.main:has(>.readerView){flex:1 0 auto;display:flex;flex-direction:column}
+.readerView{flex:1 0 auto;display:flex;flex-direction:column}
+.readerScaled{margin-bottom:60px}
+.readerView>.readerFooter{margin-top:auto}
