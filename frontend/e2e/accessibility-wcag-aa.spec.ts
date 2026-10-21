@@ -242,6 +242,10 @@ test("prévia do professor ocupa a coluna e Editar jornada abre a Jornada certa"
   const footer = page.locator("footer").last();
   const [barBox, footerBox] = await Promise.all([bar.boundingBox(), footer.boundingBox()]);
   expect(barBox && footerBox && Math.abs(barBox.width - footerBox.width) <= 2).toBe(true);
+  // A short content keeps the navigation at the foot of the study area, not right under the text.
+  const viewportHeight = page.viewportSize()!.height;
+  expect(footerBox && footerBox.y + footerBox.height > viewportHeight - 140).toBe(true);
+  await expect(page.getByText("Conteúdo de estudo", { exact: true })).toHaveCount(0);
 
   await page.getByRole("link", { name: "Editar jornada" }).click();
   await expect(page.getByRole("textbox", { name: "Título", exact: true })).toHaveValue("Jornada WCAG");
