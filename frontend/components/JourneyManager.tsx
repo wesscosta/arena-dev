@@ -29,6 +29,8 @@ type Props = {
   classroomId: string;
   classroomName: string;
   notify: Notify;
+  /** Opened for editing once the list loads (deep link from the study preview). */
+  initialJourneyId?: string;
 };
 
 type DraftStage = JourneyStageInput & {
@@ -76,7 +78,7 @@ function statusLabel(status: Journey["status"]) {
   return "RASCUNHO";
 }
 
-export default function JourneyManager({ classroomId, classroomName, notify }: Props) {
+export default function JourneyManager({ classroomId, classroomName, notify, initialJourneyId }: Props) {
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loading, setLoading] = useState(true);
@@ -126,6 +128,15 @@ export default function JourneyManager({ classroomId, classroomName, notify }: P
   }, [draft]);
 
   function selectJourney(journey: Journey) { setDraft(toDraft(journey)); setMoreOpen(false); }
+
+  const openedInitialRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!initialJourneyId || openedInitialRef.current === initialJourneyId) return;
+    const target = journeys.find((journey) => journey.id === initialJourneyId);
+    if (!target) return;
+    openedInitialRef.current = initialJourneyId;
+    setDraft(toDraft(target));
+  }, [initialJourneyId, journeys]);
   function newJourney() { setCreationOpen(true); }
 
   function startBlankJourney() {

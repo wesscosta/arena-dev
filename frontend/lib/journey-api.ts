@@ -76,6 +76,10 @@ export function fetchJourneys(classroomId: string) {
   return journeyRequest<Journey[]>(`/api/journeys?classroomId=${encodeURIComponent(classroomId)}`);
 }
 
+export function fetchJourney(id: string) {
+  return journeyRequest<Journey>(`/api/journeys/${encodeURIComponent(id)}`);
+}
+
 export function createJourney(input: JourneyInput) {
   return journeyRequest<Journey>("/api/journeys", { method: "POST", body: JSON.stringify(input) });
 }
