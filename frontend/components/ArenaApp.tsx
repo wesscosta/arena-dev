@@ -96,6 +96,7 @@ import { closeBuzzer as closeBuzzerApi, joinQrImageUrl, openBuzzer as openBuzzer
 import { fetchSessionEventsBySession, type SessionEvent } from "@/lib/session-event-api";
 import { updateRankingPresentation, type RankingPresentationInput } from "@/lib/ranking-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
+import { fetchJourney } from "@/lib/journey-api";
 import { fetchDashboardBootstrap } from "@/lib/dashboard-bootstrap-api";
 import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
 import { activeSessionId, selectPreferredClassroomId } from "@/lib/app-state";
@@ -183,6 +184,8 @@ export default function ArenaApp() {
   const [hydrated, setHydrated] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [classroomTab, setClassroomTab] = useState<ClassroomTab>("home");
+  // "Editar jornada" in the study preview links to /?journey=<id>.
+  const [editJourneyId, setEditJourneyId] = useState<string | undefined>();
   const [classroomSettingsIntent, setClassroomSettingsIntent] = useState<"general" | "delete">("general");
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastSeq = useRef(0);
@@ -262,6 +265,28 @@ export default function ArenaApp() {
 
   const activeClassroom = data.classrooms.find((item) => item.id === data.activeClassroomId) ?? data.classrooms[0];
   const activeClassroomId = activeClassroom?.id;
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const params = new URLSearchParams(window.location.search);
+    const journeyId = params.get("journey");
+    if (!journeyId) return;
+    params.delete("journey");
+    const query = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+    let active = true;
+    void fetchJourney(journeyId)
+      .then((journey) => {
+        if (!active) return;
+        setActiveClassroom(journey.classroomId);
+        setEditJourneyId(journey.id);
+        openClassroom("journeys");
+      })
+      .catch((error) => { if (active) notify(errorMessage(error), "error"); });
+    return () => { active = false; };
+    // Runs once after the dashboard loads; the helpers only touch state setters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
 
   useEffect(() => {
     if (hydrated && !data.activeClassroomId && data.classrooms[0]) {
@@ -576,6 +601,7 @@ export default function ArenaApp() {
                     classroomId={activeClassroom.id}
                     classroomName={activeClassroom.name}
                     notify={notify}
+                    initialJourneyId={editJourneyId}
                   />
                 )}
                 {classroomTab === "ranking" && (

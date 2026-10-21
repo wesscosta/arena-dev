@@ -223,3 +223,28 @@ for (const theme of ["dark", "light"] as const) {
     expect(findings).toEqual({});
   });
 }
+
+// rc.7: the preview bar spans the reading column and "Editar jornada" opens
+// that Journey in its classroom instead of the start screen.
+test("prévia do professor ocupa a coluna e Editar jornada abre a Jornada certa", async ({ browser }) => {
+  const { journeyId, contentId } = await createJourneyWithCode();
+  const context = await browser.newContext({ viewport: { width: 1920, height: 900 } });
+  const page = await context.newPage();
+  await page.goto("/");
+  await page.getByLabel("Usuário").fill(teacherUsername);
+  await page.getByLabel("Senha").fill(teacherPassword);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Abrir menu do professor" })).toBeVisible();
+
+  await page.goto(`/learn/journeys/${journeyId}/content/${contentId}?preview=teacher`);
+  const bar = page.getByText("Prévia do professor").locator("xpath=ancestor::div[1]");
+  await expect(bar).toBeVisible();
+  const footer = page.locator("footer").last();
+  const [barBox, footerBox] = await Promise.all([bar.boundingBox(), footer.boundingBox()]);
+  expect(barBox && footerBox && Math.abs(barBox.width - footerBox.width) <= 2).toBe(true);
+
+  await page.getByRole("link", { name: "Editar jornada" }).click();
+  await expect(page.getByRole("textbox", { name: "Título", exact: true })).toHaveValue("Jornada WCAG");
+  await expect(page).not.toHaveURL(/journey=/);
+  await context.close();
+});

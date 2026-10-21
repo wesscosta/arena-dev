@@ -154,6 +154,30 @@ class ContentIngestionServiceTest {
     }
 
     @Test
+    void contentDescriptionsNeverCarryRawMarkdownTableSyntax() {
+        String markdown = """
+                # Banco de Dados
+
+                ## Organização
+
+                ### Capítulos do material
+
+                | Capítulo | Tema | Descrição |
+                | --- | --- | --- |
+                | 01 | Introdução | Dados e informação |
+
+                Cada capítulo combina leitura e prática.
+                """;
+        var draft = service.preview(new ContentIngestionService.PreviewRequest(
+                classroom(), ContentIngestionSource.MARKDOWN, null, null, null, markdown, null, "bd.md"));
+
+        var item = draft.sections().getFirst().items().getFirst();
+        assertThat(item.description()).doesNotContain("|").doesNotContain("---");
+        assertThat(item.description()).contains("Cada capítulo combina leitura e prática.");
+        assertThat(item.body()).contains("| Capítulo | Tema | Descrição |");
+    }
+
+    @Test
     void keepsExternalAndNotionLinksAsReferencesInsteadOfScrapingThem() {
         UUID classroomId = classroom();
 
