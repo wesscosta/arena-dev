@@ -177,11 +177,12 @@ test("teacher preview reuses study routes without student progress actions", () 
   assert.match(manager, /preview=teacher/);
 });
 
-test("v0.12 keeps Perfil at the foot of the study menu and lets the student hide and reveal the menu", () => {
+test("v0.12 keeps Perfil below the zoom at the foot of the study menu and lets the student hide and reveal the menu", () => {
   const shell = readFileSync(resolve(process.cwd(), "components/study/StudyShell.tsx"), "utf8");
   const studyCss = readFileSync(resolve(process.cwd(), "components/study/study.module.css"), "utf8");
 
-  assert.match(shell, /styles\.navFoot[\s\S]*href="\/learn\/profile"/);
+  assert.match(shell, /styles\.sidebarFoot[\s\S]*styles\.navFoot[\s\S]*href="\/learn\/profile"[\s\S]*<\/aside>/);
+  assert.match(shell, /styles\.sidebarRevealBar/);
   assert.match(shell, /aria-label="Ocultar menu lateral"/);
   assert.match(shell, /aria-label="Mostrar menu lateral"/);
   assert.match(shell, /arena-dev:study-sidebar-hidden/);
