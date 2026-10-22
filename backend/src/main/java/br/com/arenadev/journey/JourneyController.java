@@ -46,6 +46,20 @@ public class JourneyController {
         return service.refreshStageResource(id, stageId);
     }
 
+    @GetMapping("/{id}/stages/{stageId}/content")
+    public JourneyService.StageContentView stageContent(@PathVariable UUID id, @PathVariable UUID stageId) {
+        return service.stageContent(id, stageId);
+    }
+
+    @PutMapping("/{id}/stages/{stageId}/content")
+    public JourneyService.JourneyView updateStageContent(
+            @PathVariable UUID id,
+            @PathVariable UUID stageId,
+            @RequestBody JourneyService.StageContentInput input
+    ) {
+        return service.updateStageContent(id, stageId, input);
+    }
+
     @GetMapping("/{id}/progress/{enrollmentId}")
     public JourneyService.JourneyProgressView progress(@PathVariable UUID id, @PathVariable UUID enrollmentId) {
         return service.progress(id, enrollmentId);

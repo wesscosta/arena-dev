@@ -1,9 +1,10 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const arena = readFileSync(resolve(process.cwd(), "components/ArenaApp.tsx"), "utf8");
+const arena = readTeacherAppSource();
 const themePreference = readFileSync(resolve(process.cwd(), "lib/theme-preference.ts"), "utf8");
 const themeContract = readFileSync(resolve(process.cwd(), "styles/theme.css"), "utf8");
 const layout = readFileSync(resolve(process.cwd(), "app/layout.tsx"), "utf8");

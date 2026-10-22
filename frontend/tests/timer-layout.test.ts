@@ -1,3 +1,4 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -8,7 +9,7 @@ function read(relativePath: string): string {
 }
 
 test("Timer drawer uses one configuration surface without redundant headings", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const panel = read("components/TimerPanel.tsx");
   const css = read("styles/timer-panel.css");
   const layout = read("app/layout.tsx");
@@ -57,7 +58,7 @@ test("Timer drawer keeps a focusable scroll region and lets the teacher collapse
   assert.match(drawer, /hideScrollbar \? styles\.scrollbarHidden/);
   assert.match(css, /\.content\.scrollbarHidden\s*\{[^}]*scrollbar-width:\s*none/s);
   assert.match(css, /\.content\.scrollbarHidden::-webkit-scrollbar\s*\{[^}]*display:\s*none/s);
-  assert.match(read("components/ArenaApp.tsx"), /title="Timer"[\s\S]*?hideScrollbar[\s\S]*?onClose=\{closeTool\}/);
+  assert.match(readTeacherAppSource(), /title="Timer"[\s\S]*?hideScrollbar[\s\S]*?onClose=\{closeTool\}/);
   assert.match(panel, /previewChoice.*setPreviewChoice/);
   assert.match(panel, /const previewCollapsed =/);
   assert.match(panel, /aria-expanded=\{!previewCollapsed\}/);

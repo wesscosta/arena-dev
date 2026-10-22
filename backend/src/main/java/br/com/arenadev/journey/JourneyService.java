@@ -7,6 +7,7 @@ import br.com.arenadev.classroom.ClassroomRepository;
 import br.com.arenadev.classroom.Enrollment;
 import br.com.arenadev.classroom.EnrollmentRepository;
 import br.com.arenadev.content.LearningResource;
+import br.com.arenadev.content.LearningResourceService;
 import br.com.arenadev.content.LearningResourceRepository;
 import br.com.arenadev.shared.ResourceNotFoundException;
 import br.com.arenadev.submission.ActivitySubmissionRepository;
@@ -26,6 +27,7 @@ public class JourneyService {
     private final EnrollmentRepository enrollmentRepository;
     private final JourneyStageProgressRepository progressRepository;
     private final ActivitySubmissionRepository submissionRepository;
+    private final LearningResourceService learningResourceService;
 
     public JourneyService(
             JourneyRepository journeyRepository,
@@ -34,7 +36,8 @@ public class JourneyService {
             LearningResourceRepository learningResourceRepository,
             EnrollmentRepository enrollmentRepository,
             JourneyStageProgressRepository progressRepository,
-            ActivitySubmissionRepository submissionRepository
+            ActivitySubmissionRepository submissionRepository,
+            LearningResourceService learningResourceService
     ) {
         this.journeyRepository = journeyRepository;
         this.classroomRepository = classroomRepository;
@@ -43,6 +46,7 @@ public class JourneyService {
         this.enrollmentRepository = enrollmentRepository;
         this.progressRepository = progressRepository;
         this.submissionRepository = submissionRepository;
+        this.learningResourceService = learningResourceService;
     }
 
     @Transactional(readOnly = true)
@@ -77,8 +81,17 @@ public class JourneyService {
         if (input.copyProtected() != null) journey.changeCopyProtection(input.copyProtected());
         if (journey.getStatus() == JourneyStatus.DRAFT) {
             applyStages(journey, input.stages());
+        } else if (journey.getStatus() == JourneyStatus.PUBLISHED) {
+            // Published Journeys stay editable; only study already started is protected.
+            if (input.stages() != null) {
+                if (input.stages().isEmpty()) {
+                    throw new IllegalStateException("Uma jornada publicada precisa manter ao menos uma etapa.");
+                }
+                requireNoStudyOnRemovedStages(journey, input.stages());
+                applyStages(journey, input.stages());
+            }
         } else if (input.stages() != null && !sameStageShape(journey, input.stages())) {
-            throw new IllegalStateException("Etapas de uma jornada publicada não podem ser reestruturadas. Arquive e crie uma nova jornada.");
+            throw new IllegalStateException("Jornada arquivada não pode ser alterada. Crie uma nova jornada.");
         }
         return toView(journey);
     }
@@ -101,8 +114,8 @@ public class JourneyService {
     @Transactional
     public JourneyView refreshStageResource(UUID journeyId, UUID stageId) {
         Journey journey = requireJourney(journeyId);
-        if (journey.getStatus() != JourneyStatus.DRAFT) {
-            throw new IllegalStateException("Somente Jornadas em rascunho podem atualizar snapshots de conteúdo.");
+        if (journey.getStatus() == JourneyStatus.ARCHIVED) {
+            throw new IllegalStateException("Jornada arquivada não pode atualizar snapshots de conteúdo.");
         }
         JourneyStage stage = requireStage(journey, stageId);
         LearningResource resource = stage.getLearningResource();
@@ -114,6 +127,56 @@ public class JourneyService {
         }
         stage.materializeResource(resource);
         return toView(journey);
+    }
+
+    /** The current text of the material behind a stage, as the teacher will edit it. */
+    @Transactional(readOnly = true)
+    public StageContentView stageContent(UUID journeyId, UUID stageId) {
+        Journey journey = requireJourney(journeyId);
+        JourneyStage stage = requireStage(journey, stageId);
+        LearningResource resource = requireStageResource(stage);
+        // The teacher opened the editor from this stage, so the dialog carries its name.
+        return new StageContentView(stageId, stage.getTitle(), resource.getBody(), resource.getFormat().name(),
+                resource.isLibraryVisible(), journey.getStatus() == JourneyStatus.ARCHIVED);
+    }
+
+    /**
+     * Corrects the text of a stage in place. The stage keeps its id, so students keep their
+     * progress; the source material advances one revision and this stage takes it as its snapshot.
+     */
+    @Transactional
+    public JourneyView updateStageContent(UUID journeyId, UUID stageId, StageContentInput input) {
+        Journey journey = requireJourney(journeyId);
+        if (journey.getStatus() == JourneyStatus.ARCHIVED) {
+            throw new IllegalStateException("Jornada arquivada não pode ser alterada. Crie uma nova jornada.");
+        }
+        JourneyStage stage = requireStage(journey, stageId);
+        LearningResource resource = learningResourceService.updateBody(requireStageResource(stage).getId(), input == null ? null : input.body());
+        stage.materializeResource(resource);
+        return toView(journey);
+    }
+
+    private LearningResource requireStageResource(JourneyStage stage) {
+        if (stage.getLearningResource() == null) {
+            throw new IllegalStateException("Esta etapa não tem texto próprio para editar.");
+        }
+        return stage.getLearningResource();
+    }
+
+    private void requireNoStudyOnRemovedStages(Journey journey, List<StageInput> inputs) {
+        Set<UUID> kept = new HashSet<>();
+        inputs.forEach(input -> {
+            UUID id = input == null ? null : parseUuid(input.id());
+            if (id != null) kept.add(id);
+        });
+        List<JourneyStage> removed = journey.getStages().stream().filter(stage -> !kept.contains(stage.getId())).toList();
+        if (removed.isEmpty()) return;
+        for (JourneyStage stage : removed) {
+            if (progressRepository.anyStudyStarted(List.of(stage.getId()))) {
+                throw new IllegalStateException("Não é possível remover \"" + stage.getTitle()
+                        + "\": alunos já começaram este conteúdo. Mantenha a etapa ou corrija o texto dela.");
+            }
+        }
     }
 
     @Transactional(readOnly = true)
@@ -484,6 +547,8 @@ public class JourneyService {
             JourneyItemType itemType,
             UUID learningResourceId
     ) {}
+    public record StageContentView(UUID stageId, String title, String body, String format, boolean libraryMaterial, boolean readOnly) {}
+    public record StageContentInput(String body) {}
     public record JourneyView(UUID id, UUID classroomId, String title, String description, JourneyStatus status, List<StageView> stages, Instant createdAt, Instant updatedAt, boolean copyProtected) {}
     public record StageView(
             UUID id,

@@ -1,3 +1,4 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -8,14 +9,14 @@ function read(relativePath: string): string {
 }
 
 function overviewSource(): string {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const start = app.indexOf("function OverviewView(");
   const end = app.indexOf("function ClassroomWorkspaceTabs", start);
   return app.slice(start, end);
 }
 
 test("teacher topbar treats Biblioteca as a global destination instead of a CTA", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
 
   assert.match(app, /topbar-global-nav/);
   assert.match(app, /aria-label="Turmas"/);

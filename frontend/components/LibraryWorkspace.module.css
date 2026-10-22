@@ -104,7 +104,6 @@
 .contentTabs button:focus-visible,
 .row:focus-visible,
 .outlineNode:focus-visible,
-.mapNode:focus-visible,
 .importSource:focus-visible,
 .importSourceActive:focus-visible,
 .secondaryAction:focus-visible,
@@ -570,54 +569,244 @@
   text-align: center;
 }
 
-.mapViewport {
-  overflow: auto;
-  padding: .75rem 0 1rem;
-}
-
-.mapForest {
-  min-width: max-content;
+.mapHeader {
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
   align-items: flex-start;
+  justify-content: space-between;
+  gap: .75rem 1rem;
+  margin-bottom: 1rem;
 }
 
-.mapBranch {
+.mapHeader .projectionIntro {
+  margin-bottom: 0;
+}
+
+.mapActions {
   display: flex;
-  align-items: center;
-  gap: .8rem;
-  position: relative;
+  flex-wrap: wrap;
+  gap: .5rem;
 }
 
-.mapChildren {
-  display: grid;
-  gap: .7rem;
-  padding-left: 1rem;
-  border-left: 2px solid var(--ds-border, var(--border));
-}
-
-.mapNode {
-  min-width: 150px;
-  max-width: 240px;
-  display: grid;
-  gap: .25rem;
+.mapActions button {
+  min-height: var(--control-height, 44px);
   border: 1px solid var(--ds-border, var(--border));
-  border-radius: var(--radius-md, .75rem);
-  background: var(--ds-surface-subtle, var(--surface-2));
-  color: inherit;
-  padding: .75rem .85rem;
-  text-align: left;
+  border-radius: var(--control-radius, .75rem);
+  background: var(--ds-surface-control, var(--surface-2));
+  color: var(--ds-text-primary, var(--text));
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 650;
+  padding: 0 .9rem;
   cursor: pointer;
 }
 
-.mapNode:hover {
-  border-color: var(--ds-accent, var(--accent));
+.mapActions button:hover {
   background: var(--ds-surface-hover, var(--surface-2));
 }
 
-.mapNode small {
-  color: var(--ds-accent-text);
-  font-family: var(--font-family-mono, monospace);
+.mapViewport {
+  overflow: auto;
+  padding: .5rem .25rem 1rem;
+}
+
+/* Mind map: the material at the center-left, branches opening to the right.
+   Connectors are drawn by each item: ::before is the upper half of the spine and the elbow
+   into the node, ::after the lower half, so collapsed branches never leave loose lines. */
+.mindMap {
+  --mm-line: var(--ds-text-secondary, var(--muted));
+  --mm-step: 1.25rem;
+  min-width: max-content;
+  display: flex;
+  align-items: center;
+}
+
+.mindRoot {
+  flex: none;
+  max-width: 15rem;
+  border: 2px solid var(--ds-text-primary, var(--text));
+  border-radius: .9rem;
+  background: var(--ds-surface-raised, var(--surface-2));
+  color: var(--ds-text-primary, var(--text));
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 750;
+  line-height: 1.3;
+  padding: .7rem 1rem;
+  text-align: left;
+}
+
+button.mindRoot {
+  cursor: pointer;
+}
+
+.mindChildren {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 var(--mm-step);
+  animation: mindReveal .18s ease-out;
+}
+
+.mindChildren::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: var(--mm-step);
+  border-top: 2px solid var(--mm-line);
+}
+
+.mindItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: .2rem 0 .2rem var(--mm-step);
+}
+
+.mindItem::before,
+.mindItem::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: var(--mm-step);
+  border: 0 solid var(--mm-line);
+  pointer-events: none;
+}
+
+.mindItem::before {
+  top: 0;
+  height: 50%;
+  border-left-width: 2px;
+  border-bottom-width: 2px;
+}
+
+.mindItem::after {
+  top: 50%;
+  bottom: 0;
+  border-left-width: 2px;
+}
+
+.mindItem:first-child::before {
+  display: none;
+}
+
+.mindItem:first-child::after {
+  border-top-width: 2px;
+  border-top-left-radius: .75rem;
+}
+
+.mindItem:last-child::before {
+  border-bottom-left-radius: .75rem;
+}
+
+.mindItem:last-child::after {
+  display: none;
+}
+
+.mindItem:only-child::before {
+  display: block;
+  border-left-width: 0;
+  border-radius: 0;
+}
+
+.mindRow {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+}
+
+.mindNode {
+  max-width: 16rem;
+  min-height: 2.25rem;
+  border: 1px solid transparent;
+  border-radius: .6rem;
+  background: transparent;
+  color: var(--ds-text-primary, var(--text));
+  font: inherit;
+  font-size: .92rem;
+  line-height: 1.3;
+  padding: .35rem .6rem;
+  text-align: left;
+  cursor: pointer;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.mindNode:hover,
+button.mindRoot:hover {
+  background: var(--ds-surface-hover, var(--surface-2));
+}
+
+/* First-level branches carry the branch color; text stays in the primary text color. */
+.mindItem[data-depth="1"] > .mindRow > .mindNode {
+  border: 2px solid var(--mm-line);
+  background: color-mix(in srgb, var(--mm-line) 12%, var(--ds-surface, var(--surface)));
+  font-weight: 700;
+  padding: .45rem .8rem;
+}
+
+.mindItem[data-depth="1"] > .mindRow > .mindNode:hover {
+  background: color-mix(in srgb, var(--mm-line) 22%, var(--ds-surface, var(--surface)));
+}
+
+.mindToggle {
+  position: relative;
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--mm-line);
+  border-radius: 999px;
+  background: var(--ds-surface, var(--surface));
+  color: var(--ds-text-primary, var(--text));
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* 44px hit area around the small visible circle. */
+.mindToggle::before {
+  content: "";
+  position: absolute;
+  inset: -.6rem;
+}
+
+.mindToggle:hover {
+  background: color-mix(in srgb, var(--mm-line) 18%, var(--ds-surface, var(--surface)));
+}
+
+.mindMinus {
+  width: .6rem;
+  border-top: 2px solid currentColor;
+}
+
+.mindItem[data-branch="0"] { --mm-line: #0f766e; }
+.mindItem[data-branch="1"] { --mm-line: #6d28d9; }
+.mindItem[data-branch="2"] { --mm-line: #c2410c; }
+.mindItem[data-branch="3"] { --mm-line: #1d4ed8; }
+.mindItem[data-branch="4"] { --mm-line: #be185d; }
+.mindItem[data-branch="5"] { --mm-line: #a16207; }
+
+:global(html[data-theme="dark"]) .mindItem[data-branch="0"] { --mm-line: #2dd4bf; }
+:global(html[data-theme="dark"]) .mindItem[data-branch="1"] { --mm-line: #a78bfa; }
+:global(html[data-theme="dark"]) .mindItem[data-branch="2"] { --mm-line: #fb923c; }
+:global(html[data-theme="dark"]) .mindItem[data-branch="3"] { --mm-line: #60a5fa; }
+:global(html[data-theme="dark"]) .mindItem[data-branch="4"] { --mm-line: #f472b6; }
+:global(html[data-theme="dark"]) .mindItem[data-branch="5"] { --mm-line: #facc15; }
+
+@keyframes mindReveal {
+  from { opacity: 0; transform: translateX(-.35rem); }
+  to { opacity: 1; transform: none; }
 }
 
 .usagePanel {
@@ -893,6 +1082,16 @@
   .mapViewport {
     max-width: calc(100vw - 2rem);
   }
+
+  .mindRoot {
+    max-width: 9.5rem;
+    font-size: .92rem;
+    padding: .55rem .75rem;
+  }
+
+  .mindNode {
+    max-width: 12rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -904,8 +1103,12 @@
 @media (prefers-reduced-motion: reduce) {
   .row,
   .outlineNode,
-  .mapNode {
+  .mindNode {
     scroll-behavior: auto;
+  }
+
+  .mindChildren {
+    animation: none;
   }
 }
 

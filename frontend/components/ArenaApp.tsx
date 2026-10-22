@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import TeacherLogin from "@/components/TeacherLogin";
 import ActivityQuestionBuilder from "@/components/ActivityQuestionBuilder";
 import ActivityStepEditor from "@/components/ActivityStepEditor";
@@ -45,7 +45,6 @@ import LearningCheckPanel from "@/components/LearningCheckPanel";
 import SessionAccessCard from "@/components/SessionAccessCard";
 import JourneyManager from "@/components/JourneyManager";
 import LibraryWorkspace from "@/components/LibraryWorkspace";
-import SessionTimeline from "@/components/SessionTimeline";
 import ClassroomContextSwitcher from "@/components/ClassroomContextSwitcher";
 import MicrosoftIntegrationConsole from "@/components/MicrosoftIntegrationConsole";
 import IntegrationSettingsSummary from "@/components/IntegrationSettingsSummary";
@@ -58,7 +57,6 @@ import {
   DialogCloseButton,
   Menu,
   MenuItem,
-  Tabs,
   Toast,
   type BreadcrumbItem,
   type Notify,
@@ -67,10 +65,8 @@ import {
   type ToastTone,
 } from "@/components/ui";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
-import { getLevel, getLevelProgress, xpForStudent } from "@/lib/game";
-import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
-import { useModalKeyboard } from "@/lib/use-modal-keyboard";
-import { anonymizeStudent, ArenaApiError, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName } from "@/lib/classroom-api";
+import { xpForStudent } from "@/lib/game";
+import { anonymizeStudent, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName } from "@/lib/classroom-api";
 import { createSession as createSessionApi, fetchSessionParticipants, finishSession as finishSessionApi, releaseParticipantDevice, setParticipantPresence } from "@/lib/session-api";
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
 import { fetchActivitySteps, replaceActivitySteps } from "@/lib/activity-step-api";
@@ -97,6 +93,11 @@ import { closeBuzzer as closeBuzzerApi, joinQrImageUrl, openBuzzer as openBuzzer
 import { fetchSessionEventsBySession, type SessionEvent } from "@/lib/session-event-api";
 import { updateRankingPresentation, type RankingPresentationInput } from "@/lib/ranking-api";
 import { EMPTY_DATA, loadData, saveData } from "@/lib/store";
+import { dateTime, errorMessage, formatSessionElapsed, todayTitle } from "@/components/teacher/format";
+import { Avatar, EmptyState, Metric, MiniEmpty, Modal, Panel, Step } from "@/components/teacher/ui";
+import { RankingView } from "@/components/teacher/RankingView";
+import { HistoryView } from "@/components/teacher/HistoryView";
+import { BackupView } from "@/components/teacher/BackupView";
 import { fetchJourney } from "@/lib/journey-api";
 import { fetchDashboardBootstrap } from "@/lib/dashboard-bootstrap-api";
 import { fetchTeacherSession, logoutTeacher, type TeacherSession } from "@/lib/auth-api";
@@ -110,6 +111,7 @@ import {
 import type { Activity, ActivityQuestion, ActivityStep, ArenaData, Classroom, ClassroomThemeColor, ClassroomThemeIcon, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 import { classroomArenaCtaState } from "@/lib/classroom-arena-cta";
 import { applyThemePreference, loadThemePreference, saveThemePreference, type ThemePreference } from "@/lib/theme-preference";
+import { parseTeacherLocation, teacherLocationSearch, type ClassroomTab, type TeacherLocation, type TeacherView } from "@/lib/teacher-location";
 import {
   CLASSROOM_ACCENT_SCOPE_CLASS,
   CLASSROOM_THEME_COLORS,
@@ -117,8 +119,7 @@ import {
   classroomThemePresentation,
 } from "@/lib/classroom-theme";
 
-type View = "dashboard" | "library" | "classroom" | "classroom-settings" | "arena" | "integrations" | "settings";
-type ClassroomTab = "home" | "students" | "activities" | "journeys" | "ranking" | "history";
+type View = TeacherView;
 
 const VIEW_LABEL: Record<View, string> = {
   dashboard: "Turmas",
@@ -145,34 +146,6 @@ const SCORE_PRESETS: { points: number; label: string; category: ScoreCategory }[
   { points: 15, label: "Debug / código", category: "DEBUG" },
   { points: 20, label: "Desafio avançado", category: "CHALLENGE" },
 ];
-
-function dateTime(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-function todayTitle() {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date());
-}
-
-function formatSessionElapsed(startedAt: string, now: number) {
-  const elapsedSeconds = Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000));
-  const hours = Math.floor(elapsedSeconds / 3600);
-  const minutes = Math.floor((elapsedSeconds % 3600) / 60);
-  const seconds = elapsedSeconds % 60;
-  return [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
-}
-
-function errorMessage(error: unknown) {
-  if (error instanceof ArenaApiError || error instanceof Error) return error.message;
-  return "Não foi possível concluir a operação.";
-}
 
 export default function ArenaApp() {
   const [data, setData] = useState<ArenaData>(EMPTY_DATA);
@@ -266,6 +239,74 @@ export default function ArenaApp() {
 
   const activeClassroom = data.classrooms.find((item) => item.id === data.activeClassroomId) ?? data.classrooms[0];
   const activeClassroomId = activeClassroom?.id;
+
+  const classroomIdsRef = useRef<string[]>([]);
+  // Until the URL has been read once, the default screen must not overwrite it.
+  const [locationRestored, setLocationRestored] = useState(false);
+  const [journeyCreation, setJourneyCreation] = useState(false);
+  // True when this tab pushed the creation entry, so leaving it can go "back".
+  const creationPushedRef = useRef(false);
+  const creatingJourney = journeyCreation && view === "classroom" && classroomTab === "journeys";
+  // Leaving the Journeys tab ends creation; coming back starts from the list.
+  if (journeyCreation && !creatingJourney) setJourneyCreation(false);
+  useEffect(() => {
+    classroomIdsRef.current = data.classrooms.map((item) => item.id);
+  }, [data.classrooms]);
+
+  // Screen ↔ URL. Opening a screen pushes a history entry; "back" (browser or
+  // installed PWA) restores the previous one instead of leaving the app.
+  useEffect(() => {
+    if (!hydrated) return;
+    function restore() {
+      const requested = parseTeacherLocation(window.location.search);
+      const known = requested.classroomId && classroomIdsRef.current.includes(requested.classroomId);
+      // A classroom screen whose classroom no longer exists falls back to the list.
+      const location: TeacherLocation = requested.classroomId && !known
+        ? { view: "dashboard", tab: "home" }
+        : requested;
+      const search = teacherLocationSearch(location, window.location.search);
+      if (search !== window.location.search) {
+        window.history.replaceState(null, "", `${window.location.pathname}${search}`);
+      }
+      if (location.classroomId) setActiveClassroom(location.classroomId);
+      setClassroomTab(location.tab);
+      setView(location.view);
+      setJourneyCreation(Boolean(location.journeyCreation));
+      if (!location.journeyCreation) creationPushedRef.current = false;
+      setLocationRestored(true);
+    }
+    restore();
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
+    // setActiveClassroom only touches state setters; classrooms are read through the ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
+
+  useEffect(() => {
+    if (!locationRestored) return;
+    const search = teacherLocationSearch(
+      { view, tab: classroomTab, classroomId: activeClassroomId, journeyCreation: creatingJourney },
+      window.location.search,
+    );
+    if (search !== window.location.search) {
+      window.history.pushState(null, "", `${window.location.pathname}${search}`);
+    }
+  }, [locationRestored, view, classroomTab, activeClassroomId, creatingJourney]);
+
+  function openJourneyCreation() {
+    creationPushedRef.current = true;
+    setJourneyCreation(true);
+  }
+
+  function closeJourneyCreation() {
+    // Leaving the screen we pushed is the same as "back", so history keeps one entry for it.
+    if (creationPushedRef.current) {
+      creationPushedRef.current = false;
+      window.history.back();
+      return;
+    }
+    setJourneyCreation(false);
+  }
 
   useEffect(() => {
     if (!hydrated) return;
@@ -603,6 +644,9 @@ export default function ArenaApp() {
                     classroomName={activeClassroom.name}
                     notify={notify}
                     initialJourneyId={editJourneyId}
+                    creating={creatingJourney}
+                    onCreate={openJourneyCreation}
+                    onCloseCreation={closeJourneyCreation}
                   />
                 )}
                 {classroomTab === "ranking" && (
@@ -4513,179 +4557,3 @@ function ActivitiesView({ data, classroomId, classroomName, students, onUseInAre
     </div>
   );
 }
-
-function RankingView({ leaderboard, events, classroomId }: { leaderboard: { student: Student; xp: number }[]; events: ArenaData["scoreEvents"]; classroomId: string }) {
-  const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 7);
-  return (
-    <div className="stack-lg">
-      <div className="ranking-podium">
-        {leaderboard.slice(0, 3).map((row, index) => <div key={row.student.id} className={`podium p${index + 1}`}><span>#{index + 1}</span><Avatar student={row.student} large /><strong>{row.student.nickname || row.student.name}</strong><b>{row.xp} XP</b><small>{getLevel(row.xp).name}</small></div>)}
-      </div>
-      <Panel title="Ranking geral" subtitle="XP total e progressão por nível">
-        <div className="ranking-full">
-          {leaderboard.map((row, index) => {
-            const level = getLevel(row.xp);
-            const weekly = events.filter((e) => e.classroomId === classroomId && e.studentId === row.student.id && new Date(e.createdAt) >= weekStart).reduce((sum, e) => sum + e.points, 0);
-            return <div className="ranking-full-row" key={row.student.id}><b className="place">#{index + 1}</b><Avatar student={row.student} /><div className="rank-main"><div><strong>{row.student.name}</strong><span>{level.name}</span></div><div className="progress"><span style={{ width: `${getLevelProgress(row.xp)}%` }} /></div></div><div className="weekly">7 dias <b>{weekly >= 0 ? "+" : ""}{weekly}</b></div><strong>{row.xp} XP</strong></div>;
-          })}
-          {!leaderboard.length && <MiniEmpty text="O ranking aparecerá após cadastrar alunos." />}
-        </div>
-      </Panel>
-    </div>
-  );
-}
-
-function HistoryView({ classroomId, events, students, onReverse }: { classroomId: string; events: ArenaData["scoreEvents"]; students: Student[]; onReverse: (id: string) => void }) {
-  const [mode, setMode] = useState<"timeline" | "xp">("timeline");
-  const [query, setQuery] = useState("");
-  const filtered = events.slice().reverse().filter((event) => {
-    const student = students.find((s) => s.id === event.studentId);
-    return `${student?.name ?? ""} ${event.description} ${event.category}`.toLowerCase().includes(query.toLowerCase());
-  });
-  return (
-    <div className="stack-lg">
-      <Tabs
-        label="Tipos de histórico da turma"
-        activeId={mode}
-        onChange={(id) => setMode(id as "timeline" | "xp")}
-        items={[
-          { id: "timeline", label: "Linha do tempo", description: "Condução e dinâmicas da aula" },
-          { id: "xp", label: "Histórico de XP", description: `${events.length} lançamento(s)` },
-        ]}
-      />
-
-      {mode === "timeline" ? (
-        <Panel title="Linha do tempo da aula" subtitle="Trilha cronológica operacional das sessões, sem duplicar o histórico de XP">
-          <SessionTimeline classroomId={classroomId} />
-        </Panel>
-      ) : (
-        <Panel title="Histórico de XP" subtitle="Auditoria completa de respostas, entregas, bônus e ajustes">
-          <input className="input search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar aluno, motivo ou categoria..." />
-          <div className="history-list">
-            {filtered.map((event) => { const student = students.find((s) => s.id === event.studentId); return <div className="history-row" key={event.id}><Avatar student={student ?? { id: "x", name: "?", nickname: "", createdAt: "" }} /><div className="grow"><strong>{student?.name ?? "Aluno removido"}</strong><small>{event.description} · {dateTime(event.createdAt)}</small></div><span className="category-tag">{event.reversalOf ? "REVERSÃO" : event.reversed ? "REVERTIDO" : event.category}</span><b className={event.points >= 0 ? "positive" : "negative"}>{event.points >= 0 ? "+" : ""}{event.points} XP</b><button className="icon-button danger" disabled={Boolean(event.reversalOf || event.reversed)} title={event.reversalOf ? "Evento de reversão" : event.reversed ? "Lançamento já revertido" : "Reverter lançamento"} onClick={() => onReverse(event.id)}>↶</button></div>; })}
-            {!filtered.length && <MiniEmpty text="Nenhum lançamento encontrado." />}
-          </div>
-        </Panel>
-      )}
-    </div>
-  );
-}
-
-function BackupView({ data, setData, notify, refreshClassroomDomain }: {
-  data: ArenaData;
-  setData: React.Dispatch<React.SetStateAction<ArenaData>>;
-  notify: Notify;
-  refreshClassroomDomain: (preferredClassroomId?: string) => Promise<void>;
-}) {
-  const [busy, setBusy] = useState(false);
-
-  function exportData() {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `arena-dev-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    anchor.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function importData(file?: File) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = JSON.parse(String(reader.result)) as Partial<ArenaData>;
-        if (!Array.isArray(parsed.classrooms) || !Array.isArray(parsed.activities)) throw new Error();
-        notify("Snapshot válido. A restauração direta foi desativada porque o núcleo agora é autoritativo no PostgreSQL; a restauração server-side entra em um incremento próprio.");
-      } catch {
-        notify("Arquivo de snapshot inválido.", "error");
-      }
-    };
-    reader.readAsText(file);
-  }
-
-  async function loadDemo() {
-    if (busy) return;
-    setBusy(true);
-    try {
-      const classroom = await createClassroomApi({ name: `Desenvolvimento de Sistemas · Demo ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` });
-      const names = ["Ana Luiza", "Carlos Henrique", "João Pedro", "Maria Francisca", "Pedro Augusto", "Rafael Lima"];
-      const createdStudents: Student[] = [];
-      for (const name of names) {
-        const result = await createAndEnrollStudent(classroom.id, { name, preferredName: name.split(" ")[0] });
-        createdStudents.push(result.student);
-      }
-
-      const demoEvents = await createScoreEventsApi(createdStudents.slice(0, 4).map((student, index) => ({
-        classroomId: classroom.id,
-        studentId: student.id,
-        points: (index + 1) * 20,
-        category: "BONUS" as const,
-        description: "Dados de demonstração",
-        source: "MANUAL" as const,
-      })));
-      await refreshClassroomDomain(classroom.id);
-      setData((current) => ({
-        ...current,
-        activeClassroomId: classroom.id,
-        scoreEvents: [...current.scoreEvents.filter((event) => event.classroomId !== classroom.id), ...demoEvents],
-      }));
-      notify("Demonstração criada no PostgreSQL, incluindo XP.");
-    } catch (error) {
-      notify(errorMessage(error), "error");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="two-col">
-      <Panel title="Backup dos dados" subtitle="Snapshot dos módulos atuais do Arena Dev">
-        <div className="backup-card"><span className="backup-icon">↓</span><div><h3>Exportar snapshot</h3><p>Inclui uma fotografia da visão atual carregada do backend/PostgreSQL.</p></div><button className="button primary" onClick={exportData}>Exportar JSON</button></div>
-        <div className="backup-card"><span className="backup-icon">↑</span><div><h3>Validar snapshot</h3><p>Confere o JSON exportado. Restauração server-side será implementada separadamente para não sobrescrever dados persistentes de forma insegura.</p></div><label className="button file-button">Validar JSON<input type="file" accept="application/json" onChange={(e) => importData(e.target.files?.[0])} /></label></div>
-      </Panel>
-      <Panel title="Ambiente de demonstração" subtitle="Teste o fluxo usando a persistência atual">
-        <div className="demo-block"><div className="target-mark small">A</div><h3>Carregar turma demonstrativa</h3><p>Cria turma, alunos e XP de demonstração diretamente no PostgreSQL.</p><button className="button" disabled={busy} onClick={() => { void loadDemo(); }}>{busy ? "Criando..." : "Carregar demonstração"}</button></div>
-        <div className="local-note"><strong>Persistência + tempo real</strong><p>Turmas, sessões, presença, XP, atividades, mecânicas, códigos de entrada e Buzzer ficam no backend/PostgreSQL. O WebSocket é usado somente para estado conectado e eventos ao vivo.</p></div>
-      </Panel>
-    </div>
-  );
-}
-
-function Modal({ open, title, subtitle, size = "medium", bodyClassName, onClose, children }: {
-  open: boolean;
-  title: string;
-  subtitle?: string;
-  size?: "medium" | "large";
-  bodyClassName?: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  const modalRef = useRef<HTMLElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const titleId = useId();
-  useBodyScrollLock(open);
-  useModalKeyboard(open, onClose, modalRef, closeRef);
-
-  if (!open) return null;
-  return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}>
-      <section ref={modalRef} className={`modal-card ${size}`} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
-        <header className="modal-header">
-          <div><h2 id={titleId}>{title}</h2>{subtitle && <p>{subtitle}</p>}</div>
-          <DialogCloseButton ref={closeRef} label={`Fechar ${title.toLocaleLowerCase("pt-BR")}`} onClick={onClose} />
-        </header>
-        <div className={bodyClassName ? `modal-body ${bodyClassName}` : "modal-body"}>{children}</div>
-      </section>
-    </div>
-  );
-}
-
-function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return <div className="panel"><div className="panel-heading"><div><h3>{title}</h3>{subtitle && <p>{subtitle}</p>}</div></div>{children}</div>;
-}
-function Metric({ label, value, hint }: { label: string; value: string; hint: string }) { return <div className="metric"><span>{label}</span><strong>{value}</strong><small>{hint}</small></div>; }
-function Avatar({ student, large = false }: { student: Student; large?: boolean }) { const initials = student.name.split(" ").slice(0, 2).map((part) => part[0]).join("").toUpperCase(); return <div className={large ? "avatar large" : "avatar"}>{initials}</div>; }
-function MiniEmpty({ text }: { text: string }) { return <div className="mini-empty">{text}</div>; }
-function EmptyState({ title, text, actionLabel, onAction }: { title: string; text: string; actionLabel: string; onAction: () => void }) { return <div className="empty-state"><div className="target-mark">A</div><h2>{title}</h2><p>{text}</p><button className="button primary large" onClick={onAction}>{actionLabel}</button></div>; }
-function Step({ n, title, text }: { n: string; title: string; text: string }) { return <div className="step"><span>{n}</span><div><strong>{title}</strong><p>{text}</p></div></div>; }

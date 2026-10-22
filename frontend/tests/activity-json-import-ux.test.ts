@@ -1,10 +1,11 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const builder = readFileSync(resolve(process.cwd(), "components/ActivityQuestionBuilder.tsx"), "utf8");
-const arena = readFileSync(resolve(process.cwd(), "components/ArenaApp.tsx"), "utf8");
+const arena = readTeacherAppSource();
 
 test("successful JSON import is explicitly a draft import", () => {
   assert.match(builder, /adicionada\(s\) ao rascunho da atividade/);

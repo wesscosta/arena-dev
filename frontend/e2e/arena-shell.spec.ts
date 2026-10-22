@@ -712,12 +712,8 @@ test("reverter XP de sorteio mantém participação e histórico sem duplicar le
     }));
     await openArena(page, fixture.classroomName, fixture.sessionTitle);
     await page.reload();
-    // After F5 the app returns to the class overview; opening the same Arena must
-    // rehydrate the authoritative draw/score state rather than resurrect local state.
-    await expect(page.getByRole("heading", { name: "Suas turmas" })).toBeVisible();
-    await page.locator("article.overview-class-card")
-      .filter({ hasText: fixture.classroomName }).click();
-    await page.getByRole("button", { name: "Continuar Arena" }).click();
+    // rc.8: F5 keeps the teacher in the same Arena (the screen lives in the URL);
+    // it must rehydrate the authoritative draw/score state rather than resurrect local state.
     await expect(page.getByRole("navigation", { name: "Turma atual" })
       .getByRole("button", { name: `Voltar para a turma ${fixture.classroomName}` })).toBeVisible();
     const persisted = await api.get(`/api/sessions/${sessionId}/draw-attempts/state`);
@@ -795,10 +791,7 @@ test("Biblioteca contextual mantém a mesma referência na Arena e retorna ao pa
     await expectOk(linked, "Vínculo persistido");
     expect(await linked.json()).toMatchObject({ resourceId: resource.id, revision: resource.revision, available: true });
     await page.reload();
-    await expect(page.getByRole("heading", { name: "Suas turmas" })).toBeVisible();
-    await page.locator("article.overview-class-card")
-      .filter({ hasText: fixture.classroomName }).click();
-    await page.getByRole("button", { name: "Continuar Arena" }).click();
+    // rc.8: F5 keeps the teacher in the same Arena (the screen lives in the URL).
     await expect(page.getByRole("button", { name: "Abrir material" })).toBeVisible();
     await openArenaMaterial(page);
     await expect(page.getByRole("dialog", { name: "Biblioteca nesta aula" })
