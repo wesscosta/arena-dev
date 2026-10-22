@@ -170,8 +170,8 @@ export default function JourneysPage() {
       </div>
       <div className={styles.redeemControls}>
         <input
-          aria-label="Matrícula ou nome"
-          placeholder="Matrícula ou nome completo"
+          aria-label="Matrícula, e-mail ou nome"
+          placeholder="Matrícula, e-mail ou nome completo"
           value={identity}
           onChange={(event) => setIdentity(event.target.value)}
           autoFocus

@@ -78,7 +78,7 @@ class StudentEmailIT {
         assertThat(student.namePending()).isFalse();
         Scenario scenario = scenario(student.id());
         var joined = joinService.join(scenario.joinCode(), "EM-" + suffix, true);
-        assertThat(joined.access().profileComplete()).isFalse();
+        assertThat(joined.access().profileComplete()).as("e-mail is optional").isTrue();
         var principal = principals.resolve(joined.deviceToken());
 
         var declared = profiles.complete(principal, null, "bruno" + suffix + "@casa.org");

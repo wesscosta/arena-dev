@@ -81,8 +81,8 @@ test("participante reconecta após perda de rede sem criar nova presença ou nov
     expect(codeResponse.ok()).toBeTruthy();
     const { code } = (await codeResponse.json()) as { code: string };
     await page.goto(`/join?code=${code}`);
-    await expect(page.getByPlaceholder("Matrícula ou nome")).toBeVisible();
-    await page.getByPlaceholder("Matrícula ou nome").fill(registration);
+    await expect(page.getByPlaceholder("Matrícula, e-mail ou nome")).toBeVisible();
+    await page.getByPlaceholder("Matrícula, e-mail ou nome").fill(registration);
     await page.getByRole("button", { name: "Entrar na sessão" }).click();
     await expect(page.getByText("Conectado", { exact: true })).toBeVisible({ timeout: 12000 });
     const before = await api.get(`/api/sessions/${sessionId}/participants`);

@@ -65,7 +65,7 @@ public class StudentProfileService {
                     student.getEmailSource() == Student.EmailSource.TEACHER,
                     enrollment.getClassroom().getName(),
                     enrollment.getPreferredName(),
-                    !student.isNamePending() && student.getEmail() != null
+                    !student.isNamePending()
             );
         }
     }

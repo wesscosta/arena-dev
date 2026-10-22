@@ -523,7 +523,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
             {access.profileComplete === false && deviceToken && (
               <a className="student-profile-prompt" href="/learn/profile">
                 <strong>Complete seu cadastro</strong>
-                <span>Confira seu nome e informe seu e-mail no perfil.</span>
+                <span>Informe seu nome completo no perfil.</span>
               </a>
             )}
 

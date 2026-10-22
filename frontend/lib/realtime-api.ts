@@ -37,7 +37,7 @@ export type StudentJoinAccess = {
   displayName: string;
   present: boolean;
   expiresAt: string;
-  /** False while the name is the e-mail placeholder or no e-mail was given. */
+  /** False while the name is still the e-mail placeholder; the e-mail itself is optional. */
   profileComplete?: boolean;
 };
 

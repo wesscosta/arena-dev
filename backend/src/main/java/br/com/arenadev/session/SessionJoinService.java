@@ -226,7 +226,7 @@ public class SessionJoinService {
                 displayNameService.resolve(session.getClassroom().getId(), student, DisplayNamePolicy.PREFERRED_NAME),
                 participant.isPresent(),
                 joinCode.getExpiresAt(),
-                !student.isNamePending() && student.getEmail() != null
+                !student.isNamePending()
         );
     }
 
@@ -327,7 +327,7 @@ public class SessionJoinService {
                 displayNameService.resolve(session.getClassroom().getId(), student, DisplayNamePolicy.PREFERRED_NAME),
                 participant.isPresent(),
                 joinCode.getExpiresAt(),
-                !student.isNamePending() && student.getEmail() != null
+                !student.isNamePending()
         );
     }
 
