@@ -2684,7 +2684,7 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 .student-table-v4 .student-identity-copy{display:grid;gap:2px;min-width:0}
 .student-table-v4 .student-identity-copy strong,.student-table-v4 .student-email-line{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .student-table-v4 .student-email-line{color:var(--muted);font-size:12px}
-.student-table-v4 .student-email-line.is-empty{font-style:italic;opacity:.7}
+.student-table-v4 .student-email-line.is-empty{font-style:italic}
 .student-table-v4 .student-class-name-cell{min-width:0}
 .student-table-v4 .student-display-name{max-width:100%;display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--text);font:inherit;font-size:14px;cursor:pointer}
 .student-table-v4 .student-display-name>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2695,7 +2695,7 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 .student-status-cell{display:flex;flex-wrap:wrap;gap:6px}
 .student-badge{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border:1px solid var(--border);border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
 .student-badge.is-inactive{color:var(--muted)}
-.student-badge.is-pending{border-color:color-mix(in srgb,var(--warning,#f5b942) 45%,var(--border));color:var(--warning,#f5b942)}
+.student-badge.is-pending{border-color:color-mix(in srgb,var(--warning,#f5b942) 60%,var(--border));background:color-mix(in srgb,var(--warning,#f5b942) 12%,transparent);color:var(--text)}
 .student-table-v4 .student-row-actions{gap:6px}
 .student-row-more{position:relative}
 .student-row-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;min-width:250px;display:grid;padding:6px;border:1px solid var(--border);border-radius:10px;background:var(--surface);box-shadow:0 12px 32px rgb(0 0 0 / .28)}
