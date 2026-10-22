@@ -41,6 +41,10 @@ test("semantic library exposes metadata, deterministic ingestion and derived con
   assert.match(importPanel, /processado deterministicamente/);
   assert.match(projections, /Mapa do conteúdo/);
   assert.match(projections, /Não representa Mastery/);
+  assert.match(projections, /aria-expanded=\{open\}/);
+  assert.match(projections, /Expandir tudo/);
+  assert.match(projections, /Recolher tudo/);
+  assert.doesNotMatch(projections, /<small>H\{node\.level\}<\/small>/);
   assert.match(ingestionApi, /\/api\/library\/ingestion\/preview/);
   assert.match(ingestionApi, /\/api\/library\/ingestion\/materialize/);
 });

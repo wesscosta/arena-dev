@@ -1,6 +1,6 @@
 "use client";
 
-import type { JSX, ReactNode } from "react";
+import { useState, type JSX, type ReactNode } from "react";
 import { SafeMarkdown } from "@/components/SafeMarkdown";
 import type { ContentOutlineNode } from "@/lib/learning-resource-api";
 import { splitNotionAsides } from "@/lib/notion-callout";
@@ -110,44 +110,126 @@ export function ContentOutlineView({ outline, onNavigate = defaultNavigate }: {
   );
 }
 
-function MapBranch({ node, depth = 0, onNavigate }: {
+const MAP_INITIAL_NODE_BUDGET = 24;
+
+/* Opens whole levels, breadth first, while the visible node count stays within the budget,
+   so a short material shows everything and a long one shows only its first levels. */
+function initiallyExpanded(branches: ContentOutlineNode[]) {
+  const expanded = new Set<string>();
+  let visible = branches.length;
+  let level = branches;
+  while (level.length) {
+    const parents = level.filter((node) => node.children.length > 0);
+    const opened = parents.reduce((sum, node) => sum + node.children.length, 0);
+    if (!parents.length || visible + opened > MAP_INITIAL_NODE_BUDGET) break;
+    parents.forEach((node) => expanded.add(node.anchor));
+    visible += opened;
+    level = parents.flatMap((node) => node.children);
+  }
+  return expanded;
+}
+
+function collectParents(nodes: ContentOutlineNode[], into = new Set<string>()) {
+  nodes.forEach((node) => {
+    if (node.children.length) {
+      into.add(node.anchor);
+      collectParents(node.children, into);
+    }
+  });
+  return into;
+}
+
+function countDescendants(node: ContentOutlineNode): number {
+  return node.children.reduce((sum, child) => sum + 1 + countDescendants(child), 0);
+}
+
+function MapBranch({ node, depth, branch, expanded, onToggle, onNavigate }: {
   node: ContentOutlineNode;
-  depth?: number;
+  depth: number;
+  branch?: number;
+  expanded: Set<string>;
+  onToggle: (anchor: string) => void;
   onNavigate: Navigate;
 }) {
+  const open = expanded.has(node.anchor);
+  const hidden = countDescendants(node);
   return (
-    <div className={styles.mapBranch} data-depth={depth}>
-      <button className={styles.mapNode} type="button" onClick={() => onNavigate(node.anchor)}>
-        <small>H{node.level}</small><strong>{node.title}</strong>
-      </button>
-      {node.children.length > 0 && (
-        <div className={styles.mapChildren}>
-          {node.children.map((child) => <MapBranch key={child.anchor} node={child} depth={depth + 1} onNavigate={onNavigate} />)}
-        </div>
+    <li className={styles.mindItem} data-depth={depth} data-branch={branch}>
+      <div className={styles.mindRow}>
+        <button className={styles.mindNode} type="button" title={node.title} onClick={() => onNavigate(node.anchor)}>
+          {node.title}
+        </button>
+        {node.children.length > 0 && (
+          <button
+            className={styles.mindToggle}
+            type="button"
+            aria-expanded={open}
+            aria-label={open ? `Recolher ${node.title}` : `Expandir ${node.title} (${hidden} ${hidden === 1 ? "tópico" : "tópicos"})`}
+            onClick={() => onToggle(node.anchor)}
+          >
+            {open ? <span aria-hidden="true" className={styles.mindMinus} /> : <span aria-hidden="true">{hidden}</span>}
+          </button>
+        )}
+      </div>
+      {open && (
+        <ul className={styles.mindChildren}>
+          {node.children.map((child) => (
+            <MapBranch key={child.anchor} node={child} depth={depth + 1} expanded={expanded} onToggle={onToggle} onNavigate={onNavigate} />
+          ))}
+        </ul>
       )}
-    </div>
+    </li>
   );
 }
 
-export function ContentMapView({ outline, onNavigate = defaultNavigate }: {
+export function ContentMapView({ outline, title, onNavigate = defaultNavigate }: {
   outline: ContentOutlineNode[];
+  title?: string;
   onNavigate?: Navigate;
 }) {
+  // A single top-level heading is the material's own title: it becomes the center of the map.
+  const root = outline.length === 1 ? outline[0] : null;
+  const branches = root ? root.children : outline;
+  const [expanded, setExpanded] = useState(() => initiallyExpanded(branches));
+
   if (!outline.length) return (
     <div className={styles.projectionEmpty}>
       <strong>Mapa indisponível para este material</strong>
       <p>O mapa é uma projeção da hierarquia real do conteúdo; ele não inventa tópicos ausentes na fonte.</p>
     </div>
   );
+
+  const toggle = (anchor: string) => setExpanded((current) => {
+    const next = new Set(current);
+    if (!next.delete(anchor)) next.add(anchor);
+    return next;
+  });
+  const rootTitle = root?.title ?? title ?? "Material";
+
   return (
     <section className={styles.mapPanel} aria-label="Mapa do conteúdo">
-      <div className={styles.projectionIntro}>
-        <strong>Mapa do conteúdo</strong>
-        <span>Projeção navegável da estrutura do material. Não representa Mastery nem taxonomia global.</span>
+      <div className={styles.mapHeader}>
+        <div className={styles.projectionIntro}>
+          <strong>Mapa do conteúdo</strong>
+          <span>Projeção navegável da estrutura do material. Não representa Mastery nem taxonomia global.</span>
+        </div>
+        <div className={styles.mapActions}>
+          <button type="button" onClick={() => setExpanded(collectParents(branches))}>Expandir tudo</button>
+          <button type="button" onClick={() => setExpanded(new Set())}>Recolher tudo</button>
+        </div>
       </div>
       <div className={styles.mapViewport}>
-        <div className={styles.mapForest}>
-          {outline.map((node) => <MapBranch key={node.anchor} node={node} onNavigate={onNavigate} />)}
+        <div className={styles.mindMap}>
+          {root
+            ? <button className={styles.mindRoot} type="button" title={rootTitle} onClick={() => onNavigate(root.anchor)}>{rootTitle}</button>
+            : <strong className={styles.mindRoot} title={rootTitle}>{rootTitle}</strong>}
+          {branches.length > 0 && (
+            <ul className={styles.mindChildren}>
+              {branches.map((node, index) => (
+                <MapBranch key={node.anchor} node={node} depth={1} branch={index % 6} expanded={expanded} onToggle={toggle} onNavigate={onNavigate} />
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </section>
