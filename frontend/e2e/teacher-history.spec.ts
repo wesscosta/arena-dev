@@ -92,6 +92,38 @@ test("back and reload follow the teacher's screens instead of leaving the app", 
   }
 });
 
+test("Journey creation is a screen of its own that back and reload respect", async ({ page }) => {
+  const fixture = await createClassroom();
+  try {
+    await login(page);
+    await page.goto(`/?tela=turma&turma=${fixture.classroom.id}&aba=jornadas`);
+    await page.getByRole("button", { name: "+ Nova jornada" }).click();
+    const heading = page.getByRole("heading", { name: "Como você quer começar?" });
+    await expect(heading).toBeVisible();
+    await expect(page).toHaveURL(/aba=jornadas&jornada=nova$/);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    // Esc no longer throws the screen away.
+    await page.keyboard.press("Escape");
+    await expect(heading).toBeVisible();
+
+    await page.reload();
+    await expect(heading).toBeVisible();
+
+    await page.goBack();
+    await expect(page.getByRole("button", { name: "+ Nova jornada" })).toBeVisible();
+    await expect(page).toHaveURL(/aba=jornadas$/);
+    await page.goForward();
+    await expect(heading).toBeVisible();
+
+    await page.getByRole("button", { name: /Começar em branco/ }).click();
+    await expect(page.getByRole("heading", { name: "Nova jornada" })).toBeVisible();
+    await expect(page).toHaveURL(/aba=jornadas$/);
+  } finally {
+    await fixture.dispose();
+  }
+});
+
 test("a link to a classroom that no longer exists falls back to the classroom list", async ({ page }) => {
   await login(page);
   await page.goto("/?tela=turma&turma=00000000-0000-0000-0000-000000000000&aba=jornadas");

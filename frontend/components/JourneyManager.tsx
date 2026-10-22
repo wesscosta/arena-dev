@@ -34,6 +34,10 @@ type Props = {
   notify: Notify;
   /** Opened for editing once the list loads (deep link from the study preview). */
   initialJourneyId?: string;
+  /** Journey creation is its own screen with a history entry, owned by the teacher app. */
+  creating: boolean;
+  onCreate: () => void;
+  onCloseCreation: () => void;
 };
 
 type DraftStage = JourneyStageInput & {
@@ -81,12 +85,11 @@ function statusLabel(status: Journey["status"]) {
   return "RASCUNHO";
 }
 
-export default function JourneyManager({ classroomId, classroomName, notify, initialJourneyId }: Props) {
+export default function JourneyManager({ classroomId, classroomName, notify, initialJourneyId, creating, onCreate, onCloseCreation }: Props) {
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [creationOpen, setCreationOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [redemption, setRedemption] = useState<JourneyRedemptionCode | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -148,7 +151,7 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
     openedInitialRef.current = initialJourneyId;
     setDraft(toDraft(target));
   }, [initialJourneyId, journeys]);
-  function newJourney() { setCreationOpen(true); }
+  function newJourney() { onCreate(); }
 
   function startBlankJourney() {
     setDraft(emptyDraft());
@@ -393,6 +396,21 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
     } finally { setBusy(false); }
   }
 
+  if (creating) {
+    return (
+      <div className={styles.workspace}>
+        <JourneyCreationWizard
+          classroomId={classroomId}
+          classroomName={classroomName}
+          onClose={onCloseCreation}
+          onBlank={startBlankJourney}
+          onUseDraft={useContentDraft}
+          notify={notify}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.workspace}>
       <header className={styles.header}>
@@ -613,14 +631,6 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
           </section>
         </div>
       )}
-      <JourneyCreationWizard
-        open={creationOpen}
-        classroomId={classroomId}
-        onClose={() => setCreationOpen(false)}
-        onBlank={startBlankJourney}
-        onUseDraft={useContentDraft}
-        notify={notify}
-      />
     </div>
   );
 }

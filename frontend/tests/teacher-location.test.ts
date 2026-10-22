@@ -27,6 +27,14 @@ test("parameters owned by other features survive navigation", () => {
   );
 });
 
+test("Journey creation is its own entry under the Journeys tab only", () => {
+  const search = teacherLocationSearch({ view: "classroom", tab: "journeys", classroomId: "c1", journeyCreation: true });
+  assert.equal(search, "?tela=turma&turma=c1&aba=jornadas&jornada=nova");
+  assert.deepEqual(parseTeacherLocation(search), { view: "classroom", tab: "journeys", classroomId: "c1", journeyCreation: true });
+  assert.equal(teacherLocationSearch({ view: "classroom", tab: "students", classroomId: "c1", journeyCreation: true }), "?tela=turma&turma=c1&aba=alunos");
+  assert.deepEqual(parseTeacherLocation("?tela=turma&turma=c1&aba=alunos&jornada=nova"), { view: "classroom", tab: "students", classroomId: "c1" });
+});
+
 test("the teacher app pushes screen changes and restores them on popstate", () => {
   const app = readFileSync("components/ArenaApp.tsx", "utf8");
   assert.match(app, /window\.history\.pushState/);

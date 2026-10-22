@@ -18,6 +18,8 @@ export type TeacherLocation = {
   view: TeacherView;
   tab: ClassroomTab;
   classroomId?: string;
+  /** The Journey creation screen, opened from the classroom's Journeys tab. */
+  journeyCreation?: boolean;
 };
 
 const VIEW_SLUG: Record<TeacherView, string> = {
@@ -47,14 +49,19 @@ function bySlug<T extends string>(slugs: Record<T, string>, slug: string | null)
 }
 
 /** Only the parameters this module owns; anything else in the query is preserved. */
-const OWNED_PARAMS = ["tela", "turma", "aba"] as const;
+const OWNED_PARAMS = ["tela", "turma", "aba", "jornada"] as const;
+
+function isJourneysTab(view: TeacherView, tab: ClassroomTab) {
+  return view === "classroom" && tab === "journeys";
+}
 
 export function parseTeacherLocation(search: string): TeacherLocation {
   const params = new URLSearchParams(search);
   const view = bySlug(VIEW_SLUG, params.get("tela")) ?? "dashboard";
   const tab = bySlug(TAB_SLUG, params.get("aba")) ?? "home";
   const classroomId = CLASSROOM_VIEWS.has(view) ? params.get("turma") || undefined : undefined;
-  return { view, tab, classroomId };
+  const journeyCreation = isJourneysTab(view, tab) && params.get("jornada") === "nova";
+  return journeyCreation ? { view, tab, classroomId, journeyCreation } : { view, tab, classroomId };
 }
 
 export function teacherLocationSearch(location: TeacherLocation, currentSearch = ""): string {
@@ -63,6 +70,7 @@ export function teacherLocationSearch(location: TeacherLocation, currentSearch =
   if (location.view !== "dashboard") params.set("tela", VIEW_SLUG[location.view]);
   if (CLASSROOM_VIEWS.has(location.view) && location.classroomId) params.set("turma", location.classroomId);
   if (location.view === "classroom" && location.tab !== "home") params.set("aba", TAB_SLUG[location.tab]);
+  if (location.journeyCreation && isJourneysTab(location.view, location.tab)) params.set("jornada", "nova");
   const query = params.toString();
   return query ? `?${query}` : "";
 }

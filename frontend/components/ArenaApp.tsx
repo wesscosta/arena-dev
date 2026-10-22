@@ -269,6 +269,12 @@ export default function ArenaApp() {
   const classroomIdsRef = useRef<string[]>([]);
   // Until the URL has been read once, the default screen must not overwrite it.
   const [locationRestored, setLocationRestored] = useState(false);
+  const [journeyCreation, setJourneyCreation] = useState(false);
+  // True when this tab pushed the creation entry, so leaving it can go "back".
+  const creationPushedRef = useRef(false);
+  const creatingJourney = journeyCreation && view === "classroom" && classroomTab === "journeys";
+  // Leaving the Journeys tab ends creation; coming back starts from the list.
+  if (journeyCreation && !creatingJourney) setJourneyCreation(false);
   useEffect(() => {
     classroomIdsRef.current = data.classrooms.map((item) => item.id);
   }, [data.classrooms]);
@@ -291,6 +297,8 @@ export default function ArenaApp() {
       if (location.classroomId) setActiveClassroom(location.classroomId);
       setClassroomTab(location.tab);
       setView(location.view);
+      setJourneyCreation(Boolean(location.journeyCreation));
+      if (!location.journeyCreation) creationPushedRef.current = false;
       setLocationRestored(true);
     }
     restore();
@@ -302,11 +310,29 @@ export default function ArenaApp() {
 
   useEffect(() => {
     if (!locationRestored) return;
-    const search = teacherLocationSearch({ view, tab: classroomTab, classroomId: activeClassroomId }, window.location.search);
+    const search = teacherLocationSearch(
+      { view, tab: classroomTab, classroomId: activeClassroomId, journeyCreation: creatingJourney },
+      window.location.search,
+    );
     if (search !== window.location.search) {
       window.history.pushState(null, "", `${window.location.pathname}${search}`);
     }
-  }, [locationRestored, view, classroomTab, activeClassroomId]);
+  }, [locationRestored, view, classroomTab, activeClassroomId, creatingJourney]);
+
+  function openJourneyCreation() {
+    creationPushedRef.current = true;
+    setJourneyCreation(true);
+  }
+
+  function closeJourneyCreation() {
+    // Leaving the screen we pushed is the same as "back", so history keeps one entry for it.
+    if (creationPushedRef.current) {
+      creationPushedRef.current = false;
+      window.history.back();
+      return;
+    }
+    setJourneyCreation(false);
+  }
 
   useEffect(() => {
     if (!hydrated) return;
@@ -644,6 +670,9 @@ export default function ArenaApp() {
                     classroomName={activeClassroom.name}
                     notify={notify}
                     initialJourneyId={editJourneyId}
+                    creating={creatingJourney}
+                    onCreate={openJourneyCreation}
+                    onCloseCreation={closeJourneyCreation}
                   />
                 )}
                 {classroomTab === "ranking" && (

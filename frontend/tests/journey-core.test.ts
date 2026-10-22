@@ -84,9 +84,12 @@ test("new journey onboarding is source-agnostic and review-first", () => {
   assert.match(wizard, /Importar página/);
   assert.match(wizard, /DraftReviewWorkspace/);
   assert.match(wizard, /handleDrop/);
-  assert.match(wizard, /event\.key === "Escape"/);
-  assert.match(wizard, /event\.key !== "Tab"/);
-  assert.match(wizard, /openerRef\.current\?\.focus\(\)/);
+  // rc.8: a screen, not a modal. Leaving with prepared material asks first.
+  assert.doesNotMatch(wizard, /aria-modal/);
+  assert.doesNotMatch(wizard, /event\.key === "Escape"/);
+  assert.match(wizard, /aria-labelledby="journey-creation-title"/);
+  assert.match(wizard, /beforeunload/);
+  assert.match(wizard, /Sair da criação\?/);
   assert.match(wizard, /DraftReviewWorkspace/);
   assert.doesNotMatch(wizard, /<option value="QUIZ">/);
   assert.doesNotMatch(wizard, /<option value="ACTIVITY">/);

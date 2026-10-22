@@ -1,40 +1,33 @@
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-  display: grid;
-  place-items: center;
-  padding: 1.25rem;
-  background: rgba(2, 8, 6, .72);
-  backdrop-filter: blur(10px);
-}
-
-.dialog {
-  width: min(70rem, 96vw);
-  max-height: min(52rem, 92vh);
-  overflow: auto;
+.screen {
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
   border-radius: 1.15rem;
   background: color-mix(in srgb, var(--surface) 97%, #07110d);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, .45);
 }
 
-.dialogHeader {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
+.screenHeader {
+  display: grid;
+  gap: .2rem;
   padding: 1.15rem 1.25rem;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
-  backdrop-filter: blur(12px);
 }
 
-.dialogHeader h3 { margin: .2rem 0 .22rem; font-size: 1.45rem; }
-.dialogHeader p { margin: 0; max-width: 46rem; color: var(--muted); font-size: .84rem; }
+.screenHeader h2 { margin: .1rem 0 .22rem; font-size: 1.55rem; }
+.screenHeader h2:focus { outline: none; }
+.screenHeader p { margin: 0; max-width: 46rem; color: var(--muted); font-size: .84rem; }
+.backLink {
+  justify-self: start;
+  margin-bottom: .45rem;
+  padding: .3rem .1rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: .84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.backLink:hover { color: var(--text); }
+.backLink:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; border-radius: .3rem; }
 .eyebrow { color: var(--ds-accent-text); font-size: .66rem; font-weight: 850; letter-spacing: .1em; }
 .choiceGrid {
   display: grid;
@@ -290,8 +283,7 @@
 .primary:disabled,.secondary:disabled { opacity: .45; cursor: not-allowed; }
 
 @media (max-width: 48rem) {
-  .backdrop { padding: 0; place-items: stretch; }
-  .dialog { width: 100%; max-height: 100dvh; border-radius: 0; }
+  .screen { border-radius: .8rem; }
   .choiceGrid,.templateGrid { grid-template-columns: 1fr; }
   .previewSummary { flex-direction: column; }
   .previewMetrics { text-align: left; }

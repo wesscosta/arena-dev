@@ -9,16 +9,14 @@ import {
   type ContentIngestionCapabilities,
   type ContentIngestionSource,
 } from "@/lib/content-ingestion-api";
-import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { fetchIntegrationConnections, fetchNotionPages, startNotionOAuth, type NotionPageSummary } from "@/lib/microsoft-integration-api";
 import styles from "./JourneyCreationWizard.module.css";
-import { DialogCloseButton } from "@/components/ui";
 import DraftReviewWorkspace from "./DraftReviewWorkspace";
 import type { Notify } from "@/components/ui";
 
 type Props = {
-  open: boolean;
   classroomId: string;
+  classroomName: string;
   onClose: () => void;
   onBlank: () => void;
   onUseDraft: (draft: ContentDraft) => Promise<void> | void;
@@ -34,15 +32,18 @@ const TEMPLATE_OPTIONS = [
   { key: "EXAM_PREP", title: "Preparação para avaliação", text: "Conhecimentos prévios, revisão e síntese." },
   { key: "CHALLENGE", title: "Estudo por desafios", text: "Contexto, análise e estratégias de resolução." },
 ] as const;
+
+// rc.8: creation is a screen of its own inside the Journeys tab, not a modal.
+// It has a history entry, so the browser "back" returns to the Journey list,
+// and Esc or a click outside can no longer discard what the teacher prepared.
 export default function JourneyCreationWizard({
-  open,
   classroomId,
+  classroomName,
   onClose,
   onBlank,
   onUseDraft,
   notify,
 }: Props) {
-  useBodyScrollLock(open);
   const [mode, setMode] = useState<Mode>("choose");
   const [importMode, setImportMode] = useState<ImportMode>("file");
   const [capabilities, setCapabilities] = useState<ContentIngestionCapabilities | null>(null);
@@ -58,68 +59,33 @@ export default function JourneyCreationWizard({
   const [draft, setDraft] = useState<ContentDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const dialogRef = useRef<HTMLElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const openerRef = useRef<HTMLElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
-  // Keep the latest onClose without re-running the focus effect on each parent render.
-  const onCloseRef = useRef(onClose);
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
+  const hasWork = Boolean(draft || title.trim() || brief.trim() || textContent.trim() || sourceUrl.trim());
 
   useEffect(() => {
-    if (!open) return;
-    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    setMode("choose");
-    setImportMode("file");
-    setTitle("");
-    setBrief("");
-    setTextContent("");
-    setSourceUrl("");
-    setSourceLabel("");
-    setDraft(null);
-    setDragOver(false);
-    queueMicrotask(() => closeRef.current?.focus());
+    headingRef.current?.focus();
+    window.scrollTo({ top: 0 });
     void fetchContentIngestionCapabilities().then(setCapabilities).catch(() => setCapabilities(null));
     void fetchIntegrationConnections().then((items) => {
       const connected = items.some((item) => item.provider === "NOTION" && item.status === "ACTIVE");
       setNotionConnected(connected);
       if (connected) { setNotionLoading(true); void fetchNotionPages().then(setNotionPages).catch(() => setNotionPages([])).finally(() => setNotionLoading(false)); }
     }).catch(() => setNotionConnected(false));
+  }, []);
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCloseRef.current();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const focusable = Array.from(
-        dialogRef.current?.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ) ?? [],
-      ).filter((element) => !element.hasAttribute("hidden") && element.getAttribute("aria-hidden") !== "true");
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
+  // A reload or closed tab would lose the prepared material; the browser asks first.
+  useEffect(() => {
+    if (!hasWork) return;
+    function warn(event: BeforeUnloadEvent) { event.preventDefault(); }
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [hasWork]);
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      openerRef.current?.focus();
-    };
-  }, [open]);
-
-  if (!open) return null;
+  function leave() {
+    if (hasWork && !window.confirm("Sair da criação? O que você preparou para esta jornada será descartado.")) return;
+    onClose();
+  }
 
   async function preview(input: {
     source: ContentIngestionSource;
@@ -196,17 +162,12 @@ export default function JourneyCreationWizard({
   }
 
   return (
-    <div className={styles.backdrop} role="presentation" onMouseDown={(event) => {
-      if (event.target === event.currentTarget) onClose();
-    }}>
-      <section ref={dialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-label="Criar jornada">
-        <header className={styles.dialogHeader}>
-          <div>
-            <span className={styles.eyebrow}>NOVA JORNADA</span>
-            <h3>{mode === "choose" ? "Como você quer começar?" : mode === "preview" ? "Revise a estrutura sugerida" : "Prepare o ponto de partida"}</h3>
-            <p>A Arena adapta o fluxo ao material que você já tem — inclusive nenhum.</p>
-          </div>
-          <DialogCloseButton ref={closeRef} onClick={onClose} label="Fechar criação de jornada" />
+    <section className={styles.screen} aria-labelledby="journey-creation-title">
+        <header className={styles.screenHeader}>
+          <button type="button" className={styles.backLink} onClick={leave}>← Jornadas de {classroomName}</button>
+          <span className={styles.eyebrow}>NOVA JORNADA</span>
+          <h2 id="journey-creation-title" ref={headingRef} tabIndex={-1}>{mode === "choose" ? "Como você quer começar?" : mode === "preview" ? "Revise a estrutura sugerida" : "Prepare o ponto de partida"}</h2>
+          <p>A Arena adapta o fluxo ao material que você já tem, inclusive nenhum.</p>
         </header>
         {mode === "choose" && (
           <div className={styles.choiceGrid}>
@@ -337,7 +298,6 @@ export default function JourneyCreationWizard({
             onUse={() => void applyDraft()}
           />
         )}
-      </section>
-    </div>
+    </section>
   );
 }
