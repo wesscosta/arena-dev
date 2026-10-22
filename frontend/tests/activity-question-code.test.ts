@@ -155,7 +155,7 @@ test("tela do aluno: bloco de código só existe quando a questão tem code, em 
 
 test("tela do aluno: hover e alternativa selecionada partem da superfície do tema", () => {
   const rule = panelCss.match(/\.runnerOption:hover,\.selectedOption\{[^}]*\}/)?.[0] ?? "";
-  assert.match(rule, /background:color-mix\(in srgb,var\(--accent\) 10%,var\(--ds-surface-subtle\)\)/);
+  assert.match(rule, /background:color-mix\(in srgb,var\(--accent\) 7%,var\(--ds-surface-subtle\)\)/);
   assert.doesNotMatch(rule, /#0b1512/);
 });
 
