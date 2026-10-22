@@ -1,3 +1,4 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -56,7 +57,7 @@ test("globals imports Arena polish after accessibility foundation", () => {
 
 
 test("Professor Arena cockpit replaces the old session tabs", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
   const css = read("styles/arena-polish.css");
 
@@ -90,7 +91,7 @@ test("Professor Arena cockpit exposes dynamics and transversal tools together", 
 
 
 test("Participant selection defaults to Grid + Spotlight and keeps Wheel as a presentation option", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const selection = read("components/arena/selection/ParticipantSelectionExperience.tsx");
   const selectorMode = read("components/arena/selection/selector-mode.ts");
   const wheel = read("components/arena/selection/WheelParticipantSelector.tsx");
@@ -106,7 +107,7 @@ test("Participant selection defaults to Grid + Spotlight and keeps Wheel as a pr
 });
 
 test("Grid + Spotlight keeps scoring and draw evidence visible without duplicating the selection algorithm", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const selection = read("components/arena/selection/ParticipantSelectionExperience.tsx");
   const outcome = read("components/arena/selection/DrawOutcomeActions.tsx");
   const api = read("lib/draw-api.ts");
@@ -125,7 +126,7 @@ test("Grid + Spotlight keeps scoring and draw evidence visible without duplicati
 
 
 test("Professor Arena fidelity pass exposes persistent context rail and QR entry", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
@@ -138,7 +139,7 @@ test("Professor Arena fidelity pass exposes persistent context rail and QR entry
 });
 
 test("Smart Draw workspace uses a participant Grid, transient Spotlight and contextual history", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const selection = read("components/arena/selection/ParticipantSelectionExperience.tsx");
   const settings = read("components/arena/selection/DrawSettingsDrawer.tsx");
   const rail = read("components/arena/selection/DrawSessionRail.tsx");
@@ -158,7 +159,7 @@ test("Smart Draw workspace uses a participant Grid, transient Spotlight and cont
 });
 
 test("Draw history comes from persisted session events instead of a frontend-only array", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
 
   assert.match(app, /fetchSessionEventsBySession/);
   assert.match(app, /event\.eventType === "DRAW_COMPLETED"/);
@@ -167,7 +168,7 @@ test("Draw history comes from persisted session events instead of a frontend-onl
 
 
 test("Arena separates primary dynamics from contextual tools", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
   const toolState = read("components/arena/live/useArenaToolState.ts");
 
@@ -180,7 +181,7 @@ test("Arena separates primary dynamics from contextual tools", () => {
 });
 
 test("Arena contextual tools open without replacing the primary dynamic", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
 
   assert.match(chrome, /pickTool\(item.target\)/);
@@ -209,7 +210,7 @@ test("Arena tool drawer is modal, keyboard dismissible, focus-contained and mobi
 });
 
 test("Buzzer uses the gamified Arena workspace instead of the legacy panel", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const css = read("styles/arena-polish.css");
 
   assert.match(app, /className="arena-dynamic-workspace buzzer-workspace"/);
@@ -221,7 +222,7 @@ test("Buzzer uses the gamified Arena workspace instead of the legacy panel", () 
 });
 
 test("Buzzer preserves server authority and winner scoring", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
 
   assert.match(app, /ordem oficial definida pelo servidor/);
   assert.match(app, /toggleBuzzer\(true\)/);
@@ -310,7 +311,7 @@ test("Nuvem de Palavras 2.0 preserves reveal, projector and close controls", () 
 
 
 test("Boss Battle 2.0 uses a gamified collective challenge workspace", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const css = read("styles/arena-polish.css");
 
   assert.match(app, /className="arena-dynamic-workspace boss-workspace"/);
@@ -323,7 +324,7 @@ test("Boss Battle 2.0 uses a gamified collective challenge workspace", () => {
 });
 
 test("Boss Battle 2.0 preserves backend-authoritative manual damage", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
 
   assert.match(app, /damageBoss\(10\)/);
   assert.match(app, /damageBoss\(20\)/);
@@ -335,7 +336,7 @@ test("Boss Battle 2.0 preserves backend-authoritative manual damage", () => {
 
 
 test("Arena desktop fidelity pass removes the global content max width only inside Arena", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const globals = read("app/globals.css");
 
   assert.match(app, /view === "arena" \? "content arena-content-full" : "content"/);
@@ -356,7 +357,7 @@ test("Wheel presentation keeps backend authority and only animates presentation"
 });
 
 test("Draw settings separate selection criterion, presentation and selection rules", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const settings = read("components/arena/selection/DrawSettingsDrawer.tsx");
   const mechanics = read("lib/mechanics-api.ts");
 
@@ -399,7 +400,7 @@ test("Draw CTA is integrated as a semicircle instead of a detached circular hub"
 });
 
 test("Presence drawer uses the dedicated compact SessionAccessCard variant", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const access = read("components/SessionAccessCard.tsx");
   const css = read("components/SessionAccessCard.module.css");
 
@@ -416,7 +417,7 @@ test("Presence drawer uses the dedicated compact SessionAccessCard variant", () 
 
 
 test("Arena right rail exposes truthful participant status and copyable session code", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
@@ -428,7 +429,7 @@ test("Arena right rail exposes truthful participant status and copyable session 
 });
 
 test("Arena QR preview expands into a projector-friendly modal", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
@@ -485,7 +486,7 @@ test("Annular roulette creates real SVG segments with an inner cutout", () => {
 });
 
 test("Draw hero uses an integrated target icon and semicircular command hub", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const css = read("components/arena/draw/DrawWheel.module.css");
 
   assert.match(app, /<DynamicHeader dynamic="draw"/);
@@ -607,7 +608,7 @@ test("Arena tool drawer only closes from a real backdrop click so native selects
 });
 
 test("Attendance drawer QR reuses the enlarged Arena QR experience", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const access = read("components/SessionAccessCard.tsx");
   const css = read("components/SessionAccessCard.module.css");
 
@@ -629,7 +630,7 @@ test("Arena native selects keep dark contrast in the cockpit and contextual draw
 });
 
 test("Attendance tool groups online and present counts beside the participant heading", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const css = read("styles/arena-polish.css");
 
   assert.match(app, /className="arena-tool-roster-badges"/);
@@ -640,7 +641,7 @@ test("Attendance tool groups online and present counts beside the participant he
 });
 
 test("Word cloud, poll, buzzer and boss share the full-height Arena dynamic workspace", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const css = read("styles/arena-polish.css");
 
   assert.match(app, /activeDynamic === "wordcloud"[\s\S]*?className="arena-dynamic-workspace"/);
@@ -672,7 +673,7 @@ test("Arena polish no longer carries the legacy CSS wheel implementation", () =>
 });
 
 test("Arena exposes explicit empty states for the roster and draw when nobody is present", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const rail = read("components/arena/live/ArenaContextRail.tsx");
   const css = read("styles/arena-polish.css");
 
@@ -700,7 +701,7 @@ test("Unstarted dynamics omit redundant prepare badge but share the same header 
 });
 
 test("Arena dynamics use a shared lifecycle vocabulary without erasing domain-specific state", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const quiz = read("components/QuizPanel.tsx");
   const poll = read("components/PollPanel.tsx");
   const wordCloud = read("components/WordCloudPanel.tsx");
@@ -719,7 +720,7 @@ test("Arena dynamics use a shared lifecycle vocabulary without erasing domain-sp
 });
 
 test("Quiz workspace fills the Arena cockpit height on desktop and returns to natural flow responsively", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const css = read("styles/arena-polish.css");
   const quizCss = read("components/QuizPanel.module.css");
 
@@ -730,7 +731,7 @@ test("Quiz workspace fills the Arena cockpit height on desktop and returns to na
 });
 
 test("Smart Draw folds history and coverage into the single result HUD without layout-shifting history rows", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const css = read("styles/arena-polish.css");
 
   assert.doesNotMatch(app, /className="draw-context-strip"/);
@@ -752,7 +753,7 @@ test("Smart Draw folds history and coverage into the single result HUD without l
 });
 
 test("Manual XP stays in the contextual tool, not duplicated below the draw", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const navigation = read("components/arena/live/ArenaLiveChrome.tsx");
   const shell = read("components/arena/live/ArenaLiveChrome.module.css");
 
@@ -785,7 +786,7 @@ test("Live Arena keeps sidebar scrolling visually hidden, sparse roster top-alig
 
 
 test("Live Arena replaces the duplicated root header with one operational topbar", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
   const css = read("styles/arena-polish.css");
 
@@ -798,7 +799,7 @@ test("Live Arena replaces the duplicated root header with one operational topbar
 });
 
 test("Arena sidebar owns product identity while the session context stays in the workspace header", () => {
-  const app = read("components/ArenaApp.tsx");
+  const app = readTeacherAppSource();
   const chrome = read("components/arena/live/ArenaLiveChrome.tsx");
 
   assert.match(app, /<ArenaLiveShell/);
