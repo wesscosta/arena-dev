@@ -1,4 +1,4 @@
-import { readTeacherAppSource } from "./support/teacher-source";
+import { componentBlock, readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
@@ -22,9 +22,8 @@ test("hard delete still requires exact classroom name", () => {
 });
 
 test("classroom management does not duplicate the students workspace", () => {
-  const start = arena.indexOf("function ClassroomManagementPage");
-  const end = arena.indexOf("function ArenaView", start);
-  const block = arena.slice(start, end);
+  const block = componentBlock(arena, "ClassroomManagementPage");
+  assert.match(block, /GERENCIAR TURMA/);
   assert.doesNotMatch(block, /StudentManager/);
   assert.doesNotMatch(block, /modal-tabs/);
 });

@@ -312,12 +312,14 @@ test.describe.serial("Classroom Home responsive contract", () => {
 
         const presets = presetRail.locator("button");
         await expect(presets).toHaveCount(8);
-        const presetBoxes = await Promise.all(Array.from({ length: 8 }, (_, index) => presets.nth(index).boundingBox()));
-        const firstPresetY = presetBoxes[0]?.y;
-        expect(firstPresetY).toBeDefined();
-        for (const box of presetBoxes) {
-          expect(box).not.toBeNull();
-          if (box && firstPresetY !== undefined) expect(Math.abs(box.y - firstPresetY)).toBeLessThanOrEqual(5);
+        // One layout read for all chips: separate boundingBox() calls can land on
+        // different frames while the drawer is still settling.
+        const presetTops = await presetRail.evaluate((element) => (
+          Array.from(element.querySelectorAll("button"), (button) => button.getBoundingClientRect().top)
+        ));
+        expect(presetTops).toHaveLength(8);
+        for (const top of presetTops) {
+          expect(Math.abs(top - presetTops[0])).toBeLessThanOrEqual(5);
         }
 
         const startButton = timerDialog.getByRole("button", { name: "Iniciar agora" });
