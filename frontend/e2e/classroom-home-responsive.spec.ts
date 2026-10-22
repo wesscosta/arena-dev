@@ -96,12 +96,11 @@ async function loginAndOpenClassroom(page: Page, classroomName: string) {
   await expect(page.getByTestId("classroom-home-hero")).toBeVisible();
 }
 
+// The open screen lives in the URL, so a reload lands back on the same classroom.
 async function reopenClassroomAfterReload(page: Page, classroomName: string) {
   await page.reload();
-  const card = page.locator("article.overview-class-card").filter({ hasText: classroomName });
-  await expect(card).toBeVisible();
-  await card.click();
   await expect(page.getByTestId("classroom-home-hero")).toBeVisible();
+  await expect(page.getByTestId("classroom-home-hero")).toContainText(classroomName);
 }
 async function expectInsideViewport(page: Page, testId: string, viewportWidth: number) {
   const box = await page.getByTestId(testId).boundingBox();

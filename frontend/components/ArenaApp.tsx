@@ -109,6 +109,7 @@ import {
 import type { Activity, ActivityQuestion, ActivityStep, ArenaData, Classroom, ClassroomThemeColor, ClassroomThemeIcon, ScoreCategory, SessionParticipant, Student } from "@/lib/types";
 import { classroomArenaCtaState } from "@/lib/classroom-arena-cta";
 import { applyThemePreference, loadThemePreference, saveThemePreference, type ThemePreference } from "@/lib/theme-preference";
+import { parseTeacherLocation, teacherLocationSearch, type ClassroomTab, type TeacherLocation, type TeacherView } from "@/lib/teacher-location";
 import {
   CLASSROOM_ACCENT_SCOPE_CLASS,
   CLASSROOM_THEME_COLORS,
@@ -116,8 +117,7 @@ import {
   classroomThemePresentation,
 } from "@/lib/classroom-theme";
 
-type View = "dashboard" | "library" | "classroom" | "classroom-settings" | "arena" | "integrations" | "settings";
-type ClassroomTab = "home" | "students" | "activities" | "journeys" | "ranking" | "history";
+type View = TeacherView;
 
 const VIEW_LABEL: Record<View, string> = {
   dashboard: "Turmas",
@@ -265,6 +265,48 @@ export default function ArenaApp() {
 
   const activeClassroom = data.classrooms.find((item) => item.id === data.activeClassroomId) ?? data.classrooms[0];
   const activeClassroomId = activeClassroom?.id;
+
+  const classroomIdsRef = useRef<string[]>([]);
+  // Until the URL has been read once, the default screen must not overwrite it.
+  const [locationRestored, setLocationRestored] = useState(false);
+  useEffect(() => {
+    classroomIdsRef.current = data.classrooms.map((item) => item.id);
+  }, [data.classrooms]);
+
+  // Screen ↔ URL. Opening a screen pushes a history entry; "back" (browser or
+  // installed PWA) restores the previous one instead of leaving the app.
+  useEffect(() => {
+    if (!hydrated) return;
+    function restore() {
+      const requested = parseTeacherLocation(window.location.search);
+      const known = requested.classroomId && classroomIdsRef.current.includes(requested.classroomId);
+      // A classroom screen whose classroom no longer exists falls back to the list.
+      const location: TeacherLocation = requested.classroomId && !known
+        ? { view: "dashboard", tab: "home" }
+        : requested;
+      const search = teacherLocationSearch(location, window.location.search);
+      if (search !== window.location.search) {
+        window.history.replaceState(null, "", `${window.location.pathname}${search}`);
+      }
+      if (location.classroomId) setActiveClassroom(location.classroomId);
+      setClassroomTab(location.tab);
+      setView(location.view);
+      setLocationRestored(true);
+    }
+    restore();
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
+    // setActiveClassroom only touches state setters; classrooms are read through the ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
+
+  useEffect(() => {
+    if (!locationRestored) return;
+    const search = teacherLocationSearch({ view, tab: classroomTab, classroomId: activeClassroomId }, window.location.search);
+    if (search !== window.location.search) {
+      window.history.pushState(null, "", `${window.location.pathname}${search}`);
+    }
+  }, [locationRestored, view, classroomTab, activeClassroomId]);
 
   useEffect(() => {
     if (!hydrated) return;
