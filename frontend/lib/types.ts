@@ -123,6 +123,10 @@ export interface Student {
   nickname: string;
   active?: boolean;
   createdAt: string;
+  /** Teacher-provided or student-declared; not verified in this version. */
+  email?: string;
+  /** Registered by e-mail only: the name is a placeholder until the student completes it. */
+  namePending?: boolean;
 }
 
 export interface Enrollment {

@@ -130,7 +130,7 @@ public class JourneyRedemptionService {
 
     private Enrollment resolveEnrollment(Journey journey, String identity) {
         if (identity == null || identity.isBlank()) {
-            throw new IllegalArgumentException("Informe sua matrícula ou nome completo.");
+            throw new IllegalArgumentException("Informe sua matrícula, e-mail ou nome completo.");
         }
 
         List<Enrollment> candidates = enrollments
@@ -144,6 +144,12 @@ public class JourneyRedemptionService {
         if (registrationMatches.size() > 1) {
             throw new IllegalArgumentException("Identificação ambígua. Use sua matrícula para continuar.");
         }
+
+        List<Enrollment> emailMatches = candidates.stream()
+                .filter(item -> item.getStudent().getEmail() != null)
+                .filter(item -> item.getStudent().getEmail().equalsIgnoreCase(identity.trim()))
+                .toList();
+        if (emailMatches.size() == 1) return emailMatches.getFirst();
 
         String wanted = normalizeIdentity(identity);
         List<Enrollment> matches = new ArrayList<>();
@@ -159,7 +165,7 @@ public class JourneyRedemptionService {
         if (matches.isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
-                    "Aluno não encontrado na turma desta Jornada. Confira a matrícula ou o nome completo."
+                    "Aluno não encontrado na turma desta Jornada. Confira a matrícula, o e-mail ou o nome completo."
             );
         }
         if (matches.size() > 1) {

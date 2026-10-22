@@ -37,6 +37,8 @@ export type StudentJoinAccess = {
   displayName: string;
   present: boolean;
   expiresAt: string;
+  /** False while the name is the e-mail placeholder or no e-mail was given. */
+  profileComplete?: boolean;
 };
 
 export type StudentJoinResult = {

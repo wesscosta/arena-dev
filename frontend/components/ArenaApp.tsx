@@ -8,6 +8,7 @@ import ActivitySubmissionDashboard from "@/components/ActivitySubmissionDashboar
 import LiveFlowConductor from "@/components/LiveFlowConductor";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
+import { parseStudentImportLine } from "@/lib/student-import";
 import ArenaToolDrawer from "@/components/ArenaToolDrawer";
 import ParticipantSelectionExperience from "@/components/arena/selection/ParticipantSelectionExperience";
 import DrawSettingsDrawer from "@/components/arena/selection/DrawSettingsDrawer";
@@ -1340,6 +1341,7 @@ function StudentManager({
   const [anonymizeTarget, setAnonymizeTarget] = useState<{ id: string; name: string } | null>(null);
   const [anonymizeConfirmation, setAnonymizeConfirmation] = useState("");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [preferredName, setPreferredName] = useState("");
   const [preferredDrafts, setPreferredDrafts] = useState<
     Record<string, string>
@@ -1378,13 +1380,15 @@ function StudentManager({
     studentName: string,
     studentPreferredName = "",
     silent = false,
+    studentEmail = "",
   ) {
-    if (!studentName.trim() || (!silent && busy)) return false;
+    if ((!studentName.trim() && !studentEmail.trim()) || (!silent && busy)) return false;
     if (!silent) setBusy(true);
     try {
       await createAndEnrollStudent(classroomId, {
         name: studentName.trim(),
         preferredName: studentPreferredName.trim(),
+        email: studentEmail.trim(),
       });
       if (!silent) {
         await refreshClassroomDomain(classroomId);
@@ -1400,9 +1404,10 @@ function StudentManager({
   }
 
   async function submitSingleStudent() {
-    const created = await addStudent(name, preferredName);
+    const created = await addStudent(name, preferredName, false, email);
     if (!created) return;
     setName("");
+    setEmail("");
     setPreferredName("");
     setEntryMode(null);
   }
@@ -1416,8 +1421,9 @@ function StudentManager({
     setBusy(true);
     let imported = 0;
     try {
-      for (const studentName of names) {
-        if (await addStudent(studentName, "", true)) imported += 1;
+      for (const line of names) {
+        const entry = parseStudentImportLine(line);
+        if (await addStudent(entry.name, "", true, entry.email)) imported += 1;
       }
       await refreshClassroomDomain(classroomId);
       setBulk("");
@@ -1617,6 +1623,12 @@ function StudentManager({
                       <Avatar student={student} />
                       <div className="student-identity-copy">
                         <strong>{student.name}</strong>
+                        {(student.email || student.namePending) && (
+                          <small className="student-email-line">
+                            {student.email}
+                            {student.namePending ? " · aguardando o aluno completar o cadastro" : ""}
+                          </small>
+                        )}
                         {isEditing ? (
                           <div className="student-display-name-editor">
                       <input
@@ -1793,6 +1805,19 @@ function StudentManager({
               />
             </label>
             <label className="field">
+              <span>E-mail</span>
+              <input
+                className="input"
+                type="email"
+                autoComplete="off"
+                placeholder="Ex.: ana.sousa@escola.edu.br"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                disabled={busy}
+              />
+              <small>Informe o nome, o e-mail ou os dois. Com só o e-mail, o aluno completa o nome no primeiro acesso.</small>
+            </label>
+            <label className="field">
               <span>
                 Nome de exibição <small>opcional</small>
               </span>
@@ -1802,7 +1827,7 @@ function StudentManager({
                 value={preferredName}
                 onChange={(event) => setPreferredName(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter" && name.trim() && !busy) {
+                  if (event.key === "Enter" && (name.trim() || email.trim()) && !busy) {
                     event.preventDefault();
                     void submitSingleStudent();
                   }
@@ -1820,7 +1845,7 @@ function StudentManager({
               </button>
               <button
                 className="button primary"
-                disabled={busy || !name.trim()}
+                disabled={busy || (!name.trim() && !email.trim())}
                 onClick={() => {
                   void submitSingleStudent();
                 }}
@@ -1844,11 +1869,11 @@ function StudentManager({
         >
           <div className="modal-section-stack">
             <label className="field">
-              <span>Lista de nomes</span>
+              <span>Lista de alunos</span>
               <textarea
                 className="textarea student-import-textarea"
                 rows={10}
-                placeholder={"Ana Luiza\nCarlos Henrique\nJoão Pedro"}
+                placeholder={"Ana Luiza\nCarlos Henrique, carlos@escola.edu.br\njoao.pedro@escola.edu.br"}
                 value={bulk}
                 onChange={(event) => setBulk(event.target.value)}
                 disabled={busy}
@@ -1862,8 +1887,8 @@ function StudentManager({
                 </>
               ) : (
                 <span>
-                  Cole um nome por linha. Também aceitamos nomes separados por
-                  ponto e vírgula.
+                  Cole um aluno por linha: nome, e-mail ou “nome, e-mail”.
+                  Também aceitamos alunos separados por ponto e vírgula.
                 </span>
               )}
             </div>
