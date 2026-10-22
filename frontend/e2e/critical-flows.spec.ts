@@ -141,7 +141,7 @@ async function joinParticipant(
 ) {
   await page.goto(`/join?code=${encodeURIComponent(code)}`);
   await expect(page.getByText(classroomName, { exact: true })).toBeVisible();
-  await page.getByPlaceholder("Matrícula ou nome").fill(registration);
+  await page.getByPlaceholder("Matrícula, e-mail ou nome").fill(registration);
   await page.getByRole("button", { name: "Entrar na sessão" }).click();
   await expect(page.getByRole("heading", { name: displayName })).toBeVisible();
   await expect(page.getByText("Conectado", { exact: true })).toBeVisible();

@@ -8,6 +8,7 @@ import ActivitySubmissionDashboard from "@/components/ActivitySubmissionDashboar
 import LiveFlowConductor from "@/components/LiveFlowConductor";
 import ExternalResultImportModal from "@/components/ExternalResultImportModal";
 import TimerPanel from "@/components/TimerPanel";
+import { parseStudentImportLine } from "@/lib/student-import";
 import ArenaToolDrawer from "@/components/ArenaToolDrawer";
 import ParticipantSelectionExperience from "@/components/arena/selection/ParticipantSelectionExperience";
 import DrawSettingsDrawer from "@/components/arena/selection/DrawSettingsDrawer";
@@ -65,7 +66,7 @@ import {
 } from "@/components/ui";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { xpForStudent } from "@/lib/game";
-import { anonymizeStudent, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName } from "@/lib/classroom-api";
+import { anonymizeStudent, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName, updateStudentEmail } from "@/lib/classroom-api";
 import { createSession as createSessionApi, fetchSessionParticipants, finishSession as finishSessionApi, releaseParticipantDevice, setParticipantPresence } from "@/lib/session-api";
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
 import { fetchActivitySteps, replaceActivitySteps } from "@/lib/activity-step-api";
@@ -1383,7 +1384,10 @@ function StudentManager({
   const [entryMode, setEntryMode] = useState<"add" | "import" | null>(null);
   const [anonymizeTarget, setAnonymizeTarget] = useState<{ id: string; name: string } | null>(null);
   const [anonymizeConfirmation, setAnonymizeConfirmation] = useState("");
+  const [emailTarget, setEmailTarget] = useState<{ id: string; name: string } | null>(null);
+  const [emailDraft, setEmailDraft] = useState("");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [preferredName, setPreferredName] = useState("");
   const [preferredDrafts, setPreferredDrafts] = useState<
     Record<string, string>
@@ -1422,13 +1426,15 @@ function StudentManager({
     studentName: string,
     studentPreferredName = "",
     silent = false,
+    studentEmail = "",
   ) {
-    if (!studentName.trim() || (!silent && busy)) return false;
+    if ((!studentName.trim() && !studentEmail.trim()) || (!silent && busy)) return false;
     if (!silent) setBusy(true);
     try {
       await createAndEnrollStudent(classroomId, {
         name: studentName.trim(),
         preferredName: studentPreferredName.trim(),
+        email: studentEmail.trim(),
       });
       if (!silent) {
         await refreshClassroomDomain(classroomId);
@@ -1444,9 +1450,10 @@ function StudentManager({
   }
 
   async function submitSingleStudent() {
-    const created = await addStudent(name, preferredName);
+    const created = await addStudent(name, preferredName, false, email);
     if (!created) return;
     setName("");
+    setEmail("");
     setPreferredName("");
     setEntryMode(null);
   }
@@ -1460,8 +1467,9 @@ function StudentManager({
     setBusy(true);
     let imported = 0;
     try {
-      for (const studentName of names) {
-        if (await addStudent(studentName, "", true)) imported += 1;
+      for (const line of names) {
+        const entry = parseStudentImportLine(line);
+        if (await addStudent(entry.name, "", true, entry.email)) imported += 1;
       }
       await refreshClassroomDomain(classroomId);
       setBulk("");
@@ -1505,6 +1513,21 @@ function StudentManager({
       notify("Dados pessoais do aluno removidos. O histórico da turma foi preservado.");
       setAnonymizeTarget(null);
       setAnonymizeConfirmation("");
+    } catch (error) {
+      notify(errorMessage(error), "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveStudentEmail() {
+    if (busy || !emailTarget) return;
+    setBusy(true);
+    try {
+      await updateStudentEmail(emailTarget.id, emailDraft);
+      await refreshClassroomDomain(classroomId);
+      notify(emailDraft.trim() ? "E-mail do aluno atualizado." : "E-mail do aluno removido.");
+      setEmailTarget(null);
     } catch (error) {
       notify(errorMessage(error), "error");
     } finally {
@@ -1661,6 +1684,12 @@ function StudentManager({
                       <Avatar student={student} />
                       <div className="student-identity-copy">
                         <strong>{student.name}</strong>
+                        {(student.email || student.namePending) && (
+                          <small className="student-email-line">
+                            {student.email}
+                            {student.namePending ? " · aguardando o aluno completar o cadastro" : ""}
+                          </small>
+                        )}
                         {isEditing ? (
                           <div className="student-display-name-editor">
                       <input
@@ -1751,6 +1780,15 @@ function StudentManager({
                       </button>
                       <button
                         type="button"
+                        className="student-row-action"
+                        aria-label={`E-mail de ${student.name}`}
+                        title="E-mail do aluno"
+                        onClick={() => { setEmailDraft(student.email ?? ""); setEmailTarget({ id: student.id, name: student.name }); }}
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5h17v11h-17zM3.5 7l8.5 6.5L20.5 7" /></svg>
+                      </button>
+                      <button
+                        type="button"
                         className="student-row-action danger"
                         aria-label={`Remover ${student.name} da turma`}
                         title="Remover da turma"
@@ -1814,6 +1852,44 @@ function StudentManager({
         </Modal>
       )}
 
+      {emailTarget && (
+        <Modal
+          open
+          title="E-mail do aluno"
+          subtitle={emailTarget.name}
+          onClose={() => { if (!busy) setEmailTarget(null); }}
+          size="medium"
+        >
+          <div className="modal-section-stack">
+            <label className="field">
+              <span>E-mail</span>
+              <input
+                className="input"
+                type="email"
+                autoComplete="off"
+                autoFocus
+                value={emailDraft}
+                onChange={(event) => setEmailDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !busy) {
+                    event.preventDefault();
+                    void saveStudentEmail();
+                  }
+                }}
+                disabled={busy}
+              />
+              <small>O e-mail cadastrado aqui substitui o informado pelo aluno, e ele não poderá alterá-lo. Deixe vazio para remover.</small>
+            </label>
+            <div className="modal-footer">
+              <button className="button ghost" onClick={() => setEmailTarget(null)} disabled={busy}>Cancelar</button>
+              <button className="button primary" disabled={busy} onClick={() => { void saveStudentEmail(); }}>
+                {busy ? "Salvando..." : "Salvar e-mail"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {entryMode === "add" && (
         <Modal
           open
@@ -1837,6 +1913,19 @@ function StudentManager({
               />
             </label>
             <label className="field">
+              <span>E-mail</span>
+              <input
+                className="input"
+                type="email"
+                autoComplete="off"
+                placeholder="Ex.: ana.sousa@escola.edu.br"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                disabled={busy}
+              />
+              <small>Informe o nome, o e-mail ou os dois. Com só o e-mail, o aluno completa o nome no primeiro acesso.</small>
+            </label>
+            <label className="field">
               <span>
                 Nome de exibição <small>opcional</small>
               </span>
@@ -1846,7 +1935,7 @@ function StudentManager({
                 value={preferredName}
                 onChange={(event) => setPreferredName(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter" && name.trim() && !busy) {
+                  if (event.key === "Enter" && (name.trim() || email.trim()) && !busy) {
                     event.preventDefault();
                     void submitSingleStudent();
                   }
@@ -1864,7 +1953,7 @@ function StudentManager({
               </button>
               <button
                 className="button primary"
-                disabled={busy || !name.trim()}
+                disabled={busy || (!name.trim() && !email.trim())}
                 onClick={() => {
                   void submitSingleStudent();
                 }}
@@ -1888,11 +1977,11 @@ function StudentManager({
         >
           <div className="modal-section-stack">
             <label className="field">
-              <span>Lista de nomes</span>
+              <span>Lista de alunos</span>
               <textarea
                 className="textarea student-import-textarea"
                 rows={10}
-                placeholder={"Ana Luiza\nCarlos Henrique\nJoão Pedro"}
+                placeholder={"Ana Luiza\nCarlos Henrique, carlos@escola.edu.br\njoao.pedro@escola.edu.br"}
                 value={bulk}
                 onChange={(event) => setBulk(event.target.value)}
                 disabled={busy}
@@ -1906,8 +1995,8 @@ function StudentManager({
                 </>
               ) : (
                 <span>
-                  Cole um nome por linha. Também aceitamos nomes separados por
-                  ponto e vírgula.
+                  Cole um aluno por linha: nome, e-mail ou “nome, e-mail”.
+                  Também aceitamos alunos separados por ponto e vírgula.
                 </span>
               )}
             </div>

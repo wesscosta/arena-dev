@@ -19,7 +19,7 @@ test("first student access can bootstrap a study profile from a journey code", (
   assert.match(studyApi, /deviceClaimStorageKey\(result\.classroomId\)/);
   assert.match(journeys, /previewJourneyCode/);
   assert.match(journeys, /bootstrapJourneyRedemption/);
-  assert.match(journeys, /Matrícula ou nome completo/);
+  assert.match(journeys, /Matrícula, e-mail ou nome completo/);
 });
 
 test("join routes journey codes to the study redemption flow", () => {

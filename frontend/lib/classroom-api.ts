@@ -36,6 +36,8 @@ type StudentView = {
   active: boolean;
   createdAt: string;
   anonymized?: boolean;
+  email?: string | null;
+  namePending?: boolean;
 };
 
 type EnrollmentView = {
@@ -71,6 +73,8 @@ function mapStudent(item: StudentView): Student {
     nickname: item.nickname ?? "",
     active: item.active,
     createdAt: item.createdAt,
+    email: item.email ?? "",
+    namePending: item.namePending ?? false,
   };
 }
 
@@ -160,14 +164,24 @@ export async function deleteClassroom(classroomId: string, confirmationName: str
   });
 }
 
-export async function createStudent(input: { name: string; nickname?: string; registration?: string }): Promise<Student> {
+/** Name, e-mail or both: with the e-mail alone the student completes the name later. */
+export async function createStudent(input: { name: string; nickname?: string; registration?: string; email?: string }): Promise<Student> {
   const result = await classroomRequest<StudentView>("/api/students", {
     method: "POST",
     body: JSON.stringify({
-      name: input.name,
+      name: input.name || null,
       nickname: input.nickname || null,
       registration: input.registration || null,
+      email: input.email || null,
     }),
+  });
+  return mapStudent(result);
+}
+
+export async function updateStudentEmail(studentId: string, email: string): Promise<Student> {
+  const result = await classroomRequest<StudentView>(`/api/students/${studentId}/email`, {
+    method: "PATCH",
+    body: JSON.stringify({ email: email.trim() || null }),
   });
   return mapStudent(result);
 }
@@ -213,7 +227,7 @@ export async function removeEnrollment(classroomId: string, studentId: string): 
 
 export async function createAndEnrollStudent(
   classroomId: string,
-  input: { name: string; nickname?: string; preferredName?: string; registration?: string },
+  input: { name: string; nickname?: string; preferredName?: string; registration?: string; email?: string },
 ): Promise<{ student: Student; enrollment: Enrollment }> {
   const student = await createStudent(input);
   try {

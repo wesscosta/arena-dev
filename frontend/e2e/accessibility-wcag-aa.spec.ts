@@ -175,11 +175,11 @@ for (const theme of ["dark", "light"] as const) {
     await student.page.goto(`/join?code=${encodeURIComponent(code)}`);
     await expect(student.page.getByText(classroomName, { exact: true })).toBeVisible();
     await check(student.page, "aluno-entrada");
-    await student.page.getByPlaceholder("Matrícula ou nome").fill("ninguem-com-este-nome");
+    await student.page.getByPlaceholder("Matrícula, e-mail ou nome").fill("ninguem-com-este-nome");
     await student.page.getByRole("button", { name: "Entrar na sessão" }).click();
     await expect(student.page.getByRole("alert").filter({ hasText: "Não encontramos você nesta turma" })).toBeVisible();
     await check(student.page, "aluno-entrada-erro");
-    await student.page.getByPlaceholder("Matrícula ou nome").fill(registration);
+    await student.page.getByPlaceholder("Matrícula, e-mail ou nome").fill(registration);
     await student.page.getByRole("button", { name: "Entrar na sessão" }).click();
     await expect(student.page.getByText("Conectado", { exact: true })).toBeVisible();
     await check(student.page, "aluno-sessao");

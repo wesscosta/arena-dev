@@ -121,7 +121,7 @@ public class SessionJoinService {
         SessionJoinCode joinCode = getUsableCode(rawCode);
         ClassSession session = joinCode.getSession();
         if (identity == null || identity.isBlank()) {
-            throw new IllegalArgumentException("Informe sua matrícula ou nome completo.");
+            throw new IllegalArgumentException("Informe sua matrícula, e-mail ou nome completo.");
         }
 
         List<SessionParticipant> participants = participantRepository.findBySessionIdForUpdate(session.getId());
@@ -225,7 +225,8 @@ public class SessionJoinService {
                 student.getNickname(),
                 displayNameService.resolve(session.getClassroom().getId(), student, DisplayNamePolicy.PREFERRED_NAME),
                 participant.isPresent(),
-                joinCode.getExpiresAt()
+                joinCode.getExpiresAt(),
+                !student.isNamePending()
         );
     }
 
@@ -286,6 +287,12 @@ public class SessionJoinService {
                 .toList();
         if (!registrationMatches.isEmpty()) return registrationMatches;
 
+        List<SessionParticipant> emailMatches = participants.stream()
+                .filter(item -> item.getStudent().getEmail() != null)
+                .filter(item -> item.getStudent().getEmail().equalsIgnoreCase(identity))
+                .toList();
+        if (!emailMatches.isEmpty()) return emailMatches;
+
         String wanted = normalize(identity);
         List<SessionParticipant> matches = new ArrayList<>();
         for (SessionParticipant item : participants) {
@@ -319,7 +326,8 @@ public class SessionJoinService {
                 student.getNickname(),
                 displayNameService.resolve(session.getClassroom().getId(), student, DisplayNamePolicy.PREFERRED_NAME),
                 participant.isPresent(),
-                joinCode.getExpiresAt()
+                joinCode.getExpiresAt(),
+                !student.isNamePending()
         );
     }
 
@@ -435,7 +443,8 @@ public class SessionJoinService {
             String nickname,
             String displayName,
             boolean present,
-            Instant expiresAt
+            Instant expiresAt,
+            boolean profileComplete
     ) {
     }
 

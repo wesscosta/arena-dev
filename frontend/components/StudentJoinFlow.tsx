@@ -488,8 +488,8 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
           <form className="student-join-form" onSubmit={submitIdentity}>
             <button type="button" className="student-back-button" onClick={() => { setSession(null); setCode(""); setDeviceToken(null); }}>← trocar código</button>
             <div className="student-session-context"><span>{session.classroomName}</span><strong>{session.sessionTitle}</strong><small>Código {session.code}</small></div>
-            <div className="student-join-heading"><span>IDENTIFICAÇÃO</span><h1>Quem é você?</h1><p>Use sua matrícula, nome completo ou nome de exibição cadastrado na turma.</p></div>
-            <input className="student-identity-input" value={identity} onChange={(event) => setIdentity(event.target.value)} placeholder="Matrícula ou nome" autoFocus />
+            <div className="student-join-heading"><span>IDENTIFICAÇÃO</span><h1>Quem é você?</h1><p>Use sua matrícula, e-mail, nome completo ou nome de exibição cadastrado na turma.</p></div>
+            <input className="student-identity-input" value={identity} onChange={(event) => setIdentity(event.target.value)} placeholder="Matrícula, e-mail ou nome" autoComplete="off" autoCapitalize="none" autoFocus />
             <label className="student-remember-device"><input type="checkbox" checked={rememberDevice} onChange={(event) => setRememberDevice(event.target.checked)} /><span><strong>Lembrar neste dispositivo</strong><small>Salva apenas um identificador opaco; seu nome continua no servidor.</small></span></label>
             <button className="student-primary-button" disabled={loading || !identity.trim()}>{loading ? "Entrando..." : "Entrar na sessão"}</button>
           </form>
@@ -518,6 +518,13 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
                 </span>
                 <button type="button" onClick={reconnectNow}>Tentar agora</button>
               </div>
+            )}
+
+            {access.profileComplete === false && deviceToken && (
+              <a className="student-profile-prompt" href="/learn/profile">
+                <strong>Complete seu cadastro</strong>
+                <span>Informe seu nome completo no perfil.</span>
+              </a>
             )}
 
             <StudentActivitiesPanel access={access} disabled={sessionFinished || !browserOnline} />

@@ -198,3 +198,35 @@ export function fetchTeacherStudyPreview(journeyId: string) {
 export function fetchTeacherContentPreview(journeyId: string, contentId: string) {
   return teacherPreviewRequest<JourneyContentDetailView>(`/api/journeys/${encodeURIComponent(journeyId)}/study-preview/contents/${encodeURIComponent(contentId)}`);
 }
+
+export type StudentProfile = {
+  studentId: string;
+  name: string;
+  namePending: boolean;
+  registration: string | null;
+  email: string | null;
+  emailSetByTeacher: boolean;
+  classroomName: string;
+  preferredName: string | null;
+  complete: boolean;
+};
+export type StudentProfileEntry = StudentProfile & { studyToken: string };
+
+export function fetchStudentProfile(token: string) {
+  return studyRequest<StudentProfile>("/api/learn/profile", token);
+}
+export function updateStudentProfile(token: string, input: { name?: string; email?: string }) {
+  return studyRequest<StudentProfile>("/api/learn/profile", token, {
+    method: "PUT",
+    body: JSON.stringify({ name: input.name?.trim() || null, email: input.email?.trim() || null }),
+  });
+}
+/** One entry per student remembered on this device (a shared tablet may hold more than one). */
+export async function fetchAllStudentProfiles(): Promise<StudentProfileEntry[]> {
+  const loaded = await Promise.all(studyDeviceClaims().map(async (claim) => {
+    try { return { ...(await fetchStudentProfile(claim.token)), studyToken: claim.token }; } catch { return null; }
+  }));
+  const unique = new Map<string, StudentProfileEntry>();
+  loaded.forEach((profile) => { if (profile && !unique.has(profile.studentId)) unique.set(profile.studentId, profile); });
+  return [...unique.values()];
+}
