@@ -350,15 +350,17 @@
 @media(max-width:640px){.profileCard{padding:20px 18px}.profileCard .button{width:100%}}
 .mobileProfile{margin-left:auto;width:44px;height:44px;display:grid;place-items:center;border-radius:10px;color:inherit}.mobileProfile svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
-/* v0.12: Perfil no rodapé do menu e menu lateral que o aluno oculta e reabre (só no desktop). */
+/* v0.12: Perfil abaixo do zoom, no fim do menu, e menu lateral que o aluno oculta e reabre (só no desktop). */
 .sidebarHead{display:flex;align-items:center;justify-content:space-between;gap:6px}
 .sidebarHead .brand{min-width:0}
 .sidebarToggle,.sidebarReveal{width:36px;height:36px;display:grid;place-items:center;flex:0 0 36px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--study-ink-faint);cursor:pointer}
 .sidebarToggle:hover,.sidebarReveal:hover{border-color:var(--study-line);background:var(--study-panel-hover);color:var(--study-ink-strong)}
 .sidebarToggle svg,.sidebarReveal svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
-.nav.navFoot{margin-top:auto;padding-top:12px}
-.navFoot+.sidebarFoot{margin-top:10px}
+.nav.navFoot{margin-top:10px}
 .shell.sidebarHidden{grid-template-columns:minmax(0,1fr)}
 .shell.sidebarHidden .studySidebar{display:none}
-.sidebarReveal{position:fixed;top:14px;left:14px;z-index:9;border-color:var(--study-line);background:var(--study-panel)}
-@media(max-width:820px){.sidebarToggle,.sidebarReveal{display:none}}
+/* The reveal button sits in its own sticky strip, so it never covers the page content. */
+.sidebarRevealBar{position:sticky;top:0;z-index:9;height:56px;display:flex;align-items:center;padding:0 14px;background:var(--study-canvas)}
+.sidebarReveal{border-color:var(--study-line);background:var(--study-panel)}
+.shell.sidebarHidden .main{padding-top:12px}
+@media(max-width:820px){.sidebarToggle,.sidebarRevealBar{display:none}}

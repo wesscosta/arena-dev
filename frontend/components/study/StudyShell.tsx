@@ -60,9 +60,6 @@ export default function StudyShell({ children }: { children: ReactNode }) {
         <Link href="/learn/live" className={liveActive ? styles.activeNav : undefined}><LiveIcon/><span>Entrar ao vivo</span></Link>
         <Link href="/learn/achievements" className={achievementsActive ? styles.activeNav : undefined}><AchievementIcon/><span>Conquistas</span></Link>
       </nav>
-      <nav className={`${styles.nav} ${styles.navFoot}`} aria-label="Conta">
-        <Link href="/learn/profile" className={profileActive ? styles.activeNav : undefined}><ProfileIcon/><span>Perfil</span></Link>
-      </nav>
       <div className={styles.sidebarFoot}>
         <span>Zoom da área de estudos</span>
         <div className={styles.shellTextScale} role="group" aria-label="Zoom da área de estudos">
@@ -71,9 +68,12 @@ export default function StudyShell({ children }: { children: ReactNode }) {
           <button type="button" onClick={() => changeTextScale(1)} disabled={textScale === 2} aria-label="Aumentar zoom da área de estudos">+</button>
         </div>
       </div>
+      <nav className={`${styles.nav} ${styles.navFoot}`} aria-label="Conta">
+        <Link href="/learn/profile" className={profileActive ? styles.activeNav : undefined}><ProfileIcon/><span>Perfil</span></Link>
+      </nav>
     </aside>
     <div className={styles.studyWorkspace}>
-      {sidebarHidden && <button type="button" className={styles.sidebarReveal} onClick={() => toggleSidebar(false)} aria-label="Mostrar menu lateral" title="Mostrar menu lateral"><SidebarIcon/></button>}
+      {sidebarHidden && <div className={styles.sidebarRevealBar}><button type="button" className={styles.sidebarReveal} onClick={() => toggleSidebar(false)} aria-label="Mostrar menu lateral" title="Mostrar menu lateral"><SidebarIcon/></button></div>}
       <header className={styles.mobileHeader}><Link href="/learn" className={styles.brand} aria-label="Arena Dev — Estudos"><span className={styles.brandMark}>A</span><span className={styles.brandCopy}><strong>ARENA DEV</strong><small>ESTUDOS</small></span></Link><Link href="/learn/profile" className={`${styles.mobileProfile}${profileActive ? ` ${styles.activeNav}` : ""}`} aria-label="Perfil"><ProfileIcon/></Link></header>
       <main className={styles.main}>{children}</main>
     </div>
