@@ -1,6 +1,6 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFileSync } from "node:fs";
 import { parseTeacherLocation, teacherLocationSearch } from "../lib/teacher-location";
 
 test("teacher screens round-trip through readable query parameters", () => {
@@ -36,7 +36,7 @@ test("Journey creation is its own entry under the Journeys tab only", () => {
 });
 
 test("the teacher app pushes screen changes and restores them on popstate", () => {
-  const app = readFileSync("components/ArenaApp.tsx", "utf8");
+  const app = readTeacherAppSource();
   assert.match(app, /window\.history\.pushState/);
   assert.match(app, /addEventListener\("popstate", restore\)/);
 });

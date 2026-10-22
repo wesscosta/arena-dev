@@ -1,3 +1,4 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -53,7 +54,7 @@ test("v0.11 text tokens reach AAA (7:1) on the worst measured surfaces", () => {
 });
 
 test("application exposes skip navigation and main landmark", () => {
-  const source = read("components/ArenaApp.tsx");
+  const source = readTeacherAppSource();
 
   assert.match(source, /href="#main-content"/);
   assert.match(source, /id="main-content"/);

@@ -1,3 +1,4 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test, { afterEach } from "node:test";
@@ -100,7 +101,7 @@ test("public ranking empty state never contains participant identity", () => {
 });
 
 test("Arena ranking remains contextual and projector-controlled", () => {
-  const app = fs.readFileSync("components/ArenaApp.tsx", "utf8");
+  const app = readTeacherAppSource();
   const panel = fs.readFileSync("components/arena/ranking/RankingPanel.tsx", "utf8");
   const projector = fs.readFileSync("components/ProjectorView.tsx", "utf8");
 

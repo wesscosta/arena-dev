@@ -1,9 +1,10 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const arena = readFileSync(resolve(process.cwd(), "components/ArenaApp.tsx"), "utf8");
+const arena = readTeacherAppSource();
 const cta = readFileSync(resolve(process.cwd(), "lib/classroom-arena-cta.ts"), "utf8");
 
 test("home does not expose a quick end-session overflow action", () => {

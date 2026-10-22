@@ -1,3 +1,4 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import test, { afterEach } from "node:test";
 import { readFileSync } from "node:fs";
@@ -12,10 +13,7 @@ const timelineSource = readFileSync(
   resolve(process.cwd(), "components/SessionTimeline.tsx"),
   "utf8",
 );
-const arenaSource = readFileSync(
-  resolve(process.cwd(), "components/ArenaApp.tsx"),
-  "utf8",
-);
+const arenaSource = readTeacherAppSource();
 
 afterEach(() => {
   globalThis.fetch = originalFetch;

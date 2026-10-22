@@ -1,10 +1,11 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const panel = readFileSync(resolve(process.cwd(), "components/QuizPanel.tsx"), "utf8");
-const arena = readFileSync(resolve(process.cwd(), "components/ArenaApp.tsx"), "utf8");
+const arena = readTeacherAppSource();
 
 test("teacher quiz panel exposes the explicit lifecycle controls", () => {
   assert.match(panel, /prepareQuiz/);

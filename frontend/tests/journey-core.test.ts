@@ -1,9 +1,10 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const app = readFileSync(resolve(process.cwd(), "components/ArenaApp.tsx"), "utf8");
+const app = readTeacherAppSource();
 const manager = readFileSync(resolve(process.cwd(), "components/JourneyManager.tsx"), "utf8");
 const api = readFileSync(resolve(process.cwd(), "lib/journey-api.ts"), "utf8");
 

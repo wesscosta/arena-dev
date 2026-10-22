@@ -1,3 +1,4 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
@@ -11,10 +12,7 @@ const join = readFileSync(
   resolve(process.cwd(), "components/StudentJoinFlow.tsx"),
   "utf8",
 );
-const arena = readFileSync(
-  resolve(process.cwd(), "components/ArenaApp.tsx"),
-  "utf8",
-);
+const arena = readTeacherAppSource();
 test("teacher learning check keeps the explicit evidence lifecycle", () => {
   assert.match(panel, /prepareLearningCheck/);
   assert.match(panel, /openLearningCheck/);

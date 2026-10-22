@@ -1,9 +1,10 @@
+import { readTeacherAppSource } from "./support/teacher-source";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const arena = readFileSync(resolve(process.cwd(), "components/ArenaApp.tsx"), "utf8");
+const arena = readTeacherAppSource();
 const css = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
 
 test("classroom management is a dedicated application view", () => {
