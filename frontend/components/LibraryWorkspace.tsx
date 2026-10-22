@@ -452,7 +452,7 @@ export default function LibraryWorkspace({ classrooms, notify }: Props) {
               : <p>Este material ainda não possui conteúdo.</p>}
         </article>}
         {viewMode === "structure" && <ContentOutlineView outline={selected.outline} onNavigate={navigateToContent} />}
-        {viewMode === "map" && <ContentMapView outline={selected.outline} onNavigate={navigateToContent} />}
+        {viewMode === "map" && <ContentMapView key={selected.id} outline={selected.outline} title={selected.title} onNavigate={navigateToContent} />}
 
         <section className={styles.usagePanel}>
           <div className={styles.usageHeading}>

@@ -134,6 +134,15 @@ test.describe("Semantic Library v0.8", () => {
     await expect(map).toContainText("Banco de Dados");
     await expect(map).toContainText("WHERE");
 
+    // Small materials open fully; each branch collapses and reopens on its own.
+    await map.getByRole("button", { name: "Recolher Consultas" }).click();
+    await expect(map.getByRole("button", { name: /^SELECT/ })).toHaveCount(0);
+    await map.getByRole("button", { name: /^Expandir Consultas/ }).click();
+    await expect(map.getByRole("button", { name: "Recolher Consultas" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+
     await map.getByRole("button", { name: /SELECT/ }).click();
     await expect(page.getByRole("button", { name: "Leitura" })).toHaveAttribute(
       "aria-current",

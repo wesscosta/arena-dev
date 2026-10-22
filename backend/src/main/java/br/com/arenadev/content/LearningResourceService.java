@@ -1,5 +1,7 @@
 package br.com.arenadev.content;
 
+import br.com.arenadev.content.ingestion.ContentIngestionLimits;
+
 import br.com.arenadev.classroom.Classroom;
 import br.com.arenadev.classroom.ClassroomRepository;
 import br.com.arenadev.shared.ResourceNotFoundException;
@@ -201,6 +203,38 @@ public class LearningResourceService {
         }
         applyResourceInput(resource, input);
         return view(resource);
+    }
+
+    /**
+     * Rewrites only the text of a resource, keeping its title, source and discovery metadata.
+     * Used when a teacher corrects the content of a Journey stage in place.
+     */
+    @Transactional
+    public LearningResource updateBody(UUID id, String body) {
+        LearningResource resource = requireResource(id);
+        if (body == null || body.isBlank()) throw new IllegalArgumentException("O conteúdo não pode ficar vazio.");
+        ContentIngestionLimits.requireWithinAnalysisLimit(body);
+        CanonicalDocument canonical = canonicalizer.canonicalize(
+                resource.getTitle(),
+                body,
+                resource.getFormat(),
+                resource.getSourceUrl(),
+                resource.getSubject(),
+                resource.getTags(),
+                resource.getLanguage()
+        );
+        resource.update(
+                resource.getTitle(),
+                resource.getSummary(),
+                canonical.body(),
+                canonical.format(),
+                resource.getSourceType(),
+                resource.getSourceUrl(),
+                resource.getSourceLabel()
+        );
+        resource.updateSemanticMetadata(canonical.subject(), canonical.tags(), canonical.language());
+        recordDerived(resource, canonical);
+        return resource;
     }
 
     @Transactional

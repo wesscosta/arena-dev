@@ -51,7 +51,7 @@ public class LearningResourceUsageService {
                         snapshotRevision,
                         resource.getRevision(),
                         updateAvailable,
-                        updateAvailable && journey.getStatus() == JourneyStatus.DRAFT
+                        updateAvailable && journey.getStatus() != JourneyStatus.ARCHIVED
                 ));
             }
         }

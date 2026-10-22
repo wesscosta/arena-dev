@@ -22,11 +22,18 @@ test("Journey Builder encapsulates sequential progression defaults", () => {
   assert.doesNotMatch(manager, /ACTIVITY_GRADED/);
 });
 
-test("published journey structure is protected in the teacher editor", () => {
-  assert.match(manager, /const structuralLocked = draft\?\.status !== "DRAFT"/);
-  assert.match(manager, /Estrutura protegida após publicação/);
+test("rc.8: a published journey stays editable and only an archived one is locked", () => {
+  assert.match(manager, /const structuralLocked = draft\?\.status === "ARCHIVED"/);
+  assert.match(manager, /Salvar alterações/);
   assert.match(manager, /publishJourney/);
   assert.match(manager, /archiveJourney/);
+});
+
+test("rc.8: stage text is corrected in place through its own editor", () => {
+  assert.match(manager, /Editar texto/);
+  assert.match(manager, /updateJourneyStageContent/);
+  assert.match(manager, /aria-labelledby="stage-text-title"/);
+  assert.match(api, /\/stages\/\$\{encodeURIComponent\(stageId\)\}\/content/);
 });
 
 test("journey API exposes draft authoring and lifecycle endpoints", () => {
@@ -37,7 +44,7 @@ test("journey API exposes draft authoring and lifecycle endpoints", () => {
 });
 
 
-test("published journey switches from authoring to a compact read-only structure", () => {
+test("an archived journey switches from authoring to a compact read-only structure", () => {
   assert.match(manager, /structuralLocked \? \(/);
   assert.match(manager, /publishedSummary/);
   assert.match(manager, /builderItemReadOnly/);
@@ -77,9 +84,12 @@ test("new journey onboarding is source-agnostic and review-first", () => {
   assert.match(wizard, /Importar página/);
   assert.match(wizard, /DraftReviewWorkspace/);
   assert.match(wizard, /handleDrop/);
-  assert.match(wizard, /event\.key === "Escape"/);
-  assert.match(wizard, /event\.key !== "Tab"/);
-  assert.match(wizard, /openerRef\.current\?\.focus\(\)/);
+  // rc.8: a screen, not a modal. Leaving with prepared material asks first.
+  assert.doesNotMatch(wizard, /aria-modal/);
+  assert.doesNotMatch(wizard, /event\.key === "Escape"/);
+  assert.match(wizard, /aria-labelledby="journey-creation-title"/);
+  assert.match(wizard, /beforeunload/);
+  assert.match(wizard, /Sair da criação\?/);
   assert.match(wizard, /DraftReviewWorkspace/);
   assert.doesNotMatch(wizard, /<option value="QUIZ">/);
   assert.doesNotMatch(wizard, /<option value="ACTIVITY">/);
