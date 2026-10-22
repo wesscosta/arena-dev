@@ -110,6 +110,30 @@ export function refreshJourneyStageResource(journeyId: string, stageId: string) 
   );
 }
 
+export type JourneyStageContent = {
+  stageId: string;
+  title: string;
+  body: string | null;
+  format: string;
+  /** The text belongs to a Library material: saving it also updates the Library. */
+  libraryMaterial: boolean;
+  readOnly: boolean;
+};
+
+export function fetchJourneyStageContent(journeyId: string, stageId: string) {
+  return journeyRequest<JourneyStageContent>(
+    `/api/journeys/${encodeURIComponent(journeyId)}/stages/${encodeURIComponent(stageId)}/content`,
+  );
+}
+
+/** Corrects a stage's text in place; also on a published Journey, keeping student progress. */
+export function updateJourneyStageContent(journeyId: string, stageId: string, body: string) {
+  return journeyRequest<Journey>(
+    `/api/journeys/${encodeURIComponent(journeyId)}/stages/${encodeURIComponent(stageId)}/content`,
+    { method: "PUT", body: JSON.stringify({ body }) },
+  );
+}
+
 export type JourneyRedemptionCode = { code: string | null; active: boolean; redeemedCount: number };
 export function fetchJourneyRedemption(id: string) { return journeyRequest<JourneyRedemptionCode>(`/api/journeys/${encodeURIComponent(id)}/redemption`); }
 export function enableJourneyRedemption(id: string) { return journeyRequest<JourneyRedemptionCode>(`/api/journeys/${encodeURIComponent(id)}/redemption/enable`, { method: "POST", body: "{}" }); }

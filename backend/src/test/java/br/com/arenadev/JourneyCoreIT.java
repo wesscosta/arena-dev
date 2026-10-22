@@ -19,6 +19,7 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -470,22 +471,112 @@ class JourneyCoreIT {
     }
 
     @Test
-    void publishedJourneyRejectsStructuralStageChanges() {
-        Fixture fixture = fixture("Imutabilidade", "JRNY-I");
+    void publishedJourneyAcceptsEditsAndKeepsStudentProgress() {
+        Fixture fixture = fixture("Edição publicada", "JRNY-E");
         JourneyService.JourneyView published = createPublishedJourney(fixture,
                 List.of(stage("Etapa única", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL)));
+        UUID firstStageId = published.stages().getFirst().id();
+        journeyService.completeStage(published.id(), firstStageId, fixture.enrollment().getId());
 
-        assertThatThrownBy(() -> journeyService.update(published.id(), new JourneyService.JourneyInput(
+        JourneyService.JourneyView edited = journeyService.update(published.id(), new JourneyService.JourneyInput(
                 fixture.classroom().getId(),
                 "Título atualizado",
                 null,
                 List.of(
-                        new JourneyService.StageInput(published.stages().getFirst().id().toString(), "Etapa única", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, null, null, null),
+                        new JourneyService.StageInput(firstStageId.toString(), "Etapa única corrigida", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, null, null, null),
                         stage("Etapa extra", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL)
                 )
-        )))
+        ));
+
+        assertThat(edited.status()).isEqualTo(JourneyStatus.PUBLISHED);
+        assertThat(edited.stages()).extracting(JourneyService.StageView::title)
+                .containsExactly("Etapa única corrigida", "Etapa extra");
+        assertThat(edited.stages().getFirst().id()).isEqualTo(firstStageId);
+        JourneyService.JourneyProgressView progress = journeyService.progress(published.id(), fixture.enrollment().getId());
+        assertThat(progress.stages()).extracting(JourneyService.StageProgressView::status)
+                .containsExactly(JourneyStageProgressStatus.COMPLETED, JourneyStageProgressStatus.AVAILABLE);
+    }
+
+    @Test
+    void publishedJourneyRefusesToRemoveAStageStudentsAlreadyStarted() {
+        Fixture fixture = fixture("Remoção protegida", "JRNY-R");
+        JourneyService.JourneyView published = createPublishedJourney(fixture, List.of(
+                stage("Começada", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL),
+                stage("Intocada", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL)
+        ));
+        UUID started = published.stages().getFirst().id();
+        UUID untouched = published.stages().get(1).id();
+        journeyService.startStage(published.id(), started, fixture.enrollment().getId());
+
+        assertThatThrownBy(() -> journeyService.update(published.id(), new JourneyService.JourneyInput(
+                fixture.classroom().getId(), "Jornada", null, List.of(
+                        new JourneyService.StageInput(untouched.toString(), "Intocada", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, null, null, null)
+                ))))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("não podem ser reestruturadas");
+                .hasMessageContaining("\"Começada\"")
+                .hasMessageContaining("alunos já começaram");
+
+        JourneyService.JourneyView trimmed = journeyService.update(published.id(), new JourneyService.JourneyInput(
+                fixture.classroom().getId(), "Jornada", null, List.of(
+                        new JourneyService.StageInput(started.toString(), "Começada", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, null, null, null)
+                )));
+        assertThat(trimmed.stages()).extracting(JourneyService.StageView::id).containsExactly(started);
+
+        assertThatThrownBy(() -> journeyService.update(published.id(), new JourneyService.JourneyInput(
+                fixture.classroom().getId(), "Jornada", null, List.of())))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ao menos uma etapa");
+    }
+
+    @Test
+    void archivedJourneyStaysLocked() {
+        Fixture fixture = fixture("Arquivada", "JRNY-A");
+        JourneyService.JourneyView published = createPublishedJourney(fixture,
+                List.of(stage("Etapa única", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL)));
+        journeyService.archive(published.id());
+
+        assertThatThrownBy(() -> journeyService.update(published.id(), new JourneyService.JourneyInput(
+                fixture.classroom().getId(), "Jornada", null, List.of(
+                        stage("Etapa nova", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL)
+                ))))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("arquivada");
+    }
+
+    @Test
+    void stageTextIsCorrectedInPlaceOnAPublishedJourney() {
+        Fixture fixture = fixture("Correção de texto", "JRNY-T");
+        LearningResource resource = new LearningResource(fixture.classroom(), "SQL");
+        resource.update("SQL", null, "# SQL\nSELEC com erro.", LearningResourceFormat.MARKDOWN,
+                LearningResourceSourceType.MANUAL, null, null);
+        resource = learningResourceRepository.save(resource);
+        JourneyService.JourneyView created = journeyService.create(new JourneyService.JourneyInput(
+                fixture.classroom().getId(), "SQL", null, List.of(
+                        new JourneyService.StageInput(null, "SQL", null, null, JourneyUnlockRule.IMMEDIATE,
+                                JourneyCompletionRule.MANUAL, null, "Consultas", JourneyItemType.CONTENT, resource.getId())
+                )));
+        JourneyService.JourneyView published = journeyService.publish(created.id());
+        UUID stageId = published.stages().getFirst().id();
+        StudyPrincipal principal = new StudyPrincipal(fixture.enrollment().getStudent().getId(), fixture.enrollment().getId(),
+                fixture.classroom().getId(), StudyPrincipal.Role.STUDENT);
+        journeyStudyService.complete(published.id(), stageId, principal);
+
+        JourneyService.StageContentView before = journeyService.stageContent(published.id(), stageId);
+        assertThat(before.body()).contains("SELEC com erro");
+        assertThat(before.libraryMaterial()).isFalse();
+
+        JourneyService.JourneyView corrected = journeyService.updateStageContent(published.id(), stageId,
+                new JourneyService.StageContentInput("# SQL\nSELECT corrigido."));
+
+        assertThat(corrected.stages().getFirst().id()).isEqualTo(stageId);
+        assertThat(corrected.stages().getFirst().resourceSnapshotRevision()).isEqualTo(2);
+        assertThat(journeyStudyService.content(published.id(), stageId, principal).body()).contains("SELECT corrigido");
+        assertThat(journeyStudyService.get(published.id(), principal).progress().percent()).isEqualTo(100);
+
+        assertThatThrownBy(() -> journeyService.updateStageContent(published.id(), stageId,
+                new JourneyService.StageContentInput("   ")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("vazio");
     }
 
     private JourneyService.JourneyView createPublishedJourney(Fixture fixture, List<JourneyService.StageInput> stages) {

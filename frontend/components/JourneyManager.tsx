@@ -14,7 +14,10 @@ import {
   enableJourneyRedemption,
   regenerateJourneyRedemption,
   disableJourneyRedemption,
+  fetchJourneyStageContent,
+  updateJourneyStageContent,
   type JourneyRedemptionCode,
+  type JourneyStageContent,
   type Journey,
   type JourneyInput,
   type JourneyStageInput,
@@ -94,6 +97,11 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
   const [libraryResources, setLibraryResources] = useState<LearningResource[]>([]);
   const [libraryQuery, setLibraryQuery] = useState("");
   const [libraryTargetModule, setLibraryTargetModule] = useState<string | undefined>();
+  const [textEditor, setTextEditor] = useState<{ content: JourneyStageContent; body: string } | null>(null);
+  const textDialogRef = useRef<HTMLElement>(null);
+  const textCloseRef = useRef<HTMLButtonElement>(null);
+  useBodyScrollLock(Boolean(textEditor));
+  useModalKeyboard(Boolean(textEditor), () => setTextEditor(null), textDialogRef, textCloseRef);
 
   useEffect(() => {
     if (!draft?.id || draft.status !== "PUBLISHED") { setRedemption(null); return; }
@@ -113,7 +121,10 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
   }, [classroomId, notify]);
 
   const selected = useMemo(() => draft?.id ? journeys.find((journey) => journey.id === draft.id) : undefined, [draft?.id, journeys]);
-  const structuralLocked = draft?.status !== "DRAFT";
+  // Drafts and published Journeys are editable; the server refuses removing a
+  // stage students already started. Only an archived Journey is read-only.
+  const structuralLocked = draft?.status === "ARCHIVED";
+  const published = draft?.status === "PUBLISHED";
   const stageGroups = useMemo(() => {
     if (!draft) return [];
     const groups = new Map<string, { key: string; title: string; entries: Array<{ stage: DraftStage; index: number }> }>();
@@ -327,6 +338,31 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
     } finally { setBusy(false); }
   }
 
+  async function openTextEditor(stageId: string) {
+    if (!draft?.id || busy) return;
+    setBusy(true);
+    try {
+      const content = await fetchJourneyStageContent(draft.id, stageId);
+      setTextEditor({ content, body: content.body ?? "" });
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível abrir o texto do conteúdo.", "error");
+    } finally { setBusy(false); }
+  }
+
+  async function saveText() {
+    if (!draft?.id || !textEditor || busy) return;
+    setBusy(true);
+    try {
+      const saved = await updateJourneyStageContent(draft.id, textEditor.content.stageId, textEditor.body);
+      // Only the text changed; unsaved edits to titles and order stay in the draft.
+      setJourneys((current) => current.map((journey) => journey.id === saved.id ? saved : journey));
+      setTextEditor(null);
+      notify(saved.status === "PUBLISHED" ? "Texto atualizado. Os alunos já veem a versão corrigida e mantêm o progresso." : "Texto atualizado.");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível salvar o texto.", "error");
+    } finally { setBusy(false); }
+  }
+
   async function publish() {
     if (!draft?.id || draft.status !== "DRAFT" || busy) return;
     if (selected && JSON.stringify(toDraft(selected)) !== JSON.stringify(draft)) {
@@ -338,7 +374,7 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
       const published = await publishJourney(draft.id);
       setJourneys((current) => current.map((journey) => journey.id === published.id ? published : journey));
       setDraft(toDraft(published));
-      notify("Jornada publicada. A estrutura agora está protegida para preservar o progresso dos alunos.");
+      notify("Jornada publicada. Você ainda pode corrigir textos e acrescentar conteúdos sem apagar o progresso dos alunos.");
     } catch (error) {
       notify(error instanceof Error ? error.message : "Não foi possível publicar a jornada.", "error");
     } finally { setBusy(false); }
@@ -394,20 +430,33 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
               <div className={styles.editorHead}>
                 <div>
                   <h3>{draft.id ? draft.title || "Jornada sem título" : "Nova jornada"}</h3>
-                  <p>{structuralLocked ? "Estrutura protegida após publicação para preservar o progresso." : "Rascunho editável. Organize módulos e conteúdos; as regras de progressão são aplicadas automaticamente."}</p>
+                  <p>{structuralLocked
+                    ? "Jornada arquivada: somente leitura."
+                    : published
+                      ? "Publicada e editável. Os alunos mantêm o progresso; um conteúdo que algum aluno já começou não pode ser removido."
+                      : "Rascunho editável. Organize módulos e conteúdos; as regras de progressão são aplicadas automaticamente."}</p>
                 </div>
                 <div className={styles.actions}>
                   {draft.id && <a className={styles.secondary} href={`/learn/journeys/${draft.id}?preview=teacher`}>Ver jornada</a>}
-                  {draft.status === "DRAFT" && <button className={styles.primary} type="button" disabled={busy} onClick={() => void save()}>{busy ? "Salvando..." : "Salvar"}</button>}
+                  {draft.status !== "ARCHIVED" && <button className={styles.primary} type="button" disabled={busy} onClick={() => void save()}>{busy ? "Salvando..." : published ? "Salvar alterações" : "Salvar"}</button>}
                   {draft.id && draft.status === "DRAFT" && <button className={styles.ghost} type="button" disabled={busy || draft.stages.length === 0} onClick={() => void publish()}>Publicar</button>}
                   <div className={styles.moreActions}><button className={styles.secondary} type="button" aria-label="Mais ações" aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}>•••</button>{moreOpen && <div className={styles.moreMenu}><button type="button" onClick={() => { setDraft(null); setMoreOpen(false); }}>Fechar painel</button>{draft.id && draft.stages.length > 0 && <button type="button" disabled={busy} onClick={() => { setMoreOpen(false); void saveContentsToLibrary(); }}>Salvar conteúdos na Biblioteca</button>}{draft.id && draft.status !== "ARCHIVED" && <button className={styles.moreDanger} type="button" disabled={busy} onClick={() => { setMoreOpen(false); void archive(); }}>Arquivar jornada</button>}</div>}</div>
                 </div>
               </div>
 
-              {structuralLocked ? (
+              {draft.status !== "DRAFT" ? (
                     <div className={styles.publishedSummary}>
-                      <div className={styles.publishedTitle}><strong>{draft.title}</strong><span className={`${styles.status} ${styles[draft.status.toLowerCase()]}`}>{statusLabel(draft.status)}</span></div>
-                      <p>{draft.description || "Sem descrição."}</p>
+                      {published ? (
+                        <div className={styles.fields}>
+                          <label className={styles.field}><span>Título</span><input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
+                          <label className={`${styles.field} ${styles.full}`}><span>Descrição</span><textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Objetivo e contexto da jornada." /></label>
+                        </div>
+                      ) : (
+                        <>
+                          <div className={styles.publishedTitle}><strong>{draft.title}</strong><span className={`${styles.status} ${styles[draft.status.toLowerCase()]}`}>{statusLabel(draft.status)}</span></div>
+                          <p>{draft.description || "Sem descrição."}</p>
+                        </>
+                      )}
                       <label className={`${styles.field} ${styles.copyToggle}`}>
                         <input type="checkbox" checked={draft.copyProtected} disabled={busy} onChange={(event) => void changeCopyProtection(event.target.checked)} />
                         <span>Impedir cópia do conteúdo
@@ -508,6 +557,9 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
                                     />
                                   </div>
                                   <div className={styles.itemActions} aria-label={`Organizar conteúdo ${index + 1}`}>
+                                    {stage.id && stage.learningResourceId && (
+                                      <button type="button" className={styles.editText} disabled={busy} onClick={() => void openTextEditor(stage.id!)}>Editar texto</button>
+                                    )}
                                     <button type="button" title="Mover para cima" disabled={entryIndex === 0} onClick={() => moveStageTo(index, group.entries[entryIndex - 1]?.index ?? index)}>↑</button>
                                     <button type="button" title="Mover para baixo" disabled={entryIndex === group.entries.length - 1} onClick={() => moveStageTo(index, group.entries[entryIndex + 1]?.index ?? index)}>↓</button>
                                     <button type="button" title="Remover conteúdo" onClick={() => removeStage(index)}>×</button>
@@ -545,6 +597,18 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
                 </button>
               ))}
               {libraryResources.length===0 && <p className={styles.libraryEmpty}>Sua Biblioteca ainda está vazia.</p>}
+            </div>
+          </section>
+        </div>
+      )}
+      {textEditor && (
+        <div className={styles.libraryBackdrop}>
+          <section ref={textDialogRef} tabIndex={-1} className={`${styles.libraryPicker} ${styles.textEditor}`} role="dialog" aria-modal="true" aria-labelledby="stage-text-title">
+            <header><div><span>CONTEÚDO DA ETAPA</span><h3 id="stage-text-title">{textEditor.content.title}</h3><p>{textEditor.content.libraryMaterial ? "Este texto vem de um material da Biblioteca. Salvar também atualiza o material na Biblioteca." : "Corrija ou melhore o texto. O progresso dos alunos é mantido."}</p></div><DialogCloseButton ref={textCloseRef} label="Fechar editor de texto" onClick={() => setTextEditor(null)} /></header>
+            <textarea className={styles.textEditorBody} value={textEditor.body} readOnly={textEditor.content.readOnly} aria-label="Texto do conteúdo" onChange={(event) => setTextEditor((current) => current ? { ...current, body: event.target.value } : current)} />
+            <div className={styles.textEditorActions}>
+              <button className={styles.secondary} type="button" onClick={() => setTextEditor(null)}>Cancelar</button>
+              {!textEditor.content.readOnly && <button className={styles.primary} type="button" disabled={busy || !textEditor.body.trim()} onClick={() => void saveText()}>{busy ? "Salvando..." : "Salvar texto"}</button>}
             </div>
           </section>
         </div>
