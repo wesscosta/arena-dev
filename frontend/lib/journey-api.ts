@@ -90,9 +90,12 @@ export function updateJourney(id: string, input: JourneyInput) {
 
 export type JourneyLibraryExport = { created: number; alreadyInLibrary: number; withoutContent: number; createdIds: string[] };
 
-/** Saves the Journey's contents to the Library as independent copies; the Journey is unchanged. */
-export function saveJourneyContentsToLibrary(id: string) {
-  return journeyRequest<JourneyLibraryExport>(`/api/journeys/${encodeURIComponent(id)}/library-export`, { method: "POST", body: "{}" });
+/**
+ * Saves the whole Journey to the Library as one Markdown material (Journey H1,
+ * modules H2, contents H3); the Journey is unchanged.
+ */
+export function saveJourneyToLibrary(id: string) {
+  return journeyRequest<JourneyLibraryExport>(`/api/journeys/${encodeURIComponent(id)}/library-export?scope=JOURNEY`, { method: "POST", body: "{}" });
 }
 
 export function publishJourney(id: string) {

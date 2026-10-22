@@ -45,7 +45,7 @@ class JourneyLibraryExportIT {
                 stage("SQL " + suffix, libraryMaterial.id()),
                 stage("Sem conteúdo", null)), true));
 
-        var first = export.saveContentsToLibrary(journey.id());
+        var first = export.saveToLibrary(journey.id(), JourneyLibraryExportService.Scope.STAGES);
         assertThat(first.created()).isEqualTo(1);
         assertThat(first.alreadyInLibrary()).isEqualTo(1);
         assertThat(first.withoutContent()).isEqualTo(1);
@@ -62,8 +62,65 @@ class JourneyLibraryExportIT {
         assertThat(second.alreadyInLibrary()).isEqualTo(2);
     }
 
+    @Test
+    void rc8SavesTheWholeJourneyAsOneMarkdownMaterialWithItsStructure() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        UUID classroomId = classrooms.create("Inteira " + suffix, "IN" + suffix).id();
+        var variables = resources.create(new LearningResourceService.ResourceInput(classroomId,
+                "Variáveis", null, "# Variáveis\n\nGuardam valores.\n\n## Tipos\n\n```python\n# comentário\nx = 1\n```",
+                LearningResourceFormat.MARKDOWN, LearningResourceSourceType.MANUAL, null, null, "Python", List.of("python"), "pt-BR"));
+        var loops = resources.create(new LearningResourceService.ResourceInput(classroomId,
+                "Laços", null, "Repetem blocos.", LearningResourceFormat.PLAIN_TEXT,
+                LearningResourceSourceType.MANUAL, null, null, "Python", List.of("python"), "pt-BR"));
+        var journey = journeys.create(new JourneyService.JourneyInput(classroomId, "Python " + suffix, "Do zero ao laço.", List.of(
+                stage("Variáveis", variables.id(), "Fundamentos"),
+                stage("Sem conteúdo", null, "Fundamentos"),
+                stage("Laços", loops.id(), "Controle")), false));
+
+        var first = export.saveToLibrary(journey.id(), JourneyLibraryExportService.Scope.JOURNEY);
+        assertThat(first.created()).isEqualTo(1);
+        assertThat(first.withoutContent()).isEqualTo(1);
+        var material = repository.findById(first.createdIds().getFirst()).orElseThrow();
+        assertThat(material.isLibraryVisible()).isTrue();
+        assertThat(material.getTitle()).isEqualTo("Python " + suffix);
+        assertThat(material.getSubject()).isEqualTo("Python");
+        assertThat(material.getBody()).isEqualTo("""
+                # Python %s
+
+                Do zero ao laço.
+
+                ## Fundamentos
+
+                ### Variáveis
+
+                Guardam valores.
+
+                ##### Tipos
+
+                ```python
+                # comentário
+                x = 1
+                ```
+
+                ## Controle
+
+                ### Laços
+
+                Repetem blocos.
+                """.formatted(suffix).strip());
+        assertThat(material.getOutlineJson()).contains("Fundamentos").contains("Laços");
+
+        var second = export.saveToLibrary(journey.id(), JourneyLibraryExportService.Scope.JOURNEY);
+        assertThat(second.created()).isZero();
+        assertThat(second.alreadyInLibrary()).isEqualTo(1);
+    }
+
     private static JourneyService.StageInput stage(String title, UUID resourceId) {
+        return stage(title, resourceId, "Módulo 1");
+    }
+
+    private static JourneyService.StageInput stage(String title, UUID resourceId, String module) {
         return new JourneyService.StageInput(null, title, null, null, JourneyUnlockRule.IMMEDIATE,
-                JourneyCompletionRule.MANUAL, null, "Módulo 1", JourneyItemType.CONTENT, resourceId);
+                JourneyCompletionRule.MANUAL, null, module, JourneyItemType.CONTENT, resourceId);
     }
 }

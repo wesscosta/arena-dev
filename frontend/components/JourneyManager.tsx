@@ -9,7 +9,7 @@ import {
   createJourney,
   fetchJourneys,
   publishJourney,
-  saveJourneyContentsToLibrary, updateJourney,
+  saveJourneyToLibrary, updateJourney,
   fetchJourneyRedemption,
   enableJourneyRedemption,
   regenerateJourneyRedemption,
@@ -309,19 +309,19 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
     } finally { setBusy(false); }
   }
 
-  async function saveContentsToLibrary() {
+  async function saveToLibrary() {
     if (!draft?.id || busy) return;
     setBusy(true);
     try {
-      const result = await saveJourneyContentsToLibrary(draft.id);
-      const parts = [
-        result.created === 1 ? "1 conteúdo salvo na Biblioteca" : `${result.created} conteúdos salvos na Biblioteca`,
-        result.alreadyInLibrary ? `${result.alreadyInLibrary} já estava${result.alreadyInLibrary === 1 ? "" : "m"} lá` : "",
-        result.withoutContent ? `${result.withoutContent} sem conteúdo` : "",
-      ].filter(Boolean);
-      notify(`${parts.join(" · ")}. A Jornada não foi alterada.`);
+      const result = await saveJourneyToLibrary(draft.id);
+      const skipped = result.withoutContent ? ` ${result.withoutContent === 1 ? "1 etapa sem conteúdo ficou" : `${result.withoutContent} etapas sem conteúdo ficaram`} de fora.` : "";
+      notify(result.created
+        ? `Jornada salva na Biblioteca como um material.${skipped} A Jornada não foi alterada.`
+        : result.alreadyInLibrary
+          ? "Esta versão da jornada já está na Biblioteca."
+          : "A jornada ainda não tem conteúdo para salvar na Biblioteca.");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Não foi possível salvar os conteúdos na Biblioteca.", "error");
+      notify(error instanceof Error ? error.message : "Não foi possível salvar a jornada na Biblioteca.", "error");
     } finally { setBusy(false); }
   }
 
@@ -458,7 +458,7 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
                   {draft.id && <a className={styles.secondary} href={`/learn/journeys/${draft.id}?preview=teacher`}>Ver jornada</a>}
                   {draft.status !== "ARCHIVED" && <button className={styles.primary} type="button" disabled={busy} onClick={() => void save()}>{busy ? "Salvando..." : published ? "Salvar alterações" : "Salvar"}</button>}
                   {draft.id && draft.status === "DRAFT" && <button className={styles.ghost} type="button" disabled={busy || draft.stages.length === 0} onClick={() => void publish()}>Publicar</button>}
-                  <div className={styles.moreActions}><button className={styles.secondary} type="button" aria-label="Mais ações" aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}>•••</button>{moreOpen && <div className={styles.moreMenu}><button type="button" onClick={() => { setDraft(null); setMoreOpen(false); }}>Fechar painel</button>{draft.id && draft.stages.length > 0 && <button type="button" disabled={busy} onClick={() => { setMoreOpen(false); void saveContentsToLibrary(); }}>Salvar conteúdos na Biblioteca</button>}{draft.id && draft.status !== "ARCHIVED" && <button className={styles.moreDanger} type="button" disabled={busy} onClick={() => { setMoreOpen(false); void archive(); }}>Arquivar jornada</button>}</div>}</div>
+                  <div className={styles.moreActions}><button className={styles.secondary} type="button" aria-label="Mais ações" aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}>•••</button>{moreOpen && <div className={styles.moreMenu}><button type="button" onClick={() => { setDraft(null); setMoreOpen(false); }}>Fechar painel</button>{draft.id && draft.stages.length > 0 && <button type="button" disabled={busy} onClick={() => { setMoreOpen(false); void saveToLibrary(); }}>Salvar jornada na Biblioteca</button>}{draft.id && draft.status !== "ARCHIVED" && <button className={styles.moreDanger} type="button" disabled={busy} onClick={() => { setMoreOpen(false); void archive(); }}>Arquivar jornada</button>}</div>}</div>
                 </div>
               </div>
 
