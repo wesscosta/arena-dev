@@ -265,6 +265,16 @@ export function buildQuestionPrompt({
         answer: "A",
         explanation: "Explicação objetiva da resposta",
       },
+      {
+        type: "ANALYSIS",
+        statement: "O código abaixo deveria somar apenas os valores positivos da lista. Explique por que o resultado sai errado.",
+        difficulty,
+        points: 4,
+        code: "def soma_positivos(valores):\n    total = 0\n    for valor in valores:\n        if valor > 0:\n            total = valor\n    return total",
+        language: "python",
+        expectedAnswer: "A linha total = valor substitui o acumulado em vez de somar. O correto é total += valor.",
+        evaluationCriteria: ["Identifica a linha errada", "Explica a diferença entre atribuir e acumular"],
+      },
     ],
   };
 
@@ -284,18 +294,22 @@ Requisitos de qualidade:
 - MULTIPLE_CHOICE deve possuir exatamente 4 alternativas, somente uma correta e answer deve conter o id da alternativa correta.
 - TRUE_FALSE deve usar answer com valor booleano true ou false.
 - OPEN e ANALYSIS devem incluir expectedAnswer e, quando útil, evaluationCriteria.
-- BUG_FIX deve incluir code, language, expectedAnswer e explanation. Só use BUG_FIX quando o tema permitir esse tipo de problema.
+- BUG_FIX deve incluir expectedAnswer e explanation. Só use BUG_FIX quando o tema permitir esse tipo de problema.
 - PRACTICAL deve incluir expectedOutcome e evaluationCriteria objetivos.
 - SCENARIO deve apresentar uma situação-problema realista e critérios claros para uma boa resposta.
+- O statement deve ser texto corrido, sem quebras de linha e sem código em várias linhas. Identificadores curtos podem aparecer no texto, como app.exec().
+- Qualquer tipo de questão pode usar code quando a situação exigir um trecho de código; não use code quando a questão não precisar. Quando usar, informe language e faça o statement se referir a "o código abaixo".
+- O statement deve ter até 350 caracteres e o code até 40 linhas, com trechos omitidos marcados como # (...).
 - Use points coerentes com a dificuldade e o esforço exigido.
 - Não escreva introdução, conclusão, comentários ou Markdown fora do JSON.
 - Retorne somente JSON válido em UTF-8. Não envolva a resposta em bloco \`\`\`json.
 - Use exatamente os nomes de tipos: MULTIPLE_CHOICE, OPEN, TRUE_FALSE, BUG_FIX, ANALYSIS, PRACTICAL, SCENARIO.
 - Use exatamente as dificuldades: EASY, INTERMEDIATE, HARD.
+- Antes de responder, confira se nenhum statement contém quebra de linha ou código.
 
-Formato obrigatório de saída (exemplo estrutural; adapte os campos ao tipo de cada questão):
+Formato obrigatório de saída (exemplo estrutural, com uma questão sem code e outra com code; adapte os campos ao tipo de cada questão):
 ${JSON.stringify(schemaExample, null, 2)}
 
-Campos opcionais por tipo: expectedAnswer, explanation, code, language, expectedOutcome, evaluationCriteria.
+Campos opcionais: expectedAnswer, explanation, expectedOutcome, evaluationCriteria. Os campos code e language são opcionais em qualquer tipo e andam juntos.
 Retorne exclusivamente o objeto JSON final.`;
 }
