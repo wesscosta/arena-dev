@@ -98,8 +98,8 @@ export default function ActivityQuestionBuilder({
       answer,
       expectedAnswer: ["OPEN", "ANALYSIS", "SCENARIO", "BUG_FIX"].includes(manualType) ? manualAnswer.trim() || undefined : undefined,
       explanation: manualExplanation.trim() || undefined,
-      code: manualType === "BUG_FIX" ? manualCode : undefined,
-      language: manualType === "BUG_FIX" ? manualLanguage.trim() || undefined : undefined,
+      code: manualCode.trim() ? manualCode : undefined,
+      language: manualCode.trim() ? manualLanguage.trim() || undefined : undefined,
       expectedOutcome: manualType === "PRACTICAL" ? manualAnswer.trim() || undefined : undefined,
       evaluationCriteria: criteria.length ? criteria : undefined,
     };
@@ -262,7 +262,7 @@ export default function ActivityQuestionBuilder({
             <label>{manualType === "PRACTICAL" ? "Resultado esperado" : "Resposta esperada"}<textarea className="input textarea" rows={3} value={manualAnswer} onChange={(event) => setManualAnswer(event.target.value)} /></label>
           )}
 
-          {manualType === "BUG_FIX" && <div className="form-two"><label>Linguagem<input className="input" value={manualLanguage} onChange={(event) => setManualLanguage(event.target.value)} placeholder="java, python, javascript..." /></label><label>Código<textarea className="input textarea code-area" rows={5} value={manualCode} onChange={(event) => setManualCode(event.target.value)} /></label></div>}
+          <div className="form-two"><label>Linguagem <small>opcional</small><input className="input" value={manualLanguage} onChange={(event) => setManualLanguage(event.target.value)} placeholder="java, python, javascript..." /></label><label>Código <small>opcional, exibido abaixo do enunciado</small><textarea className="input textarea code-area" rows={5} value={manualCode} onChange={(event) => setManualCode(event.target.value)} /></label></div>
 
           {["OPEN", "ANALYSIS", "SCENARIO", "PRACTICAL"].includes(manualType) && <label>Critérios de avaliação <small>um por linha</small><textarea className="input textarea" rows={3} value={manualCriteria} onChange={(event) => setManualCriteria(event.target.value)} /></label>}
           <label>Explicação / apoio ao professor<textarea className="input textarea" rows={2} value={manualExplanation} onChange={(event) => setManualExplanation(event.target.value)} /></label>

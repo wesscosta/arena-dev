@@ -138,13 +138,14 @@ export function validateQuestionPackage(input: unknown): { package?: QuestionPac
       : undefined;
     const expectedAnswer = isString(row.expectedAnswer) ? row.expectedAnswer.trim() : undefined;
     const expectedOutcome = isString(row.expectedOutcome) ? row.expectedOutcome.trim() : undefined;
-    const code = isString(row.code) ? row.code : undefined;
+    const code = isString(row.code) && row.code.trim() ? row.code : undefined;
+    const language = isString(row.language) && row.language.trim() ? row.language.trim() : undefined;
 
     if (["OPEN", "ANALYSIS", "SCENARIO"].includes(type) && !expectedAnswer && !criteria?.length) {
       errors.push(`Questão ${position}: informe expectedAnswer ou evaluationCriteria para orientar a correção.`);
     }
-    if (type === "BUG_FIX" && (!code?.trim() || !expectedAnswer)) {
-      errors.push(`Questão ${position}: BUG_FIX deve incluir code e expectedAnswer.`);
+    if (type === "BUG_FIX" && !expectedAnswer) {
+      errors.push(`Questão ${position}: BUG_FIX deve incluir expectedAnswer.`);
     }
     if (type === "PRACTICAL" && (!expectedOutcome || !criteria?.length)) {
       errors.push(`Questão ${position}: PRACTICAL deve incluir expectedOutcome e evaluationCriteria.`);
@@ -161,7 +162,7 @@ export function validateQuestionPackage(input: unknown): { package?: QuestionPac
       expectedAnswer,
       explanation: isString(row.explanation) ? row.explanation.trim() : undefined,
       code,
-      language: isString(row.language) ? row.language.trim() : undefined,
+      language,
       expectedOutcome,
       evaluationCriteria: criteria,
     });
