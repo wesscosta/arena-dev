@@ -41,11 +41,12 @@ public class DashboardBootstrapService {
                     "createdAt", instant(rs,"created_at")));
 
         var students = jdbc.query("""
-                select id, registration, name, nickname, active, created_at
+                select id, registration, name, nickname, active, created_at, email, name_pending
                   from students order by name, id
                 """, (rs,n) -> fields("id", uuid(rs,"id"), "registration", rs.getString("registration"),
                     "name", rs.getString("name"), "nickname", rs.getString("nickname"),
-                    "active", rs.getBoolean("active"), "createdAt", instant(rs,"created_at")));
+                    "active", rs.getBoolean("active"), "createdAt", instant(rs,"created_at"),
+                    "email", rs.getString("email"), "namePending", rs.getBoolean("name_pending")));
 
         var enrollments = jdbc.query("""
                 select id, classroom_id, student_id, preferred_name, active, joined_at

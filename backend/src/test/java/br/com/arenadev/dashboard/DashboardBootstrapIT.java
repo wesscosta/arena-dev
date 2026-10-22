@@ -46,8 +46,8 @@ class DashboardBootstrapIT {
         UUID classroomId=jdbc.queryForObject("select classroom_id from class_sessions order by started_at desc limit 1",UUID.class);
         UUID sessionId=jdbc.queryForObject("select id from class_sessions where classroom_id=?",UUID.class,classroomId);
         UUID studentId=UUID.randomUUID();
-        jdbc.update("insert into students(id,registration,name,nickname) values(?,?,?,?)",
-                studentId,"CARGA-"+suffix,"Pessoa Teste de Carga",null);
+        jdbc.update("insert into students(id,registration,name,nickname,email,email_source) values(?,?,?,?,?,'STUDENT')",
+                studentId,"CARGA-"+suffix,"Pessoa Teste de Carga",null,"carga"+suffix+"@escola.org");
         jdbc.update("insert into enrollments(id,classroom_id,student_id,preferred_name) values(?,?,?,?)",
                 UUID.randomUUID(),classroomId,studentId,"Nome da Turma");
         jdbc.update("insert into session_participants(id,session_id,student_id,present,connected) values(?,?,?,true,false)",
@@ -68,6 +68,10 @@ class DashboardBootstrapIT {
         assertThat(snapshot.classrooms()).hasSize(350);
         assertThat(snapshot.sessions()).hasSize(340);
         assertThat(snapshot.students()).hasSize(1);
+        // The teacher's roster reads the e-mail a student declared in the profile from here.
+        assertThat(snapshot.students().getFirst())
+                .containsEntry("email","carga"+suffix+"@escola.org")
+                .containsEntry("namePending",false);
         assertThat(snapshot.enrollments()).hasSize(1);
         assertThat(snapshot.sessionParticipants()).hasSize(1);
         assertThat(snapshot.sessionParticipants().getFirst()).containsEntry("displayName","Nome da Turma");

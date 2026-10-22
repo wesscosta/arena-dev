@@ -40,6 +40,7 @@ export function normalizeDashboardBootstrap(snapshot: DashboardSnapshot): Pick<A
     })),
     students: snapshot.students.map((item) => ({ ...item,
       registration: item.registration ?? "", nickname: item.nickname ?? "",
+      email: item.email ?? "", namePending: item.namePending ?? false,
     })),
     enrollments: snapshot.enrollments.map((item) => ({ ...item,
       preferredName: item.preferredName ?? "",
