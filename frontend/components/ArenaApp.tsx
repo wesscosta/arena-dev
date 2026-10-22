@@ -66,7 +66,7 @@ import {
 } from "@/components/ui";
 import { QUESTION_DIFFICULTY_LABEL, QUESTION_TYPE_LABEL } from "@/lib/activity-questions";
 import { xpForStudent } from "@/lib/game";
-import { anonymizeStudent, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName } from "@/lib/classroom-api";
+import { anonymizeStudent, createAndEnrollStudent, createClassroom as createClassroomApi, deleteClassroom as deleteClassroomApi, removeEnrollment, setEnrollmentActive, updateClassroom as updateClassroomApi, updateEnrollmentPreferredName, updateStudentEmail } from "@/lib/classroom-api";
 import { createSession as createSessionApi, fetchSessionParticipants, finishSession as finishSessionApi, releaseParticipantDevice, setParticipantPresence } from "@/lib/session-api";
 import { copyActivity as copyActivityApi, createActivity as createActivityApi, updateActivity as updateActivityApi, type ActivityUpsertInput } from "@/lib/activity-api";
 import { fetchActivitySteps, replaceActivitySteps } from "@/lib/activity-step-api";
@@ -1384,6 +1384,8 @@ function StudentManager({
   const [entryMode, setEntryMode] = useState<"add" | "import" | null>(null);
   const [anonymizeTarget, setAnonymizeTarget] = useState<{ id: string; name: string } | null>(null);
   const [anonymizeConfirmation, setAnonymizeConfirmation] = useState("");
+  const [emailTarget, setEmailTarget] = useState<{ id: string; name: string } | null>(null);
+  const [emailDraft, setEmailDraft] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [preferredName, setPreferredName] = useState("");
@@ -1511,6 +1513,21 @@ function StudentManager({
       notify("Dados pessoais do aluno removidos. O histórico da turma foi preservado.");
       setAnonymizeTarget(null);
       setAnonymizeConfirmation("");
+    } catch (error) {
+      notify(errorMessage(error), "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveStudentEmail() {
+    if (busy || !emailTarget) return;
+    setBusy(true);
+    try {
+      await updateStudentEmail(emailTarget.id, emailDraft);
+      await refreshClassroomDomain(classroomId);
+      notify(emailDraft.trim() ? "E-mail do aluno atualizado." : "E-mail do aluno removido.");
+      setEmailTarget(null);
     } catch (error) {
       notify(errorMessage(error), "error");
     } finally {
@@ -1763,6 +1780,15 @@ function StudentManager({
                       </button>
                       <button
                         type="button"
+                        className="student-row-action"
+                        aria-label={`E-mail de ${student.name}`}
+                        title="E-mail do aluno"
+                        onClick={() => { setEmailDraft(student.email ?? ""); setEmailTarget({ id: student.id, name: student.name }); }}
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5h17v11h-17zM3.5 7l8.5 6.5L20.5 7" /></svg>
+                      </button>
+                      <button
+                        type="button"
                         className="student-row-action danger"
                         aria-label={`Remover ${student.name} da turma`}
                         title="Remover da turma"
@@ -1820,6 +1846,44 @@ function StudentManager({
                 onClick={() => { void confirmAnonymize(); }}
               >
                 {busy ? "Apagando…" : "Apagar dados pessoais"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {emailTarget && (
+        <Modal
+          open
+          title="E-mail do aluno"
+          subtitle={emailTarget.name}
+          onClose={() => { if (!busy) setEmailTarget(null); }}
+          size="medium"
+        >
+          <div className="modal-section-stack">
+            <label className="field">
+              <span>E-mail</span>
+              <input
+                className="input"
+                type="email"
+                autoComplete="off"
+                autoFocus
+                value={emailDraft}
+                onChange={(event) => setEmailDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !busy) {
+                    event.preventDefault();
+                    void saveStudentEmail();
+                  }
+                }}
+                disabled={busy}
+              />
+              <small>O e-mail cadastrado aqui substitui o informado pelo aluno, e ele não poderá alterá-lo. Deixe vazio para remover.</small>
+            </label>
+            <div className="modal-footer">
+              <button className="button ghost" onClick={() => setEmailTarget(null)} disabled={busy}>Cancelar</button>
+              <button className="button primary" disabled={busy} onClick={() => { void saveStudentEmail(); }}>
+                {busy ? "Salvando..." : "Salvar e-mail"}
               </button>
             </div>
           </div>
