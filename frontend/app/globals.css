@@ -2676,3 +2676,54 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 .toast-error{background:#2a1316;border-color:rgba(255,107,115,.55);color:#ffe3e5;padding-right:8px}
 .toast-error>button{flex:none;color:inherit}
 @media (max-width:640px){.toast{right:16px;left:16px;bottom:16px;max-width:none}}
+
+/* v0.12: lista de alunos com colunas fixas (Aluno, Nome na turma, XP, Situação, Ações) e prévia da importação. */
+.student-table-v4 .student-table-head-v3,.student-table-v4 .student-table-row-v3{grid-template-columns:minmax(220px,1.3fr) minmax(170px,1fr) 76px 150px 124px;gap:16px}
+.student-table-v4 .student-table-row-v3{min-height:64px;padding:10px 8px}
+.student-table-v4 .student-identity-v3{min-width:0}
+.student-table-v4 .student-identity-copy{display:grid;gap:2px;min-width:0}
+.student-table-v4 .student-identity-copy strong,.student-table-v4 .student-email-line{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.student-table-v4 .student-email-line{color:var(--muted);font-size:12px}
+.student-table-v4 .student-email-line.is-empty{font-style:italic;opacity:.7}
+.student-table-v4 .student-class-name-cell{min-width:0}
+.student-table-v4 .student-display-name{max-width:100%;display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--text);font:inherit;font-size:14px;cursor:pointer}
+.student-table-v4 .student-display-name>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.student-table-v4 .student-display-name.is-empty{color:var(--muted)}
+.student-table-v4 .student-display-name .student-edit-icon{opacity:0;color:var(--accent-text);transition:opacity .15s ease}
+.student-table-v4 .student-display-name:hover,.student-table-v4 .student-display-name:focus-visible{border-color:var(--border);background:var(--surface-raised)}
+.student-table-v4 .student-display-name:hover .student-edit-icon,.student-table-v4 .student-display-name:focus-visible .student-edit-icon{opacity:1}
+.student-status-cell{display:flex;flex-wrap:wrap;gap:6px}
+.student-badge{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border:1px solid var(--border);border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.student-badge.is-inactive{color:var(--muted)}
+.student-badge.is-pending{border-color:color-mix(in srgb,var(--warning,#f5b942) 45%,var(--border));color:var(--warning,#f5b942)}
+.student-table-v4 .student-row-actions{gap:6px}
+.student-row-more{position:relative}
+.student-row-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;min-width:250px;display:grid;padding:6px;border:1px solid var(--border);border-radius:10px;background:var(--surface);box-shadow:0 12px 32px rgb(0 0 0 / .28)}
+.student-row-menu button{min-height:40px;white-space:nowrap;padding:0 12px;border:0;border-radius:7px;background:transparent;color:var(--text);font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.student-row-menu button:hover,.student-row-menu button:focus-visible{background:var(--surface-raised)}
+.student-row-menu button.danger{color:var(--danger)}
+@media(max-width:980px){
+  .student-table-v4 .student-table-row-v3{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"identity actions" "class-name xp" "status status";gap:4px 12px;padding:12px 4px}
+  .student-table-v4 .student-table-row-v3>.student-xp{display:block;align-self:end;justify-self:end;padding:0 8px 9px 0}
+  .student-table-v4 .student-class-name-cell{padding-left:44px}
+  .student-table-v4 .student-class-name-cell::before{content:"Nome na turma";display:block;color:var(--muted);font-size:11px;font-weight:700}
+  .student-table-v4 .student-display-name{padding-left:0}
+  .student-table-v4 .student-status-cell{padding-left:44px}
+  .student-table-v4 .student-status-cell:empty{display:none}
+  .student-table-v4 .student-identity-v3{grid-area:identity}
+  .student-table-v4 .student-class-name-cell{grid-area:class-name}
+  .student-table-v4 .student-xp{grid-area:xp}
+  .student-table-v4 .student-status-cell{grid-area:status}
+  .student-table-v4 .student-row-actions{grid-area:actions}
+}
+.student-import-textarea{min-height:150px}
+.student-import-preview{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.student-import-preview-head,.student-import-preview li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1.2fr);gap:12px;padding:8px 12px}
+.student-import-preview-head{background:var(--surface-raised);color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.student-import-preview ol{max-height:240px;margin:0;padding:0;list-style:none;overflow:auto}
+.student-import-preview li{border-top:1px solid var(--border);font-size:13px}
+.student-import-preview li>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.student-import-preview em{color:var(--muted)}
+.student-import-status{font-weight:700;color:var(--muted)}
+.student-import-preview li.is-new .student-import-status,.student-import-preview li.is-link .student-import-status{color:var(--accent-text)}
+.student-import-preview li.is-invalid-email .student-import-status{color:var(--danger)}

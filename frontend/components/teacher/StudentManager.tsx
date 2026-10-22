@@ -1,11 +1,19 @@
-import { useState } from "react";
-import { parseStudentImportLine } from "@/lib/student-import";
+import { useEffect, useState } from "react";
+import { planStudentImport, type StudentImportStatus } from "@/lib/student-import";
 import { type Notify } from "@/components/ui";
 import { xpForStudent } from "@/lib/game";
-import { anonymizeStudent, createAndEnrollStudent, removeEnrollment, setEnrollmentActive, updateEnrollmentPreferredName, updateStudentEmail } from "@/lib/classroom-api";
+import { anonymizeStudent, createAndEnrollStudent, enrollStudent, removeEnrollment, setEnrollmentActive, updateEnrollmentPreferredName, updateStudentEmail } from "@/lib/classroom-api";
 import { errorMessage } from "./format";
 import { Avatar, MiniEmpty, Modal } from "./ui";
 import type { ArenaData } from "@/lib/types";
+
+const IMPORT_STATUS_LABEL: Record<StudentImportStatus, string> = {
+  new: "Novo cadastro",
+  link: "Vincular cadastro de outra turma",
+  enrolled: "Já está na turma (ignorado)",
+  duplicate: "Repetido na lista (ignorado)",
+  "invalid-email": "E-mail inválido (ignorado)",
+};
 
 export function StudentManager({
   data,
@@ -34,6 +42,7 @@ export function StudentManager({
     Record<string, string>
   >({});
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const [menuStudentId, setMenuStudentId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
@@ -52,16 +61,31 @@ export function StudentManager({
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase("pt-BR");
   const visibleRows = normalizedSearch
     ? allRows.filter(({ student, enrollment }) =>
-        [student.name, student.nickname, enrollment.preferredName].some(
+        [student.name, student.nickname, enrollment.preferredName, student.email].some(
           (value) =>
             value?.toLocaleLowerCase("pt-BR").includes(normalizedSearch),
         ),
       )
     : allRows;
-  const importCount = bulk
-    .split(/\r?\n|;/)
-    .map((item) => item.trim())
-    .filter(Boolean).length;
+  const importPlan = planStudentImport(
+    bulk,
+    data.students,
+    new Set(allRows.map((row) => row.student.id)),
+  );
+  const importable = importPlan.filter((row) => row.status === "new" || row.status === "link");
+  const importSkipped = importPlan.length - importable.length;
+  useEffect(() => {
+    if (!menuStudentId) return;
+    function close(event: PointerEvent | KeyboardEvent) {
+      if (event instanceof KeyboardEvent ? event.key === "Escape" : !(event.target as Element).closest?.(".student-row-more")) setMenuStudentId(null);
+    }
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", close);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", close);
+    };
+  }, [menuStudentId]);
 
   async function addStudent(
     studentName: string,
@@ -100,26 +124,29 @@ export function StudentManager({
   }
 
   async function importStudents() {
-    const names = bulk
-      .split(/\r?\n|;/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-    if (!names.length || busy) return;
+    if (!importable.length || busy) return;
     setBusy(true);
-    let imported = 0;
+    const failed: { line: string; reason: string }[] = [];
     try {
-      for (const line of names) {
-        const entry = parseStudentImportLine(line);
-        if (await addStudent(entry.name, "", true, entry.email)) imported += 1;
+      for (const row of importable) {
+        try {
+          if (row.status === "link" && row.studentId) await enrollStudent(classroomId, row.studentId);
+          else await createAndEnrollStudent(classroomId, { name: row.name, preferredName: "", email: row.email });
+        } catch (error) {
+          failed.push({ line: row.line, reason: errorMessage(error) });
+        }
       }
       await refreshClassroomDomain(classroomId);
-      setBulk("");
-      setEntryMode(null);
-      notify(
-        imported === names.length
-          ? `${imported} aluno(s) importado(s).`
-          : `${imported} de ${names.length} aluno(s) importados.`,
-      );
+      const imported = importable.length - failed.length;
+      if (failed.length) {
+        // Keep only the lines that failed, so the teacher can fix and retry them.
+        setBulk(failed.map((item) => item.line).join("\n"));
+        notify(`${imported} de ${importable.length} aluno(s) importados. ${failed[0].reason}`, "error");
+      } else {
+        setBulk("");
+        setEntryMode(null);
+        notify(`${imported} aluno(s) importado(s).`);
+      }
     } finally {
       setBusy(false);
     }
@@ -266,7 +293,7 @@ export function StudentManager({
                   type="search"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Buscar por nome ou nome de exibição..."
+                  placeholder="Buscar por nome, nome na turma ou e-mail..."
                   aria-label="Buscar participante"
                 />
               </label>
@@ -295,11 +322,12 @@ export function StudentManager({
               </button>
             </div>
           ) : (
-            <div className="student-table student-table-v3">
+            <div className="student-table student-table-v3 student-table-v4">
               <div className="table-head student-table-head-v3">
-                <span>Participante</span>
-                <span>Status</span>
+                <span>Aluno</span>
+                <span>Nome na turma</span>
                 <span>XP</span>
+                <span>Situação</span>
                 <span><span className="sr-only">Ações</span></span>
               </div>
               {visibleRows.map(({ student, enrollment }) => {
@@ -312,10 +340,8 @@ export function StudentManager({
                   preferredDrafts[student.id] ?? enrollment.preferredName;
                 const dirty = draft !== enrollment.preferredName;
                 const isEditing = editingStudentId === student.id;
-                const displayName =
-                  enrollment.preferredName ||
-                  student.nickname ||
-                  "Não definido";
+                const displayName = enrollment.preferredName || student.nickname;
+                const menuOpen = menuStudentId === student.id;
                 return (
                   <div
                     className={`table-row student-table-row-v3${enrollment.active ? "" : " is-inactive"}`}
@@ -324,91 +350,86 @@ export function StudentManager({
                     <div className="student-cell student-identity-v3">
                       <Avatar student={student} />
                       <div className="student-identity-copy">
-                        <strong>{student.name}</strong>
-                        {(student.email || student.namePending) && (
-                          <small className="student-email-line">
-                            {student.email}
-                            {student.namePending ? " · aguardando o aluno completar o cadastro" : ""}
-                          </small>
-                        )}
-                        {isEditing ? (
-                          <div className="student-display-name-editor">
-                      <input
-                        className="input"
-                              autoFocus
-                              aria-label={`Nome de exibição de ${student.name}`}
-                        value={draft}
-                              onChange={(event) =>
-                                setPreferredDrafts((current) => ({
-                                  ...current,
-                                  [student.id]: event.target.value,
-                                }))
-                              }
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" && dirty && !busy) {
-                            event.preventDefault();
-                            void savePreferredName(student.id, draft);
-                          }
-                                if (event.key === "Escape") {
-                                  event.preventDefault();
-                                  setPreferredDrafts((current) => ({
-                                    ...current,
-                                    [student.id]: enrollment.preferredName,
-                                  }));
-                                  setEditingStudentId(null);
-                                }
-                        }}
-                              placeholder="Nome de exibição"
-                        disabled={busy}
-                      />
-                      <button
-                              className="button ghost student-inline-save"
-                        type="button"
-                        disabled={busy || !dirty}
-                              onClick={() => {
+                        <strong title={student.name}>{student.name}</strong>
+                        <small className={student.email ? "student-email-line" : "student-email-line is-empty"} title={student.email || undefined}>
+                          {student.email || "sem e-mail"}
+                        </small>
+                      </div>
+                    </div>
+                    <div className="student-class-name-cell">
+                      {isEditing ? (
+                        <div className="student-display-name-editor">
+                          <input
+                            className="input"
+                            autoFocus
+                            aria-label={`Nome na turma de ${student.name}`}
+                            value={draft}
+                            onChange={(event) =>
+                              setPreferredDrafts((current) => ({
+                                ...current,
+                                [student.id]: event.target.value,
+                              }))
+                            }
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" && dirty && !busy) {
+                                event.preventDefault();
                                 void savePreferredName(student.id, draft);
-                              }}
-                            >
-                              {busy ? "Salvando..." : "Salvar"}
-                            </button>
-                            <button
-                              className="text-button"
-                              type="button"
-                              disabled={busy}
-                              onClick={() => {
+                              }
+                              if (event.key === "Escape") {
+                                event.preventDefault();
                                 setPreferredDrafts((current) => ({
                                   ...current,
                                   [student.id]: enrollment.preferredName,
                                 }));
                                 setEditingStudentId(null);
-                              }}
-                            >
-                              Cancelar
-                            </button>
-                          </div>
-                        ) : (
+                              }
+                            }}
+                            placeholder="Como aparece na Arena"
+                            disabled={busy}
+                          />
                           <button
-                            className="student-display-name"
+                            className="button ghost student-inline-save"
                             type="button"
-                            onClick={() => setEditingStudentId(student.id)}
-                            aria-label={`Editar nome de exibição de ${student.name}`}
-                            title="Editar o nome exibido somente nesta turma"
+                            disabled={busy || !dirty}
+                            onClick={() => {
+                              void savePreferredName(student.id, draft);
+                            }}
                           >
-                            <span>Nome na turma: {displayName}</span>
-                            <span
-                              className="student-edit-icon"
-                              aria-hidden="true"
-                            >
-                              ✎ Editar
-                            </span>
+                            {busy ? "Salvando..." : "Salvar"}
                           </button>
-                        )}
+                          <button
+                            className="text-button"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => {
+                              setPreferredDrafts((current) => ({
+                                ...current,
+                                [student.id]: enrollment.preferredName,
+                              }));
+                              setEditingStudentId(null);
+                            }}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className={displayName ? "student-display-name" : "student-display-name is-empty"}
+                          type="button"
+                          onClick={() => setEditingStudentId(student.id)}
+                          aria-label={`Editar nome na turma de ${student.name}`}
+                          title="Editar o nome exibido somente nesta turma"
+                        >
+                          <span>{displayName || "—"}</span>
+                          <span className="student-edit-icon" aria-hidden="true">✎</span>
+                        </button>
+                      )}
                     </div>
-                    </div>
-                    <span className={enrollment.active ? "student-status-normal" : "student-status-inactive"}>
-                      {enrollment.active ? null : "Inativo"}
-                    </span>
                     <b className="student-xp">{xp} XP</b>
+                    <div className="student-status-cell">
+                      {!enrollment.active && <span className="student-badge is-inactive">Inativo</span>}
+                      {student.namePending && <span className="student-badge is-pending" title="O aluno ainda não informou o nome completo">Cadastro pendente</span>}
+                    </div>
                     <div className="student-row-actions">
                       <button
                         type="button"
@@ -428,24 +449,40 @@ export function StudentManager({
                       >
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5h17v11h-17zM3.5 7l8.5 6.5L20.5 7" /></svg>
                       </button>
-                      <button
-                        type="button"
-                        className="student-row-action danger"
-                        aria-label={`Remover ${student.name} da turma`}
-                        title="Remover da turma"
-                        onClick={() => { void removeStudent(student.id, student.name); }}
-                      >
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5" /></svg>
-                      </button>
-                      <button
-                        type="button"
-                        className="student-row-action danger"
-                        aria-label={`Apagar dados pessoais de ${student.name}`}
-                        title="Apagar dados pessoais (LGPD)"
-                        onClick={() => { setAnonymizeConfirmation(""); setAnonymizeTarget({ id: student.id, name: student.name }); }}
-                      >
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 19c0-2.8-2.7-5-6-5s-6 2.2-6 5M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M16 9l5 5M21 9l-5 5" /></svg>
-                      </button>
+                      <div className="student-row-more">
+                        <button
+                          type="button"
+                          className="student-row-action"
+                          aria-label={`Mais ações para ${student.name}`}
+                          aria-haspopup="menu"
+                          aria-expanded={menuOpen}
+                          title="Mais ações"
+                          onClick={() => setMenuStudentId(menuOpen ? null : student.id)}
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.4" fill="currentColor" /><circle cx="12" cy="12" r="1.4" fill="currentColor" /><circle cx="18.5" cy="12" r="1.4" fill="currentColor" /></svg>
+                        </button>
+                        {menuOpen && (
+                          <div className="student-row-menu" role="menu">
+                            <button
+                              type="button"
+                              role="menuitem"
+                              title="Remover da turma"
+                              onClick={() => { setMenuStudentId(null); void removeStudent(student.id, student.name); }}
+                            >
+                              Remover da turma
+                            </button>
+                            <button
+                              type="button"
+                              role="menuitem"
+                              className="danger"
+                              title="Apagar dados pessoais (LGPD)"
+                              onClick={() => { setMenuStudentId(null); setAnonymizeConfirmation(""); setAnonymizeTarget({ id: student.id, name: student.name }); }}
+                            >
+                              Apagar dados pessoais (LGPD)
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -628,19 +665,31 @@ export function StudentManager({
                 disabled={busy}
               />
             </label>
-            <div className="inline-note">
-              {importCount ? (
-                <>
-                  <strong>{importCount} aluno(s) identificado(s)</strong>
-                  <span>Revise a lista antes de importar.</span>
-                </>
-              ) : (
+            {importPlan.length > 0 ? (
+              <div className="student-import-preview" aria-label="Prévia da importação">
+                <div className="student-import-preview-head">
+                  <span>Nome</span>
+                  <span>E-mail</span>
+                  <span>O que acontece</span>
+                </div>
+                <ol>
+                  {importPlan.map((row, index) => (
+                    <li key={`${index}-${row.line}`} className={`is-${row.status}`}>
+                      <span>{row.name || <em>definido pelo aluno</em>}</span>
+                      <span>{row.email || <em>sem e-mail</em>}</span>
+                      <span className="student-import-status">{IMPORT_STATUS_LABEL[row.status]}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : (
+              <div className="inline-note">
                 <span>
-                  Cole um aluno por linha: nome, e-mail ou “nome, e-mail”.
-                  Também aceitamos alunos separados por ponto e vírgula.
+                  Cole um aluno por linha: nome, e-mail ou “nome, e-mail”. Também
+                  dá para colar as colunas Nome e E-mail direto de uma planilha.
                 </span>
-              )}
-            </div>
+              </div>
+            )}
             <div className="modal-footer">
               <button
                 className="button ghost"
@@ -651,14 +700,14 @@ export function StudentManager({
               </button>
               <button
                 className="button primary"
-                disabled={busy || !importCount}
+                disabled={busy || !importable.length}
                 onClick={() => {
                   void importStudents();
                 }}
               >
                 {busy
                   ? "Importando..."
-                  : `Importar ${importCount || ""} aluno(s)`}
+                  : `Importar ${importable.length} aluno(s)${importSkipped ? ` · ${importSkipped} ignorado(s)` : ""}`}
               </button>
             </div>
           </div>
