@@ -74,17 +74,47 @@ function asPositivePoints(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
-export function validateQuestionPackage(input: unknown): { package?: QuestionPackage; errors: string[] } {
+export const STATEMENT_WARNING_LENGTH = 400;
+
+const STATEMENT_CODE_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
+  { pattern: /\n[ \t]+\S/, reason: "quebra de linha seguida de indentação" },
+  { pattern: /(^|[\s:;(])(def|class|import)\s/, reason: "palavra típica de código (def, class ou import)" },
+  { pattern: /\{[^{}]*;[^{}]*\}|;\s*[{}]/, reason: "chaves e ponto e vírgula em sequência" },
+];
+
+/**
+ * Avisos não bloqueiam a importação: apontam questões que a IA gerou fora do
+ * padrão (código no enunciado, enunciado longo, code e language desencontrados).
+ */
+export function questionWarnings(
+  question: Pick<ActivityQuestion, "statement" | "code" | "language">,
+  position: number,
+): string[] {
+  const warnings: string[] = [];
+  const reasons = STATEMENT_CODE_PATTERNS.filter(({ pattern }) => pattern.test(question.statement)).map(({ reason }) => reason);
+  if (reasons.length) {
+    warnings.push(`Questão ${position}: o enunciado parece conter código (${reasons.join("; ")}). Mova o trecho para o campo code.`);
+  }
+  if (question.statement.length > STATEMENT_WARNING_LENGTH) {
+    warnings.push(`Questão ${position}: o enunciado tem ${question.statement.length} caracteres, acima do recomendado (${STATEMENT_WARNING_LENGTH}).`);
+  }
+  if (question.code && !question.language) warnings.push(`Questão ${position}: code informado sem language.`);
+  if (question.language && !question.code) warnings.push(`Questão ${position}: language informado sem code.`);
+  return warnings;
+}
+
+export function validateQuestionPackage(input: unknown): { package?: QuestionPackage; errors: string[]; warnings: string[] } {
   const errors: string[] = [];
+  const warnings: string[] = [];
   if (!input || typeof input !== "object") {
-    return { errors: ["O conteúdo precisa ser um objeto JSON."] };
+    return { errors: ["O conteúdo precisa ser um objeto JSON."], warnings: [] };
   }
 
   const root = input as Record<string, unknown>;
   if (root.version !== "1.0") errors.push('O campo "version" deve ser "1.0".');
   if (!Array.isArray(root.questions)) {
     errors.push('O campo "questions" deve ser uma lista.');
-    return { errors };
+    return { errors, warnings };
   }
 
   const normalized: ActivityQuestion[] = [];
@@ -151,6 +181,8 @@ export function validateQuestionPackage(input: unknown): { package?: QuestionPac
       errors.push(`Questão ${position}: PRACTICAL deve incluir expectedOutcome e evaluationCriteria.`);
     }
 
+    if (statement) warnings.push(...questionWarnings({ statement, code, language }, position));
+
     normalized.push({
       id: uid("question"),
       type,
@@ -168,7 +200,7 @@ export function validateQuestionPackage(input: unknown): { package?: QuestionPac
     });
   });
 
-  if (errors.length) return { errors };
+  if (errors.length) return { errors, warnings };
 
   const activity = root.activity && typeof root.activity === "object"
     ? root.activity as QuestionPackage["activity"]
@@ -176,6 +208,7 @@ export function validateQuestionPackage(input: unknown): { package?: QuestionPac
 
   return {
     errors,
+    warnings,
     package: {
       version: "1.0",
       activity,
@@ -188,7 +221,7 @@ export function parseQuestionPackage(raw: string) {
   try {
     return validateQuestionPackage(JSON.parse(raw));
   } catch {
-    return { errors: ["JSON inválido. Verifique vírgulas, aspas e chaves antes de importar."] };
+    return { errors: ["JSON inválido. Verifique vírgulas, aspas e chaves antes de importar."], warnings: [] };
   }
 }
 

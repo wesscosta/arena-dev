@@ -44,6 +44,7 @@ export default function ActivityQuestionBuilder({
 
   const [jsonInput, setJsonInput] = useState("");
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [lastImportedCount, setLastImportedCount] = useState(0);
 
   const [theme, setTheme] = useState(defaultTheme);
@@ -111,6 +112,7 @@ export default function ActivityQuestionBuilder({
   function importJson() {
     const result = parseQuestionPackage(jsonInput);
     setImportErrors(result.errors);
+    setImportWarnings(result.warnings);
     if (!result.package) {
       setLastImportedCount(0);
       return;
@@ -129,6 +131,7 @@ export default function ActivityQuestionBuilder({
     reader.onload = () => {
       setJsonInput(String(reader.result ?? ""));
       setImportErrors([]);
+      setImportWarnings([]);
     };
     reader.readAsText(file);
   }
@@ -223,8 +226,9 @@ export default function ActivityQuestionBuilder({
       {tab === "import" && (
         <div className="question-tool-body">
           <p className="tool-note">Cole a resposta JSON da IA ou carregue um arquivo <b>.json</b>. O Arena Dev valida o pacote antes de adicionar as questões.</p>
-          <textarea className="input textarea json-area" rows={12} value={jsonInput} onChange={(event) => { setJsonInput(event.target.value); setImportErrors([]); setLastImportedCount(0); }} placeholder={'{\n  "version": "1.0",\n  "questions": [...]\n}'} />
+          <textarea className="input textarea json-area" rows={12} value={jsonInput} onChange={(event) => { setJsonInput(event.target.value); setImportErrors([]); setImportWarnings([]); setLastImportedCount(0); }} placeholder={'{\n  "version": "1.0",\n  "questions": [...]\n}'} />
           {importErrors.length > 0 && <div className="validation-box"><strong>Revise antes de importar</strong>{importErrors.map((error) => <span key={error}>{error}</span>)}</div>}
+          {importWarnings.length > 0 && <div className="validation-box" role="status"><strong>{lastImportedCount > 0 ? "Importado com avisos" : "Avisos"}</strong>{importWarnings.map((warning) => <span key={warning}>{warning}</span>)}</div>}
           {lastImportedCount > 0 && (
             <div className="inline-note">
               <strong>{lastImportedCount} questão(ões) adicionada(s) ao rascunho.</strong>
