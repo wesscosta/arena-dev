@@ -22,7 +22,7 @@
 
 /* Student runner balance — stable question stage + stronger answer targets */
 @media (min-width: 901px) and (min-height: 700px) {
-  .runnerMain{align-content:start;padding-top:clamp(70px,10vh,112px);padding-bottom:36px}
+  .runnerMain{align-content:start;padding-top:clamp(24px,4vh,44px);padding-bottom:36px}
   .runnerProgress{margin-bottom:30px}
   .runnerQuestion{grid-template-rows:auto minmax(112px,auto) auto;gap:22px}
   .runnerOptions{margin-top:2px;gap:14px}
@@ -42,4 +42,7 @@
 .runnerQuestion{grid-template-columns:minmax(0,1fr)}
 .runnerQuestion:has(.runnerCodeBlock){grid-template-rows:none}
 .runnerCodeBlock .runnerCode{max-height:min(60vh,720px)}
-.selectedOption,.selectedOption:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--ds-surface-subtle))}
+/* Hover e seleção: texto sempre na cor do tema; a seleção se distingue por borda dupla e letra preenchida */
+.runnerOption,.runnerOption:hover,.selectedOption{color:var(--text)}
+.selectedOption,.selectedOption:hover{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--ds-surface-subtle))}
+.selectedOption b{background:var(--accent);color:var(--theme-accent-contrast)}

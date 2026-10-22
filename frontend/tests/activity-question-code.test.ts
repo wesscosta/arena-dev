@@ -157,6 +157,13 @@ test("tela do aluno: hover e alternativa selecionada partem da superfície do te
   const rule = panelCss.match(/\.runnerOption:hover,\.selectedOption\{[^}]*\}/)?.[0] ?? "";
   assert.match(rule, /background:color-mix\(in srgb,var\(--accent\) 7%,var\(--ds-surface-subtle\)\)/);
   assert.doesNotMatch(rule, /#0b1512/);
+  assert.match(panelCss, /\.runnerOption,\.runnerOption:hover,\.selectedOption\{color:var\(--text\)\}/);
+  assert.match(panelCss, /\.selectedOption b\{background:var\(--accent\);color:var\(--theme-accent-contrast\)\}/);
+});
+
+test("tela do aluno: topo do runner sem espaço sobrando no desktop", () => {
+  assert.match(panelCss, /\.runnerMain\{align-content:start;padding-top:clamp\(24px,4vh,44px\)/);
+  assert.doesNotMatch(panelCss, /padding-top:clamp\(70px,10vh,112px\)/);
 });
 
 const builder = readFileSync(resolve(process.cwd(), "components/ActivityQuestionBuilder.tsx"), "utf8");
