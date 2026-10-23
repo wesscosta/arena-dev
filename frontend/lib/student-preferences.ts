@@ -48,9 +48,16 @@ export function subscribeStudentPreferences(notify: () => void): () => void {
       notify();
     }
   };
+  // System theme follows OS changes without requiring a page reload.
+  const colorScheme = window.matchMedia("(prefers-color-scheme: light)");
+  const onColorScheme = () => {
+    if (readStudentPreferences().theme === "system") applyThemePreference("system");
+  };
+  colorScheme.addEventListener("change", onColorScheme);
   window.addEventListener("storage", onStorage);
   window.addEventListener(STUDENT_PREFERENCES_EVENT, notify);
   return () => {
+    colorScheme.removeEventListener("change", onColorScheme);
     window.removeEventListener("storage", onStorage);
     window.removeEventListener(STUDENT_PREFERENCES_EVENT, notify);
   };
