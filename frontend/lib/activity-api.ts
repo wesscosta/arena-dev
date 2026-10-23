@@ -30,6 +30,9 @@ type ActivityView = {
   updatedAt: string;
   copiedFromActivityId: string | null;
   copiedFromClassroomId: string | null;
+  individualOptionOrder?: boolean;
+  individualQuestionOrder?: boolean;
+  orderLocked?: boolean;
 };
 
 export type ActivityUpsertInput = {
@@ -40,6 +43,8 @@ export type ActivityUpsertInput = {
   onTimeBonus: number;
   resource?: ActivityResource;
   questions?: ActivityQuestion[];
+  individualOptionOrder?: boolean;
+  individualQuestionOrder?: boolean;
 };
 
 function mapActivity(row: ActivityView): Activity {
@@ -60,6 +65,9 @@ function mapActivity(row: ActivityView): Activity {
     updatedAt: row.updatedAt,
     copiedFromActivityId: row.copiedFromActivityId ?? undefined,
     copiedFromClassroomId: row.copiedFromClassroomId ?? undefined,
+    individualOptionOrder: row.individualOptionOrder ?? false,
+    individualQuestionOrder: row.individualQuestionOrder ?? false,
+    orderLocked: row.orderLocked ?? false,
   };
 }
 

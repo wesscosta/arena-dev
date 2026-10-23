@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { individualOrderLabel } from "@/lib/activity-order";
 import { openSubmissionReview, saveSubmissionReviewNotes, type SubmissionReview } from "@/lib/submission-review-api";
 import AssessmentRubricPanel from "@/components/AssessmentRubricPanel";
 import AssessmentFeedbackPanel from "@/components/AssessmentFeedbackPanel";
@@ -67,7 +68,7 @@ export default function SubmissionReviewPanel({
 
   return <section className="classroom-settings-card stack-lg">
     <div className="page-action-bar">
-      <div><span className="eyebrow accent">CORREÇÃO INDIVIDUAL</span><h2>{review.displayName}</h2><p>{review.activityTitle} · tentativa {review.attemptNumber}</p></div>
+      <div><span className="eyebrow accent">CORREÇÃO INDIVIDUAL</span><h2>{review.displayName}</h2><p>{review.activityTitle} · tentativa {review.attemptNumber}{review.individualOptionOrder ? ` · ${individualOrderLabel(review.individualQuestionOrder)}` : ""}</p></div>
       <div className="page-action-buttons"><button className="button ghost" disabled={!previousId || busy} onClick={() => previousId && void load(previousId)}>← Anterior</button><button className="button ghost" disabled={!nextId || busy} onClick={() => nextId && void load(nextId)}>Próximo →</button><button className="button" onClick={onClose}>Fechar</button></div>
     </div>
     {error && <div className="validation-box">{error}</div>}

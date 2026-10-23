@@ -2727,3 +2727,10 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 .student-import-status{font-weight:700;color:var(--muted)}
 .student-import-preview li.is-new .student-import-status,.student-import-preview li.is-link .student-import-status{color:var(--accent-text)}
 .student-import-preview li.is-invalid-email .student-import-status{color:var(--danger)}
+
+/* Ordem individual das alternativas (formulário da atividade) */
+.activity-order-settings{display:grid;gap:10px;margin:0;padding:12px 14px;border:1px solid var(--ds-border);border-radius:var(--radius-md)}
+.activity-order-settings legend{padding:0 6px;color:var(--ds-text-primary);font-size:var(--font-size-xs);font-weight:var(--font-bold)}
+.activity-order-questions{display:flex;align-items:center;gap:8px;color:var(--ds-text-primary);font-size:var(--font-size-xs)}
+.activity-order-questions:has(input:disabled){color:var(--ds-text-secondary)}
+.activity-order-locked{color:var(--ds-warning-text);font-size:var(--font-size-xs)}

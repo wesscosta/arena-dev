@@ -37,6 +37,8 @@ export type SubmissionReview = {
   assessmentId: string;
   teacherNotes: string | null;
   assessmentUpdatedAt: string;
+  individualOptionOrder?: boolean;
+  individualQuestionOrder?: boolean;
 };
 
 function submissionReviewRequest(path: string, init?: RequestInit): Promise<SubmissionReview> {

@@ -11,6 +11,8 @@ import { createScoreEvents as createScoreEventsApi, type CreateScoreEventInput }
 import { errorMessage } from "./format";
 import { Avatar, EmptyState, Metric, MiniEmpty, Modal, Panel } from "./ui";
 import type { Activity, ActivityQuestion, ActivityStep, ArenaData, Student } from "@/lib/types";
+import ToggleField from "@/components/arena/dynamics/ToggleField";
+import { INDIVIDUAL_OPTION_ORDER_LABEL, INDIVIDUAL_ORDER_HELP, INDIVIDUAL_ORDER_LOCKED, INDIVIDUAL_ORDER_SECTION, INDIVIDUAL_QUESTION_ORDER_LABEL, individualOrderLabel } from "@/lib/activity-order";
 
 export function ActivitiesView({ data, classroomId, classroomName, students, onUseInArena, patch, notify }: {
   data: ArenaData;
@@ -35,6 +37,9 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
   const [platform, setPlatform] = useState("");
   const [resourceUrl, setResourceUrl] = useState("");
   const [questions, setQuestions] = useState<ActivityQuestion[]>([]);
+  const [individualOptionOrder, setIndividualOptionOrder] = useState(false);
+  const [individualQuestionOrder, setIndividualQuestionOrder] = useState(false);
+  const [orderLocked, setOrderLocked] = useState(false);
   const [activitySteps, setActivitySteps] = useState<ActivityStep[]>([]);
   const [stepsActivityId, setStepsActivityId] = useState<string | undefined>();
   const [stepsLoading, setStepsLoading] = useState(false);
@@ -74,6 +79,8 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
         url: resourceKind === "EXTERNAL" ? resourceUrl.trim() || undefined : undefined,
       },
       questions,
+      individualOptionOrder,
+      individualQuestionOrder: individualOptionOrder && individualQuestionOrder,
     };
   }
 
@@ -87,6 +94,9 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
     setPlatform("");
     setResourceUrl("");
     setQuestions([]);
+    setIndividualOptionOrder(false);
+    setIndividualQuestionOrder(false);
+    setOrderLocked(false);
     setActivitySteps([]);
     setStepsActivityId(undefined);
     setStepsLoading(false);
@@ -109,6 +119,9 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
     setPlatform(activity.resource?.platform ?? "");
     setResourceUrl(activity.resource?.url ?? "");
     setQuestions(activity.questions ?? []);
+    setIndividualOptionOrder(activity.individualOptionOrder ?? false);
+    setIndividualQuestionOrder(activity.individualQuestionOrder ?? false);
+    setOrderLocked(activity.orderLocked ?? false);
     setActivitySteps([]);
     setStepsActivityId(undefined);
     setStepsLoading(false);
@@ -347,6 +360,7 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
                   </div>
                   <div className="activity-card-stats">
                     <span>{activity.questions?.length ?? 0} questões</span>
+                    {activity.individualOptionOrder && <span>{individualOrderLabel(activity.individualQuestionOrder)}</span>}
                     <span>{submissionCount}/{students.length} entregaram</span>
                     {activity.copiedFromClassroomId && <span>Cópia reutilizada</span>}
                   </div>
@@ -392,6 +406,12 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
               </div>
               {resourceKind === "EXTERNAL" && <div className="form-two"><label>Plataforma<input className="input" value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Wayground, Forms, Kahoot..." /></label><label>Link<input className="input" type="url" value={resourceUrl} onChange={(e) => setResourceUrl(e.target.value)} placeholder="https://..." /></label></div>}
               <div className="form-two"><label>XP da entrega<input className="input" type="number" min="0" value={points} onChange={(e) => setPoints(Math.max(0, Number(e.target.value) || 0))} /></label><label>Bônus no prazo<input className="input" type="number" min="0" value={bonus} onChange={(e) => setBonus(Math.max(0, Number(e.target.value) || 0))} /></label></div>
+              <fieldset className="activity-order-settings" disabled={orderLocked}>
+                <legend>{INDIVIDUAL_ORDER_SECTION}</legend>
+                <ToggleField label={INDIVIDUAL_OPTION_ORDER_LABEL} description={INDIVIDUAL_ORDER_HELP} checked={individualOptionOrder} disabled={orderLocked} onChange={(checked) => { setIndividualOptionOrder(checked); if (!checked) setIndividualQuestionOrder(false); }} />
+                <label className="activity-order-questions"><input type="checkbox" checked={individualOptionOrder && individualQuestionOrder} disabled={orderLocked || !individualOptionOrder} onChange={(e) => setIndividualQuestionOrder(e.target.checked)} /> {INDIVIDUAL_QUESTION_ORDER_LABEL}</label>
+                {orderLocked && <small className="activity-order-locked">{INDIVIDUAL_ORDER_LOCKED}</small>}
+              </fieldset>
             </div>
             <div className="activity-summary-line"><span>{questions.length} questão(ões) vinculadas</span><button className="text-button" onClick={() => setEditorTab("questions")}>Gerenciar questões →</button></div>
           </div>
