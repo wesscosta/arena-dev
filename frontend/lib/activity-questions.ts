@@ -209,6 +209,10 @@ export function validateQuestionPackage(input: unknown): { package?: QuestionPac
         errors.push(`Questão ${position}: múltipla escolha deve ter exatamente 4 alternativas.`);
       } else {
         options = row.options.map((option, optionIndex) => {
+          if (!option || typeof option !== "object" || Array.isArray(option)) {
+            errors.push("Questão " + position + ": alternativa " + String.fromCharCode(65 + optionIndex) + " deve ser um objeto com id e text.");
+            return { id: String.fromCharCode(65 + optionIndex), text: "" };
+          }
           const item = option as Record<string, unknown>;
           return {
             id: isString(item.id) && item.id.trim() ? item.id.trim() : String.fromCharCode(65 + optionIndex),

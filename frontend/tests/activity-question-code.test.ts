@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildQuestionPrompt, questionWarnings, validateQuestionPackage } from "../lib/activity-questions";
+import { buildQuestionPrompt, parseQuestionPackage, questionWarnings, validateQuestionPackage } from "../lib/activity-questions";
 
 const PYTHON = "def main():\n    app = QApplication(sys.argv)\n    return app.exec()";
 
@@ -286,4 +286,18 @@ test("construtor: avisos aparecem após importar e o formulário manual aceita c
   assert.match(builder, /Importado com avisos/);
   assert.match(builder, /code: manualCode\.trim\(\) \? manualCode : undefined/);
   assert.doesNotMatch(builder, /manualType === "BUG_FIX" && <div className="form-two">/);
+});
+
+test("alternativas nulas, escalares e arrays são rejeitadas sem exceção não controlada", () => {
+  for (const invalid of [null, 5, "texto", [], ["A"]]) {
+    const options = ["A", "B", "C", "D"].map((id) => ({ id, text: "Resposta " + id })) as unknown[];
+    options[1] = invalid;
+    const payload = { version: "1.0", questions: [base("MULTIPLE_CHOICE", { options, answer: "A" })] };
+    const result = validateQuestionPackage(payload);
+    assert.equal(result.package, undefined);
+    assert.match(result.errors.join(" "), /Questão 1: alternativa B deve ser um objeto com id e text/);
+    const fromJson = parseQuestionPackage(JSON.stringify(payload));
+    assert.match(fromJson.errors.join(" "), /alternativa B deve ser um objeto/);
+    assert.doesNotMatch(fromJson.errors.join(" "), /JSON inválido/);
+  }
 });
