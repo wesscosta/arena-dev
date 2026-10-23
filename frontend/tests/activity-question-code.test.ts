@@ -113,8 +113,8 @@ test("prompt de geração traz as regras de statement e code e exemplo com e sem
   });
   assert.match(prompt, /O statement deve ser texto corrido, sem quebras de linha e sem código em várias linhas\. Identificadores curtos podem aparecer no texto, como app\.exec\(\)\./);
   assert.match(prompt, /Qualquer tipo de questão pode usar code quando a situação exigir um trecho de código; não use code quando a questão não precisar\. Quando usar, informe language e faça o statement se referir a "o código abaixo"\./);
-  assert.match(prompt, /O statement deve ter até 350 caracteres e o code até 40 linhas, com trechos omitidos marcados como # \(\.\.\.\)\./);
-  assert.match(prompt, /Antes de responder, confira se nenhum statement contém quebra de linha ou código\./);
+  assert.match(prompt, /O statement deve ter até 350 caracteres em MULTIPLE_CHOICE, TRUE_FALSE e BUG_FIX, e até 600 em OPEN, ANALYSIS, PRACTICAL e SCENARIO\. O code deve ter até 40 linhas, com trechos omitidos marcados como # \(\.\.\.\)\./);
+  assert.doesNotMatch(prompt, /confira se nenhum statement contém quebra de linha ou código/);
   assert.doesNotMatch(prompt, /BUG_FIX deve incluir code/);
 
   const example = JSON.parse(prompt.slice(prompt.indexOf("{\n"), prompt.lastIndexOf("}") + 1));
@@ -124,6 +124,119 @@ test("prompt de geração traz as regras de statement e code e exemplo com e sem
   assert.equal(withCode.language, "python");
   assert.doesNotMatch(withCode.statement, /\n/);
   assert.deepEqual(questionWarnings(withCode, 2), []);
+});
+
+test("prompt de geração traz as regras de alternativas, code e language e a conferência final", () => {
+  const prompt = buildQuestionPrompt({
+    theme: "SQL",
+    context: "",
+    difficulty: "EASY",
+    counts: { MULTIPLE_CHOICE: 1, OPEN: 1, TRUE_FALSE: 0, BUG_FIX: 0, ANALYSIS: 0, PRACTICAL: 0, SCENARIO: 0 },
+    additionalInstructions: "",
+  });
+  for (const rule of [
+    "- Em MULTIPLE_CHOICE, use os ids A, B, C e D, nesta ordem.",
+    "- O texto de cada alternativa deve ser curto e em uma linha, sem código em várias linhas. Identificadores curtos são permitidos. Se as alternativas precisarem comparar trechos de código, coloque o código no campo code da questão e faça as alternativas se referirem a ele.",
+    "- As alternativas podem ser embaralhadas para cada aluno. Nenhuma alternativa pode depender de posição ou letra: não use 'todas as anteriores', 'nenhuma das anteriores', 'A e C estão corretas' nem referências a outras alternativas.",
+    "- No campo code, use 4 espaços para indentar, nunca tabulação, e represente as quebras de linha como \\n dentro da string JSON.",
+    "- Use em language um destes valores, em minúsculas: python, sql, javascript, typescript, java, bash, html, css, json, text.",
+    "- Só escreva 'o código abaixo' no statement quando a questão tiver code. Sem code, o statement não cita código abaixo nem acima.",
+    "- Antes de responder, confira cada questão: o statement não tem quebra de linha nem código; respeita o limite do seu tipo; code e language aparecem juntos ou não aparecem; 'o código abaixo' só aparece quando há code; as alternativas estão em uma linha, sem código, sem referência a outras alternativas, com ids A, B, C e D nessa ordem; as quantidades por tipo estão exatas. Corrija o que não passar.",
+  ]) {
+    assert.ok(prompt.includes(rule), rule);
+  }
+
+  const example = JSON.parse(prompt.slice(prompt.indexOf("{\n"), prompt.lastIndexOf("}") + 1));
+  assert.deepEqual(example.questions.map((question: { type: string }) => question.type), ["MULTIPLE_CHOICE", "ANALYSIS"]);
+  assert.deepEqual(example.questions[0].options.map((option: { id: string }) => option.id), ["A", "B", "C", "D"]);
+  assert.deepEqual(questionWarnings(example.questions[0], 1), []);
+});
+
+const cleanChoice = {
+  type: "MULTIPLE_CHOICE" as const,
+  statement: "Qual comando lista as tabelas no psql?",
+  options: [
+    { id: "A", text: "\\dt" },
+    { id: "B", text: "SHOW TABLES" },
+    { id: "C", text: "LIST TABLES" },
+    { id: "D", text: "SELECT tables" },
+  ],
+};
+
+function withOption(id: string, text: string) {
+  return { ...cleanChoice, options: cleanChoice.options.map((option) => option.id === id ? { id, text } : option) };
+}
+
+test("aviso: limite do enunciado depende do tipo, com margem de 50", () => {
+  assert.deepEqual(questionWarnings({ type: "TRUE_FALSE", statement: "a".repeat(400) }, 1), []);
+  assert.deepEqual(questionWarnings({ type: "BUG_FIX", statement: "a".repeat(401) }, 1), ["Questão 1: o enunciado tem 401 caracteres, acima do recomendado (400)."]);
+  assert.deepEqual(questionWarnings({ type: "SCENARIO", statement: "a".repeat(650) }, 2), []);
+  assert.deepEqual(questionWarnings({ type: "ANALYSIS", statement: "a".repeat(651) }, 2), ["Questão 2: o enunciado tem 651 caracteres, acima do recomendado (650)."]);
+});
+
+test("aviso: enunciado cita código abaixo ou acima sem code", () => {
+  for (const statement of ["O que o código abaixo imprime?", "No codigo acima, qual linha falha?"]) {
+    assert.deepEqual(questionWarnings({ statement }, 3), ["Questão 3: o enunciado cita código abaixo ou acima, mas a questão não tem code."], statement);
+  }
+  assert.deepEqual(questionWarnings({ statement: "O que o código abaixo imprime?", code: "print(1)", language: "python" }, 3), []);
+});
+
+test("aviso: alternativa com quebra de linha ou código", () => {
+  assert.deepEqual(questionWarnings(withOption("B", "total = 0\ntotal += 1"), 1), [
+    "Questão 1: a alternativa B parece conter código (quebra de linha). Use uma linha e mova o trecho para o campo code.",
+  ]);
+  const [warning] = questionWarnings(withOption("C", "if (x) { a++; }"), 1);
+  assert.match(warning, /^Questão 1: a alternativa C parece conter código \(chaves e ponto e vírgula em sequência\)/);
+});
+
+test("aviso: alternativa que depende de outras alternativas", () => {
+  assert.deepEqual(questionWarnings(withOption("D", "Todas as anteriores"), 4), [
+    "Questão 4: a alternativa D depende de outras alternativas ('Todas as anteriores'). As alternativas podem ser embaralhadas.",
+  ]);
+  assert.match(questionWarnings(withOption("D", "Nenhuma das alternativas anteriores"), 4)[0], /depende de outras alternativas \('Nenhuma das alternativas anteriores'\)/);
+  assert.match(questionWarnings(withOption("D", "A e C estão corretas"), 4)[0], /alternativa D depende de outras alternativas \(letra A, C\)/);
+  assert.match(questionWarnings(withOption("C", "Igual à alternativa B"), 4)[0], /alternativa C depende de outras alternativas \(letra B\)/);
+  assert.deepEqual(questionWarnings(withOption("A", "A função retorna None"), 4), []);
+  assert.deepEqual(questionWarnings(withOption("A", "Alternativa A"), 4), []);
+});
+
+test("aviso: ids de múltipla escolha fora de A, B, C, D ou fora de ordem", () => {
+  const message = "Questão 2: os ids das alternativas devem ser A, B, C e D, nesta ordem.";
+  const reordered = { ...cleanChoice, options: [cleanChoice.options[1], cleanChoice.options[0], ...cleanChoice.options.slice(2)] };
+  const numbered = { ...cleanChoice, options: cleanChoice.options.map((option, index) => ({ ...option, id: String(index + 1) })) };
+  assert.deepEqual(questionWarnings(reordered, 2), [message]);
+  assert.deepEqual(questionWarnings(numbered, 2), [message]);
+});
+
+test("aviso: code com tabulação", () => {
+  assert.deepEqual(questionWarnings({ statement: "Veja o código abaixo.", code: "def f():\n\treturn 1", language: "python" }, 5), [
+    "Questão 5: o code usa tabulação. Use 4 espaços.",
+  ]);
+});
+
+test("aviso: language fora da lista", () => {
+  for (const language of ["py", "Python", "c++"]) {
+    assert.deepEqual(questionWarnings({ statement: "Veja o código abaixo.", code: "x = 1", language }, 6), [
+      `Questão 6: language '${language}' fora da lista (python, sql, javascript, typescript, java, bash, html, css, json, text).`,
+    ]);
+  }
+});
+
+test("avisos novos chegam pelo importador sem bloquear e questão limpa não gera aviso", () => {
+  const clean = validateQuestionPackage({ version: "1.0", questions: [base("MULTIPLE_CHOICE", { ...cleanChoice, answer: "A" })] });
+  assert.deepEqual(clean.errors, []);
+  assert.deepEqual(clean.warnings, []);
+
+  const flagged = validateQuestionPackage({
+    version: "1.0",
+    questions: [base("MULTIPLE_CHOICE", { ...withOption("D", "Todas as anteriores"), statement: "O que o código abaixo faz?", answer: "D" })],
+  });
+  assert.deepEqual(flagged.errors, []);
+  assert.equal(flagged.package?.questions.length, 1);
+  assert.deepEqual(flagged.warnings, [
+    "Questão 1: o enunciado cita código abaixo ou acima, mas a questão não tem code.",
+    "Questão 1: a alternativa D depende de outras alternativas ('Todas as anteriores'). As alternativas podem ser embaralhadas.",
+  ]);
 });
 
 const panel = readFileSync(resolve(process.cwd(), "components/StudentActivitiesPanel.tsx"), "utf8");
