@@ -1,4 +1,4 @@
-import { secureId } from "@/lib/secure-id";
+import { secureId } from "./secure-id";
 import type { ArenaData } from "./types";
 
 export const STORAGE_KEY = "arena-dev-v1";
