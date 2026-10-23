@@ -1,0 +1,9 @@
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;min-width:0;padding:8px 0;font-size:.78rem;color:var(--text);background:var(--bg)}
+.scale{display:flex;align-items:center;min-width:0;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.scale button{height:44px;min-width:44px;padding:0 7px;border:0;border-right:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+.scale button:last-child{border-right:0}.scale button:disabled{opacity:.45;cursor:not-allowed}
+.field{display:flex;align-items:center;gap:8px}.field select{min-height:44px;border:1px solid var(--border);border-radius:8px;padding:0 8px;background:var(--surface);color:var(--text);font:inherit}
+.motion{min-height:44px;display:flex;align-items:center;gap:6px;cursor:pointer}.motion input{width:18px;height:18px;accent-color:var(--accent)}
+.controls :is(button,select,input):focus-visible{outline:2px solid var(--ds-accent-text);outline-offset:2px}
+.compact{padding:5px 8px;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
+@media(max-width:550px){.controls{gap:5px;font-size:.71rem}.scale button{min-width:40px;height:42px}.field select,.motion{min-height:42px}.compact{padding:6px}}

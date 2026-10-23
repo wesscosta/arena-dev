@@ -2734,3 +2734,17 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 .activity-order-questions{display:flex;align-items:center;gap:8px;color:var(--ds-text-primary);font-size:var(--font-size-xs)}
 .activity-order-questions:has(input:disabled){color:var(--ds-text-secondary)}
 .activity-order-locked{color:var(--ds-warning-text);font-size:var(--font-size-xs)}
+
+/* Shared accessibility preferences apply to live participation without altering the teacher UI. */
+.student-join-shell{position:relative;align-content:center}
+.student-accessibility-row{position:relative;z-index:2;justify-self:center;width:min(1120px,100%);margin-bottom:12px}
+.student-accessibility-row>section{justify-content:flex-end;background:transparent}
+.student-join-card{zoom:var(--student-content-scale,1);max-width:calc((100vw - 32px) / var(--student-content-scale,1))}
+/* An activity runner is viewport-fixed. Keep its frame at 100%; magnify only its scrollable question content. */
+.student-join-card:has([aria-modal="true"]){zoom:1}
+.student-join-card [aria-modal="true"] main{zoom:var(--student-content-scale,1)}
+.student-join-shell[data-student-motion="reduce"] :is(*,*::before,*::after){animation-duration:0.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:0.01ms!important}
+@media(max-width:620px){.student-accessibility-row>section{justify-content:center}}
+
+.student-leave-session{min-height:44px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;font-size:.8rem;cursor:pointer}
+.student-leave-session:hover{border-color:var(--ds-accent-text)}

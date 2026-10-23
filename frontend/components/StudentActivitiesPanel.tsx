@@ -16,6 +16,7 @@ import {
 } from "@/lib/participant-submission-api";
 import styles from "./StudentActivitiesPanel.module.css";
 import { DialogCloseButton } from "@/components/ui";
+import StudentAccessibilityControls from "@/components/student/StudentAccessibilityControls";
 import { persistChangedQuestionDrafts } from "@/lib/submission-drafts";
 
 function contentValue(value: unknown) {
@@ -285,7 +286,10 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
             <header className={styles.runnerTop}>
               <div className={styles.runnerBrand}><span>A</span><div><strong>ARENA DEV</strong><small>{access.classroomName}</small></div></div>
               <div className={styles.runnerTitle}><span>ATIVIDADE</span><strong>{open.title}</strong></div>
-              <DialogCloseButton className={styles.runnerClose} onClick={() => void closeActivity()} label="Fechar atividade" />
+              <div className={styles.runnerActions}>
+                <details className={styles.runnerAccessibility}><summary>Acessibilidade</summary><div className={styles.runnerAccessibilityPanel}><StudentAccessibilityControls compact /></div></details>
+                <DialogCloseButton className={styles.runnerClose} onClick={() => void closeActivity()} label="Fechar atividade" />
+              </div>
             </header>
 
             <main className={styles.runnerMain}>

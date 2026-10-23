@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import StudentActivitiesPanel from "@/components/StudentActivitiesPanel";
+import StudentAccessibilityControls, { useStudentPreferences } from "@/components/student/StudentAccessibilityControls";
 import { recordSelfConfidence, type SelfConfidence } from "@/lib/learner-confidence-api";
 import {
   connectSessionSocket,
@@ -40,6 +41,7 @@ function messageOf(error: unknown) {
 
 export default function StudentJoinFlow({ embedded = false, initialCode = "" }: { embedded?: boolean; initialCode?: string }) {
   const [code, setCode] = useState(() => normalizeJoinCode(initialCode));
+  const { scale: studentScale, reducedMotion } = useStudentPreferences();
   const [session, setSession] = useState<PublicSession | null>(null);
   const [identity, setIdentity] = useState("");
   const [access, setAccess] = useState<StudentJoinAccess | null>(null);
@@ -361,6 +363,21 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
     if (token) void revokeRememberedDevice(token).catch(() => undefined);
   }
 
+  function leaveSession() {
+    if (!access) return;
+    // Leave this short-lived session, while preserving the optional remembered enrolment.
+    window.sessionStorage.removeItem(studentAccessStorageKey(access.code));
+    socketRef.current?.close();
+    setAccess(null);
+    setSession(null);
+    setRecognizedDevice(null);
+    setDeviceToken(null);
+    setError("");
+    setCode("");
+    setSessionFinished(false);
+    if (!embedded) window.history.replaceState(null, "", "/join");
+  }
+
   function reconnectNow() {
     if (!access || sessionFinished || !navigator.onLine) return;
     reconnectAttemptRef.current = 0;
@@ -462,7 +479,8 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
   }, [activeQuizRound?.id]);
 
   return (
-    <main className="student-join-shell">
+    <main className="student-join-shell" style={{ "--student-content-scale": studentScale } as React.CSSProperties} data-student-motion={reducedMotion ? "reduce" : undefined}>
+      <div className="student-accessibility-row"><StudentAccessibilityControls /></div>
       <section className="student-join-card">
         {!embedded && <div className="student-brand"><span>A</span><div><strong>ARENA DEV</strong><small>Participação ao vivo</small></div></div>}
 
@@ -499,6 +517,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
           <div className="student-live-view">
             <div className="student-live-top">
               <div><span className="student-live-kicker">{access.classroomName}</span><h1>{access.displayName}</h1><p>{access.sessionTitle}</p></div>
+              <button type="button" className="student-leave-session" onClick={leaveSession}>Sair da sessão</button>
               <span className={`student-connection ${socketState}`} role="status" aria-live="polite"><i aria-hidden="true" />{socketState === "online" ? "Conectado" : socketState === "connecting" ? "Conectando…" : socketState === "reconnecting" ? "Reconectando…" : "Offline"}</span>
             </div>
 
