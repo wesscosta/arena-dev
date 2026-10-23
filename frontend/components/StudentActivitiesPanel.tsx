@@ -219,8 +219,8 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
 
               {question ? <section className={styles.runnerQuestion}>
                 <div className={styles.questionLabel}>QUESTÃO {String(questionIndex + 1).padStart(2, "0")}</div>
-                <h2>{question.statement}</h2>
-                {question.code && <pre className={styles.runnerCode}><code>{question.code}</code></pre>}
+                <p className={styles.runnerStatement}>{question.statement}</p>
+                {question.code && <figure className={styles.runnerCodeBlock}>{question.language && <figcaption>{question.language}</figcaption>}<pre className={styles.runnerCode}><code data-language={question.language || undefined}>{question.code}</code></pre></figure>}
                 {options.length ? <div className={styles.runnerOptions}>{options.map((option, index) => <label className={`${styles.runnerOption} ${(drafts[key] ?? "") === option.id ? styles.selectedOption : ""}`} key={option.id}><input type="radio" name={key} value={option.id} checked={(drafts[key] ?? "") === option.id} disabled={!editable || busy} onChange={(event) => { const value = event.target.value; setDrafts((current) => ({ ...current, [key]: value })); void saveQuestion(question, value); }} /><b>{String.fromCharCode(65 + index)}</b><span>{option.text}</span></label>)}</div> : <label className={styles.runnerField}><span>Sua resposta</span><textarea value={drafts[key] ?? ""} disabled={!editable || busy} onChange={(event) => setDrafts((current) => ({ ...current, [key]: event.target.value }))} onPaste={(event) => registerPaste(open.items.find((item) => item.questionId === question.id)?.id ?? null, event.clipboardData.getData("text").length)} placeholder="Digite sua resposta..." /></label>}
               </section> : <div className={styles.empty}>Esta atividade não possui questões objetivas. Use a entrega complementar quando solicitada.</div>}
             </main>

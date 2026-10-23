@@ -74,17 +74,47 @@ function asPositivePoints(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
-export function validateQuestionPackage(input: unknown): { package?: QuestionPackage; errors: string[] } {
+export const STATEMENT_WARNING_LENGTH = 400;
+
+const STATEMENT_CODE_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
+  { pattern: /\n[ \t]+\S/, reason: "quebra de linha seguida de indentação" },
+  { pattern: /(^|[\s:;(])(def|class|import)\s/, reason: "palavra típica de código (def, class ou import)" },
+  { pattern: /\{[^{}]*;[^{}]*\}|;\s*[{}]/, reason: "chaves e ponto e vírgula em sequência" },
+];
+
+/**
+ * Avisos não bloqueiam a importação: apontam questões que a IA gerou fora do
+ * padrão (código no enunciado, enunciado longo, code e language desencontrados).
+ */
+export function questionWarnings(
+  question: Pick<ActivityQuestion, "statement" | "code" | "language">,
+  position: number,
+): string[] {
+  const warnings: string[] = [];
+  const reasons = STATEMENT_CODE_PATTERNS.filter(({ pattern }) => pattern.test(question.statement)).map(({ reason }) => reason);
+  if (reasons.length) {
+    warnings.push(`Questão ${position}: o enunciado parece conter código (${reasons.join("; ")}). Mova o trecho para o campo code.`);
+  }
+  if (question.statement.length > STATEMENT_WARNING_LENGTH) {
+    warnings.push(`Questão ${position}: o enunciado tem ${question.statement.length} caracteres, acima do recomendado (${STATEMENT_WARNING_LENGTH}).`);
+  }
+  if (question.code && !question.language) warnings.push(`Questão ${position}: code informado sem language.`);
+  if (question.language && !question.code) warnings.push(`Questão ${position}: language informado sem code.`);
+  return warnings;
+}
+
+export function validateQuestionPackage(input: unknown): { package?: QuestionPackage; errors: string[]; warnings: string[] } {
   const errors: string[] = [];
+  const warnings: string[] = [];
   if (!input || typeof input !== "object") {
-    return { errors: ["O conteúdo precisa ser um objeto JSON."] };
+    return { errors: ["O conteúdo precisa ser um objeto JSON."], warnings: [] };
   }
 
   const root = input as Record<string, unknown>;
   if (root.version !== "1.0") errors.push('O campo "version" deve ser "1.0".');
   if (!Array.isArray(root.questions)) {
     errors.push('O campo "questions" deve ser uma lista.');
-    return { errors };
+    return { errors, warnings };
   }
 
   const normalized: ActivityQuestion[] = [];
@@ -138,17 +168,20 @@ export function validateQuestionPackage(input: unknown): { package?: QuestionPac
       : undefined;
     const expectedAnswer = isString(row.expectedAnswer) ? row.expectedAnswer.trim() : undefined;
     const expectedOutcome = isString(row.expectedOutcome) ? row.expectedOutcome.trim() : undefined;
-    const code = isString(row.code) ? row.code : undefined;
+    const code = isString(row.code) && row.code.trim() ? row.code : undefined;
+    const language = isString(row.language) && row.language.trim() ? row.language.trim() : undefined;
 
     if (["OPEN", "ANALYSIS", "SCENARIO"].includes(type) && !expectedAnswer && !criteria?.length) {
       errors.push(`Questão ${position}: informe expectedAnswer ou evaluationCriteria para orientar a correção.`);
     }
-    if (type === "BUG_FIX" && (!code?.trim() || !expectedAnswer)) {
-      errors.push(`Questão ${position}: BUG_FIX deve incluir code e expectedAnswer.`);
+    if (type === "BUG_FIX" && !expectedAnswer) {
+      errors.push(`Questão ${position}: BUG_FIX deve incluir expectedAnswer.`);
     }
     if (type === "PRACTICAL" && (!expectedOutcome || !criteria?.length)) {
       errors.push(`Questão ${position}: PRACTICAL deve incluir expectedOutcome e evaluationCriteria.`);
     }
+
+    if (statement) warnings.push(...questionWarnings({ statement, code, language }, position));
 
     normalized.push({
       id: uid("question"),
@@ -161,13 +194,13 @@ export function validateQuestionPackage(input: unknown): { package?: QuestionPac
       expectedAnswer,
       explanation: isString(row.explanation) ? row.explanation.trim() : undefined,
       code,
-      language: isString(row.language) ? row.language.trim() : undefined,
+      language,
       expectedOutcome,
       evaluationCriteria: criteria,
     });
   });
 
-  if (errors.length) return { errors };
+  if (errors.length) return { errors, warnings };
 
   const activity = root.activity && typeof root.activity === "object"
     ? root.activity as QuestionPackage["activity"]
@@ -175,6 +208,7 @@ export function validateQuestionPackage(input: unknown): { package?: QuestionPac
 
   return {
     errors,
+    warnings,
     package: {
       version: "1.0",
       activity,
@@ -187,7 +221,7 @@ export function parseQuestionPackage(raw: string) {
   try {
     return validateQuestionPackage(JSON.parse(raw));
   } catch {
-    return { errors: ["JSON inválido. Verifique vírgulas, aspas e chaves antes de importar."] };
+    return { errors: ["JSON inválido. Verifique vírgulas, aspas e chaves antes de importar."], warnings: [] };
   }
 }
 
@@ -231,6 +265,16 @@ export function buildQuestionPrompt({
         answer: "A",
         explanation: "Explicação objetiva da resposta",
       },
+      {
+        type: "ANALYSIS",
+        statement: "O código abaixo deveria somar apenas os valores positivos da lista. Explique por que o resultado sai errado.",
+        difficulty,
+        points: 4,
+        code: "def soma_positivos(valores):\n    total = 0\n    for valor in valores:\n        if valor > 0:\n            total = valor\n    return total",
+        language: "python",
+        expectedAnswer: "A linha total = valor substitui o acumulado em vez de somar. O correto é total += valor.",
+        evaluationCriteria: ["Identifica a linha errada", "Explica a diferença entre atribuir e acumular"],
+      },
     ],
   };
 
@@ -250,18 +294,22 @@ Requisitos de qualidade:
 - MULTIPLE_CHOICE deve possuir exatamente 4 alternativas, somente uma correta e answer deve conter o id da alternativa correta.
 - TRUE_FALSE deve usar answer com valor booleano true ou false.
 - OPEN e ANALYSIS devem incluir expectedAnswer e, quando útil, evaluationCriteria.
-- BUG_FIX deve incluir code, language, expectedAnswer e explanation. Só use BUG_FIX quando o tema permitir esse tipo de problema.
+- BUG_FIX deve incluir expectedAnswer e explanation. Só use BUG_FIX quando o tema permitir esse tipo de problema.
 - PRACTICAL deve incluir expectedOutcome e evaluationCriteria objetivos.
 - SCENARIO deve apresentar uma situação-problema realista e critérios claros para uma boa resposta.
+- O statement deve ser texto corrido, sem quebras de linha e sem código em várias linhas. Identificadores curtos podem aparecer no texto, como app.exec().
+- Qualquer tipo de questão pode usar code quando a situação exigir um trecho de código; não use code quando a questão não precisar. Quando usar, informe language e faça o statement se referir a "o código abaixo".
+- O statement deve ter até 350 caracteres e o code até 40 linhas, com trechos omitidos marcados como # (...).
 - Use points coerentes com a dificuldade e o esforço exigido.
 - Não escreva introdução, conclusão, comentários ou Markdown fora do JSON.
 - Retorne somente JSON válido em UTF-8. Não envolva a resposta em bloco \`\`\`json.
 - Use exatamente os nomes de tipos: MULTIPLE_CHOICE, OPEN, TRUE_FALSE, BUG_FIX, ANALYSIS, PRACTICAL, SCENARIO.
 - Use exatamente as dificuldades: EASY, INTERMEDIATE, HARD.
+- Antes de responder, confira se nenhum statement contém quebra de linha ou código.
 
-Formato obrigatório de saída (exemplo estrutural; adapte os campos ao tipo de cada questão):
+Formato obrigatório de saída (exemplo estrutural, com uma questão sem code e outra com code; adapte os campos ao tipo de cada questão):
 ${JSON.stringify(schemaExample, null, 2)}
 
-Campos opcionais por tipo: expectedAnswer, explanation, code, language, expectedOutcome, evaluationCriteria.
+Campos opcionais: expectedAnswer, explanation, expectedOutcome, evaluationCriteria. Os campos code e language são opcionais em qualquer tipo e andam juntos.
 Retorne exclusivamente o objeto JSON final.`;
 }

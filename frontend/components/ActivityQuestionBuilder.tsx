@@ -44,6 +44,7 @@ export default function ActivityQuestionBuilder({
 
   const [jsonInput, setJsonInput] = useState("");
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [lastImportedCount, setLastImportedCount] = useState(0);
 
   const [theme, setTheme] = useState(defaultTheme);
@@ -98,8 +99,8 @@ export default function ActivityQuestionBuilder({
       answer,
       expectedAnswer: ["OPEN", "ANALYSIS", "SCENARIO", "BUG_FIX"].includes(manualType) ? manualAnswer.trim() || undefined : undefined,
       explanation: manualExplanation.trim() || undefined,
-      code: manualType === "BUG_FIX" ? manualCode : undefined,
-      language: manualType === "BUG_FIX" ? manualLanguage.trim() || undefined : undefined,
+      code: manualCode.trim() ? manualCode : undefined,
+      language: manualCode.trim() ? manualLanguage.trim() || undefined : undefined,
       expectedOutcome: manualType === "PRACTICAL" ? manualAnswer.trim() || undefined : undefined,
       evaluationCriteria: criteria.length ? criteria : undefined,
     };
@@ -111,6 +112,7 @@ export default function ActivityQuestionBuilder({
   function importJson() {
     const result = parseQuestionPackage(jsonInput);
     setImportErrors(result.errors);
+    setImportWarnings(result.warnings);
     if (!result.package) {
       setLastImportedCount(0);
       return;
@@ -129,6 +131,7 @@ export default function ActivityQuestionBuilder({
     reader.onload = () => {
       setJsonInput(String(reader.result ?? ""));
       setImportErrors([]);
+      setImportWarnings([]);
     };
     reader.readAsText(file);
   }
@@ -223,8 +226,9 @@ export default function ActivityQuestionBuilder({
       {tab === "import" && (
         <div className="question-tool-body">
           <p className="tool-note">Cole a resposta JSON da IA ou carregue um arquivo <b>.json</b>. O Arena Dev valida o pacote antes de adicionar as questões.</p>
-          <textarea className="input textarea json-area" rows={12} value={jsonInput} onChange={(event) => { setJsonInput(event.target.value); setImportErrors([]); setLastImportedCount(0); }} placeholder={'{\n  "version": "1.0",\n  "questions": [...]\n}'} />
+          <textarea className="input textarea json-area" rows={12} value={jsonInput} onChange={(event) => { setJsonInput(event.target.value); setImportErrors([]); setImportWarnings([]); setLastImportedCount(0); }} placeholder={'{\n  "version": "1.0",\n  "questions": [...]\n}'} />
           {importErrors.length > 0 && <div className="validation-box"><strong>Revise antes de importar</strong>{importErrors.map((error) => <span key={error}>{error}</span>)}</div>}
+          {importWarnings.length > 0 && <div className="validation-box" role="status"><strong>{lastImportedCount > 0 ? "Importado com avisos" : "Avisos"}</strong>{importWarnings.map((warning) => <span key={warning}>{warning}</span>)}</div>}
           {lastImportedCount > 0 && (
             <div className="inline-note">
               <strong>{lastImportedCount} questão(ões) adicionada(s) ao rascunho.</strong>
@@ -262,7 +266,7 @@ export default function ActivityQuestionBuilder({
             <label>{manualType === "PRACTICAL" ? "Resultado esperado" : "Resposta esperada"}<textarea className="input textarea" rows={3} value={manualAnswer} onChange={(event) => setManualAnswer(event.target.value)} /></label>
           )}
 
-          {manualType === "BUG_FIX" && <div className="form-two"><label>Linguagem<input className="input" value={manualLanguage} onChange={(event) => setManualLanguage(event.target.value)} placeholder="java, python, javascript..." /></label><label>Código<textarea className="input textarea code-area" rows={5} value={manualCode} onChange={(event) => setManualCode(event.target.value)} /></label></div>}
+          <div className="form-two"><label>Linguagem <small>opcional</small><input className="input" value={manualLanguage} onChange={(event) => setManualLanguage(event.target.value)} placeholder="java, python, javascript..." /></label><label>Código <small>opcional, exibido abaixo do enunciado</small><textarea className="input textarea code-area" rows={5} value={manualCode} onChange={(event) => setManualCode(event.target.value)} /></label></div>
 
           {["OPEN", "ANALYSIS", "SCENARIO", "PRACTICAL"].includes(manualType) && <label>Critérios de avaliação <small>um por linha</small><textarea className="input textarea" rows={3} value={manualCriteria} onChange={(event) => setManualCriteria(event.target.value)} /></label>}
           <label>Explicação / apoio ao professor<textarea className="input textarea" rows={2} value={manualExplanation} onChange={(event) => setManualExplanation(event.target.value)} /></label>
