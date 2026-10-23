@@ -157,8 +157,8 @@ test("tela do aluno: hover e alternativa selecionada partem da superfície do te
   const rule = panelCss.match(/\.runnerOption:hover,\.selectedOption\{[^}]*\}/)?.[0] ?? "";
   assert.match(rule, /background:color-mix\(in srgb,var\(--accent\) 7%,var\(--ds-surface-subtle\)\)/);
   assert.doesNotMatch(rule, /#0b1512/);
-  assert.match(panelCss, /\.runnerOption,\.runnerOption:hover,\.selectedOption\{color:var\(--text\)\}/);
-  assert.match(panelCss, /\.selectedOption b\{background:var\(--accent\);color:var\(--theme-accent-contrast\)\}/);
+  assert.match(panelCss, /\.runnerOption:hover,\.runnerOption:active\{[^}]*color:var\(--ds-text-primary\)\}/);
+  assert.match(panelCss, /\.selectedOption b\{[^}]*background:var\(--ds-accent-text\);color:var\(--ds-accent-text-contrast\)\}/);
 });
 
 test("tela do aluno: topo do runner sem espaço sobrando no desktop", () => {

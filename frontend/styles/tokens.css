@@ -89,6 +89,9 @@
   --ds-accent-strong: var(--accent-2, var(--accent));
   --ds-accent-text: var(--accent-text, var(--accent));
   --ds-accent-contrast: var(--theme-accent-contrast);
+  --ds-accent-text-contrast: var(--theme-accent-text-contrast);
+  --ds-border-control: var(--theme-border-control);
+  --ds-selected-surface: var(--theme-selected-surface);
   --ds-surface: var(--surface);
   --ds-surface-raised: var(--surface-2, var(--surface));
   --ds-border: var(--border);

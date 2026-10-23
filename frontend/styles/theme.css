@@ -31,6 +31,11 @@ html[data-theme="dark"] {
   --theme-accent-strong: #b5ffda;
   --theme-accent-contrast: #04110b;
   --theme-accent-text: #58f3a7;
+  /* Texto sobre preenchimento --theme-accent-text (marcador selecionado). */
+  --theme-accent-text-contrast: #04110b;
+  /* Limite de controles (alternativas): >= 3:1 contra a superfície do runner. */
+  --theme-border-control: #61766c;
+  --theme-selected-surface: #173528;
   --theme-danger: #ff6b73;
   --theme-danger-fill: #7d2d36;
   --theme-danger-text: #ff9da3;
@@ -74,6 +79,10 @@ html[data-theme="light"] {
   --theme-accent-contrast: #06150e;
   /* The light accent (#22b978) is a fill colour; as text it was 2.2-2.5:1. */
   --theme-accent-text: #085236;
+  --theme-accent-text-contrast: #ffffff;
+  --theme-border-control: #6b7d75;
+  /* Seleção em verde claro: o texto primário mantém AAA sobre ela. */
+  --theme-selected-surface: #dcefe5;
   --theme-danger: #d84f5a;
   --theme-danger-fill: #fff0f1;
   --theme-danger-text: #8c2a33;
