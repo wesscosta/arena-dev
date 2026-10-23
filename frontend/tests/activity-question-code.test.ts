@@ -288,6 +288,7 @@ test("construtor: avisos aparecem após importar e o formulário manual aceita c
   assert.doesNotMatch(builder, /manualType === "BUG_FIX" && <div className="form-two">/);
 });
 
+
 test("alternativas nulas, escalares e arrays são rejeitadas sem exceção não controlada", () => {
   for (const invalid of [null, 5, "texto", [], ["A"]]) {
     const options = ["A", "B", "C", "D"].map((id) => ({ id, text: "Resposta " + id })) as unknown[];
@@ -300,4 +301,12 @@ test("alternativas nulas, escalares e arrays são rejeitadas sem exceção não 
     assert.match(fromJson.errors.join(" "), /alternativa B deve ser um objeto/);
     assert.doesNotMatch(fromJson.errors.join(" "), /JSON inválido/);
   }
+});
+
+test("runner usa toda a largura disponível sem alargar excessivamente o enunciado", () => {
+  assert.match(panelCss, /\.runnerProgress,\.runnerQuestion\{width:100%;min-width:0/);
+  assert.doesNotMatch(panelCss, /\.runnerProgress,\.runnerQuestion\{width:min\(900px,100%\)/);
+  assert.match(panelCss, /\.runnerStatement\{max-width:72ch/);
+  assert.match(panelCss, /\.runnerOptions\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+
 });
