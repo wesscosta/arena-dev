@@ -74,7 +74,21 @@ function asPositivePoints(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
-export const STATEMENT_WARNING_LENGTH = 400;
+/** Limite do statement pedido no prompt, por tipo. */
+export const STATEMENT_LIMIT: Record<QuestionType, number> = {
+  MULTIPLE_CHOICE: 350,
+  TRUE_FALSE: 350,
+  BUG_FIX: 350,
+  OPEN: 600,
+  ANALYSIS: 600,
+  PRACTICAL: 600,
+  SCENARIO: 600,
+};
+
+/** Folga sobre o limite do prompt antes de avisar. */
+export const STATEMENT_WARNING_MARGIN = 50;
+
+export const CODE_LANGUAGES = ["python", "sql", "javascript", "typescript", "java", "bash", "html", "css", "json", "text"];
 
 const STATEMENT_CODE_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
   { pattern: /\n[ \t]+\S/, reason: "quebra de linha seguida de indentação" },
@@ -82,24 +96,76 @@ const STATEMENT_CODE_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
   { pattern: /\{[^{}]*;[^{}]*\}|;\s*[{}]/, reason: "chaves e ponto e vírgula em sequência" },
 ];
 
+const CODE_BELOW_PATTERN = /c[oó]digo\s+(abaixo|acima)/i;
+const PREVIOUS_OPTIONS_PATTERN = /\b(todas|nenhuma)\s+d?as\s+(alternativas\s+)?(anteriores|acima)/i;
+// Letras só contam como referência nestes formatos, para não confundir com o artigo "A".
+const OPTION_LETTER_PATTERNS = [
+  /\b(?:[Aa]lternativas?|[Ll]etras?|[Oo]p[cç](?:ão|ões))\s+([A-D])\b/g,
+  /\b([A-D])\s+(?:e|ou)\s+([A-D])\b/g,
+  /\(([A-D])\)/g,
+];
+
+function codeReasons(text: string) {
+  return STATEMENT_CODE_PATTERNS.filter(({ pattern }) => pattern.test(text)).map(({ reason }) => reason);
+}
+
+function referencedLetters(text: string) {
+  const letters = new Set<string>();
+  for (const pattern of OPTION_LETTER_PATTERNS) {
+    for (const match of text.matchAll(pattern)) match.slice(1).forEach((letter) => letter && letters.add(letter));
+  }
+  return letters;
+}
+
+function optionWarnings(options: NonNullable<ActivityQuestion["options"]>, position: number): string[] {
+  const warnings: string[] = [];
+  if (options.map((option) => option.id).join(",") !== "A,B,C,D") {
+    warnings.push(`Questão ${position}: os ids das alternativas devem ser A, B, C e D, nesta ordem.`);
+  }
+  for (const option of options) {
+    const label = `Questão ${position}: a alternativa ${option.id}`;
+    const reasons = codeReasons(option.text);
+    if (/\n/.test(option.text) && !reasons.length) reasons.unshift("quebra de linha");
+    if (reasons.length) warnings.push(`${label} parece conter código (${reasons.join("; ")}). Use uma linha e mova o trecho para o campo code.`);
+
+    const previous = option.text.match(PREVIOUS_OPTIONS_PATTERN)?.[0];
+    const others = [...referencedLetters(option.text)].filter((letter) => letter !== option.id);
+    if (previous || others.length) {
+      const reference = previous ? `'${previous}'` : `letra ${others.join(", ")}`;
+      warnings.push(`${label} depende de outras alternativas (${reference}). As alternativas podem ser embaralhadas.`);
+    }
+  }
+  return warnings;
+}
+
 /**
  * Avisos não bloqueiam a importação: apontam questões que a IA gerou fora do
- * padrão (código no enunciado, enunciado longo, code e language desencontrados).
+ * padrão do prompt (código no enunciado ou nas alternativas, enunciado longo,
+ * code e language desencontrados, alternativas que dependem da posição).
  */
 export function questionWarnings(
-  question: Pick<ActivityQuestion, "statement" | "code" | "language">,
+  question: Pick<ActivityQuestion, "statement" | "code" | "language"> & Partial<Pick<ActivityQuestion, "type" | "options">>,
   position: number,
 ): string[] {
   const warnings: string[] = [];
-  const reasons = STATEMENT_CODE_PATTERNS.filter(({ pattern }) => pattern.test(question.statement)).map(({ reason }) => reason);
+  const reasons = codeReasons(question.statement);
   if (reasons.length) {
     warnings.push(`Questão ${position}: o enunciado parece conter código (${reasons.join("; ")}). Mova o trecho para o campo code.`);
   }
-  if (question.statement.length > STATEMENT_WARNING_LENGTH) {
-    warnings.push(`Questão ${position}: o enunciado tem ${question.statement.length} caracteres, acima do recomendado (${STATEMENT_WARNING_LENGTH}).`);
+  const limit = (question.type ? STATEMENT_LIMIT[question.type] ?? 350 : 350) + STATEMENT_WARNING_MARGIN;
+  if (question.statement.length > limit) {
+    warnings.push(`Questão ${position}: o enunciado tem ${question.statement.length} caracteres, acima do recomendado (${limit}).`);
+  }
+  if (!question.code && CODE_BELOW_PATTERN.test(question.statement)) {
+    warnings.push(`Questão ${position}: o enunciado cita código abaixo ou acima, mas a questão não tem code.`);
   }
   if (question.code && !question.language) warnings.push(`Questão ${position}: code informado sem language.`);
   if (question.language && !question.code) warnings.push(`Questão ${position}: language informado sem code.`);
+  if (question.code && /\t/.test(question.code)) warnings.push(`Questão ${position}: o code usa tabulação. Use 4 espaços.`);
+  if (question.language && !CODE_LANGUAGES.includes(question.language)) {
+    warnings.push(`Questão ${position}: language '${question.language}' fora da lista (${CODE_LANGUAGES.join(", ")}).`);
+  }
+  if (question.type === "MULTIPLE_CHOICE" && question.options) warnings.push(...optionWarnings(question.options, position));
   return warnings;
 }
 
@@ -181,7 +247,7 @@ export function validateQuestionPackage(input: unknown): { package?: QuestionPac
       errors.push(`Questão ${position}: PRACTICAL deve incluir expectedOutcome e evaluationCriteria.`);
     }
 
-    if (statement) warnings.push(...questionWarnings({ statement, code, language }, position));
+    if (statement) warnings.push(...questionWarnings({ type, statement, code, language, options }, position));
 
     normalized.push({
       id: uid("question"),
