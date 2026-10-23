@@ -2,7 +2,7 @@
 
 import { secureId } from "@/lib/secure-id";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { StudentJoinAccess } from "@/lib/realtime-api";
 import {
   fetchParticipantActivities,
@@ -16,6 +16,7 @@ import {
 } from "@/lib/participant-submission-api";
 import styles from "./StudentActivitiesPanel.module.css";
 import { DialogCloseButton } from "@/components/ui";
+import { persistChangedQuestionDrafts } from "@/lib/submission-drafts";
 
 function contentValue(value: unknown) {
   if (value == null) return "";
@@ -65,6 +66,9 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
   const [savedAt, setSavedAt] = useState<string>("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [questionIndex, setQuestionIndex] = useState(0);
+  const activeActivityRef = useRef<ParticipantActivity | null>(null);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const itemIdsRef = useRef(new Map<string, string>());
 
   async function load() {
     setBusy(true); setError("");
@@ -78,6 +82,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
   const open = useMemo(() => activities.find((activity) => activity.id === openId) ?? null, [activities, openId]);
 
   function replaceActivity(next: ParticipantActivity) {
+    if (activeActivityRef.current?.id === next.id) activeActivityRef.current = next;
     setActivities((current) => current.map((activity) => activity.id === next.id ? next : activity));
   }
 
@@ -99,6 +104,9 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
       restored.generic = contentValue(generic?.content);
       if (generic) setGenericKind(generic.kind);
       setDrafts(restored);
+      activeActivityRef.current = next;
+      itemIdsRef.current = new Map();
+      saveQueueRef.current = Promise.resolve();
       setQuestionIndex(0);
       setSaveState("idle");
       setSavedAt("");
@@ -108,37 +116,65 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
     } finally { setBusy(false); }
   }
 
-  async function saveQuestion(question: ParticipantQuestion, value: string) {
-    if (!open?.submissionId || open.submissionStatus !== "IN_PROGRESS") return;
-    setBusy(true); setError(""); setSaveState("saving");
+  async function saveQuestion(question: ParticipantQuestion, value: string): Promise<void> {
+    const activity = activeActivityRef.current;
+    if (!activity?.submissionId || activity.submissionStatus !== "IN_PROGRESS") {
+      throw new Error("Esta atividade não aceita alterações.");
+    }
+    setSaveState("saving"); setError("");
+    const key = "question:" + question.id;
+    let itemId = activity.items.find((item) => item.questionId === question.id)?.id ?? itemIdsRef.current.get(key);
+    if (!itemId) {
+      itemId = secureId();
+      itemIdsRef.current.set(key, itemId);
+    }
     try {
-      const existing = open.items.find((item) => item.questionId === question.id);
       const next = await saveParticipantSubmissionItem(
-        access.code, access.token, open.id, open.submissionId,
-        existing?.id ?? secureId(),
+        access.code, access.token, activity.id, activity.submissionId,
+        itemId,
         { kind: "QUESTION_RESPONSE", questionId: question.id, position: question.position, content: { value } },
       );
       replaceActivity(next);
       setSavedAt(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
       setSaveState("saved");
-    } catch (caught) { setSaveState("error"); setError(caught instanceof Error ? caught.message : "Falha no autosave."); }
-    finally { setBusy(false); }
+    } catch (caught) {
+      setSaveState("error");
+      setError(caught instanceof Error ? caught.message : "Falha ao salvar sua resposta.");
+      throw caught;
+    }
   }
 
-  async function saveGeneric() {
-    if (!open?.submissionId || open.submissionStatus !== "IN_PROGRESS") return;
-    setBusy(true); setError("");
+  async function saveGeneric(): Promise<void> {
+    const activity = activeActivityRef.current;
+    if (!activity?.submissionId || activity.submissionStatus !== "IN_PROGRESS") {
+      throw new Error("Esta atividade não aceita alterações.");
+    }
+    const existing = genericItem(activity);
+    let itemId = existing?.id ?? itemIdsRef.current.get("generic");
+    if (!itemId) {
+      itemId = secureId();
+      itemIdsRef.current.set("generic", itemId);
+    }
     try {
-      const existing = genericItem(open);
       const next = await saveParticipantSubmissionItem(
-        access.code, access.token, open.id, open.submissionId,
-        existing?.id ?? secureId(),
+        access.code, access.token, activity.id, activity.submissionId,
+        itemId,
         { kind: genericKind, position: 1000, content: { value: drafts.generic ?? "" } },
       );
       replaceActivity(next);
       setSavedAt(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Falha no autosave."); }
-    finally { setBusy(false); }
+    } catch (caught) {
+      setSaveState("error");
+      setError(caught instanceof Error ? caught.message : "Falha ao salvar sua entrega complementar.");
+      throw caught;
+    }
+  }
+
+  function queueQuestionSave(question: ParticipantQuestion, value: string): Promise<void> {
+    // Serialize writes to one attempt; a late response must never overwrite a newer answer.
+    const pending = saveQueueRef.current.catch(() => undefined).then(() => saveQuestion(question, value));
+    saveQueueRef.current = pending;
+    return pending;
   }
 
   function registerPaste(itemId: string | null, characterCount: number) {
@@ -154,29 +190,78 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
   }
 
   async function persistCurrentQuestion() {
-    if (!open || open.submissionStatus !== "IN_PROGRESS") return;
-    const question = open.questions[questionIndex];
-    if (!question || optionsOf(question).length) return;
-    await saveQuestion(question, drafts[`q:${question.id}`] ?? "");
+    const activity = activeActivityRef.current;
+    if (!activity || activity.submissionStatus !== "IN_PROGRESS") return;
+    // An earlier autosave error can be retried from the unsaved draft below.
+    await saveQueueRef.current.catch(() => undefined);
+    const question = activity.questions[questionIndex];
+    if (!question) return;
+    await persistChangedQuestionDrafts(
+      [question], drafts,
+      (id) => existingValue(activeActivityRef.current ?? activity, id),
+      saveQuestion,
+    );
+  }
+
+  async function closeActivity() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await persistCurrentQuestion();
+      setOpenId(null);
+      activeActivityRef.current = null;
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível salvar antes de fechar.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function goToQuestion(nextIndex: number) {
     if (!open || busy || nextIndex < 0 || nextIndex >= open.questions.length) return;
-    await persistCurrentQuestion();
-    setQuestionIndex(nextIndex);
+    setBusy(true);
+    try {
+      await persistCurrentQuestion();
+      setQuestionIndex(nextIndex);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Salve sua resposta antes de avançar.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function submit() {
-    if (!open?.submissionId || open.submissionStatus !== "IN_PROGRESS") return;
+    if (!open?.submissionId || open.submissionStatus !== "IN_PROGRESS" || busy) return;
     if (!window.confirm("Enviar esta atividade? Depois do envio, esta tentativa deixa de aceitar alterações.")) return;
     setBusy(true); setError("");
     try {
-      if ((drafts.generic ?? "").trim()) await saveGeneric();
+      // Reconcile every draft with the last server response, including a failed option save.
+      await saveQueueRef.current.catch(() => undefined);
+      await persistChangedQuestionDrafts(
+        open.questions, drafts,
+        (id) => existingValue(activeActivityRef.current ?? open, id),
+        saveQuestion,
+      );
+      const activity = activeActivityRef.current ?? open;
+      if ((drafts.generic ?? "") !== contentValue(genericItem(activity)?.content)) await saveGeneric();
       const next = await submitParticipantActivity(access.code, access.token, open.id, open.submissionId);
       replaceActivity(next);
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Não foi possível enviar a atividade."); }
-    finally { setBusy(false); }
+      setSaveState("saved");
+    } catch (caught) {
+      // Do not submit when even one pending write failed.
+      setSaveState("error");
+      setError(caught instanceof Error ? caught.message : "Não foi possível salvar todas as respostas. Tente novamente.");
+    } finally {
+      setBusy(false);
+    }
   }
+
+  const question = open?.questions[questionIndex] ?? null;
+  const questionKey = question ? "q:" + question.id : "";
+  const options = question ? optionsOf(question) : [];
+  const editable = open?.submissionStatus === "IN_PROGRESS";
+  const total = open?.questions.length ?? 0;
+  const isLast = questionIndex === total - 1;
 
   return <section className={styles.shell}>
     <header className={styles.head}>
@@ -196,18 +281,11 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
           {activity.submissionStatus === "NOT_STARTED" ? "Iniciar atividade" : activity.submissionStatus === "IN_PROGRESS" ? "Continuar atividade" : "Visualizar entrega"}
         </button>
 
-        {open?.id === activity.id && (() => {
-          const question = open.questions[questionIndex] ?? null;
-          const key = question ? `q:${question.id}` : "";
-          const options = question ? optionsOf(question) : [];
-          const editable = open.submissionStatus === "IN_PROGRESS";
-          const total = open.questions.length;
-          const isLast = questionIndex === total - 1;
-          return <div className={styles.runner} role="dialog" aria-modal="true" aria-label={`Atividade ${open.title}`}>
+        {open?.id === activity.id && <div className={styles.runner} role="dialog" aria-modal="true" aria-label={`Atividade ${open.title}`}>
             <header className={styles.runnerTop}>
               <div className={styles.runnerBrand}><span>A</span><div><strong>ARENA DEV</strong><small>{access.classroomName}</small></div></div>
               <div className={styles.runnerTitle}><span>ATIVIDADE</span><strong>{open.title}</strong></div>
-              <DialogCloseButton className={styles.runnerClose} onClick={() => setOpenId(null)} label="Fechar atividade" />
+              <DialogCloseButton className={styles.runnerClose} onClick={() => void closeActivity()} label="Fechar atividade" />
             </header>
 
             <main className={styles.runnerMain}>
@@ -217,21 +295,25 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
                 <small className={styles.saveState} role="status" aria-live="polite">{!editable ? statusLabel(open.submissionStatus) : saveState === "saving" ? "Salvando…" : saveState === "error" ? "Falha ao salvar" : saveState === "saved" ? `✓ Salvo${savedAt ? ` às ${savedAt}` : ""}` : "✓ Autosave ativo"}</small>
               </div>
 
+              {error && <div className={styles.runnerError} role="alert">{error} Sua atividade permanece aberta para tentar novamente.</div>}
               {question ? <section className={styles.runnerQuestion}>
                 <div className={styles.questionLabel}>QUESTÃO {String(questionIndex + 1).padStart(2, "0")}</div>
                 <p className={styles.runnerStatement}>{question.statement}</p>
                 {question.code && <figure className={styles.runnerCodeBlock}>{question.language && <figcaption>{question.language}</figcaption>}<pre className={styles.runnerCode}><code data-language={question.language || undefined}>{question.code}</code></pre></figure>}
-                {options.length ? <div className={styles.runnerOptions} role="radiogroup" aria-label={`Alternativas da questão ${String(questionIndex + 1).padStart(2, "0")}`}>{options.map((option, index) => <label className={`${styles.runnerOption} ${(drafts[key] ?? "") === option.id ? styles.selectedOption : ""}`} key={option.id}><input type="radio" name={key} value={option.id} checked={(drafts[key] ?? "") === option.id} disabled={!editable || busy} onChange={(event) => { const value = event.target.value; setDrafts((current) => ({ ...current, [key]: value })); void saveQuestion(question, value); }} /><b>{String.fromCharCode(65 + index)}</b><span>{option.text}</span></label>)}</div> : <label className={styles.runnerField}><span>Sua resposta</span><textarea value={drafts[key] ?? ""} disabled={!editable || busy} onChange={(event) => setDrafts((current) => ({ ...current, [key]: event.target.value }))} onPaste={(event) => registerPaste(open.items.find((item) => item.questionId === question.id)?.id ?? null, event.clipboardData.getData("text").length)} placeholder="Digite sua resposta..." /></label>}
+                {options.length ? <div className={styles.runnerOptions} role="radiogroup" aria-label={`Alternativas da questão ${String(questionIndex + 1).padStart(2, "0")}`}>{options.map((option, index) => <label className={`${styles.runnerOption} ${(drafts[questionKey] ?? "") === option.id ? styles.selectedOption : ""}`} key={option.id}><input type="radio" name={questionKey} value={option.id} checked={(drafts[questionKey] ?? "") === option.id} disabled={!editable || busy} onChange={(event) => { const value = event.target.value; setDrafts((current) => ({ ...current, [questionKey]: value })); void queueQuestionSave(question, value).catch(() => undefined); }} /><b>{String.fromCharCode(65 + index)}</b><span>{option.text}</span></label>)}</div> : <label className={styles.runnerField}><span>Sua resposta</span><textarea value={drafts[questionKey] ?? ""} disabled={!editable || busy} onChange={(event) => setDrafts((current) => ({ ...current, [questionKey]: event.target.value }))} onBlur={() => {
+                  if (question && (drafts[questionKey] ?? "") !== existingValue(activeActivityRef.current ?? open, question.id)) {
+                    void queueQuestionSave(question, drafts[questionKey] ?? "").catch(() => undefined);
+                  }
+                }} onPaste={(event) => registerPaste(open.items.find((item) => item.questionId === question.id)?.id ?? null, event.clipboardData.getData("text").length)} placeholder="Digite sua resposta..." /></label>}
               </section> : <div className={styles.empty}>Esta atividade não possui questões objetivas. Use a entrega complementar quando solicitada.</div>}
             </main>
 
             <footer className={styles.runnerFooter}>
               <button type="button" className={styles.runnerSecondary} disabled={busy || questionIndex === 0} onClick={() => void goToQuestion(questionIndex - 1)}>← Anterior</button>
               <span aria-hidden="true" />
-              {!isLast ? <button type="button" className={styles.runnerPrimary} disabled={busy} onClick={() => void goToQuestion(questionIndex + 1)}>Próxima →</button> : editable ? <button type="button" className={styles.runnerPrimary} disabled={busy} onClick={async () => { await persistCurrentQuestion(); void submit(); }}>{busy ? "Salvando..." : "Revisar e enviar"}</button> : <button type="button" className={styles.runnerPrimary} onClick={() => setOpenId(null)}>Concluir</button>}
+              {!isLast ? <button type="button" className={styles.runnerPrimary} disabled={busy} onClick={() => void goToQuestion(questionIndex + 1)}>Próxima →</button> : editable ? <button type="button" className={styles.runnerPrimary} disabled={busy} onClick={() => void submit()}>{busy ? "Salvando..." : "Revisar e enviar"}</button> : <button type="button" className={styles.runnerPrimary} onClick={() => setOpenId(null)}>Concluir</button>}
             </footer>
-          </div>;
-        })()}
+          </div>}
 
       </article>)}
       {!activities.length && !busy && <div className={styles.empty}>Nenhuma atividade disponível nesta turma.</div>}

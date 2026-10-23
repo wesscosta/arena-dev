@@ -55,3 +55,5 @@
 .runnerOption:has(input:disabled):not(.selectedOption):hover,.runnerOption:has(input:disabled):not(.selectedOption):active{border-color:var(--ds-border-control);background:var(--ds-surface-subtle)}
 .runnerOption:focus-within{outline:none}
 .runnerOption:has(input:focus-visible){outline:var(--focus-width) solid var(--ds-accent-text);outline-offset:var(--focus-offset)}
+
+.runnerError{width:100%;padding:12px 16px;margin-bottom:18px;border:1px solid var(--danger,#c63737);border-radius:10px;background:var(--ds-surface-subtle);color:var(--text);font-size:14px;line-height:1.5}
