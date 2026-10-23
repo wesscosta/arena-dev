@@ -293,7 +293,7 @@ export function StudentManager({
                   type="search"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Buscar por nome, nome na turma ou e-mail..."
+                  placeholder="Buscar por nome, nome de exibição ou e-mail..."
                   aria-label="Buscar participante"
                 />
               </label>
@@ -324,10 +324,10 @@ export function StudentManager({
           ) : (
             <div className="student-table student-table-v3 student-table-v4">
               <div className="table-head student-table-head-v3">
-                <span>Aluno</span>
-                <span>Nome na turma</span>
+                <span>Participante</span>
+                <span>Nome de exibição</span>
+                <span>Status</span>
                 <span>XP</span>
-                <span>Situação</span>
                 <span><span className="sr-only">Ações</span></span>
               </div>
               {visibleRows.map(({ student, enrollment }) => {
@@ -362,7 +362,7 @@ export function StudentManager({
                           <input
                             className="input"
                             autoFocus
-                            aria-label={`Nome na turma de ${student.name}`}
+                            aria-label={`Nome de exibição de ${student.name}`}
                             value={draft}
                             onChange={(event) =>
                               setPreferredDrafts((current) => ({
@@ -417,7 +417,7 @@ export function StudentManager({
                           className={displayName ? "student-display-name" : "student-display-name is-empty"}
                           type="button"
                           onClick={() => setEditingStudentId(student.id)}
-                          aria-label={`Editar nome na turma de ${student.name}`}
+                          aria-label={`Editar nome de exibição de ${student.name}`}
                           title="Editar o nome exibido somente nesta turma"
                         >
                           <span>{displayName || "—"}</span>
@@ -425,11 +425,11 @@ export function StudentManager({
                         </button>
                       )}
                     </div>
-                    <b className="student-xp">{xp} XP</b>
                     <div className="student-status-cell">
-                      {!enrollment.active && <span className="student-badge is-inactive">Inativo</span>}
+                      <span className={enrollment.active ? "student-badge is-active" : "student-badge is-inactive"}>{enrollment.active ? "Ativo" : "Inativo"}</span>
                       {student.namePending && <span className="student-badge is-pending" title="O aluno ainda não informou o nome completo">Cadastro pendente</span>}
                     </div>
+                    <b className="student-xp">{xp} XP</b>
                     <div className="student-row-actions">
                       <button
                         type="button"
