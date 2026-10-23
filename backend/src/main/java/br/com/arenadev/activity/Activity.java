@@ -41,6 +41,12 @@ public class Activity {
     @Column(name = "resource_url", length = 1000)
     private String resourceUrl;
 
+    @Column(name = "individual_option_order", nullable = false)
+    private boolean individualOptionOrder;
+
+    @Column(name = "individual_question_order", nullable = false)
+    private boolean individualQuestionOrder;
+
     @Column(name = "copied_from_activity_id")
     private UUID copiedFromActivityId;
 
@@ -92,6 +98,11 @@ public class Activity {
         this.updatedAt = Instant.now();
     }
 
+    public void configureIndividualOrder(boolean options, boolean questions) {
+        this.individualOptionOrder = options;
+        this.individualQuestionOrder = questions;
+    }
+
     public void markCopiedFrom(Activity source) {
         this.copiedFromActivityId = source.getId();
         this.copiedFromClassroomId = source.getClassroom().getId();
@@ -125,6 +136,8 @@ public class Activity {
     public ActivityResourceKind getResourceKind() { return resourceKind; }
     public String getResourcePlatform() { return resourcePlatform; }
     public String getResourceUrl() { return resourceUrl; }
+    public boolean isIndividualOptionOrder() { return individualOptionOrder; }
+    public boolean isIndividualQuestionOrder() { return individualQuestionOrder; }
     public UUID getCopiedFromActivityId() { return copiedFromActivityId; }
     public UUID getCopiedFromClassroomId() { return copiedFromClassroomId; }
     public Instant getCreatedAt() { return createdAt; }

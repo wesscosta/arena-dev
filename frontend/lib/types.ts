@@ -224,6 +224,10 @@ export interface Activity {
   updatedAt?: string;
   copiedFromActivityId?: string;
   copiedFromClassroomId?: string;
+  individualOptionOrder?: boolean;
+  individualQuestionOrder?: boolean;
+  /** Um aluno já iniciou: a ordem individual não pode mais mudar. */
+  orderLocked?: boolean;
 }
 
 export interface GroupHistory {

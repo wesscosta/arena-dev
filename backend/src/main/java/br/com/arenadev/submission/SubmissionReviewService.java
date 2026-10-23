@@ -109,7 +109,9 @@ public class SubmissionReviewService {
                 questions,
                 assessment.getId(),
                 assessment.getTeacherNotes(),
-                assessment.getUpdatedAt()
+                assessment.getUpdatedAt(),
+                submission.getActivity().isIndividualOptionOrder(),
+                submission.getActivity().isIndividualQuestionOrder()
         );
     }
 
@@ -147,7 +149,9 @@ public class SubmissionReviewService {
             List<QuestionContextView> questions,
             UUID assessmentId,
             String teacherNotes,
-            Instant assessmentUpdatedAt
+            Instant assessmentUpdatedAt,
+            boolean individualOptionOrder,
+            boolean individualQuestionOrder
     ) {}
 
     public record ReviewItemView(UUID id, SubmissionItemKind kind, UUID questionId, int position, Object content) {}
