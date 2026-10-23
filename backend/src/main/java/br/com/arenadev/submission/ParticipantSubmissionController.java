@@ -4,6 +4,7 @@ import br.com.arenadev.activity.Activity;
 import br.com.arenadev.activity.ActivityQuestion;
 import br.com.arenadev.activity.ActivityQuestionRepository;
 import br.com.arenadev.activity.ActivityRepository;
+import br.com.arenadev.activity.QuestionType;
 import br.com.arenadev.classroom.Enrollment;
 import br.com.arenadev.classroom.EnrollmentRepository;
 import br.com.arenadev.session.SessionJoinService;
@@ -144,9 +145,7 @@ public class ParticipantSubmissionController {
                 activity.getTopic(),
                 activity.getPoints(),
                 activity.getOnTimeBonus(),
-                questions.stream()
-                        .map(question -> question(question, submission == null ? null : submission.getId()))
-                        .toList(),
+                participantQuestions(activity, questions, submission),
                 submission == null ? null : submission.getId(),
                 submission == null ? "NOT_STARTED" : submission.getStatus().name(),
                 submission == null ? null : submission.getStartedAt(),
@@ -161,10 +160,27 @@ public class ParticipantSubmissionController {
      * Alternativas só seguem depois de iniciada a tentativa, e com ids opacos
      * dela; o runner chama start antes de abrir a atividade.
      */
-    private QuestionView question(ActivityQuestion q, UUID submissionId) {
+    /** Com ordem individual, a tentativa vê questões e alternativas numa ordem própria e estável. */
+    private List<QuestionView> participantQuestions(
+            Activity activity, List<ActivityQuestion> questions, ActivitySubmission submission
+    ) {
+        if (submission == null) return questions.stream().map(question -> question(question, null, false)).toList();
+        UUID submissionId = submission.getId();
+        List<ActivityQuestion> ordered = activity.isIndividualQuestionOrder()
+                ? IndividualOrder.shuffle(questions, IndividualOrder.questionSeed(submissionId))
+                : questions;
+        return ordered.stream()
+                .map(question -> question(question, submissionId, activity.isIndividualOptionOrder()))
+                .toList();
+    }
+
+    private QuestionView question(ActivityQuestion q, UUID submissionId, boolean individualOptionOrder) {
         List<Map<String, Object>> options = null;
         if (submissionId != null) {
-            options = options(q).stream()
+            List<OptionView> source = individualOptionOrder && q.getType() == QuestionType.MULTIPLE_CHOICE
+                    ? IndividualOrder.shuffle(options(q), IndividualOrder.optionSeed(submissionId, q.getId()))
+                    : options(q);
+            options = source.stream()
                     .map(option -> {
                         Map<String, Object> view = new LinkedHashMap<>();
                         view.put("id", optionIds.opaque(submissionId, q.getId(), option.id()));
