@@ -36,6 +36,9 @@ app:
     session-timeout-minutes: ${APP_TEACHER_SESSION_TIMEOUT_MINUTES:240}
     username: ${APP_TEACHER_USERNAME:professor}
     password: ${APP_TEACHER_PASSWORD:arena-dev-change-me}
+  activity:
+    # Segredo dos ids opacos das alternativas. Vazio: gerado e guardado no banco.
+    option-id-secret: ${APP_ACTIVITY_OPTION_SECRET:}
   integrations:
     credential-encryption-key: ${APP_INTEGRATIONS_CREDENTIAL_ENCRYPTION_KEY:}
     microsoft:
