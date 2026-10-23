@@ -2678,7 +2678,7 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 @media (max-width:640px){.toast{right:16px;left:16px;bottom:16px;max-width:none}}
 
 /* v0.12: lista de alunos com colunas fixas (Aluno, Nome na turma, XP, Situação, Ações) e prévia da importação. */
-.student-table-v4 .student-table-head-v3,.student-table-v4 .student-table-row-v3{grid-template-columns:minmax(220px,1.3fr) minmax(170px,1fr) 76px 150px 124px;gap:16px}
+.student-table-v4 .student-table-head-v3,.student-table-v4 .student-table-row-v3{grid-template-columns:minmax(220px,1.3fr) minmax(170px,1fr) 190px 76px 124px;gap:16px}
 .student-table-v4 .student-table-row-v3{min-height:64px;padding:10px 8px}
 .student-table-v4 .student-identity-v3{min-width:0}
 .student-table-v4 .student-identity-copy{display:grid;gap:2px;min-width:0}
@@ -2694,6 +2694,7 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 .student-table-v4 .student-display-name:hover .student-edit-icon,.student-table-v4 .student-display-name:focus-visible .student-edit-icon{opacity:1}
 .student-status-cell{display:flex;flex-wrap:wrap;gap:6px}
 .student-badge{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border:1px solid var(--border);border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.student-badge.is-active{border-color:color-mix(in srgb,var(--accent) 45%,var(--border));background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--text)}
 .student-badge.is-inactive{color:var(--muted)}
 .student-badge.is-pending{border-color:color-mix(in srgb,var(--warning,#f5b942) 60%,var(--border));background:color-mix(in srgb,var(--warning,#f5b942) 12%,transparent);color:var(--text)}
 .student-table-v4 .student-row-actions{gap:6px}
@@ -2706,10 +2707,9 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
   .student-table-v4 .student-table-row-v3{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"identity actions" "class-name xp" "status status";gap:4px 12px;padding:12px 4px}
   .student-table-v4 .student-table-row-v3>.student-xp{display:block;align-self:end;justify-self:end;padding:0 8px 9px 0}
   .student-table-v4 .student-class-name-cell{padding-left:44px}
-  .student-table-v4 .student-class-name-cell::before{content:"Nome na turma";display:block;color:var(--muted);font-size:11px;font-weight:700}
+  .student-table-v4 .student-class-name-cell::before{content:"Nome de exibição";display:block;color:var(--muted);font-size:11px;font-weight:700}
   .student-table-v4 .student-display-name{padding-left:0}
   .student-table-v4 .student-status-cell{padding-left:44px}
-  .student-table-v4 .student-status-cell:empty{display:none}
   .student-table-v4 .student-identity-v3{grid-area:identity}
   .student-table-v4 .student-class-name-cell{grid-area:class-name}
   .student-table-v4 .student-xp{grid-area:xp}
