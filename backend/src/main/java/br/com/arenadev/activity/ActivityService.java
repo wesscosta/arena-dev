@@ -27,15 +27,13 @@ public class ActivityService {
     @Transactional(readOnly = true)
     public List<ActivityView> list(UUID classroomId) {
         requireClassroom(classroomId);
-        return activityRepository.findByClassroomIdOrderByUpdatedAtDesc(classroomId).stream()
-                .map(this::toView)
-                .toList();
+        return toViews(activityRepository.findByClassroomIdOrderByUpdatedAtDesc(classroomId));
     }
 
     /** Batch for the teacher dashboard; keeps the same activity/quiz projection as the detail API. */
     @Transactional(readOnly = true)
     public List<ActivityView> listAll() {
-        return activityRepository.findAllWithQuestions().stream().map(this::toView).toList();
+        return toViews(activityRepository.findAllWithQuestions());
     }
 
     @Transactional(readOnly = true)
@@ -49,6 +47,10 @@ public class ActivityService {
         Classroom classroom = requireClassroom(input.classroomId());
         Activity activity = new Activity(classroom, input.title().trim());
         apply(activity, input);
+        boolean options = Boolean.TRUE.equals(input.individualOptionOrder());
+        boolean questions = Boolean.TRUE.equals(input.individualQuestionOrder());
+        validateIndividualOrder(options, questions);
+        activity.configureIndividualOrder(options, questions);
         applyQuestions(activity, input.questions());
         return toView(activityRepository.save(activity));
     }
@@ -60,7 +62,15 @@ public class ActivityService {
         if (!activity.getClassroom().getId().equals(input.classroomId())) {
             throw new IllegalArgumentException("A atividade não pode ser movida para outra turma. Use a cópia entre turmas.");
         }
+        boolean options = input.individualOptionOrder() == null ? activity.isIndividualOptionOrder() : input.individualOptionOrder();
+        boolean questions = input.individualQuestionOrder() == null ? activity.isIndividualQuestionOrder() : input.individualQuestionOrder();
+        validateIndividualOrder(options, questions);
+        boolean orderChanged = options != activity.isIndividualOptionOrder() || questions != activity.isIndividualQuestionOrder();
+        if (orderChanged && activityRepository.hasSubmissions(activity.getId())) {
+            throw new IllegalStateException("A ordem individual não pode mudar depois que um aluno iniciou a atividade.");
+        }
         apply(activity, input);
+        activity.configureIndividualOrder(options, questions);
         applyQuestions(activity, input.questions());
         return toView(activity);
     }
@@ -74,6 +84,7 @@ public class ActivityService {
                 source.getTitle(), source.getTopic(), source.getPoints(), source.getOnTimeBonus(),
                 source.getResourceKind(), source.getResourcePlatform(), source.getResourceUrl()
         );
+        copy.configureIndividualOrder(source.isIndividualOptionOrder(), source.isIndividualQuestionOrder());
         copy.markCopiedFrom(source);
 
         Map<UUID, ActivityQuestion> copiedQuestions = new HashMap<>();
@@ -176,6 +187,12 @@ public class ActivityService {
         if (input.points() < 0 || input.onTimeBonus() < 0) throw new IllegalArgumentException("XP e bônus não podem ser negativos.");
     }
 
+    private static void validateIndividualOrder(boolean options, boolean questions) {
+        if (questions && !options) {
+            throw new IllegalArgumentException("Embaralhar as questões exige embaralhar as alternativas.");
+        }
+    }
+
     private void validateQuestion(QuestionInput input, int position) {
         if (input == null || input.type() == null || input.difficulty() == null || input.statement() == null || input.statement().isBlank()) {
             throw new IllegalArgumentException("Questão " + position + " possui campos obrigatórios ausentes.");
@@ -234,7 +251,19 @@ public class ActivityService {
         catch (RuntimeException ex) { return null; }
     }
 
+    private List<ActivityView> toViews(List<Activity> activities) {
+        if (activities.isEmpty()) return List.of();
+        Set<UUID> locked = new HashSet<>(activityRepository.findIdsWithSubmissions(
+                activities.stream().map(Activity::getId).toList()
+        ));
+        return activities.stream().map(activity -> toView(activity, locked.contains(activity.getId()))).toList();
+    }
+
     private ActivityView toView(Activity activity) {
+        return toView(activity, activity.getId() != null && activityRepository.hasSubmissions(activity.getId()));
+    }
+
+    private ActivityView toView(Activity activity, boolean orderLocked) {
         List<QuestionView> questions = activity.getQuestions().stream().map(question -> new QuestionView(
                 question.getId().toString(), question.getType(), question.getStatement(), question.getDifficulty(), question.getPoints(),
                 readJson(question.getOptionsJson(), new TypeReference<List<QuestionOptionView>>() {}, null),
@@ -245,7 +274,8 @@ public class ActivityService {
         return new ActivityView(
                 activity.getId(), activity.getClassroom().getId(), activity.getTitle(), activity.getTopic(), activity.getPoints(),
                 activity.getOnTimeBonus(), new ResourceView(activity.getResourceKind(), activity.getResourcePlatform(), activity.getResourceUrl()),
-                questions, activity.getCreatedAt(), activity.getUpdatedAt(), activity.getCopiedFromActivityId(), activity.getCopiedFromClassroomId()
+                questions, activity.getCreatedAt(), activity.getUpdatedAt(), activity.getCopiedFromActivityId(), activity.getCopiedFromClassroomId(),
+                activity.isIndividualOptionOrder(), activity.isIndividualQuestionOrder(), orderLocked
         );
     }
 
@@ -258,10 +288,22 @@ public class ActivityService {
         return value == null || value.isBlank() ? null : value.trim();
     }
 
+    /**
+     * individualOptionOrder e individualQuestionOrder: null na criação vale
+     * false; na edição mantém o valor atual.
+     */
     public record ActivityInput(
             UUID classroomId, String title, String topic, int points, int onTimeBonus,
-            ResourceInput resource, List<QuestionInput> questions
-    ) {}
+            ResourceInput resource, List<QuestionInput> questions,
+            Boolean individualOptionOrder, Boolean individualQuestionOrder
+    ) {
+        public ActivityInput(
+                UUID classroomId, String title, String topic, int points, int onTimeBonus,
+                ResourceInput resource, List<QuestionInput> questions
+        ) {
+            this(classroomId, title, topic, points, onTimeBonus, resource, questions, null, null);
+        }
+    }
     public record ResourceInput(ActivityResourceKind kind, String platform, String url) {}
     public record QuestionInput(
             String id, QuestionType type, String statement, QuestionDifficulty difficulty, int points,
@@ -274,7 +316,8 @@ public class ActivityService {
     public record ActivityView(
             UUID id, UUID classroomId, String title, String topic, int points, int onTimeBonus,
             ResourceView resource, List<QuestionView> questions, Instant createdAt, Instant updatedAt,
-            UUID copiedFromActivityId, UUID copiedFromClassroomId
+            UUID copiedFromActivityId, UUID copiedFromClassroomId,
+            boolean individualOptionOrder, boolean individualQuestionOrder, boolean orderLocked
     ) {}
     public record ResourceView(ActivityResourceKind kind, String platform, String url) {}
     public record QuestionView(
