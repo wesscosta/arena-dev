@@ -32,6 +32,10 @@ public class Journey {
     @Column(name = "copy_protected", nullable = false)
     private boolean copyProtected = false;
 
+    /** Null preserves the original completion-based progression for existing Journeys. */
+    @Column(name = "released_chapter_count")
+    private Integer releasedChapterCount;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -69,6 +73,22 @@ public class Journey {
     }
 
     public boolean isCopyProtected() { return copyProtected; }
+
+    public Integer getReleasedChapterCount() { return releasedChapterCount; }
+
+    /** One chapter = a Journey section containing one or more contents, matching the study UI. */
+    public int getChapterCount() {
+        return (int) stages.stream().map(JourneyStage::getSection).distinct().count();
+    }
+
+    /** Explicit teacher release: 0 closes all chapters; null restores legacy progression. */
+    public void changeReleasedChapterCount(Integer count) {
+        if (count != null && (count < 0 || count > getChapterCount())) {
+            throw new IllegalArgumentException("Informe uma quantidade entre 0 e " + getChapterCount() + " capítulos.");
+        }
+        this.releasedChapterCount = count;
+        this.updatedAt = Instant.now();
+    }
 
     public void publish() {
         if (stages.isEmpty()) throw new IllegalStateException("A jornada precisa ter ao menos uma etapa antes de ser publicada.");

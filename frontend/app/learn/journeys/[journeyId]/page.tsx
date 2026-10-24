@@ -18,14 +18,14 @@ function ChevronIcon({ collapsed }: { collapsed: boolean }) { return <svg viewBo
 function PendingIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/></svg>; }
 function ReviewIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.8 12s3.4-5.5 9.2-5.5 9.2 5.5 9.2 5.5-3.4 5.5-9.2 5.5S2.8 12 2.8 12Z"/><circle cx="12" cy="12" r="2.7"/></svg>; }
 
-function ContentRow({ journeyId, content, preview = false }: { journeyId: string; content: JourneyContentView; preview?: boolean }) {
-  const stateLabel = preview ? "Disponível" : content.state === "COMPLETED" ? "Concluído" : content.state === "CURRENT" ? "Em andamento" : "Bloqueado";
+function ContentRow({ journeyId, content, preview = false, teacherLocked = false }: { journeyId: string; content: JourneyContentView; preview?: boolean; teacherLocked?: boolean }) {
+  const stateLabel = preview ? "Disponível" : content.state === "COMPLETED" ? "Concluído" : content.state === "CURRENT" ? "Em andamento" : content.state === "AVAILABLE" ? "Disponível" : "Bloqueado";
   const marker = preview ? <PendingIcon /> : content.state === "COMPLETED" ? <CheckIcon /> : content.state === "CURRENT" ? <CurrentIcon /> : <PendingIcon />;
   const body = <>
     <span className={`${styles.studyMarker} ${styles[`studyMarker${content.state}`]}`} aria-hidden="true">{marker}</span>
-    <span className={styles.studyContentText}><strong>{content.title}</strong>{studyExcerpt(content.description) && <span>{studyExcerpt(content.description)}</span>}{!preview && content.state === "LOCKED" && <small>Conclua o conteúdo anterior para avançar.</small>}</span>
+    <span className={styles.studyContentText}><strong>{content.title}</strong>{studyExcerpt(content.description) && <span>{studyExcerpt(content.description)}</span>}{!preview && content.state === "LOCKED" && <small>{teacherLocked ? "Aguarde a liberação deste capítulo pelo professor." : "Conclua o conteúdo anterior para avançar."}</small>}</span>
     {content.state === "LOCKED" && <span className={`${styles.studyState} ${styles.studyStateLOCKED}`}>{stateLabel}</span>}
-    <span className={`${styles.studyContinue} ${content.state === "COMPLETED" && !preview ? styles.studyReviewIcon : ""}`} aria-label={content.state === "COMPLETED" && !preview ? `Revisar ${content.title}` : undefined} title={content.state === "COMPLETED" && !preview ? "Revisar" : undefined}>{preview ? "Abrir" : content.state === "CURRENT" ? "Continuar" : content.state === "COMPLETED" ? <ReviewIcon /> : ""}</span>
+    <span className={`${styles.studyContinue} ${content.state === "COMPLETED" && !preview ? styles.studyReviewIcon : ""}`} aria-label={content.state === "COMPLETED" && !preview ? `Revisar ${content.title}` : undefined} title={content.state === "COMPLETED" && !preview ? "Revisar" : undefined}>{preview ? "Abrir" : content.state === "CURRENT" ? "Continuar" : content.state === "AVAILABLE" ? "Abrir" : content.state === "COMPLETED" ? <ReviewIcon /> : ""}</span>
   </>;
   return !preview && content.state === "LOCKED"
     ? <div className={`${styles.studyContentRow} ${styles.studyContentLocked}`} aria-disabled="true">{body}</div>
@@ -126,7 +126,7 @@ export default function JourneyStudyPage() {
               <span className={styles.studyModuleMeta}><span className={styles.studyModuleCount}>{teacherPreview ? `${progress.total} conteúdos` : `${progress.completed}/${progress.total}`}</span><span className={styles.studyModuleChevron} aria-hidden="true"><ChevronIcon collapsed={collapsed} /></span></span>
             </button>
           </header>
-          {!collapsed && <div className={styles.studyContents} id={`module-contents-${moduleIndex}`}>{journeyModule.contents.map((content) => <ContentRow key={content.id} journeyId={journey.id} content={content} preview={teacherPreview} />)}</div>}
+          {!collapsed && <div className={styles.studyContents} id={`module-contents-${moduleIndex}`}>{journeyModule.contents.map((content) => <ContentRow key={content.id} journeyId={journey.id} content={content} preview={teacherPreview} teacherLocked={!teacherPreview && journey.releasedChapterCount != null && moduleIndex >= journey.releasedChapterCount} />)}</div>}
         </div>
       </section>;
     })}</div>
