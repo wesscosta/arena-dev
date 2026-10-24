@@ -62,3 +62,5 @@
 ## Gates subsequentes
 
 11.0–11.6 integradas; **pacote técnico encerrado e congelado**. A release permanece **NO-GO operacional** até evidência real dos oito gates. Redesign e Active Learning foram reservados ao [roadmap v0.12](../ROADMAP_V0_12.md).
+
+**Regressão integrada e condição para a release:** [11.10 — Fechamento técnico após PRs #104–#107](11.10_RELEASE_INTEGRATED_REGRESSION_2026-10-24.md). Inclui evidências automatizadas e explicita os oito gates físicos/operacionais ainda pendentes; não substitui o plano 11.6.
