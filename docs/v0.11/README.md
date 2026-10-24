@@ -53,7 +53,7 @@
 
 1. A pré-release `v0.11.0-rc.1` congela o SHA da candidata. Gates de campo executam **somente** sobre esse SHA (ou uma `rc.N` posterior).
 2. Mudanças aceitas daqui em diante: **apenas defeitos encontrados nos gates**. Cada correção gera nova `rc.N` e reteste do que ela afeta.
-3. Publicação estável: após GO assinado, bump `0.11.0-rc.N` → `0.11.0`, backup V58, `release-gate.sh final --attestation` e tag `v0.11.0`.
+3. Publicação estável: após GO assinado, bump `0.11.0-rc.N` → `0.11.0`, backup e rollback compatíveis com V66, `release-gate.sh final --attestation` e tag `v0.11.0`.
 
 ## Disciplina de status
 
@@ -63,4 +63,6 @@
 
 11.0–11.6 integradas; **pacote técnico encerrado e congelado**. A release permanece **NO-GO operacional** até evidência real dos oito gates. Redesign e Active Learning foram reservados ao [roadmap v0.12](../ROADMAP_V0_12.md).
 
-**Marco 24/10/2026:** desenvolvimento **CONCLUÍDO** ([issue #37](https://github.com/wesscosta/arena-dev/issues/37)). Gate de homologação e publicação estável separado na [issue #110](https://github.com/wesscosta/arena-dev/issues/110): oito testes de campo ainda pendentes, portanto release NO-GO.
+**Regressão integrada:** [11.10 — fechamento técnico](11.10_RELEASE_INTEGRATED_REGRESSION_2026-10-24.md). CI complementa e não substitui os testes de campo.
+
+**Marco de 24/10/2026:** desenvolvimento **CONCLUÍDO** ([issue #37](https://github.com/wesscosta/arena-dev/issues/37)); homologação operacional e release estável pendentes na [issue #110](https://github.com/wesscosta/arena-dev/issues/110).
