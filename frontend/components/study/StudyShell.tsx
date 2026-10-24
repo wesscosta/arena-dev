@@ -22,6 +22,7 @@ export default function StudyShell({ children }: { children: ReactNode }) {
   const homeActive = pathname === "/learn";
   const { scale: textScale, reducedMotion } = useStudentPreferences();
   const [sidebarHidden, setSidebarHidden] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [achievementToast, setAchievementToast] = useState<{ title: string; description: string } | null>(null);
   useEffect(() => {
     function onAchievement(event: Event) {
@@ -36,6 +37,7 @@ export default function StudyShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     setSidebarHidden(window.localStorage.getItem("arena-dev:study-sidebar-hidden") === "1");
   }, []);
+  useEffect(() => { setMobileMenuOpen(false); }, [pathname]);
   function toggleSidebar(hidden: boolean) {
     setSidebarHidden(hidden);
     window.localStorage.setItem("arena-dev:study-sidebar-hidden", hidden ? "1" : "0");
@@ -59,7 +61,20 @@ export default function StudyShell({ children }: { children: ReactNode }) {
     </aside>
     <div className={styles.studyWorkspace}>
       {sidebarHidden && <div className={styles.sidebarRevealBar}><button type="button" className={styles.sidebarReveal} onClick={() => toggleSidebar(false)} aria-label="Mostrar menu lateral" title="Mostrar menu lateral"><SidebarIcon/></button></div>}
-      <header className={styles.mobileHeader}><Link href="/learn" className={styles.brand} aria-label="Arena Dev — Estudos"><span className={styles.brandMark}>A</span><span className={styles.brandCopy}><strong>ARENA DEV</strong><small>ESTUDOS</small></span></Link><Link href="/learn/profile" className={`${styles.mobileProfile}${profileActive ? ` ${styles.activeNav}` : ""}`} aria-label="Perfil"><ProfileIcon/></Link></header>
+      <header className={styles.mobileHeader}>
+        <Link href="/learn" className={styles.brand} aria-label="Arena Dev — Estudos"><span className={styles.brandMark}>A</span><span className={styles.brandCopy}><strong>ARENA DEV</strong><small>ESTUDOS</small></span></Link>
+        <div className={styles.mobileHeaderActions}>
+          <Link href="/learn/profile" className={`${styles.mobileProfile}${profileActive ? ` ${styles.activeNav}` : ""}`} aria-label="Perfil"><ProfileIcon/></Link>
+          <button type="button" className={styles.mobileMenuButton} aria-label={mobileMenuOpen ? "Fechar navegação" : "Abrir navegação"} aria-expanded={mobileMenuOpen} aria-controls="student-mobile-navigation" onClick={() => setMobileMenuOpen((value) => !value)}><SidebarIcon/></button>
+        </div>
+      </header>
+      {mobileMenuOpen && <nav id="student-mobile-navigation" className={styles.mobileNavigation} aria-label="Navegação de estudos no celular">
+        <Link href="/learn" aria-current={homeActive ? "page" : undefined}><HomeIcon/>Início</Link>
+        <Link href="/learn/journeys" aria-current={journeysActive ? "page" : undefined}><JourneyIcon/>Jornadas</Link>
+        <Link href="/learn/live" aria-current={liveActive ? "page" : undefined}><LiveIcon/>Entrar ao vivo</Link>
+        <Link href="/learn/achievements" aria-current={achievementsActive ? "page" : undefined}><AchievementIcon/>Conquistas</Link>
+        <Link href="/learn/profile" aria-current={profileActive ? "page" : undefined}><ProfileIcon/>Perfil e cadastro</Link>
+      </nav>}
       <div className={styles.accessibilityMobile}><StudentAccessibilityControls /></div>
       <main className={styles.main}>{children}</main>
     </div>

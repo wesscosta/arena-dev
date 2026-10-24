@@ -381,3 +381,17 @@
   .studyWorkspace .main .libraryFilters input,.studyWorkspace .main .libraryFilters select{min-width:0}
   .studyWorkspace .main button{white-space:normal}
 }
+
+
+/* v0.11 stabilization: restore navigation parity on mobile without replacing the v0.12 design. */
+.mobileHeaderActions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.mobileMenuButton{display:none}
+.mobileNavigation{display:none}
+@media(max-width:820px){
+  .mobileMenuButton{display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--study-line);border-radius:8px;background:var(--study-panel);color:var(--study-fg);cursor:pointer}
+  .mobileMenuButton svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
+  .mobileNavigation{position:sticky;top:62px;z-index:7;display:grid;gap:2px;padding:10px 16px 14px;border-bottom:1px solid var(--study-line);background:var(--study-panel)}
+  .mobileNavigation a{display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 12px;border-radius:8px;color:var(--study-fg);text-decoration:none}
+  .mobileNavigation a[aria-current=page]{background:var(--study-tint);color:var(--study-accent-ink);font-weight:700}
+  .mobileNavigation svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8}
+}
