@@ -33,12 +33,14 @@ test("controles são compartilhados entre estudo e participação e persistem em
   const join = readFileSync(resolve(process.cwd(), "components/StudentJoinFlow.tsx"), "utf8");
   const profile = readFileSync(resolve(process.cwd(), "app/learn/profile/page.tsx"), "utf8");
   const studyCss = readFileSync(resolve(process.cwd(), "components/study/study.module.css"), "utf8");
-  assert.match(study, /<StudentAccessibilityControls/);
+  assert.match(profile, /<StudentAccessibilityControls/);
+  assert.doesNotMatch(study, /<StudentAccessibilityControls/);
+  assert.match(study, /Configurações/);
   assert.match(join, /<StudentAccessibilityControls/);
   assert.match(study, /--study-content-scale/);
   assert.match(join, /--student-content-scale/);
-  assert.match(studyCss, /\.accessibilityMobile\{display:none/);
-  assert.match(studyCss, /@media\(max-width:820px\)\{\.accessibilityMobile\{display:block/);
+  assert.doesNotMatch(study, /styles\.accessibilityMobile/);
+  assert.match(studyCss, /\.profilePreferences\{/);
   const joinCss = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
   assert.match(joinCss, /student-join-card:has\(\[aria-modal="true"\]\)\{zoom:1\}/);
   assert.match(joinCss, /student-join-card \[aria-modal="true"\] main\{zoom:var\(--student-content-scale,1\)/);

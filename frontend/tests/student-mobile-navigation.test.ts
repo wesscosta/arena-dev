@@ -10,6 +10,8 @@ test("student mobile navigation exposes the same five destinations as desktop", 
     const occurrences = shell.split(`href="${destination}"`).length - 1;
     assert.ok(occurrences >= 2, `Missing mobile and desktop destination: ${destination}`);
   }
+  assert.match(shell, /Configurações/);
+  assert.doesNotMatch(shell, /styles\.accessibilityMobile/);
   assert.match(shell, /aria-expanded=\{mobileMenuOpen\}/);
   assert.match(shell, /aria-controls="student-mobile-navigation"/);
   assert.match(shell, /setMobileMenuOpen\(false\)/);
