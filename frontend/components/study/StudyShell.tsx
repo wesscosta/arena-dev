@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import styles from "./study.module.css";
-import StudentAccessibilityControls, { useStudentPreferences } from "@/components/student/StudentAccessibilityControls";
+import { useStudentPreferences } from "@/components/student/StudentAccessibilityControls";
 
 function HomeIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.5 12 3l8.5 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-5v-6h-4v6H5a1.5 1.5 0 0 1-1.5-1.5z" /></svg>; }
 function JourneyIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14v4H5zM5 10h14v4H5zM5 15.5h14v4H5z" /></svg>; }
@@ -54,9 +54,8 @@ export default function StudyShell({ children }: { children: ReactNode }) {
         <Link href="/learn/live" className={liveActive ? styles.activeNav : undefined}><LiveIcon/><span>Entrar ao vivo</span></Link>
         <Link href="/learn/achievements" className={achievementsActive ? styles.activeNav : undefined}><AchievementIcon/><span>Conquistas</span></Link>
       </nav>
-      <div className={styles.sidebarFoot}><StudentAccessibilityControls compact /></div>
       <nav className={`${styles.nav} ${styles.navFoot}`} aria-label="Conta">
-        <Link href="/learn/profile" className={profileActive ? styles.activeNav : undefined}><ProfileIcon/><span>Perfil</span></Link>
+        <Link href="/learn/profile" className={profileActive ? styles.activeNav : undefined}><ProfileIcon/><span>Configurações</span></Link>
       </nav>
     </aside>
     <div className={styles.studyWorkspace}>
@@ -64,7 +63,7 @@ export default function StudyShell({ children }: { children: ReactNode }) {
       <header className={styles.mobileHeader}>
         <Link href="/learn" className={styles.brand} aria-label="Arena Dev — Estudos"><span className={styles.brandMark}>A</span><span className={styles.brandCopy}><strong>ARENA DEV</strong><small>ESTUDOS</small></span></Link>
         <div className={styles.mobileHeaderActions}>
-          <Link href="/learn/profile" className={`${styles.mobileProfile}${profileActive ? ` ${styles.activeNav}` : ""}`} aria-label="Perfil"><ProfileIcon/></Link>
+          <Link href="/learn/profile" className={`${styles.mobileProfile}${profileActive ? ` ${styles.activeNav}` : ""}`} aria-label="Configurações e perfil"><ProfileIcon/></Link>
           <button type="button" className={styles.mobileMenuButton} aria-label={mobileMenuOpen ? "Fechar navegação" : "Abrir navegação"} aria-expanded={mobileMenuOpen} aria-controls="student-mobile-navigation" onClick={() => setMobileMenuOpen((value) => !value)}><SidebarIcon/></button>
         </div>
       </header>
@@ -73,9 +72,8 @@ export default function StudyShell({ children }: { children: ReactNode }) {
         <Link href="/learn/journeys" aria-current={journeysActive ? "page" : undefined}><JourneyIcon/>Jornadas</Link>
         <Link href="/learn/live" aria-current={liveActive ? "page" : undefined}><LiveIcon/>Entrar ao vivo</Link>
         <Link href="/learn/achievements" aria-current={achievementsActive ? "page" : undefined}><AchievementIcon/>Conquistas</Link>
-        <Link href="/learn/profile" aria-current={profileActive ? "page" : undefined}><ProfileIcon/>Perfil e cadastro</Link>
+        <Link href="/learn/profile" aria-current={profileActive ? "page" : undefined}><ProfileIcon/>Configurações</Link>
       </nav>}
-      <div className={styles.accessibilityMobile}><StudentAccessibilityControls /></div>
       <main className={styles.main}>{children}</main>
     </div>
     {achievementToast && <div className={styles.achievementToast} role="status" aria-live="polite"><span><AchievementIcon /></span><div><small>Nova conquista</small><strong>{achievementToast.title}</strong><p>{achievementToast.description}</p></div></div>}

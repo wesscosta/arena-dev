@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import StudentAccessibilityControls from "@/components/student/StudentAccessibilityControls";
 import { useEffect, useState, type FormEvent } from "react";
 import { fetchAllStudentProfiles, updateStudentProfile, type StudentProfileEntry } from "@/lib/study-api";
 import styles from "@/components/study/study.module.css";
@@ -83,9 +84,15 @@ export default function ProfilePage() {
   }, []);
 
   return <>
-    <p className={styles.eyebrow}>Perfil</p>
-    <h1 className={styles.title}>Seu cadastro</h1>
-    <p className={styles.lead}>Confira seus dados e complete o que faltar.</p>
+    <p className={styles.eyebrow}>Minha conta</p>
+    <h1 className={styles.title}>Configurações</h1>
+    <p className={styles.lead}>Ajuste sua experiência de estudo e gerencie seus dados e dispositivos em um só lugar.</p>
+    <section className={styles.profilePreferences} aria-labelledby="study-preferences-heading">
+      <h2 id="study-preferences-heading">Aparência e acessibilidade</h2>
+      <p>Tamanho do conteúdo, tema e movimento. O tamanho ajusta os materiais e a área de estudo, sem ampliar o menu de navegação.</p>
+      <StudentAccessibilityControls />
+    </section>
+    <h2 className={styles.profileSectionHeading}>Cadastro e dispositivos</h2>
     {!profiles && <div className={`${styles.empty} ${styles.skeleton}`}>Carregando seu cadastro…</div>}
     {profiles && profiles.length === 0 && <div className={styles.empty}><strong>Nenhum cadastro lembrado neste dispositivo.</strong><p>Entre em uma aula com a opção “Lembrar neste dispositivo” marcada. <Link href="/join">Entrar em uma aula</Link></p></div>}
     {profiles?.map((profile) => <ProfileForm
