@@ -4,11 +4,14 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { fetchAllStudentProfiles, updateStudentProfile, type StudentProfileEntry } from "@/lib/study-api";
 import styles from "@/components/study/study.module.css";
+import { revokeRememberedDevice } from "@/lib/realtime-api";
+import { clearStudentDeviceAccess } from "@/lib/student-session";
 
-function ProfileForm({ profile, onSaved }: { profile: StudentProfileEntry; onSaved: (next: StudentProfileEntry) => void }) {
+function ProfileForm({ profile, onSaved, onForgot }: { profile: StudentProfileEntry; onSaved: (next: StudentProfileEntry) => void; onForgot: (classroomId: string, studentId: string) => void }) {
   const [name, setName] = useState(profile.namePending ? "" : profile.name);
   const [email, setEmail] = useState(profile.email ?? "");
   const [saving, setSaving] = useState(false);
+  const [forgetting, setForgetting] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const dirty = (profile.namePending && name.trim() !== "") || (!profile.emailSetByTeacher && email.trim() !== (profile.email ?? ""));
 
@@ -22,13 +25,26 @@ function ProfileForm({ profile, onSaved }: { profile: StudentProfileEntry; onSav
         name: profile.namePending ? name : undefined,
         email: profile.emailSetByTeacher ? undefined : email,
       });
-      onSaved({ ...next, studyToken: profile.studyToken });
+      onSaved({ ...next, studyToken: profile.studyToken, classroomId: profile.classroomId });
       setMessage({ kind: "ok", text: "Cadastro atualizado." });
     } catch (caught) {
       setMessage({ kind: "error", text: caught instanceof Error ? caught.message : "Não foi possível salvar." });
     } finally {
       setSaving(false);
     }
+  }
+
+  async function forgetDevice() {
+    if (forgetting || !window.confirm("Esquecer este cadastro neste dispositivo? Será necessário identificar-se novamente para acessar a turma.")) return;
+    setForgetting(true);
+    setMessage(null);
+    try {
+      await revokeRememberedDevice(profile.studyToken);
+      clearStudentDeviceAccess(profile.classroomId, profile.studentId, profile.studyToken);
+      onForgot(profile.classroomId, profile.studentId);
+    } catch (cause) {
+      setMessage({ kind: "error", text: cause instanceof Error ? cause.message : "Não foi possível revogar este dispositivo. Tente novamente conectado." });
+    } finally { setForgetting(false); }
   }
 
   return <form className={styles.profileCard} onSubmit={save}>
@@ -53,6 +69,7 @@ function ProfileForm({ profile, onSaved }: { profile: StudentProfileEntry; onSav
     </label>}
     {message && <p className={message.kind === "ok" ? styles.profileOk : styles.profileError} role="status">{message.text}</p>}
     {(profile.namePending || !profile.emailSetByTeacher) && <button className={styles.button} disabled={saving || !dirty}>{saving ? "Salvando…" : "Salvar"}</button>}
+    <button type="button" className={styles.forgetDevice} disabled={saving || forgetting} onClick={() => void forgetDevice()}>{forgetting ? "Revogando dispositivo…" : "Esquecer este dispositivo"}</button>
   </form>;
 }
 
@@ -72,9 +89,10 @@ export default function ProfilePage() {
     {!profiles && <div className={`${styles.empty} ${styles.skeleton}`}>Carregando seu cadastro…</div>}
     {profiles && profiles.length === 0 && <div className={styles.empty}><strong>Nenhum cadastro lembrado neste dispositivo.</strong><p>Entre em uma aula com a opção “Lembrar neste dispositivo” marcada. <Link href="/join">Entrar em uma aula</Link></p></div>}
     {profiles?.map((profile) => <ProfileForm
-      key={profile.studentId}
+      key={profile.classroomId + ":" + profile.studentId}
       profile={profile}
-      onSaved={(next) => setProfiles((current) => current?.map((item) => item.studentId === next.studentId ? next : item) ?? null)}
+      onSaved={(next) => setProfiles((current) => current?.map((item) => item.classroomId === next.classroomId && item.studentId === next.studentId ? next : item) ?? null)}
+      onForgot={(classroomId, studentId) => setProfiles((current) => current?.filter((item) => item.classroomId !== classroomId || item.studentId !== studentId) ?? null)}
     />)}
   </>;
 }

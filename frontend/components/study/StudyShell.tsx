@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import styles from "./study.module.css";
+import StudentAccessibilityControls, { useStudentPreferences } from "@/components/student/StudentAccessibilityControls";
 
 function HomeIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.5 12 3l8.5 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-5v-6h-4v6H5a1.5 1.5 0 0 1-1.5-1.5z" /></svg>; }
 function JourneyIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14v4H5zM5 10h14v4H5zM5 15.5h14v4H5z" /></svg>; }
@@ -19,7 +20,7 @@ export default function StudyShell({ children }: { children: ReactNode }) {
   const achievementsActive = pathname.startsWith("/learn/achievements");
   const profileActive = pathname.startsWith("/learn/profile");
   const homeActive = pathname === "/learn";
-  const [textScale, setTextScale] = useState(1);
+  const { scale: textScale, reducedMotion } = useStudentPreferences();
   const [sidebarHidden, setSidebarHidden] = useState(false);
   const [achievementToast, setAchievementToast] = useState<{ title: string; description: string } | null>(null);
   useEffect(() => {
@@ -33,22 +34,13 @@ export default function StudyShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("arena:achievement-unlocked", onAchievement);
   }, []);
   useEffect(() => {
-    const stored = Number(window.localStorage.getItem("arena-dev:study-text-scale"));
-    if ([0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2].includes(stored)) setTextScale(stored);
     setSidebarHidden(window.localStorage.getItem("arena-dev:study-sidebar-hidden") === "1");
   }, []);
   function toggleSidebar(hidden: boolean) {
     setSidebarHidden(hidden);
     window.localStorage.setItem("arena-dev:study-sidebar-hidden", hidden ? "1" : "0");
   }
-  function changeTextScale(direction: -1 | 1) {
-    const levels = [0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
-    const index = levels.indexOf(textScale);
-    const next = levels[Math.min(levels.length - 1, Math.max(0, index + direction))] ?? 1;
-    setTextScale(next);
-    window.localStorage.setItem("arena-dev:study-text-scale", String(next));
-  }
-  return <div className={`${styles.shell}${sidebarHidden ? ` ${styles.sidebarHidden}` : ""}`} style={{ "--study-text-scale": textScale, "--study-text-percent": `${Math.round(textScale * 100)}%` } as React.CSSProperties}>
+  return <div className={`${styles.shell}${sidebarHidden ? ` ${styles.sidebarHidden}` : ""}`} style={{ "--study-text-scale": textScale, "--study-content-scale": textScale, "--study-text-percent": `${Math.round(textScale * 100)}%` } as React.CSSProperties} data-student-motion={reducedMotion ? "reduce" : undefined}>
     <aside className={styles.studySidebar} hidden={sidebarHidden}>
       <div className={styles.sidebarHead}>
         <Link href="/learn" className={styles.brand} aria-label="Arena Dev — Estudos"><span className={styles.brandMark}>A</span><span className={styles.brandCopy}><strong>ARENA DEV</strong><small>ESTUDOS</small></span></Link>
@@ -60,14 +52,7 @@ export default function StudyShell({ children }: { children: ReactNode }) {
         <Link href="/learn/live" className={liveActive ? styles.activeNav : undefined}><LiveIcon/><span>Entrar ao vivo</span></Link>
         <Link href="/learn/achievements" className={achievementsActive ? styles.activeNav : undefined}><AchievementIcon/><span>Conquistas</span></Link>
       </nav>
-      <div className={styles.sidebarFoot}>
-        <span>Zoom da área de estudos</span>
-        <div className={styles.shellTextScale} role="group" aria-label="Zoom da área de estudos">
-          <button type="button" onClick={() => changeTextScale(-1)} disabled={textScale === .8} aria-label="Diminuir zoom da área de estudos">−</button>
-          <button type="button" onClick={() => { setTextScale(1); window.localStorage.setItem("arena-dev:study-text-scale", "1"); }} title="Restaurar tamanho padrão">{Math.round(textScale * 100)}%</button>
-          <button type="button" onClick={() => changeTextScale(1)} disabled={textScale === 2} aria-label="Aumentar zoom da área de estudos">+</button>
-        </div>
-      </div>
+      <div className={styles.sidebarFoot}><StudentAccessibilityControls compact /></div>
       <nav className={`${styles.nav} ${styles.navFoot}`} aria-label="Conta">
         <Link href="/learn/profile" className={profileActive ? styles.activeNav : undefined}><ProfileIcon/><span>Perfil</span></Link>
       </nav>
@@ -75,6 +60,7 @@ export default function StudyShell({ children }: { children: ReactNode }) {
     <div className={styles.studyWorkspace}>
       {sidebarHidden && <div className={styles.sidebarRevealBar}><button type="button" className={styles.sidebarReveal} onClick={() => toggleSidebar(false)} aria-label="Mostrar menu lateral" title="Mostrar menu lateral"><SidebarIcon/></button></div>}
       <header className={styles.mobileHeader}><Link href="/learn" className={styles.brand} aria-label="Arena Dev — Estudos"><span className={styles.brandMark}>A</span><span className={styles.brandCopy}><strong>ARENA DEV</strong><small>ESTUDOS</small></span></Link><Link href="/learn/profile" className={`${styles.mobileProfile}${profileActive ? ` ${styles.activeNav}` : ""}`} aria-label="Perfil"><ProfileIcon/></Link></header>
+      <div className={styles.accessibilityMobile}><StudentAccessibilityControls /></div>
       <main className={styles.main}>{children}</main>
     </div>
     {achievementToast && <div className={styles.achievementToast} role="status" aria-live="polite"><span><AchievementIcon /></span><div><small>Nova conquista</small><strong>{achievementToast.title}</strong><p>{achievementToast.description}</p></div></div>}

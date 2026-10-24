@@ -210,7 +210,7 @@ export type StudentProfile = {
   preferredName: string | null;
   complete: boolean;
 };
-export type StudentProfileEntry = StudentProfile & { studyToken: string };
+export type StudentProfileEntry = StudentProfile & { studyToken: string; classroomId: string };
 
 export function fetchStudentProfile(token: string) {
   return studyRequest<StudentProfile>("/api/learn/profile", token);
@@ -224,9 +224,9 @@ export function updateStudentProfile(token: string, input: { name?: string; emai
 /** One entry per student remembered on this device (a shared tablet may hold more than one). */
 export async function fetchAllStudentProfiles(): Promise<StudentProfileEntry[]> {
   const loaded = await Promise.all(studyDeviceClaims().map(async (claim) => {
-    try { return { ...(await fetchStudentProfile(claim.token)), studyToken: claim.token }; } catch { return null; }
+    try { return { ...(await fetchStudentProfile(claim.token)), studyToken: claim.token, classroomId: claim.classroomId }; } catch { return null; }
   }));
   const unique = new Map<string, StudentProfileEntry>();
-  loaded.forEach((profile) => { if (profile && !unique.has(profile.studentId)) unique.set(profile.studentId, profile); });
+  loaded.forEach((profile) => { if (profile && !unique.has(profile.classroomId + ":" + profile.studentId)) unique.set(profile.classroomId + ":" + profile.studentId, profile); });
   return [...unique.values()];
 }
