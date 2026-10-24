@@ -18,7 +18,7 @@ class JourneyControllerTest {
         UUID journeyId = UUID.randomUUID();
         JourneyService.JourneyInput input = new JourneyService.JourneyInput(classroomId, "Jornada", null, List.of());
         JourneyService.JourneyView view = new JourneyService.JourneyView(
-                journeyId, classroomId, "Jornada", null, JourneyStatus.DRAFT, List.of(), Instant.now(), Instant.now(), false
+                journeyId, classroomId, "Jornada", null, JourneyStatus.DRAFT, List.of(), Instant.now(), Instant.now(), false, null
         );
         when(service.create(input)).thenReturn(view);
 

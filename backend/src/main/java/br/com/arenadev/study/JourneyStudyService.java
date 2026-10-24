@@ -165,10 +165,27 @@ public class JourneyStudyService {
                     .forEach(item -> persisted.put(item.getStage().getId(), new ProgressState(item.getCompletedAt(), item.getUpdatedAt())));
         }
         Map<UUID, StudyState> states = new LinkedHashMap<>(); boolean currentAssigned = false; int completed = 0;
+        int index = 0;
+        Integer released = journey.getReleasedStageCount();
         for (JourneyStage stage : journey.getStages()) {
-            ProgressState item = persisted.get(stage.getId()); boolean done = item != null && item.completedAt() != null; StudyState state;
-            if (done) { state = StudyState.COMPLETED; completed++; } else if (!currentAssigned) { state = StudyState.CURRENT; currentAssigned = true; } else state = StudyState.LOCKED;
+            ProgressState item = persisted.get(stage.getId());
+            boolean done = item != null && item.completedAt() != null;
+            if (done) completed++;
+            // A teacher gate overrides the legacy completion sequence only inside
+            // the explicitly released prefix. Prior completed progress remains recorded.
+            StudyState state;
+            if (released != null) {
+                state = index >= released ? StudyState.LOCKED : done ? StudyState.COMPLETED : StudyState.CURRENT;
+            } else if (done) {
+                state = StudyState.COMPLETED;
+            } else if (!currentAssigned) {
+                state = StudyState.CURRENT;
+                currentAssigned = true;
+            } else {
+                state = StudyState.LOCKED;
+            }
             states.put(stage.getId(), state);
+            index++;
         }
         int total = journey.getStages().size(); int percent = total == 0 ? 0 : Math.round(completed * 100f / total);
         Instant lastStudiedAt = persisted.values().stream().map(ProgressState::updatedAt).filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(null);

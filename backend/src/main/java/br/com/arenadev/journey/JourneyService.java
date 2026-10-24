@@ -93,6 +93,21 @@ public class JourneyService {
         } else if (input.stages() != null && !sameStageShape(journey, input.stages())) {
             throw new IllegalStateException("Jornada arquivada não pode ser alterada. Crie uma nova jornada.");
         }
+        if (journey.getReleasedStageCount() != null
+                && journey.getReleasedStageCount() > journey.getStages().size()) {
+            throw new IllegalStateException("Reduza primeiro o limite de conteúdos liberados.");
+        }
+        return toView(journey);
+    }
+
+    /** A teacher can release the first N contents of a published Journey without editing its structure. */
+    @Transactional
+    public JourneyView changeRelease(UUID id, Integer releasedStageCount) {
+        Journey journey = requireJourney(id);
+        if (journey.getStatus() != JourneyStatus.PUBLISHED) {
+            throw new IllegalStateException("A liberação de conteúdos exige uma jornada publicada.");
+        }
+        journey.changeReleasedStageCount(releasedStageCount);
         return toView(journey);
     }
 
@@ -261,8 +276,13 @@ public class JourneyService {
             JourneyStage stage = journey.getStages().get(index);
             JourneyStageProgress stored = persisted.get(stage.getId());
             boolean completed = isCompleted(stage, enrollment, stored);
-            boolean unlocked = index == 0 || stage.getUnlockRule() == JourneyUnlockRule.IMMEDIATE || previousCompleted;
-            JourneyStageProgressStatus status = completed
+            Integer released = journey.getReleasedStageCount();
+            boolean teacherLocked = released != null && index >= released;
+            boolean unlocked = released != null ? !teacherLocked
+                    : index == 0 || stage.getUnlockRule() == JourneyUnlockRule.IMMEDIATE || previousCompleted;
+            JourneyStageProgressStatus status = teacherLocked
+                    ? JourneyStageProgressStatus.LOCKED
+                    : completed
                     ? JourneyStageProgressStatus.COMPLETED
                     : !unlocked
                         ? JourneyStageProgressStatus.LOCKED
@@ -276,7 +296,7 @@ public class JourneyService {
                     stage.getUnlockRule(), stage.getCompletionRule(), status,
                     stored == null ? null : stored.getStartedAt(),
                     completed ? completionTimestamp(stage, enrollment, stored) : null,
-                    nextAction(stage, status)
+                    teacherLocked ? "WAIT_FOR_TEACHER" : nextAction(stage, status)
             ));
             previousCompleted = completed;
         }
@@ -518,7 +538,7 @@ public class JourneyService {
                                 && stage.getLearningResource().getRevision() > stage.getResourceSnapshotRevision()
                 )).toList(),
                 journey.getCreatedAt(), journey.getUpdatedAt(),
-                journey.isCopyProtected()
+                journey.isCopyProtected(), journey.getReleasedStageCount()
         );
     }
 
@@ -549,7 +569,7 @@ public class JourneyService {
     ) {}
     public record StageContentView(UUID stageId, String title, String body, String format, boolean libraryMaterial, boolean readOnly) {}
     public record StageContentInput(String body) {}
-    public record JourneyView(UUID id, UUID classroomId, String title, String description, JourneyStatus status, List<StageView> stages, Instant createdAt, Instant updatedAt, boolean copyProtected) {}
+    public record JourneyView(UUID id, UUID classroomId, String title, String description, JourneyStatus status, List<StageView> stages, Instant createdAt, Instant updatedAt, boolean copyProtected, Integer releasedStageCount) {}
     public record StageView(
             UUID id,
             int position,

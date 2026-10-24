@@ -33,6 +33,8 @@ export type Journey = {
   updatedAt: string;
   /** Students cannot copy this Journey's content in the reader. */
   copyProtected: boolean;
+  /** Null means the original sequential-unlock policy; N exposes the first N contents. */
+  releasedStageCount: number | null;
 };
 
 export type JourneyStageInput = {
@@ -86,6 +88,12 @@ export function createJourney(input: JourneyInput) {
 
 export function updateJourney(id: string, input: JourneyInput) {
   return journeyRequest<Journey>(`/api/journeys/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(input) });
+}
+
+export function changeJourneyRelease(id: string, releasedStageCount: number | null) {
+  return journeyRequest<Journey>("/api/journeys/" + encodeURIComponent(id) + "/release", {
+    method: "PATCH", body: JSON.stringify({ releasedStageCount }),
+  });
 }
 
 export type JourneyLibraryExport = { created: number; alreadyInLibrary: number; withoutContent: number; createdIds: string[] };

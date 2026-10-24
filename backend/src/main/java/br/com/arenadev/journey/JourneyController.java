@@ -32,6 +32,13 @@ public class JourneyController {
         return service.update(id, input);
     }
 
+    @PatchMapping("/{id}/release")
+    public JourneyService.JourneyView release(@PathVariable UUID id, @RequestBody ReleaseInput input) {
+        return service.changeRelease(id, input == null ? null : input.releasedStageCount());
+    }
+
+    public record ReleaseInput(Integer releasedStageCount) {}
+
     @PostMapping("/{id}/publish")
     public JourneyService.JourneyView publish(@PathVariable UUID id) { return service.publish(id); }
 
