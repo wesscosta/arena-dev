@@ -51,7 +51,7 @@ type Draft = {
   description: string;
   status: Journey["status"];
   copyProtected: boolean;
-  releasedStageCount: number | null;
+  releasedChapterCount: number | null;
   stages: DraftStage[];
 };
 
@@ -62,7 +62,7 @@ function toDraft(journey: Journey): Draft {
     description: journey.description ?? "",
     status: journey.status,
     copyProtected: journey.copyProtected ?? false,
-    releasedStageCount: journey.releasedStageCount ?? null,
+    releasedChapterCount: journey.releasedChapterCount ?? null,
     stages: journey.stages.map((stage) => ({
       id: stage.id,
       title: stage.title,
@@ -79,7 +79,7 @@ function toDraft(journey: Journey): Draft {
 }
 
 function emptyDraft(): Draft {
-  return { title: "", description: "", status: "DRAFT", copyProtected: false, releasedStageCount: null, stages: [] };
+  return { title: "", description: "", status: "DRAFT", copyProtected: false, releasedChapterCount: null, stages: [] };
 }
 
 function statusLabel(status: Journey["status"]) {
@@ -132,9 +132,10 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
   // stage students already started. Only an archived Journey is read-only.
   const structuralLocked = draft?.status === "ARCHIVED";
   const published = draft?.status === "PUBLISHED";
+  const chapterCount = new Set((draft?.stages ?? []).map(stage => stage.sectionId || stage.sectionTitle || "__default")).size;
   useEffect(() => {
-    setReleaseInput(draft?.releasedStageCount == null ? "auto" : String(draft.releasedStageCount));
-  }, [draft?.id, draft?.releasedStageCount]);
+    setReleaseInput(draft?.releasedChapterCount == null ? "auto" : String(draft.releasedChapterCount));
+  }, [draft?.id, draft?.releasedChapterCount]);
   const stageGroups = useMemo(() => {
     if (!draft) return [];
     const groups = new Map<string, { key: string; title: string; entries: Array<{ stage: DraftStage; index: number }> }>();
@@ -351,14 +352,14 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
   async function saveRelease() {
     if (!draft?.id || !published || busy) return;
     const requested = releaseInput === "auto" ? null : releaseInput.trim() === "" ? NaN : Number(releaseInput);
-    if (requested !== null && (!Number.isInteger(requested) || requested < 0 || requested > draft.stages.length)) {
-      notify("Informe uma quantidade entre 0 e " + draft.stages.length + " conteúdos.", "error");
+    if (requested !== null && (!Number.isInteger(requested) || requested < 0 || requested > chapterCount)) {
+      notify("Informe uma quantidade entre 0 e " + chapterCount + " capítulos.", "error");
       return;
     }
-    if (requested === draft.releasedStageCount) return;
+    if (requested === draft.releasedChapterCount) return;
     // Never unexpectedly hide content from students who may already have viewed it.
-    if (requested !== null && (draft.releasedStageCount === null || requested < draft.releasedStageCount)
-        && !window.confirm("A nova liberação poderá bloquear conteúdos que alunos já acessaram. O progresso salvo será preservado. Continuar?")) return;
+    if (requested !== null && (draft.releasedChapterCount === null || requested < draft.releasedChapterCount)
+        && !window.confirm("A nova liberação poderá bloquear capítulos que alunos já acessaram. O progresso salvo será preservado. Continuar?")) return;
     setBusy(true);
     try {
       const saved = await changeJourneyRelease(draft.id, requested);
@@ -367,8 +368,8 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
       notify(requested === null
         ? "Progressão original restaurada."
         : requested === 0
-          ? "Todos os conteúdos foram bloqueados para os alunos."
-          : "Primeiros " + requested + " conteúdos liberados para a turma.");
+          ? "Todos os capítulos foram bloqueados para os alunos."
+          : "Primeiros " + requested + " capítulos liberados para a turma.");
     } catch (error) {
       notify(error instanceof Error ? error.message : "Não foi possível atualizar a liberação.", "error");
     } finally { setBusy(false); }
@@ -514,19 +515,19 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
                           <small>Vale imediatamente para os alunos. Desencoraja a cópia, mas não impede captura de tela.</small>
                         </span>
                       </label>
-                      {published && <section className={styles.releasePanel} aria-label="Liberação gradual dos conteúdos">
-                        <div><strong>Liberação gradual</strong><p>Defina quantos conteúdos iniciais ficarão acessíveis para a turma, independentemente da conclusão anterior. Os seguintes ficam bloqueados até sua liberação. Não apaga o progresso salvo.</p></div>
+                      {published && <section className={styles.releasePanel} aria-label="Liberação gradual de capítulos">
+                        <div><strong>Liberação gradual</strong><p>Escolha quantos capítulos iniciais ficarão disponíveis para a turma. Todos os conteúdos desses capítulos poderão ser estudados; os demais ficam bloqueados até sua liberação. O progresso é preservado.</p></div>
                         <div className={styles.releaseControls}>
-                          <label htmlFor="journey-release-count">Conteúdos disponíveis</label>
-                          <select id="journey-release-count" disabled={busy} value={releaseInput === "auto" ? "auto" : "teacher"} onChange={event => setReleaseInput(event.target.value === "auto" ? "auto" : String(draft.releasedStageCount ?? Math.min(1, draft.stages.length)))}>
+                          <label htmlFor="journey-release-count">Modo de liberação</label>
+                          <select id="journey-release-count" disabled={busy} value={releaseInput === "auto" ? "auto" : "teacher"} onChange={event => setReleaseInput(event.target.value === "auto" ? "auto" : String(draft.releasedChapterCount ?? Math.min(1, chapterCount)))}>
                             <option value="auto">Progressão original (por conclusão)</option>
                             <option value="teacher">Controlar por quantidade</option>
                           </select>
                           {releaseInput !== "auto" && <label className={styles.releaseCountField} htmlFor="journey-released-amount">Liberar os primeiros
-                            <input id="journey-released-amount" type="number" inputMode="numeric" min={0} max={draft.stages.length} step={1} value={releaseInput} disabled={busy} onChange={event => setReleaseInput(event.target.value)} />
-                            <span>de {draft.stages.length} conteúdos</span>
+                            <input id="journey-released-amount" type="number" inputMode="numeric" min={0} max={chapterCount} step={1} value={releaseInput} disabled={busy} onChange={event => setReleaseInput(event.target.value)} />
+                            <span>de {chapterCount} capítulos</span>
                           </label>}
-                          <button className={styles.secondary} type="button" disabled={busy || releaseInput === (draft.releasedStageCount == null ? "auto" : String(draft.releasedStageCount))} onClick={() => void saveRelease()}>Aplicar liberação</button>
+                          <button className={styles.secondary} type="button" disabled={busy || releaseInput === (draft.releasedChapterCount == null ? "auto" : String(draft.releasedChapterCount))} onClick={() => void saveRelease()}>Aplicar liberação</button>
                         </div>
                       </section>}
                       <div className={styles.publishedMeta}><span>{stageGroups.length} {stageGroups.length === 1 ? "módulo" : "módulos"}</span><span>{draft.stages.length} {draft.stages.length === 1 ? "conteúdo" : "conteúdos"}</span></div>

@@ -65,7 +65,7 @@ public class JourneyStudyService {
         Projection projection = project(journey, access);
         return new JourneyStudyView(
                 journey.getId(), journey.getTitle(), journey.getDescription(),
-                projection.progress(), modules(journey, projection.states()), List.of()
+                projection.progress(), modules(journey, projection.states()), List.of(), journey.getReleasedChapterCount()
         );
     }
 
@@ -129,7 +129,7 @@ public class JourneyStudyService {
         Map<UUID, StudyState> states = new LinkedHashMap<>();
         journey.getStages().forEach(stage -> states.put(stage.getId(), StudyState.CURRENT));
         return new JourneyStudyView(journey.getId(), journey.getTitle(), journey.getDescription(),
-                new JourneyProgressSummary(0, journey.getStages().size(), 0), modules(journey, states), List.of());
+                new JourneyProgressSummary(0, journey.getStages().size(), 0), modules(journey, states), List.of(), journey.getReleasedChapterCount());
     }
 
     private JourneyStudyView view(Journey journey, AccessContext access) {
@@ -139,7 +139,7 @@ public class JourneyStudyService {
     private JourneyStudyView view(Journey journey, AccessContext access, List<AchievementService.AchievementView> unlocked) {
         Projection projection = project(journey, access);
         return new JourneyStudyView(journey.getId(), journey.getTitle(), journey.getDescription(),
-                projection.progress(), modules(journey, projection.states()), unlocked);
+                projection.progress(), modules(journey, projection.states()), unlocked, journey.getReleasedChapterCount());
     }
 
     private JourneyStudySummary summary(Journey journey, AccessContext access) {
@@ -165,9 +165,10 @@ public class JourneyStudyService {
                     .forEach(item -> persisted.put(item.getStage().getId(), new ProgressState(item.getCompletedAt(), item.getUpdatedAt())));
         }
         Map<UUID, StudyState> states = new LinkedHashMap<>(); boolean currentAssigned = false; int completed = 0;
-        int index = 0;
-        Integer released = journey.getReleasedStageCount();
+        Integer released = journey.getReleasedChapterCount();
+        Map<JourneySection, Integer> chapterPositions = new LinkedHashMap<>();
         for (JourneyStage stage : journey.getStages()) {
+            int chapterIndex = chapterPositions.computeIfAbsent(stage.getSection(), ignored -> chapterPositions.size());
             ProgressState item = persisted.get(stage.getId());
             boolean done = item != null && item.completedAt() != null;
             if (done) completed++;
@@ -175,7 +176,10 @@ public class JourneyStudyService {
             // the explicitly released prefix. Prior completed progress remains recorded.
             StudyState state;
             if (released != null) {
-                state = index >= released ? StudyState.LOCKED : done ? StudyState.COMPLETED : StudyState.CURRENT;
+                if (chapterIndex >= released) state = StudyState.LOCKED;
+                else if (done) state = StudyState.COMPLETED;
+                else if (!currentAssigned) { state = StudyState.CURRENT; currentAssigned = true; }
+                else state = StudyState.AVAILABLE;
             } else if (done) {
                 state = StudyState.COMPLETED;
             } else if (!currentAssigned) {
@@ -185,7 +189,6 @@ public class JourneyStudyService {
                 state = StudyState.LOCKED;
             }
             states.put(stage.getId(), state);
-            index++;
         }
         int total = journey.getStages().size(); int percent = total == 0 ? 0 : Math.round(completed * 100f / total);
         Instant lastStudiedAt = persisted.values().stream().map(ProgressState::updatedAt).filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(null);
@@ -284,10 +287,10 @@ public class JourneyStudyService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conteúdo não encontrado nesta jornada."));
     }
 
-    public enum StudyState { COMPLETED, CURRENT, LOCKED }
+    public enum StudyState { COMPLETED, CURRENT, AVAILABLE, LOCKED }
     public record JourneyProgressSummary(int completedContents, int totalContents, int percent) {}
     public record JourneyStudySummary(UUID id, String title, String description, JourneyProgressSummary progress, UUID currentContentId, String currentContentTitle, boolean started, Instant lastStudiedAt, UUID classroomId, String classroomName, String classroomCode) {}
-    public record JourneyStudyView(UUID id, String title, String description, JourneyProgressSummary progress, List<JourneyModuleView> modules, List<AchievementService.AchievementView> newlyUnlockedAchievements) {}
+    public record JourneyStudyView(UUID id, String title, String description, JourneyProgressSummary progress, List<JourneyModuleView> modules, List<AchievementService.AchievementView> newlyUnlockedAchievements, Integer releasedChapterCount) {}
     public record JourneyModuleView(UUID id, String title, String description, List<JourneyContentView> contents) {}
     public record JourneyContentView(UUID id, String title, String description, StudyState state, UUID resourceId, boolean hasExternalSource) {}
     /** copyProtected: the Journey or the linked material forbids copying in the reader. */

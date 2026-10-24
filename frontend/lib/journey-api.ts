@@ -34,7 +34,7 @@ export type Journey = {
   /** Students cannot copy this Journey's content in the reader. */
   copyProtected: boolean;
   /** Null means the original sequential-unlock policy; N exposes the first N contents. */
-  releasedStageCount: number | null;
+  releasedChapterCount: number | null;
 };
 
 export type JourneyStageInput = {
@@ -90,9 +90,9 @@ export function updateJourney(id: string, input: JourneyInput) {
   return journeyRequest<Journey>(`/api/journeys/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(input) });
 }
 
-export function changeJourneyRelease(id: string, releasedStageCount: number | null) {
+export function changeJourneyRelease(id: string, releasedChapterCount: number | null) {
   return journeyRequest<Journey>("/api/journeys/" + encodeURIComponent(id) + "/release", {
-    method: "PATCH", body: JSON.stringify({ releasedStageCount }),
+    method: "PATCH", body: JSON.stringify({ releasedChapterCount }),
   });
 }
 

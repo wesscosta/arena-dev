@@ -33,8 +33,8 @@ public class Journey {
     private boolean copyProtected = false;
 
     /** Null preserves the original completion-based progression for existing Journeys. */
-    @Column(name = "released_stage_count")
-    private Integer releasedStageCount;
+    @Column(name = "released_chapter_count")
+    private Integer releasedChapterCount;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
@@ -74,14 +74,19 @@ public class Journey {
 
     public boolean isCopyProtected() { return copyProtected; }
 
-    public Integer getReleasedStageCount() { return releasedStageCount; }
+    public Integer getReleasedChapterCount() { return releasedChapterCount; }
 
-    /** Explicit teacher release: 0 closes all contents; null restores legacy progression. */
-    public void changeReleasedStageCount(Integer count) {
-        if (count != null && (count < 0 || count > stages.size())) {
-            throw new IllegalArgumentException("Informe uma quantidade entre 0 e " + stages.size() + " conteúdos.");
+    /** One chapter = a Journey section containing one or more contents, matching the study UI. */
+    public int getChapterCount() {
+        return (int) stages.stream().map(JourneyStage::getSection).distinct().count();
+    }
+
+    /** Explicit teacher release: 0 closes all chapters; null restores legacy progression. */
+    public void changeReleasedChapterCount(Integer count) {
+        if (count != null && (count < 0 || count > getChapterCount())) {
+            throw new IllegalArgumentException("Informe uma quantidade entre 0 e " + getChapterCount() + " capítulos.");
         }
-        this.releasedStageCount = count;
+        this.releasedChapterCount = count;
         this.updatedAt = Instant.now();
     }
 

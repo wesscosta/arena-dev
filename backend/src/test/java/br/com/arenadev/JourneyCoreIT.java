@@ -70,9 +70,9 @@ class JourneyCoreIT {
     void teacherCanReleaseFirstNContentsAndBlockDirectStudentAccessWithoutErasingProgress() {
         Fixture fixture = fixture("Liberação gradual", "JRNY-GATE");
         var journey = createPublishedJourney(fixture, List.of(
-                stage("Capítulo 1", null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL),
-                stage("Capítulo 2", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL),
-                stage("Capítulo 3", null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL)
+                new JourneyService.StageInput(null, "Texto 1", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, "Capítulo 1", null, null),
+                new JourneyService.StageInput(null, "Texto 2", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL, null, "Capítulo 2", null, null),
+                new JourneyService.StageInput(null, "Texto 3", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL, null, "Capítulo 3", null, null)
         ));
         var principal = new StudyPrincipal(fixture.enrollment().getStudent().getId(),
                 fixture.enrollment().getId(), fixture.classroom().getId(), StudyPrincipal.Role.STUDENT);
@@ -80,18 +80,20 @@ class JourneyCoreIT {
         UUID second = journey.stages().get(1).id();
         UUID third = journey.stages().get(2).id();
 
-        assertThat(journey.releasedStageCount()).isNull();
-        assertThat(journeyStudyService.get(journey.id(), principal).modules().getFirst().contents())
+        assertThat(journey.releasedChapterCount()).isNull();
+        assertThat(journeyStudyService.get(journey.id(), principal).modules().stream()
+                .flatMap(module -> module.contents().stream()).toList())
                 .extracting(JourneyStudyService.JourneyContentView::state)
                 .containsExactly(JourneyStudyService.StudyState.CURRENT,
                         JourneyStudyService.StudyState.LOCKED, JourneyStudyService.StudyState.LOCKED);
 
         var released = journeyService.changeRelease(journey.id(), 2);
-        assertThat(released.releasedStageCount()).isEqualTo(2);
-        assertThat(journeyStudyService.get(journey.id(), principal).modules().getFirst().contents())
+        assertThat(released.releasedChapterCount()).isEqualTo(2);
+        assertThat(journeyStudyService.get(journey.id(), principal).modules().stream()
+                .flatMap(module -> module.contents().stream()).toList())
                 .extracting(JourneyStudyService.JourneyContentView::state)
                 .containsExactly(JourneyStudyService.StudyState.CURRENT,
-                        JourneyStudyService.StudyState.CURRENT, JourneyStudyService.StudyState.LOCKED);
+                        JourneyStudyService.StudyState.AVAILABLE, JourneyStudyService.StudyState.LOCKED);
         assertThat(journeyService.progress(journey.id(), fixture.enrollment().getId()).stages())
                 .extracting(JourneyService.StageProgressView::nextAction)
                 .containsExactly("COMPLETE_STAGE", "COMPLETE_STAGE", "WAIT_FOR_TEACHER");
@@ -111,21 +113,51 @@ class JourneyCoreIT {
         assertThat(journeyStudyService.get(journey.id(), principal).progress().completedContents()).isEqualTo(1);
 
         journeyService.changeRelease(journey.id(), 3);
-        assertThat(journeyStudyService.content(journey.id(), third, principal).title()).isEqualTo("Capítulo 3");
-        assertThat(journeyStudyService.get(journey.id(), principal).modules().getFirst().contents().get(1).state())
+        assertThat(journeyStudyService.content(journey.id(), third, principal).title()).isEqualTo("Texto 3");
+        assertThat(journeyStudyService.get(journey.id(), principal).modules().get(1).contents().getFirst().state())
                 .isEqualTo(JourneyStudyService.StudyState.COMPLETED);
         journeyService.changeRelease(journey.id(), 0);
         assertThatThrownBy(() -> journeyStudyService.content(journey.id(), first, principal))
                 .hasMessageContaining("bloqueado");
 
         journeyService.changeRelease(journey.id(), null);
-        assertThat(journeyService.get(journey.id()).releasedStageCount()).isNull();
+        assertThat(journeyService.get(journey.id()).releasedChapterCount()).isNull();
         assertThat(journeyStudyService.get(journey.id(), principal).modules().getFirst().contents().get(0).state())
                 .isEqualTo(JourneyStudyService.StudyState.CURRENT);
         assertThatThrownBy(() -> journeyService.changeRelease(journey.id(), 4))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> journeyService.changeRelease(journey.id(), -1))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void releasesWholeChaptersIncludingEveryContentWithinThem() {
+        Fixture fixture = fixture("Capítulos com conteúdos", "JRNY-MODS");
+        var journey = createPublishedJourney(fixture, List.of(
+                new JourneyService.StageInput(null, "Conceito A", null, null, JourneyUnlockRule.IMMEDIATE, JourneyCompletionRule.MANUAL, null, "Capítulo 1", null, null),
+                new JourneyService.StageInput(null, "Exemplo A", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL, null, "Capítulo 1", null, null),
+                new JourneyService.StageInput(null, "Conceito B", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL, null, "Capítulo 2", null, null),
+                new JourneyService.StageInput(null, "Exemplo B", null, null, JourneyUnlockRule.PREVIOUS_STAGE_COMPLETED, JourneyCompletionRule.MANUAL, null, "Capítulo 2", null, null)
+        ));
+        var principal = new StudyPrincipal(fixture.enrollment().getStudent().getId(),
+                fixture.enrollment().getId(), fixture.classroom().getId(), StudyPrincipal.Role.STUDENT);
+        assertThat(journeyService.changeRelease(journey.id(), 1).releasedChapterCount()).isEqualTo(1);
+        var view = journeyStudyService.get(journey.id(), principal);
+        assertThat(view.modules()).hasSize(2);
+        assertThat(view.modules().getFirst().contents())
+                .extracting(JourneyStudyService.JourneyContentView::state)
+                .containsExactly(JourneyStudyService.StudyState.CURRENT, JourneyStudyService.StudyState.AVAILABLE);
+        assertThat(view.modules().get(1).contents())
+                .extracting(JourneyStudyService.JourneyContentView::state)
+                .containsOnly(JourneyStudyService.StudyState.LOCKED);
+        assertThatThrownBy(() -> journeyStudyService.content(journey.id(), journey.stages().get(2).id(), principal))
+                .hasMessageContaining("bloqueado");
+        assertThatThrownBy(() -> journeyService.changeRelease(journey.id(), 3))
+                .isInstanceOf(IllegalArgumentException.class);
+        journeyService.changeRelease(journey.id(), 2);
+        assertThat(journeyStudyService.get(journey.id(), principal).modules().get(1).contents())
+                .extracting(JourneyStudyService.JourneyContentView::state)
+                .containsOnly(JourneyStudyService.StudyState.AVAILABLE);
     }
 
     @Test

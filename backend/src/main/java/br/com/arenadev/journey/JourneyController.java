@@ -34,10 +34,10 @@ public class JourneyController {
 
     @PatchMapping("/{id}/release")
     public JourneyService.JourneyView release(@PathVariable UUID id, @RequestBody ReleaseInput input) {
-        return service.changeRelease(id, input == null ? null : input.releasedStageCount());
+        return service.changeRelease(id, input == null ? null : input.releasedChapterCount());
     }
 
-    public record ReleaseInput(Integer releasedStageCount) {}
+    public record ReleaseInput(Integer releasedChapterCount) {}
 
     @PostMapping("/{id}/publish")
     public JourneyService.JourneyView publish(@PathVariable UUID id) { return service.publish(id); }

@@ -2,7 +2,7 @@ import { apiRequest } from "./http/client";
 import { deviceClaimStorageKey } from "./app-state";
 import { HttpApiError } from "./http/errors";
 
-export type StudyState = "COMPLETED" | "CURRENT" | "LOCKED";
+export type StudyState = "COMPLETED" | "CURRENT" | "AVAILABLE" | "LOCKED";
 export type JourneyProgressSummary = { completedContents: number; totalContents: number; percent: number };
 export type JourneyStudySummary = {
   id: string;
@@ -37,6 +37,7 @@ export type JourneyStudyView = {
   progress: JourneyProgressSummary;
   modules: JourneyModuleView[];
   newlyUnlockedAchievements: AchievementView[];
+  releasedChapterCount: number | null;
 };
 export type JourneyContentDetailView = JourneyContentView & {
   body: string | null;
