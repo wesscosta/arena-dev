@@ -36,5 +36,8 @@ test("roster keeps one aligned row per student and hides destructive actions in 
   assert.match(arena, /enrollment\.active \? "Ativo" : "Inativo"/);
   assert.match(arena, /student-row-menu[\s\S]*Remover da turma[\s\S]*Apagar dados pessoais \(LGPD\)/);
   assert.match(arena, /planStudentImport\(/);
-  assert.match(css, /\.student-table-v4 \.student-table-head-v3,\.student-table-v4 \.student-table-row-v3\{grid-template-columns:minmax\(220px,1\.3fr\) minmax\(170px,1fr\) 190px 76px 124px/);
+  assert.match(css, /\.student-table-v4 \.student-row-action\{width:44px;height:44px\}/);
+  assert.match(arena, /aria-controls=\{menuOpen \?/);
+  assert.match(arena, /event\.key === "Escape"[\s\S]*trigger\?\.focus\(\)/);
+  assert.match(css, /\.student-table-v4 \.student-table-head-v3,\.student-table-v4 \.student-table-row-v3\{grid-template-columns:minmax\(220px,1\.3fr\) minmax\(170px,1fr\) 190px 76px 144px/);
 });
