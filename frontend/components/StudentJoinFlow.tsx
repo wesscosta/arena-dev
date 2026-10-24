@@ -480,7 +480,7 @@ export default function StudentJoinFlow({ embedded = false, initialCode = "" }: 
 
   return (
     <main className="student-join-shell" style={{ "--student-content-scale": studentScale } as React.CSSProperties} data-student-motion={reducedMotion ? "reduce" : undefined}>
-      <div className="student-accessibility-row"><StudentAccessibilityControls /></div>
+      {!embedded && <div className="student-accessibility-row"><StudentAccessibilityControls /></div>}
       <section className="student-join-card">
         {!embedded && <div className="student-brand"><span>A</span><div><strong>ARENA DEV</strong><small>Participação ao vivo</small></div></div>}
 
