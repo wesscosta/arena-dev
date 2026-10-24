@@ -64,8 +64,9 @@ test("release manifests and version derivation stay aligned", () => {
   assert.match(gate, /artifactId>arena-dev-api/);
 });
 
-test("release gate uses v0.11/V61 without dropping v0.10/V56, v0.9/V48 and v0.8/V38 checks", () => {
+test("release gate uses v0.11/V66 while preserving earlier v0.11 and v0.10 contract checks", () => {
   assert.match(gate, /verify-v0\.11-contract\.sh/);
+  assert.match(gate, /expected_schema_version=66/);
   assert.match(gate, /expected_schema_version=61/);
   assert.match(gate, /expected_schema_version=60/);
   assert.match(gate, /expected_schema_version=59/);
@@ -90,14 +91,14 @@ test("release gate uses v0.11/V61 without dropping v0.10/V56, v0.9/V48 and v0.8/
   assert.match(v09Contract, /physicalLegacyRemovalReady/);
 });
 
-test("final v0.11 release requires 0.11.0, the signed 11.6 attestation and a V58 backup", () => {
+test("final v0.11 release requires 0.11.0, signed 11.6 attestation and validated backup", () => {
   assert.match(gate, /RELEASE_VERSION" == "0\.11\.0"/);
   assert.match(gate, /--attestation/);
   assert.match(gate, /v011-readiness\.py/);
   assert.match(gate, /--candidate "\$head_sha"/);
   assert.match(gate, /--ci-run-id "\$run_id"/);
   assert.match(v011Contract, /verify-v0\.10-contract\.sh/);
-  assert.match(v011Contract, /V011_LAST_MIGRATION=61/);
+  assert.match(v011Contract, /V011_LAST_MIGRATION=66/);
   assert.match(v011Contract, /--check-template/);
   assert.match(v011Contract, /0\\\.11\\\.0/);
   assert.match(verifier, /arena_material_publications/);
