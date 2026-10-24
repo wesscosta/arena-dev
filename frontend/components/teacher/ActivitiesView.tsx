@@ -33,6 +33,7 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
   const [topic, setTopic] = useState("");
   const [points, setPoints] = useState(10);
   const [bonus, setBonus] = useState(5);
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState(0);
   const [resourceKind, setResourceKind] = useState<"INTERNAL" | "EXTERNAL">("INTERNAL");
   const [platform, setPlatform] = useState("");
   const [resourceUrl, setResourceUrl] = useState("");
@@ -73,6 +74,7 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
       topic: topic.trim() || undefined,
       points,
       onTimeBonus: bonus,
+      timeLimitMinutes,
       resource: {
         kind: resourceKind,
         platform: resourceKind === "EXTERNAL" ? platform.trim() || undefined : undefined,
@@ -90,6 +92,7 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
     setTopic("");
     setPoints(10);
     setBonus(5);
+    setTimeLimitMinutes(0);
     setResourceKind("INTERNAL");
     setPlatform("");
     setResourceUrl("");
@@ -115,6 +118,7 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
     setTopic(activity.topic ?? "");
     setPoints(activity.points);
     setBonus(activity.onTimeBonus);
+    setTimeLimitMinutes(activity.timeLimitMinutes ?? 0);
     setResourceKind(activity.resource?.kind ?? "INTERNAL");
     setPlatform(activity.resource?.platform ?? "");
     setResourceUrl(activity.resource?.url ?? "");
@@ -133,6 +137,10 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
   function validateDraft() {
     if (!title.trim()) {
       notify("Informe o título da atividade.");
+      return false;
+    }
+    if (!Number.isInteger(timeLimitMinutes) || timeLimitMinutes < 0 || timeLimitMinutes > 480) {
+      notify("O tempo total deve ser de 1 a 480 minutos ou 0 para não limitar.", "error");
       return false;
     }
     if (resourceKind === "EXTERNAL" && resourceUrl.trim()) {
@@ -360,6 +368,7 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
                   </div>
                   <div className="activity-card-stats">
                     <span>{activity.questions?.length ?? 0} questões</span>
+                    {activity.timeLimitMinutes != null && <span>{activity.timeLimitMinutes} min por tentativa</span>}
                     {activity.individualOptionOrder && <span>{individualOrderLabel(activity.individualQuestionOrder)}</span>}
                     <span>{submissionCount}/{students.length} entregaram</span>
                     {activity.copiedFromClassroomId && <span>Cópia reutilizada</span>}
@@ -406,6 +415,15 @@ export function ActivitiesView({ data, classroomId, classroomName, students, onU
               </div>
               {resourceKind === "EXTERNAL" && <div className="form-two"><label>Plataforma<input className="input" value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Wayground, Forms, Kahoot..." /></label><label>Link<input className="input" type="url" value={resourceUrl} onChange={(e) => setResourceUrl(e.target.value)} placeholder="https://..." /></label></div>}
               <div className="form-two"><label>XP da entrega<input className="input" type="number" min="0" value={points} onChange={(e) => setPoints(Math.max(0, Number(e.target.value) || 0))} /></label><label>Bônus no prazo<input className="input" type="number" min="0" value={bonus} onChange={(e) => setBonus(Math.max(0, Number(e.target.value) || 0))} /></label></div>
+              <fieldset className="activity-order-settings">
+                <legend>Prazo da resolução</legend>
+                <label>Tempo total da tentativa (minutos)
+                  <input className="input" type="number" min="0" max="480" step="1" value={timeLimitMinutes}
+                    disabled={orderLocked} onChange={(event) => setTimeLimitMinutes(Number(event.target.value))} />
+                </label>
+                <small>0 = sem limite (padrão). De 1 a 480 minutos a partir do primeiro início da tentativa. O prazo não reinicia ao atualizar a página.</small>
+                {orderLocked && <small>Uma tentativa já foi iniciada; a duração não pode ser alterada.</small>}
+              </fieldset>
               <fieldset className="activity-order-settings" disabled={orderLocked}>
                 <legend>{INDIVIDUAL_ORDER_SECTION}</legend>
                 <ToggleField label={INDIVIDUAL_OPTION_ORDER_LABEL} description={INDIVIDUAL_ORDER_HELP} checked={individualOptionOrder} disabled={orderLocked} onChange={(checked) => { setIndividualOptionOrder(checked); if (!checked) setIndividualQuestionOrder(false); }} />

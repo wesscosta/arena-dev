@@ -33,6 +33,7 @@ type ActivityView = {
   individualOptionOrder?: boolean;
   individualQuestionOrder?: boolean;
   orderLocked?: boolean;
+  timeLimitMinutes?: number | null;
 };
 
 export type ActivityUpsertInput = {
@@ -41,6 +42,7 @@ export type ActivityUpsertInput = {
   topic?: string;
   points: number;
   onTimeBonus: number;
+  timeLimitMinutes?: number | null;
   resource?: ActivityResource;
   questions?: ActivityQuestion[];
   individualOptionOrder?: boolean;
@@ -55,6 +57,7 @@ function mapActivity(row: ActivityView): Activity {
     topic: row.topic ?? undefined,
     points: row.points,
     onTimeBonus: row.onTimeBonus,
+    timeLimitMinutes: row.timeLimitMinutes ?? null,
     resource: {
       kind: row.resource?.kind ?? "INTERNAL",
       platform: row.resource?.platform ?? undefined,

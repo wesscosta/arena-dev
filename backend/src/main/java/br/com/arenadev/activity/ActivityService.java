@@ -51,6 +51,7 @@ public class ActivityService {
         boolean questions = Boolean.TRUE.equals(input.individualQuestionOrder());
         validateIndividualOrder(options, questions);
         activity.configureIndividualOrder(options, questions);
+        activity.configureTimeLimit(normalizeLimit(input.timeLimitMinutes()));
         applyQuestions(activity, input.questions());
         return toView(activityRepository.save(activity));
     }
@@ -69,8 +70,13 @@ public class ActivityService {
         if (orderChanged && activityRepository.hasSubmissions(activity.getId())) {
             throw new IllegalStateException("A ordem individual não pode mudar depois que um aluno iniciou a atividade.");
         }
+        Integer limit = input.timeLimitMinutes() == null ? activity.getTimeLimitMinutes() : normalizeLimit(input.timeLimitMinutes());
+        if (!Objects.equals(limit, activity.getTimeLimitMinutes()) && activityRepository.hasSubmissions(activity.getId())) {
+            throw new IllegalStateException("O tempo da atividade não pode mudar depois que um aluno iniciou a tentativa.");
+        }
         apply(activity, input);
         activity.configureIndividualOrder(options, questions);
+        activity.configureTimeLimit(limit);
         applyQuestions(activity, input.questions());
         return toView(activity);
     }
@@ -85,6 +91,7 @@ public class ActivityService {
                 source.getResourceKind(), source.getResourcePlatform(), source.getResourceUrl()
         );
         copy.configureIndividualOrder(source.isIndividualOptionOrder(), source.isIndividualQuestionOrder());
+        copy.configureTimeLimit(source.getTimeLimitMinutes());
         copy.markCopiedFrom(source);
 
         Map<UUID, ActivityQuestion> copiedQuestions = new HashMap<>();
@@ -187,6 +194,14 @@ public class ActivityService {
         if (input.points() < 0 || input.onTimeBonus() < 0) throw new IllegalArgumentException("XP e bônus não podem ser negativos.");
     }
 
+    private static Integer normalizeLimit(Integer minutes) {
+        if (minutes == null || minutes == 0) return null;
+        if (minutes < 1 || minutes > 480) {
+            throw new IllegalArgumentException("O tempo da atividade deve estar entre 1 e 480 minutos, ou 0 para sem limite.");
+        }
+        return minutes;
+    }
+
     private static void validateIndividualOrder(boolean options, boolean questions) {
         if (questions && !options) {
             throw new IllegalArgumentException("Embaralhar as questões exige embaralhar as alternativas.");
@@ -275,7 +290,8 @@ public class ActivityService {
                 activity.getId(), activity.getClassroom().getId(), activity.getTitle(), activity.getTopic(), activity.getPoints(),
                 activity.getOnTimeBonus(), new ResourceView(activity.getResourceKind(), activity.getResourcePlatform(), activity.getResourceUrl()),
                 questions, activity.getCreatedAt(), activity.getUpdatedAt(), activity.getCopiedFromActivityId(), activity.getCopiedFromClassroomId(),
-                activity.isIndividualOptionOrder(), activity.isIndividualQuestionOrder(), orderLocked
+                activity.isIndividualOptionOrder(), activity.isIndividualQuestionOrder(), orderLocked,
+                activity.getTimeLimitMinutes()
         );
     }
 
@@ -295,13 +311,20 @@ public class ActivityService {
     public record ActivityInput(
             UUID classroomId, String title, String topic, int points, int onTimeBonus,
             ResourceInput resource, List<QuestionInput> questions,
-            Boolean individualOptionOrder, Boolean individualQuestionOrder
+            Boolean individualOptionOrder, Boolean individualQuestionOrder,
+            Integer timeLimitMinutes
     ) {
+        public ActivityInput(UUID classroomId, String title, String topic, int points, int onTimeBonus,
+                             ResourceInput resource, List<QuestionInput> questions,
+                             Boolean individualOptionOrder, Boolean individualQuestionOrder) {
+            this(classroomId, title, topic, points, onTimeBonus, resource, questions,
+                    individualOptionOrder, individualQuestionOrder, null);
+        }
         public ActivityInput(
                 UUID classroomId, String title, String topic, int points, int onTimeBonus,
                 ResourceInput resource, List<QuestionInput> questions
         ) {
-            this(classroomId, title, topic, points, onTimeBonus, resource, questions, null, null);
+            this(classroomId, title, topic, points, onTimeBonus, resource, questions, null, null, null);
         }
     }
     public record ResourceInput(ActivityResourceKind kind, String platform, String url) {}
@@ -317,7 +340,8 @@ public class ActivityService {
             UUID id, UUID classroomId, String title, String topic, int points, int onTimeBonus,
             ResourceView resource, List<QuestionView> questions, Instant createdAt, Instant updatedAt,
             UUID copiedFromActivityId, UUID copiedFromClassroomId,
-            boolean individualOptionOrder, boolean individualQuestionOrder, boolean orderLocked
+            boolean individualOptionOrder, boolean individualQuestionOrder, boolean orderLocked,
+            Integer timeLimitMinutes
     ) {}
     public record ResourceView(ActivityResourceKind kind, String platform, String url) {}
     public record QuestionView(

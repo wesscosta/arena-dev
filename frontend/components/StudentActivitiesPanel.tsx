@@ -2,7 +2,7 @@
 
 import { secureId } from "@/lib/secure-id";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StudentJoinAccess } from "@/lib/realtime-api";
 import {
   fetchParticipantActivities,
@@ -15,6 +15,7 @@ import {
   type ParticipantSubmissionKind,
 } from "@/lib/participant-submission-api";
 import styles from "./StudentActivitiesPanel.module.css";
+import ParticipantDeadlineTimer from "./ParticipantDeadlineTimer";
 import { DialogCloseButton } from "@/components/ui";
 import StudentAccessibilityControls from "@/components/student/StudentAccessibilityControls";
 import { persistChangedQuestionDrafts } from "@/lib/submission-drafts";
@@ -79,6 +80,29 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
   }
 
   useEffect(() => { void load(); }, [access.code, access.token]);
+
+  const refreshAfterDeadline = useCallback(async () => {
+    try {
+      const loaded = await fetchParticipantActivities(access.code, access.token);
+      setActivities(loaded);
+      const id = activeActivityRef.current?.id;
+      const updated = loaded.find((activity) => activity.id === id);
+      if (updated) {
+        activeActivityRef.current = updated;
+        if (updated.deadlineAt && updated.submissionStatus !== "IN_PROGRESS") {
+          const restored: Record<string, string> = {};
+          for (const question of updated.questions) restored["q:" + question.id] = existingValue(updated, question.id);
+          restored.generic = contentValue(genericItem(updated)?.content);
+          setDrafts(restored);
+          setSaveState("saved");
+          setError("Tempo encerrado. A tentativa foi finalizada com as respostas que o servidor havia salvado até o prazo. Rascunhos não salvos não foram enviados.");
+        }
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível atualizar o status do prazo.");
+    }
+  }, [access.code, access.token]);
+  const onDeadlineExpired = useCallback(() => { void refreshAfterDeadline(); }, [refreshAfterDeadline]);
 
   const open = useMemo(() => activities.find((activity) => activity.id === openId) ?? null, [activities, openId]);
 
@@ -275,7 +299,7 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
     <div className={styles.list}>
       {activities.map((activity) => <article className={styles.card} key={activity.id}>
         <div className={styles.cardHead}>
-          <div><h3>{activity.title}</h3><div className={styles.meta}><span>{activity.topic || "Atividade"}</span><span>{activity.points} XP previsto</span><span>{activity.questions.length} questão(ões)</span></div></div>
+          <div><h3>{activity.title}</h3><div className={styles.meta}><span>{activity.topic || "Atividade"}</span><span>{activity.points} XP previsto</span><span>{activity.questions.length} questão(ões)</span>{activity.timeLimitMinutes != null && <span>{activity.timeLimitMinutes} min após iniciar</span>}</div></div>
           <span className={styles.status}>{statusLabel(activity.submissionStatus)}</span>
         </div>
         <button type="button" className={`${styles.action} ${activity.submissionStatus === "NOT_STARTED" ? styles.primary : ""}`} disabled={disabled || busy} onClick={() => void openActivity(activity)}>
@@ -296,6 +320,9 @@ export default function StudentActivitiesPanel({ access, disabled }: { access: S
               <div className={styles.runnerProgress}>
                 <div><strong>{questionIndex + 1}</strong><span>/ {total}</span></div>
                 <div className={styles.runnerTrack}><span style={{ width: `${total ? ((questionIndex + 1) / total) * 100 : 0}%` }} /></div>
+                {open.deadlineAt && open.serverNow && open.submissionStatus === "IN_PROGRESS"
+                  ? <ParticipantDeadlineTimer deadlineAt={open.deadlineAt} serverNow={open.serverNow} onExpire={onDeadlineExpired} />
+                  : open.deadlineAt && open.submittedAt && <small>Prazo finalizado</small>}
                 <small className={styles.saveState} role="status" aria-live="polite">{!editable ? statusLabel(open.submissionStatus) : saveState === "saving" ? "Salvando…" : saveState === "error" ? "Falha ao salvar" : saveState === "saved" ? `✓ Salvo${savedAt ? ` às ${savedAt}` : ""}` : "✓ Autosave ativo"}</small>
               </div>
 

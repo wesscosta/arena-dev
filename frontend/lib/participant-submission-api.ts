@@ -36,6 +36,10 @@ export type ParticipantActivity = {
   items: ParticipantSubmissionItem[];
   publishedFeedback: string | null;
   feedbackPublishedAt: string | null;
+  timeLimitMinutes: number | null;
+  deadlineAt: string | null;
+  /** Timestamp do backend para calibrar a contagem; relógio do browser é apenas visual. */
+  serverNow: string;
 };
 
 

@@ -47,6 +47,9 @@ public class Activity {
     @Column(name = "individual_question_order", nullable = false)
     private boolean individualQuestionOrder;
 
+    @Column(name = "time_limit_minutes")
+    private Integer timeLimitMinutes;
+
     @Column(name = "copied_from_activity_id")
     private UUID copiedFromActivityId;
 
@@ -103,6 +106,10 @@ public class Activity {
         this.individualQuestionOrder = questions;
     }
 
+    public void configureTimeLimit(Integer minutes) {
+        this.timeLimitMinutes = minutes;
+    }
+
     public void markCopiedFrom(Activity source) {
         this.copiedFromActivityId = source.getId();
         this.copiedFromClassroomId = source.getClassroom().getId();
@@ -136,6 +143,7 @@ public class Activity {
     public ActivityResourceKind getResourceKind() { return resourceKind; }
     public String getResourcePlatform() { return resourcePlatform; }
     public String getResourceUrl() { return resourceUrl; }
+    public Integer getTimeLimitMinutes() { return timeLimitMinutes; }
     public boolean isIndividualOptionOrder() { return individualOptionOrder; }
     public boolean isIndividualQuestionOrder() { return individualQuestionOrder; }
     public UUID getCopiedFromActivityId() { return copiedFromActivityId; }
