@@ -62,3 +62,5 @@
 ## Gates subsequentes
 
 11.0–11.6 integradas; **pacote técnico encerrado e congelado**. A release permanece **NO-GO operacional** até evidência real dos oito gates. Redesign e Active Learning foram reservados ao [roadmap v0.12](../ROADMAP_V0_12.md).
+
+**Marco 24/10/2026:** desenvolvimento **CONCLUÍDO** ([issue #37](https://github.com/wesscosta/arena-dev/issues/37)). Gate de homologação e publicação estável separado na [issue #110](https://github.com/wesscosta/arena-dev/issues/110): oito testes de campo ainda pendentes, portanto release NO-GO.
