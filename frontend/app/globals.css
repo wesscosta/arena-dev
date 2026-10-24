@@ -2678,7 +2678,7 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 @media (max-width:640px){.toast{right:16px;left:16px;bottom:16px;max-width:none}}
 
 /* v0.12: lista de alunos com colunas fixas (Aluno, Nome na turma, XP, Situação, Ações) e prévia da importação. */
-.student-table-v4 .student-table-head-v3,.student-table-v4 .student-table-row-v3{grid-template-columns:minmax(220px,1.3fr) minmax(170px,1fr) 190px 76px 124px;gap:16px}
+.student-table-v4 .student-table-head-v3,.student-table-v4 .student-table-row-v3{grid-template-columns:minmax(220px,1.3fr) minmax(170px,1fr) 190px 76px 144px;gap:16px}
 .student-table-v4 .student-table-row-v3{min-height:64px;padding:10px 8px}
 .student-table-v4 .student-identity-v3{min-width:0}
 .student-table-v4 .student-identity-copy{display:grid;gap:2px;min-width:0}
@@ -2698,6 +2698,7 @@ html[data-theme="light"] .classroom-lifecycle-confirmation {
 .student-badge.is-inactive{color:var(--muted)}
 .student-badge.is-pending{border-color:color-mix(in srgb,var(--warning,#f5b942) 60%,var(--border));background:color-mix(in srgb,var(--warning,#f5b942) 12%,transparent);color:var(--text)}
 .student-table-v4 .student-row-actions{gap:6px}
+.student-table-v4 .student-row-action{width:44px;height:44px}
 .student-row-more{position:relative}
 .student-row-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;min-width:250px;display:grid;padding:6px;border:1px solid var(--border);border-radius:10px;background:var(--surface);box-shadow:0 12px 32px rgb(0 0 0 / .28)}
 .student-row-menu button{min-height:40px;white-space:nowrap;padding:0 12px;border:0;border-radius:7px;background:transparent;color:var(--text);font:inherit;font-size:14px;text-align:left;cursor:pointer}

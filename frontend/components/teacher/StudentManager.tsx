@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { planStudentImport, type StudentImportStatus } from "@/lib/student-import";
 import { type Notify } from "@/components/ui";
 import { xpForStudent } from "@/lib/game";
@@ -43,6 +43,8 @@ export function StudentManager({
   >({});
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
   const [menuStudentId, setMenuStudentId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
@@ -76,14 +78,45 @@ export function StudentManager({
   const importSkipped = importPlan.length - importable.length;
   useEffect(() => {
     if (!menuStudentId) return;
-    function close(event: PointerEvent | KeyboardEvent) {
-      if (event instanceof KeyboardEvent ? event.key === "Escape" : !(event.target as Element).closest?.(".student-row-more")) setMenuStudentId(null);
+    const trigger = menuTriggerRef.current;
+    const menu = menuRef.current;
+    const actions = Array.from(menu?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+    actions[0]?.focus();
+
+    function onPointerDown(event: PointerEvent) {
+      if (event.target instanceof Node && !menu?.contains(event.target) && !trigger?.contains(event.target)) {
+        setMenuStudentId(null);
+      }
     }
-    document.addEventListener("pointerdown", close);
-    document.addEventListener("keydown", close);
+    function onFocusIn(event: FocusEvent) {
+      if (event.target instanceof Node && !menu?.contains(event.target) && !trigger?.contains(event.target)) {
+        setMenuStudentId(null);
+      }
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMenuStudentId(null);
+        trigger?.focus();
+        return;
+      }
+      if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+      if (!(event.target instanceof Node) || !menu?.contains(event.target) || !actions.length) return;
+      event.preventDefault();
+      const currentIndex = actions.indexOf(document.activeElement as HTMLButtonElement);
+      const targetIndex = event.key === "Home" ? 0
+        : event.key === "End" ? actions.length - 1
+        : event.key === "ArrowDown" ? (currentIndex + 1) % actions.length
+        : (currentIndex + actions.length - 1) % actions.length;
+      actions[targetIndex]?.focus();
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("keydown", onKeyDown);
     return () => {
-      document.removeEventListener("pointerdown", close);
-      document.removeEventListener("keydown", close);
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("keydown", onKeyDown);
     };
   }, [menuStudentId]);
 
@@ -292,7 +325,7 @@ export function StudentManager({
                 <input
                   type="search"
                   value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onChange={(event) => { setSearchQuery(event.target.value); setMenuStudentId(null); }}
                   placeholder="Buscar por nome, nome de exibição ou e-mail..."
                   aria-label="Buscar participante"
                 />
@@ -453,16 +486,21 @@ export function StudentManager({
                         <button
                           type="button"
                           className="student-row-action"
+                          ref={menuOpen ? menuTriggerRef : undefined}
                           aria-label={`Mais ações para ${student.name}`}
                           aria-haspopup="menu"
                           aria-expanded={menuOpen}
+                          aria-controls={menuOpen ? `student-actions-${student.id}` : undefined}
                           title="Mais ações"
-                          onClick={() => setMenuStudentId(menuOpen ? null : student.id)}
+                          onClick={(event) => {
+                            menuTriggerRef.current = event.currentTarget;
+                            setMenuStudentId(menuOpen ? null : student.id);
+                          }}
                         >
                           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.4" fill="currentColor" /><circle cx="12" cy="12" r="1.4" fill="currentColor" /><circle cx="18.5" cy="12" r="1.4" fill="currentColor" /></svg>
                         </button>
                         {menuOpen && (
-                          <div className="student-row-menu" role="menu">
+                          <div id={`student-actions-${student.id}`} ref={menuRef} className="student-row-menu" role="menu" aria-label={`Ações para ${student.name}`}>
                             <button
                               type="button"
                               role="menuitem"

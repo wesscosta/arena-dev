@@ -42,6 +42,10 @@ export function ClassroomManagementPage({
   const activityCount = data.activities.filter((activity) => activity.classroomId === classroom.id).length;
   const scoreCount = data.scoreEvents.filter((event) => event.classroomId === classroom.id).length;
   const deleteConfirmed = deleteConfirmation === classroom.name;
+  const hasUnsavedChanges = name.trim() !== classroom.name
+    || code.trim() !== classroom.code.trim()
+    || themeColor !== (classroom.themeColor ?? "emerald")
+    || themeIcon !== (classroom.themeIcon ?? "code");
   const appearancePreview = classroomThemePresentation({ ...classroom, themeColor, themeIcon });
 
   useEffect(() => {
@@ -59,6 +63,11 @@ export function ClassroomManagementPage({
     classroom.themeIcon,
     initialAction,
   ]);
+
+  function backToClassroom() {
+    if (hasUnsavedChanges && !window.confirm("Há alterações não salvas nesta turma. Deseja descartá-las?")) return;
+    onBack();
+  }
 
   async function save() {
     if (!name.trim() || busy) return;
@@ -153,10 +162,10 @@ export function ClassroomManagementPage({
           <p>Identidade, aparência, status e ciclo de vida desta turma.</p>
         </div>
         <div className="classroom-settings-heading-actions">
-          <button className="button ghost" type="button" onClick={onBack}>
+          <button className="button ghost" type="button" onClick={backToClassroom}>
             ← Voltar para a turma
           </button>
-          <button className="button primary" type="button" disabled={busy || !name.trim()} onClick={() => { void save(); }}>
+          <button className="button primary" type="button" disabled={busy || !name.trim() || !hasUnsavedChanges} onClick={() => { void save(); }}>
             {busy ? "Salvando..." : "Salvar alterações"}
           </button>
         </div>
