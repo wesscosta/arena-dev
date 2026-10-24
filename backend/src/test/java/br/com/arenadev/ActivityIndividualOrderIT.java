@@ -77,6 +77,9 @@ class ActivityIndividualOrderIT {
     private JdbcTemplate jdbc;
 
     @Autowired
+    private br.com.arenadev.submission.SubmissionDeadlineSweep deadlineSweep;
+
+    @Autowired
     private JsonMapper json;
 
     private HttpClient teacher;
@@ -192,6 +195,100 @@ class ActivityIndividualOrderIT {
         ActivityView view = activityService.get(legacy);
         assertThat(view.individualOptionOrder()).isFalse();
         assertThat(view.individualQuestionOrder()).isFalse();
+    }
+
+    @Test
+    void activityTimeLimitStartsOnceAndCopiesButCannotChangeAfterAttempt() throws Exception {
+        Fixture fixture = fixture(false, false);
+        ActivityView original = activityService.get(fixture.activityId());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> input = json.readValue(
+                body(original, null, null, original.title()), Map.class);
+        input.put("timeLimitMinutes", 15);
+        HttpResponse<String> updated = teacherSend("PUT", "/api/activities/" + fixture.activityId(),
+                json.writeValueAsString(input));
+        assertThat(updated.statusCode()).as(updated.body()).isEqualTo(200);
+        assertThat(activityService.get(fixture.activityId()).timeLimitMinutes()).isEqualTo(15);
+
+        Map<String, Object> started = start(fixture, fixture.tokens().getFirst());
+        assertThat(started.get("timeLimitMinutes")).isEqualTo(15);
+        assertThat(started.get("deadlineAt")).isNotNull();
+        assertThat(java.time.Instant.parse((String) started.get("deadlineAt"))
+                .isAfter(java.time.Instant.parse((String) started.get("startedAt")))).isTrue();
+        Map<String, Object> repeat = start(fixture, fixture.tokens().getFirst());
+        assertThat(repeat.get("deadlineAt")).isEqualTo(started.get("deadlineAt"));
+
+        input.put("timeLimitMinutes", 30);
+        HttpResponse<String> changed = teacherSend("PUT", "/api/activities/" + fixture.activityId(),
+                json.writeValueAsString(input));
+        assertThat(changed.statusCode()).as(changed.body()).isEqualTo(409);
+        assertThat(activityService.get(fixture.activityId()).timeLimitMinutes()).isEqualTo(15);
+
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        UUID destination = classroomService.create("Cópia com prazo " + suffix, "T" + suffix).id();
+        assertThat(activityService.copy(fixture.activityId(), destination).timeLimitMinutes()).isEqualTo(15);
+    }
+
+    @Test
+    void expiredDeadlineFinalizesOnlySavedAnswersAndRejectsLateWrites() throws Exception {
+        Fixture fixture = fixture(false, false);
+        ActivityView original = activityService.get(fixture.activityId());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> input = json.readValue(
+                body(original, null, null, original.title()), Map.class);
+        input.put("timeLimitMinutes", 1);
+        assertThat(teacherSend("PUT", "/api/activities/" + fixture.activityId(),
+                json.writeValueAsString(input)).statusCode()).isEqualTo(200);
+        Map<String, Object> started = start(fixture, fixture.tokens().getFirst());
+        String submissionId = (String) started.get("submissionId");
+        Map<String, Object> question = multipleChoice(started).getFirst();
+        UUID questionId = UUID.fromString((String) question.get("id"));
+        UUID itemId = UUID.randomUUID();
+        String url = "/" + fixture.activityId() + "/submissions/" + submissionId;
+        String savedBody = json.writeValueAsString(Map.of(
+                "kind", "QUESTION_RESPONSE", "questionId", questionId, "position", 0,
+                "content", Map.of("value", optionId(question, "Alternativa B"))));
+        HttpResponse<String> saved = participantSend(fixture, fixture.tokens().getFirst(), "PUT",
+                url + "/items/" + itemId, savedBody);
+        assertThat(saved.statusCode()).as(saved.body()).isEqualTo(200);
+
+        jdbc.update("update activity_submissions set deadline_at = now() - interval '1 second' where id = ?",
+                UUID.fromString(submissionId));
+        deadlineSweep.sweep(); // also finalizes without a browser polling the activity
+        deadlineSweep.sweep(); // idempotent: no second submit event
+        assertThat(jdbc.queryForObject("select count(*) from submission_process_events where submission_id = ? and event_type = 'SUBMITTED'",
+                Long.class, UUID.fromString(submissionId))).isEqualTo(1L);
+        Map<String, Object> expired = card(list(fixture, fixture.tokens().getFirst()), fixture.activityId());
+        assertThat(expired.get("submissionStatus")).isEqualTo("SUBMITTED");
+        assertThat(expired.get("submittedAt")).isNotNull();
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> items = (List<Map<String, Object>>) expired.get("items");
+        assertThat(items).hasSize(1);
+        HttpResponse<String> late = participantSend(fixture, fixture.tokens().getFirst(), "PUT",
+                url + "/items/" + itemId, savedBody);
+        assertThat(late.statusCode()).as(late.body()).isEqualTo(409);
+        HttpResponse<String> retryExpired = participantSend(fixture, fixture.tokens().getFirst(), "POST",
+                url + "/submit", null);
+        assertThat(retryExpired.statusCode()).as(retryExpired.body()).isEqualTo(200);
+        assertThat(jdbc.queryForObject("select count(*) from submission_items where submission_id = ?",
+                Long.class, UUID.fromString(submissionId))).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select status from activity_submissions where id = ?",
+                String.class, UUID.fromString(submissionId))).isEqualTo("SUBMITTED");
+    }
+
+    @Test
+    void unlimitedLegacyActivitiesRemainUntimedAndInvalidDurationsAreRejected() throws Exception {
+        Fixture fixture = fixture(false, false);
+        assertThat(activityService.get(fixture.activityId()).timeLimitMinutes()).isNull();
+        Map<String, Object> started = start(fixture, fixture.tokens().getFirst());
+        assertThat(started.get("deadlineAt")).isNull();
+
+        ActivityView original = activityService.get(fixture.activityId());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> input = json.readValue(body(original, null, null, original.title()), Map.class);
+        input.put("timeLimitMinutes", 481);
+        assertThat(teacherSend("PUT", "/api/activities/" + fixture.activityId(),
+                json.writeValueAsString(input)).statusCode()).isEqualTo(400);
     }
 
     private Fixture fixture(boolean optionOrder, boolean questionOrder) {

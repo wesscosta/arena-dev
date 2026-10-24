@@ -218,6 +218,8 @@ export interface Activity {
   topic?: string;
   points: number;
   onTimeBonus: number;
+  /** Nulo: atividade sem limite. Limites configuráveis são aplicados no servidor. */
+  timeLimitMinutes?: number | null;
   resource?: ActivityResource;
   questions?: ActivityQuestion[];
   createdAt: string;

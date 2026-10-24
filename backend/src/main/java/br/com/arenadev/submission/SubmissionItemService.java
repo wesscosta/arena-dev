@@ -20,20 +20,23 @@ public class SubmissionItemService {
     private final ActivityQuestionRepository questionRepository;
     private final SubmissionProcessEvidenceService processEvidenceService;
     private final JsonMapper json;
+    private final SubmissionDeadlineService deadlineService;
 
     public SubmissionItemService(
             ActivitySubmissionRepository submissionRepository,
             SubmissionItemRepository itemRepository,
             ActivityQuestionRepository questionRepository,
             SubmissionProcessEvidenceService processEvidenceService,
+            SubmissionDeadlineService deadlineService,
             JsonMapper json
     ) {
         this.submissionRepository = submissionRepository;
         this.itemRepository = itemRepository;
         this.questionRepository = questionRepository;
         this.processEvidenceService = processEvidenceService;
-            this.json = json;
-}
+        this.deadlineService = deadlineService;
+        this.json = json;
+    }
 
     @Transactional
     public SubmissionItem saveItem(
@@ -42,7 +45,8 @@ public class SubmissionItemService {
             UUID itemId,
             SaveItem command
     ) {
-        ActivitySubmission submission = getSubmission(activityId, submissionId);
+        deadlineService.expireIfDue(submissionId);
+        ActivitySubmission submission = getSubmissionLocked(activityId, submissionId);
         ensureEditable(submission);
 
         if (command.kind() == null) {
@@ -99,7 +103,8 @@ public class SubmissionItemService {
             UUID submissionId,
             UUID itemId
     ) {
-        ActivitySubmission submission = getSubmission(activityId, submissionId);
+        deadlineService.expireIfDue(submissionId);
+        ActivitySubmission submission = getSubmissionLocked(activityId, submissionId);
         ensureEditable(submission);
 
         SubmissionItem item = itemRepository
@@ -123,7 +128,12 @@ public class SubmissionItemService {
             UUID activityId,
             UUID submissionId
     ) {
-        ActivitySubmission submission = getSubmission(activityId, submissionId);
+        deadlineService.expireIfDue(submissionId);
+        ActivitySubmission submission = getSubmissionLocked(activityId, submissionId);
+        if (!submission.isEditable() && submission.getDeadlineAt() != null &&
+                submission.getDeadlineAt().equals(submission.getSubmittedAt())) {
+            return submission; // Expired: only confirmed, saved responses were finalized.
+        }
 
         try {
             submission.submit(Instant.now());
@@ -137,6 +147,13 @@ public class SubmissionItemService {
         ActivitySubmission saved = submissionRepository.save(submission);
         processEvidenceService.recordSubmitted(saved);
         return saved;
+    }
+
+    private ActivitySubmission getSubmissionLocked(UUID activityId, UUID submissionId) {
+        ActivitySubmission submission = submissionRepository.findLocked(submissionId)
+                .orElseThrow(() -> notFound("Entrega não encontrada."));
+        if (!submission.getActivity().getId().equals(activityId)) throw notFound("Entrega não encontrada para esta atividade.");
+        return submission;
     }
 
     private ActivitySubmission getSubmission(
@@ -211,6 +228,11 @@ public class SubmissionItemService {
     }
 
     private void ensureEditable(ActivitySubmission submission) {
+        if (submission.isEditable() && submission.getDeadlineAt() != null
+                && !Instant.now().isBefore(submission.getDeadlineAt())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "O tempo da atividade terminou. Somente as respostas salvas até o prazo serão consideradas.");
+        }
         if (!submission.isEditable()) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,

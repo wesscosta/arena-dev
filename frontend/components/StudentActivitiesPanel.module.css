@@ -60,3 +60,6 @@
 
 .runnerActions{display:flex;align-items:center;justify-content:flex-end;justify-self:end;gap:8px;min-width:0}.runnerAccessibility{position:relative}.runnerAccessibility summary{list-style:none;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0 10px;border-radius:8px;border:1px solid var(--border);font-size:.78rem;color:var(--text)}.runnerAccessibility summary::-webkit-details-marker{display:none}.runnerAccessibility summary:focus-visible{outline:2px solid var(--ds-accent-text);outline-offset:2px}.runnerAccessibilityPanel{position:absolute;right:0;top:calc(100% + 8px);z-index:3;width:min(360px,calc(100vw - 28px));padding:8px;border:1px solid var(--border);border-radius:10px;background:var(--ds-surface-raised);box-shadow:0 12px 28px rgba(0,0,0,.2)}
 @media(max-width:460px){.runnerAccessibility summary{padding:0 6px;font-size:.71rem}}
+/* Timed evaluation indicator: visible in narrow runners without hiding save feedback. */
+.runnerProgress [role="timer"]{display:inline-flex;align-items:center;justify-content:flex-end;min-height:32px;color:var(--ds-text-primary);font-variant-numeric:tabular-nums;font-weight:750;font-size:.85rem;white-space:nowrap}
+@media(max-width:720px){.runnerProgress [role="timer"]{grid-column:1/-1;justify-content:flex-start;font-size:.87rem}}

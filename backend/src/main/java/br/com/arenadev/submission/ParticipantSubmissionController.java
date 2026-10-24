@@ -35,6 +35,7 @@ public class ParticipantSubmissionController {
     private final SubmissionAssessmentRepository assessmentRepository;
     private final OptionIdCipher optionIds;
     private final JsonMapper json;
+    private final SubmissionDeadlineService deadlineService;
 
     public ParticipantSubmissionController(
             SessionJoinService joinService,
@@ -46,6 +47,7 @@ public class ParticipantSubmissionController {
             SubmissionItemService itemService,
             SubmissionAssessmentRepository assessmentRepository,
             OptionIdCipher optionIds,
+            SubmissionDeadlineService deadlineService,
             JsonMapper json
     ) {
         this.joinService = joinService;
@@ -57,6 +59,7 @@ public class ParticipantSubmissionController {
         this.itemService = itemService;
         this.assessmentRepository = assessmentRepository;
         this.optionIds = optionIds;
+        this.deadlineService = deadlineService;
         this.json = json;
     }
 
@@ -124,15 +127,20 @@ public class ParticipantSubmissionController {
         ActivitySubmission submission = submissionRepository
                 .findByActivityIdAndEnrollmentIdAndAttemptNumber(activity.getId(), enrollment.getId(), 1)
                 .orElse(null);
+        if (submission != null && submission.isEditable() && submission.getDeadlineAt() != null
+                && !Instant.now().isBefore(submission.getDeadlineAt())) {
+            submission = deadlineService.expireIfDue(submission.getId());
+        }
 
         List<ActivityQuestion> questions = questionRepository.findByActivityIdOrderByPositionAsc(activity.getId());
         Map<UUID, ActivityQuestion> questionById = new LinkedHashMap<>();
         for (ActivityQuestion question : questions) questionById.put(question.getId(), question);
 
+        UUID attemptId = submission == null ? null : submission.getId();
         List<SubmissionItemView> items = submission == null
                 ? List.of()
                 : itemService.list(activity.getId(), submission.getId()).stream()
-                        .map(item -> item(item, questionById, submission.getId()))
+                        .map(item -> item(item, questionById, attemptId))
                         .toList();
 
         SubmissionAssessment assessment = submission == null
@@ -152,7 +160,10 @@ public class ParticipantSubmissionController {
                 submission == null ? null : submission.getSubmittedAt(),
                 items,
                 assessment == null ? null : assessment.getPublishedFeedback(),
-                assessment == null ? null : assessment.getFeedbackPublishedAt()
+                assessment == null ? null : assessment.getFeedbackPublishedAt(),
+                activity.getTimeLimitMinutes(),
+                submission == null ? null : submission.getDeadlineAt(),
+                Instant.now()
         );
     }
 
@@ -318,7 +329,10 @@ public class ParticipantSubmissionController {
             Instant submittedAt,
             List<SubmissionItemView> items,
             String publishedFeedback,
-            Instant feedbackPublishedAt
+            Instant feedbackPublishedAt,
+            Integer timeLimitMinutes,
+            Instant deadlineAt,
+            Instant serverNow
     ) {}
 
     public record QuestionView(

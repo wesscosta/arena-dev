@@ -43,6 +43,9 @@ public class ActivitySubmission {
     @Column(name = "started_at", nullable = false, updatable = false)
     private Instant startedAt = Instant.now();
 
+    @Column(name = "deadline_at")
+    private Instant deadlineAt;
+
     @Column(name = "submitted_at")
     private Instant submittedAt;
 
@@ -66,6 +69,9 @@ public class ActivitySubmission {
         this.enrollment = enrollment;
         this.attemptNumber = attemptNumber;
         this.source = source;
+        if (activity.getTimeLimitMinutes() != null) {
+            this.deadlineAt = this.startedAt.plusSeconds(activity.getTimeLimitMinutes() * 60L);
+        }
     }
 
     @PreUpdate
@@ -78,6 +84,7 @@ public class ActivitySubmission {
     public SubmissionSource getSource() { return source; }
     public int getAttemptNumber() { return attemptNumber; }
     public Instant getStartedAt() { return startedAt; }
+    public Instant getDeadlineAt() { return deadlineAt; }
     public Instant getSubmittedAt() { return submittedAt; }
     public Instant getReturnedAt() { return returnedAt; }
     public Instant getCreatedAt() { return createdAt; }
