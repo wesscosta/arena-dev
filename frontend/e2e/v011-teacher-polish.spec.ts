@@ -21,7 +21,7 @@ async function login(page: Page) {
   await expect(page.getByRole("heading", { name: "Suas turmas" })).toBeVisible();
 }
 
-test.describe("v0.11 — navegação acessível dos participantes e edição segura de turma", () => {
+test.describe("v0.11 / 11.4 — navegação acessível dos participantes e edição segura de turma", () => {
   let api: APIRequestContext;
   let csrfHeaders: Record<string, string>;
   let classroom: { id: string; name: string };
