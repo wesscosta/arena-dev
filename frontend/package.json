@@ -1,6 +1,6 @@
 {
   "name": "arena-dev-web",
-  "version": "0.11.0-rc.7",
+  "version": "0.11.0-rc.8",
   "private": true,
   "scripts": {
     "dev": "next dev",

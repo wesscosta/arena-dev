@@ -1,6 +1,16 @@
-# Arena Dev v0.11.0 — Material Presentation (candidata)
+# Arena Dev v0.11.0 — Material Presentation e Jornada (pré-release)
 
-**Status: pré-release `v0.11.0-rc.7` (20/10/2026), NO-GO operacional para `0.11.0`.** A rc.7 substitui a rc.6 antes de qualquer gate de campo: contraste da área de estudos nos dois temas e ajustes de uso vistos pelo professor. Os 8 gates rodam na tag `v0.11.0-rc.7`; não há tag `v0.11.0` nem release estável antes do aceite assinado validado por `release-gate.sh final --attestation`.
+**Situação em 24/10/2026:** desenvolvimento funcional encerrado; candidata **v0.11.0-rc.8**, com homologação operacional **NO-GO**. A rc.8 substitui rc.7 como candidata técnica após a tag no SHA validado. A última versão estável permanece v0.10.0.
+
+## rc.8 — fechamento funcional e estabilização (24/10/2026)
+
+- **Material e projetor:** publicação versionada, leitor seguro, navegação por seções, reconexão e revogação, com autorização explícita.
+- **Jornada:** professor libera os primeiros N capítulos/módulos inteiros de uma Jornada publicada (0..total); bloqueio efetivo no backend e preservação da conclusão. Progressão legada mantida até ativação docente. Flyway **V66**.
+- **Aluno:** menu mobile completo, Configurações centralizadas e remoção de controles duplicados da entrada ao vivo incorporada.
+- **Integridade:** gestão de turmas/participantes, rascunhos, dependências, experiências de Atividades e validação E2E de liberação/rebloqueio.
+- **Qualidade:** regressão Java/PostgreSQL, frontend, TypeScript e E2E Chromium/WebKit. [Evidências e limites](v0.11/11.10_RELEASE_INTEGRATED_REGRESSION_2026-10-24.md).
+- **Metadados:** backend, frontend e lockfile em **0.11.0-rc.8**, migrações **V1–V66**.
+- **Limite:** esta pré-release **não é versão operacional homologada**. Oito gates 11.6 seguem pendentes na [issue #110](https://github.com/wesscosta/arena-dev/issues/110).
 
 ## Principais entregas da candidata
 

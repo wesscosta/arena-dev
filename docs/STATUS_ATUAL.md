@@ -6,6 +6,7 @@
 | --- | --- | --- |
 | `v0.9.0` | Publicada, congelada; Flyway V48 | [`RELEASE_0_9.md`](RELEASE_0_9.md) |
 | `v0.10.0` | **Publicada**, Flyway V56, edição self-hosted docente único | [`RELEASE_0_10.md`](RELEASE_0_10.md) |
+| `v0.11.0-rc.8` | **Nova candidata técnica de 24/10/2026**; Flyway V66, desenvolvimento concluído, release estável NO-GO até [issue #110](https://github.com/wesscosta/arena-dev/issues/110). | [Notas](RELEASE_0_11.md) |
 | `v0.11` — desenvolvimento | **CONCLUÍDO em 24/10/2026**: [issue #37 encerrada](https://github.com/wesscosta/arena-dev/issues/37); entrega funcional da v0.11 com CI 3/3 no SHA 86fd31b. **Homologação e publicação estável seguem NO-GO**, acompanhadas na [issue #110](https://github.com/wesscosta/arena-dev/issues/110). | [Plano 11.6](v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md) |
 | `v0.11.0-rc.7` | Candidata **histórica** de 20/10, anterior à main atual. Não representa a versão vigente nem a liberação operacional. | [Release notes](RELEASE_0_11.md) |
 | `v0.11.0-rc.6` | Substituída pela rc.7 antes dos gates de campo (20/10/2026): bugs de sala da auditoria SOLID e proteção contra cópia (V61) | [Release notes](RELEASE_0_11.md) |

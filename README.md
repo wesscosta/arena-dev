@@ -2,19 +2,17 @@
 
 **Arena Dev** é uma plataforma proprietária e self-hosted para condução, participação e gamificação de dinâmicas de sala, com foco em baixa fricção para o professor.
 
-**Estado do produto (10/10/2026)**
+## Estado do produto — 24/10/2026
 
-**Release v0.10.0:** publicada a partir da `main`, com contratos Flyway V56 e aceite operacional do responsável. [Aceite](docs/v0.10/OPERATOR_ACCEPTANCE_2026-10-10.md) · [Release notes](docs/RELEASE_0_10.md).
+**v0.11 — desenvolvimento funcional concluído.** A candidata **v0.11.0-rc.8** consolida o trabalho, mas a versão estável v0.11.0 **ainda não foi homologada**. [Notas da v0.11](docs/RELEASE_0_11.md) · [Roadmap](docs/ROADMAP_V0_11.md).
 
-- **Publicada:** `v0.10.0 — Learning Loop` (atual). `v0.9.0` permanece congelada como baseline anterior.
-- **Integração:** [PR #35](https://github.com/wesscosta/arena-dev/pull/35) incorporada na `main`, release estável `v0.10.0`.
-- **v0.11 — fechamento técnico:** etapas 11.0–11.6 integradas à `main` (merge `2c1e011`), [CI aprovado](https://github.com/wesscosta/arena-dev/actions/runs/38098271861). **Homologação operacional NO-GO**: testes físicos, piloto, rollback, segurança e aceite pendentes. **Sem tag/release v0.11.0**; [registro formal](docs/v0.11/11.6_TECHNICAL_CLOSURE_NO_GO_2026-10-10.md).
-- **v0.12 — planejamento reservado:** [redesign no Figma Transportta e Active Learning](docs/ROADMAP_V0_12.md), sem misturar escopo à v0.11.
-- **Validação:** código da candidata consolidado até `d876325` (10/10); última bateria local informada: frontend 319/319 testes unitários, TypeScript, build, testes Playwright direcionados do Timer (2/2) e lint sem erros. **O CI remoto precisa aprovar o SHA final**, inclusive commits de documentação. A aprovação de UX em Safari/iOS foi **declarada pelo operador em 10/10**, sem relatório formal de dispositivos/roteiro, e não certifica atualização de PWA previamente instalada.
-- **Evidência adicional:** ensaio isolado de rollback [V48→V56→V48 aprovado em 10/10](docs/v0.10/ROLLBACK_V56_SYNTHETIC_2026-10-10.md); **não** equivale a restauração operacional com RTO/RPO.
-- **Aceite operacional:** os testes manuais foram declarados aprovados pelo operador em 10/10; os artefatos individuais e métricas RTO/RPO não foram anexados. A release foi concluída somente após a verificação técnica (CI, backup/restauração V56 e gate final). Manter as limitações e riscos residuais documentados.
+- **Última versão estável:** [v0.10.0 — Learning Loop](https://github.com/wesscosta/arena-dev/releases/tag/v0.10.0). A rc.8 é **pré-release**, não a substitui.
+- **Entregas v0.11:** Biblioteca e projetor com publicação versionada, leitor seguro, sincronização e reconexão; segurança e acessibilidade; navegação móvel completa; Configurações do aluno centralizadas; liberação gradual docente de capítulos da Jornada, com bloqueio no backend e progresso preservado; melhorias em turmas, participantes e Atividades.
+- **Qualidade:** testes Java/PostgreSQL, frontend, TypeScript, build e E2E Chromium/WebKit emulados. [Regressão integrada 11.10](docs/v0.11/11.10_RELEASE_INTEGRATED_REGRESSION_2026-10-24.md).
+- **Homologação operacional NO-GO:** oito gates físicos/institucionais PENDING, incluindo Safari/iOS, Android PWA, VoiceOver/zoom, rede com dois projetores, piloto docente, backup/rollback, segurança e GO assinado. [Issue #110](https://github.com/wesscosta/arena-dev/issues/110) · [Roteiro 11.6](docs/v0.11/11.6_OPERATIONAL_HOMOLOGATION_PLAN.md).
+- **Gestão:** desenvolvimento concluído ([issue #37](https://github.com/wesscosta/arena-dev/issues/37)); redesign v0.12 **Figma-first A0–A4** ([roadmap](docs/ROADMAP_V0_12.md)).
 
-Comece por [estado corrente](docs/STATUS_ATUAL.md), [checklist de release](docs/v0.10/RELEASE_CANDIDATE_CHECKLIST.md), [aceite operacional](docs/v0.10/OPERATIONAL_ACCEPTANCE.md) e [auditoria de consolidação](docs/v0.10/AUDITORIA_CONSOLIDACAO_2026-10-09.md). A trilha histórica e os ADRs ficam no [índice documental](docs/DOCUMENTATION_INDEX.md).
+Comece pelo [status corrente](docs/STATUS_ATUAL.md), [notas de versão](docs/RELEASE_0_11.md) e [índice documental](docs/DOCUMENTATION_INDEX.md).
 
 ## Modelo do produto
 
