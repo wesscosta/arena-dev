@@ -110,7 +110,7 @@ test("v0.11 / 11.6 — professor libera capítulos inteiros sem expor conteúdo 
     await page.getByLabel("Liberar os primeiros").fill("1");
     page.once("dialog", async dialog => dialog.accept());
     await page.getByRole("button", { name: "Aplicar liberação" }).click();
-    await expect(page.getByText("Primeiros 1 capítulos liberados", { exact: false })).toBeVisible();
+    await expect(page.getByTestId("toast").getByText("Primeiro capítulo liberado para a turma.")).toBeVisible();
 
     const limited = await projection();
     expect(limited.releasedChapterCount).toBe(1);

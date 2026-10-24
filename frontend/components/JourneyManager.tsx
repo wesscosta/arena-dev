@@ -369,6 +369,7 @@ export default function JourneyManager({ classroomId, classroomName, notify, ini
         ? "Progressão original restaurada."
         : requested === 0
           ? "Todos os capítulos foram bloqueados para os alunos."
+          : requested === 1 ? "Primeiro capítulo liberado para a turma."
           : "Primeiros " + requested + " capítulos liberados para a turma.");
     } catch (error) {
       notify(error instanceof Error ? error.message : "Não foi possível atualizar a liberação.", "error");
