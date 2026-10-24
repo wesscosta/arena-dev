@@ -4,6 +4,8 @@
 **Fonte de verdade:** as decisões de produto e design da v0.12 vivem no Notion ([auditoria Figma-first e gate de implementação](https://app.notion.com/p/3f9f3eb198c38136b319e5807170f8bf)); este arquivo resume o que afeta o repositório.
 **Figma:** [ARENA — Redesign UX v0.12 · Transportta](https://www.figma.com/design/gWMkarPwmeFY15jr0Tr6DN). A exploração é referência visual editável, **não** especificação funcional aprovada.
 
+**Reavaliação de 24/10/2026:** [auditoria mestre dos gates e dos próximos incrementos](PRODUCT_REASSESSMENT_2026-10-24.md) e [registro canônico de produto no Notion](https://app.notion.com/p/403f3eb198c38187a735cb36f988fc80). A atualização expande D12-DYN-01 com condução docente por rodada, geração de avaliações baseada na Jornada e respostas abertas para debate; **não** antecipa código da v0.12. O texto de estado 20/10 acima é histórico.
+
 ## 0. Gate Figma-first (decisão de 14/10/2026)
 
 A v0.12 é conduzida como **auditoria e design no Figma primeiro**. O código da v0.12 parte da baseline **`v0.11.0-rc.7`** e não recebe mudanças da v0.12 até aprovação explícita do Design System e dos três pilotos. A 11.7 corrigiu defeitos contra o Design System atual (tokens de papel, controles de 44px, contraste AAA de texto); não é a nova linguagem visual e serve de ponto de partida para a migração.
@@ -113,3 +115,7 @@ As alternativas podem ser reavaliadas e rejeitadas por falta de benefício. Não
 **Próxima ação da v0.12:** obter acesso ao Figma suficiente para o inventário completo (A0), depois validar identidade, Design System e os três pilotos, incluindo Jornada em mapa e linha do tempo e D12-JR-CODE-01. O gate de código permanece fechado. O desenvolvimento Active Learning avançará depois de decisões explicitamente aprovadas, não em paralelo por padrão.
 
 **Fontes:** Notion: [auditoria Figma-first e gate](https://app.notion.com/p/3f9f3eb198c38136b319e5807170f8bf), [Jornada PTD: mapa, parallax e timeline](https://app.notion.com/p/3f9f3eb198c3816d9e12d12d97cd17f9), [Design System e handoff Figma-first](https://app.notion.com/p/3f9f3eb198c38141b995d80952c1bc79). Repositório: [fechamento v0.11](v0.11/11.6_TECHNICAL_CLOSURE_NO_GO_2026-10-10.md), [roadmap v0.11](ROADMAP_V0_11.md), [handoff v0.9](HANDOFF_V0_9.md), [UX v0.10](v0.10/UX_FLOWS.md), [Design System](DESIGN_SYSTEM.md).
+
+## 6. Reavaliação de produto de 24/10/2026 — discovery para os pilotos (não implementado)
+
+Priorizar o protótipo docente **Preparar → Conduzir → Analisar**, com foco no fluxo real de aula e sem multiplicar entradas independentes para Quiz, Verificar aprendizagem, Votação ou Nuvem. Evoluir **D12-DYN-01** preservando os registros e o cutover comprovado do Learning Core. Criar hipótese de avaliação a partir de material da Jornada/Biblioteca (com fonte, revisão, gabarito e rubrica aprovados), aplicação na Arena/Atividades e visualizações moderadas de respostas abertas. **Tempo por questão** do professor difere do **tempo total de tentativa** já na PR #101. Código/SQL necessita sandbox isolada. Os critérios detalhados de privacidade, estado, interação, acessibilidade, métricas e sequenciamento estão no [índice técnico](PRODUCT_REASSESSMENT_2026-10-24.md) e no [Notion](https://app.notion.com/p/403f3eb198c38187a735cb36f988fc80). Aprovação formal Figma A0–A4 e atribuição de release continuam pendentes.

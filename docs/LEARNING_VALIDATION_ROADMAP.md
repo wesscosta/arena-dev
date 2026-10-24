@@ -1,5 +1,8 @@
 # Learning Architecture — Roadmaps, Questões, Mastery e Progressão
 
+**Nota de reavaliação 24/10/2026:** [material da Jornada → avaliação com proveniência/revisão → aplicação em Atividades/Arena → feedback e evidência](PRODUCT_REASSESSMENT_2026-10-24.md). Isso complementa os eixos 17.3/17.4/17.6 sem decretar versão de release, automatizar Mastery nem fundir XP com evidência. Respostas abertas, nuvem de conceitos, ritmo do professor e sandbox de código permanecem propostas condicionadas a design, segurança e piloto.
+
+
 **Status:** planejado / pós-v0.8
 **Definido em:** 02/10/2026
 **Precedência:** não altera a sequência de fechamento da v0.8.
