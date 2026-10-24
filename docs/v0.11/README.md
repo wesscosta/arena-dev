@@ -1,5 +1,7 @@
 # Arena Dev v0.11 — execução e evidências
 
+**Adendo documental (24/10/2026):** [reavaliação dos gates v0.11/v0.12 e próximos incrementos](../PRODUCT_REASSESSMENT_2026-10-24.md). A main avançou até as PRs #100/#101, porém os **oito gates operacionais da 11.6 continuam sem GO**. As melhorias de UX, modo professor e avaliações derivadas da Jornada estão em discovery/Figma e não alteram os critérios de release da 11.6.
+
 **Baseline publicada:** `v0.10.0`. **v0.11 tecnicamente encerrada:** 11.0–11.6 integradas à `main`, último merge `2c1e011`, CI 3/3 aprovado no SHA. **11.6 operacional NO-GO:** testes físicos, piloto, segurança e rollback pendentes. **Sem tag/release estável v0.11.0.** Candidata congelada como pré-release **`v0.11.0-rc.1`** (19/10/2026), alvo dos 8 gates de campo. [Fechamento](11.6_TECHNICAL_CLOSURE_NO_GO_2026-10-10.md) · [v0.12](../ROADMAP_V0_12.md).
 
 ## 11.0 — itens entregues para revisão
